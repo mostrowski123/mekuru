@@ -1516,6 +1516,22 @@ function getLinkAtPoint(clientX, clientY, doc) {
 
 // ── Word-at-point detection ───────────────────────────────────────────
 
+// How far (CSS px) outside a character's box a tap still counts as on it.
+var TAP_SLOP_PX = 8;
+
+// How far the point lies outside the box of the character of text node
+// `node` at `index` (0 inside it); Infinity when that character has no box
+// (no such index, or collapsed white space).
+function distanceToChar(node, index, x, y) {
+  if (index < 0 || index >= node.length) return Infinity;
+  var range = node.ownerDocument.createRange();
+  range.setStart(node, index);
+  range.setEnd(node, index + 1);
+  var rect = range.getBoundingClientRect();
+  if (!rect || !rect.width || !rect.height) return Infinity;
+  return Math.max(rect.left - x, x - rect.right, rect.top - y, y - rect.bottom, 0);
+}
+
 function getTextAtPoint(clientX, clientY, doc) {
   try {
     var range = doc.caretRangeFromPoint(clientX, clientY);
@@ -1527,27 +1543,14 @@ function getTextAtPoint(clientX, clientY, doc) {
     // Must be a text node
     if (node.nodeType !== 3) return null;
 
-    // Check visual distance between tap point and the resolved character.
-    // caretRangeFromPoint snaps to the nearest text even when tapping far
-    // from any text — reject if the character is too far from the tap.
-    var checkRange = range.cloneRange();
-    try {
-      checkRange.setStart(node, offset);
-      checkRange.setEnd(node, Math.min(offset + 1, node.textContent.length));
-      var rect = checkRange.getBoundingClientRect();
-      if (rect && rect.width > 0 && rect.height > 0) {
-        var dx = 0;
-        var dy = 0;
-        if (clientX < rect.left) dx = rect.left - clientX;
-        else if (clientX > rect.right) dx = clientX - rect.right;
-        if (clientY < rect.top) dy = rect.top - clientY;
-        else if (clientY > rect.bottom) dy = clientY - rect.bottom;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 50) return null;
-      }
-    } catch (e) {
-      // getBoundingClientRect can fail in edge cases; proceed normally
-    }
+    // caretRangeFromPoint snaps to the nearest caret position even far from
+    // any text, so the tap must be on a character beside it: the one after
+    // the caret (tapped in its first half) or before it (its second half).
+    // Boxes are screen rectangles, so this holds in every writing mode.
+    var after = distanceToChar(node, offset, clientX, clientY);
+    var before = distanceToChar(node, offset - 1, clientX, clientY);
+    if (Math.min(after, before) > TAP_SLOP_PX) return null;
+    if (before < after) offset -= 1;
 
     // In the furigana (or its brackets): use the ruby's base text.
     if (isInRubyAnnotation(node, null)) {
