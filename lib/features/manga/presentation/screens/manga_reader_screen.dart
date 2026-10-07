@@ -91,6 +91,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   bool _isComputingAutoCrop = false;
   bool _autoCropComputedThisSession = false;
 
+  /// Set once this book, opened with Auto-Crop on but without crop bounds,
+  /// has been offered the computation, so the offer is not repeated after a
+  /// cancel or a failure.
+  bool _autoCropOfferedOnOpen = false;
+
   /// Set once the characters on the initially displayed page(s) have been
   /// counted, so rebuilds (and page-data reloads) don't count them again.
   bool _initialPageCharsCounted = false;
@@ -788,13 +793,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   }
 
   void _showSettingsSheet(MokuroBook mokuroBook) {
-    final hasComputedAutoCrop =
-        mokuroBook.autoCropVersion > 0 ||
-        mokuroBook.pages.any((page) => page.contentBounds != null);
     showReaderSettingsSheet(
       context: context,
       builder: (sheetContext) => MangaReaderSettingsSheet(
-        hasComputedAutoCrop: hasComputedAutoCrop,
+        hasComputedAutoCrop: mokuroBook.hasAutoCropBounds,
         onAutoCropToggled: (value) =>
             _handleAutoCropToggle(ref, mokuroBook, value),
         onAutoCropRerun: () => _handleAutoCropRerun(ref),
@@ -1209,6 +1211,27 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) _precacheAdjacentPages();
             });
+
+            // The Auto-Crop switch is global, but crop bounds are computed per
+            // book: a book opened with the switch on and no bounds yet is
+            // offered the switch's own computation, once. Right after any
+            // computation the reload still shows the pages without bounds.
+            if (autoCrop &&
+                !_autoCropOfferedOnOpen &&
+                !_autoCropComputedThisSession &&
+                !mokuroBook.hasAutoCropBounds) {
+              _autoCropOfferedOnOpen = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                unawaited(
+                  _runAutoCropComputation(
+                    ref,
+                    force: false,
+                    enableAfterCompute: true,
+                  ),
+                );
+              });
+            }
 
             // PDF books turn their own way; see _pdfDirection.
             final direction =

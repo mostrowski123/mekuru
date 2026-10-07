@@ -60,6 +60,11 @@ class MokuroBook {
 
   static const Object _unset = Object();
 
+  /// Whether auto-crop bounds were ever computed for this book (by any
+  /// version of the algorithm).
+  bool get hasAutoCropBounds =>
+      autoCropVersion > 0 || pages.any((page) => page.contentBounds != null);
+
   /// SAF tree-relative path of [page]'s image, or `null` when this book is
   /// not SAF-backed (read it from `imageDirPath` instead).
   String? safImagePathFor(MokuroPage page) {
