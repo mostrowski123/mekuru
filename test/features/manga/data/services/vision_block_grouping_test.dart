@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:math' as math;
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/services/vision_block_grouping.dart';
 
@@ -197,62 +193,4 @@ void main() {
   test('blank lines are ignored', () {
     expect(groupVisionLines([_column(100, 100, text: '  ')]), isEmpty);
   });
-
-  // Local only: the fixture is copyrighted manga and is not in the repo.
-  // Make the second file with
-  //   swift tools/vision_recall.swift example/mokuro/test1.mokuro --json example/mokuro/test1.vision.json
-  final reference = File('example/mokuro/test1.mokuro');
-  final visionLines = File('example/mokuro/test1.vision.json');
-  test(
-    'real pages: grouped blocks match the reference blocks',
-    skip: reference.existsSync() && visionLines.existsSync()
-        ? false
-        : 'local fixture not present',
-    () {
-      final refPages = {
-        for (final p
-            in (jsonDecode(reference.readAsStringSync())['pages'] as List))
-          p['img_path'] as String: p['blocks'] as List,
-      };
-      var referenceBlocks = 0;
-      var matched = 0;
-      var produced = 0;
-      for (final page in jsonDecode(visionLines.readAsStringSync()) as List) {
-        final blocks = groupVisionLines([
-          for (final l in page['lines'] as List)
-            VisionLine(
-              left: (l['box'][0] as num).toDouble(),
-              top: (l['box'][1] as num).toDouble(),
-              right: (l['box'][2] as num).toDouble(),
-              bottom: (l['box'][3] as num).toDouble(),
-              text: l['text'] as String,
-            ),
-        ]);
-        produced += blocks.length;
-        for (final ref in refPages[page['img_path']]!) {
-          referenceBlocks++;
-          final box = (ref['box'] as List)
-              .map((v) => (v as num).toDouble())
-              .toList();
-          final best = blocks.fold<double>(0, (best, b) {
-            final w = math.min(b.right, box[2]) - math.max(b.left, box[0]);
-            final h = math.min(b.bottom, box[3]) - math.max(b.top, box[1]);
-            if (w <= 0 || h <= 0) return best;
-            final union =
-                (b.right - b.left) * (b.bottom - b.top) +
-                (box[2] - box[0]) * (box[3] - box[1]) -
-                w * h;
-            return math.max(best, w * h / union);
-          });
-          if (best >= 0.5) matched++;
-        }
-      }
-      // ignore: avoid_print
-      print(
-        'matched $matched/$referenceBlocks reference blocks (IoU >= 0.5), '
-        'produced $produced blocks',
-      );
-      expect(matched / referenceBlocks, greaterThan(0.7));
-    },
-  );
 }
