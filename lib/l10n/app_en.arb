@@ -5116,9 +5116,9 @@
   "@ndlTextModelTitle": {
     "description": "Downloads screen: title of the optional NDL text-line OCR model tile (both platforms). A reader for scanned pages of prose text, as opposed to manga. NDLOCR-Lite is a product name; keep it."
   },
-  "ndlTextModelDescription": "On-device OCR needs it for the scanned graded readers from Free books, whose long lines of text it reads much more accurately. Page images stay on your device.",
+  "ndlTextModelDescription": "On-device OCR uses it for books imported from PDFs, whose long lines of text it reads much more accurately. The scanned graded readers from Free books need it. Page images stay on your device.",
   "@ndlTextModelDescription": {
-    "description": "Downloads screen: subtitle of the NDL text-line model tile before it is installed; the download size follows in parentheses. Free books is the app's free-book section (freeBooksTitle), graded readers its tab (freeBooksTabGradedReaders)."
+    "description": "Downloads screen: subtitle of the NDL text-line model tile before it is installed; the download size follows in parentheses. On-device scans of every book imported from a PDF use the model once it is installed; the scanned graded readers are only scanned with it. Free books is the app's free-book section (freeBooksTitle), graded readers its tab (freeBooksTabGradedReaders)."
   },
   "ndlTextModelPromptTitle": "Scanned-book reader needed",
   "@ndlTextModelPromptTitle": {

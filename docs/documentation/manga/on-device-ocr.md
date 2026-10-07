@@ -115,7 +115,7 @@ If the NDL text model is missing when you start a scan, Mekuru says **Scanned-bo
 
 Free books are always scanned on your device: the **Recognize text** sheet has no **Remote** choice for them. On Android you need the manga OCR model pack as well.
 
-A scanned PDF that you import yourself is scanned like a manga. When you import one, Mekuru tells you that it looks like a scan.
+A scanned PDF that you import yourself is scanned like a manga. When you import one, Mekuru tells you that it looks like a scan. If you downloaded the NDL text model, on-device OCR also uses it to read the long lines of text in the PDFs you import. Without it, Mekuru scans them anyway and doesn't ask for it.
 
 ## Remove the models or the text
 

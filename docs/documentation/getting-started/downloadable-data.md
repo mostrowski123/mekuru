@@ -88,7 +88,7 @@ OCR means reading the text in an image. These models let Mekuru read manga and s
 |-|-|-|
 | **Japanese manga OCR — manga-ocr** (Android) | 296.2 MB | Needed for on-device OCR on Android |
 | **Japanese manga OCR — manga-ocr** (iPhone and iPad) | 201.5 MB | Optional. Apple's text recognition reads manga without it. With it, Mekuru reads the text more accurately |
-| **Scanned-book reader — NDLOCR-Lite** | 42.6 MB | Needed to OCR the scanned graded readers from [free books](free-books.md) |
+| **Scanned-book reader — NDLOCR-Lite** | 42.6 MB | Needed to OCR the scanned graded readers from [free books](free-books.md). Optional for the PDFs you import. With it, Mekuru reads their long lines of text more accurately |
 
 On Android, on-device OCR needs a phone with a 64-bit ARM processor. On other phones, the manga OCR row says so, and the **Scanned-book reader — NDLOCR-Lite** row doesn't appear.
 

@@ -3810,7 +3810,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ndlTextModelDescription =>
-      '设备端 OCR 识别“免费书籍”中的扫描版分级读物时需要它，它能更准确地读取较长的文字行。页面图像不会离开你的设备。';
+      '设备端 OCR 会用它识别从 PDF 导入的书籍，它能更准确地读取较长的文字行。“免费书籍”中的扫描版分级读物需要它。页面图像不会离开你的设备。';
 
   @override
   String get ndlTextModelPromptTitle => '需要扫描书籍识别';
@@ -7776,7 +7776,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ndlTextModelDescription =>
-      '设备端 OCR 识别“免费书籍”中的扫描版分级读物时需要它，它能更准确地读取较长的文字行。页面图像不会离开你的设备。';
+      '设备端 OCR 会用它识别从 PDF 导入的书籍，它能更准确地读取较长的文字行。“免费书籍”中的扫描版分级读物需要它。页面图像不会离开你的设备。';
 
   @override
   String get ndlTextModelPromptTitle => '需要扫描书籍识别';

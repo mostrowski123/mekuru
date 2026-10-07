@@ -28,7 +28,7 @@ class MangaOcrIosDownloadTile extends StatelessWidget {
 }
 
 /// Downloads screen tile for the optional NDL text-line model, on both
-/// platforms: on-device scans of Tadoku's graded readers use it.
+/// platforms: on-device scans of books imported from PDFs use it.
 class NdlTextModelDownloadTile extends StatelessWidget {
   const NdlTextModelDownloadTile({super.key});
 

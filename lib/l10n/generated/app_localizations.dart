@@ -6477,10 +6477,10 @@ abstract class AppLocalizations {
   /// **'Scanned-book reader — NDLOCR-Lite'**
   String get ndlTextModelTitle;
 
-  /// Downloads screen: subtitle of the NDL text-line model tile before it is installed; the download size follows in parentheses. Free books is the app's free-book section (freeBooksTitle), graded readers its tab (freeBooksTabGradedReaders).
+  /// Downloads screen: subtitle of the NDL text-line model tile before it is installed; the download size follows in parentheses. On-device scans of every book imported from a PDF use the model once it is installed; the scanned graded readers are only scanned with it. Free books is the app's free-book section (freeBooksTitle), graded readers its tab (freeBooksTabGradedReaders).
   ///
   /// In en, this message translates to:
-  /// **'On-device OCR needs it for the scanned graded readers from Free books, whose long lines of text it reads much more accurately. Page images stay on your device.'**
+  /// **'On-device OCR uses it for books imported from PDFs, whose long lines of text it reads much more accurately. The scanned graded readers from Free books need it. Page images stay on your device.'**
   String get ndlTextModelDescription;
 
   /// Dialog title when an on-device OCR scan of a scanned free book starts and the NDL text-line model (ndlTextModelTitle) is not installed.

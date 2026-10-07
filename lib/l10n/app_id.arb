@@ -3069,7 +3069,7 @@
   "readerVolumeKeysDownNext": "Turun: berikutnya",
   "readerVolumeKeysUpNext": "Naik: berikutnya",
   "ndlTextModelTitle": "Pembaca buku pindaian — NDLOCR-Lite",
-  "ndlTextModelDescription": "OCR di perangkat memerlukannya untuk bacaan berjenjang hasil pindaian dari Buku gratis, karena membaca baris teks yang panjang jauh lebih akurat. Gambar halaman tetap di perangkat Anda.",
+  "ndlTextModelDescription": "OCR di perangkat menggunakannya untuk buku yang diimpor dari PDF, karena membaca baris teks yang panjang jauh lebih akurat. Bacaan berjenjang hasil pindaian dari Buku gratis memerlukannya. Gambar halaman tetap di perangkat Anda.",
   "ndlTextModelPromptTitle": "Perlu pembaca buku pindaian",
   "ndlTextModelPromptBody": "Buku gratis ini berupa halaman teks hasil pindaian. OCR di perangkat membacanya dengan pembaca buku pindaian, unduhan sebesar {size} di Unduhan.",
   "localOcrLicenseNdl": "Model pengenalan teks NDLOCR-Lite © Perpustakaan Diet Nasional, Jepang (国立国会図書館). Digunakan tanpa modifikasi untuk membaca buku pindaian. CC BY 4.0.",

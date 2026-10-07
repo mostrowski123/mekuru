@@ -124,6 +124,7 @@ void main() {
     List<int> visible = const [],
     OcrProgress? progress,
     Book? book,
+    bool fromPdf = false,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -159,6 +160,7 @@ void main() {
                         : null,
                   ),
               ],
+              fromPdf: fromPdf,
             ),
           ),
           localOcrJobsProvider.overrideWith((ref) => Stream.value(const [])),
@@ -220,7 +222,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(client.started.single.pages, [1, 2]);
       expect(client.started.single.policy, OcrExistingPolicy.missingOnly);
-      // Not a scanned free book: no text model, and no question about it.
+      // Not a PDF: no text model, and no question about it.
       expect(client.started.single.ndlModelDir, isNull);
       // Even a run that only fills missing pages backs up the book's own
       // text first, so Delete OCR can restore it.
@@ -431,6 +433,36 @@ void main() {
       expect(client.started.single.ndlModelDir, dir);
     });
 
+    testWidgets('a PDF that is not a free book reads with it when installed', (
+      tester,
+    ) async {
+      final dir = await installModel(tester);
+      await open(tester, fromPdf: true);
+      await tapStart(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(prompt), findsNothing);
+      expect(client.started.single.ndlModelDir, dir);
+    });
+
+    testWidgets('a PDF that is not a free book scans without it, unasked', (
+      tester,
+    ) async {
+      await open(tester, fromPdf: true);
+      await tapStart(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(prompt), findsNothing);
+      expect(client.started.single.ndlModelDir, isNull);
+    });
+
+    testWidgets('a manga that is not a PDF does not use it', (tester) async {
+      await installModel(tester);
+      await open(tester);
+      await tapStart(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(prompt), findsNothing);
+      expect(client.started.single.ndlModelDir, isNull);
+    });
+
     // The platform override must be undone inside the test body.
     void testIos(String name, Future<void> Function(WidgetTester) body) =>
         testWidgets('on iOS, $name', (tester) async {
@@ -465,7 +497,20 @@ void main() {
       expect(scheduled, [(onDevice: true, ndlModelDir: dir)]);
     });
 
-    testIos('other books neither ask nor use it', (tester) async {
+    testIos('a PDF that is not a free book reads with it, without asking', (
+      tester,
+    ) async {
+      final dir = await installModel(tester);
+      await open(tester, fromPdf: true);
+      await tapStart(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(prompt), findsNothing);
+      expect(scheduled, [(onDevice: true, ndlModelDir: dir)]);
+    });
+
+    testIos('a manga that is not a PDF neither asks nor uses it', (
+      tester,
+    ) async {
       await installModel(tester);
       await open(tester);
       await tapStart(tester);

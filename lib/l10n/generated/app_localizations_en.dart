@@ -3977,7 +3977,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ndlTextModelDescription =>
-      'On-device OCR needs it for the scanned graded readers from Free books, whose long lines of text it reads much more accurately. Page images stay on your device.';
+      'On-device OCR uses it for books imported from PDFs, whose long lines of text it reads much more accurately. The scanned graded readers from Free books need it. Page images stay on your device.';
 
   @override
   String get ndlTextModelPromptTitle => 'Scanned-book reader needed';

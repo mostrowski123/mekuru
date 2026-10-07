@@ -213,7 +213,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             if (GemmaTranslation.supported) const _HighQualityTranslationTile(),
             const LocalOcrDownloadTile(),
           ],
-          // On-device scans of scanned free books read long lines with it;
+          // On-device scans of books imported from PDFs read long lines with it;
           // on Android only devices that run on-device OCR can use it.
           if (defaultTargetPlatform == TargetPlatform.iOS ||
               ref.watch(localOcrModelProvider).asData?.value.supported == true)

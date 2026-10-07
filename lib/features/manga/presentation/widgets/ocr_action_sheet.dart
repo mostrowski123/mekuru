@@ -135,7 +135,7 @@ Future<bool> startOcr(
   // page inside the page loop, while the app is open.
   if (defaultTargetPlatform == TargetPlatform.iOS) {
     if (!context.mounted) return false;
-    final ndl = await _ndlModelFor(context, book);
+    final ndl = await _ndlModelFor(context, book, manga);
     if (!ndl.go) return false;
     return runPageLoop(onDevice: true, ndlModelDir: ndl.dir);
   }
@@ -167,7 +167,7 @@ Future<bool> startOcr(
     ).push(namedRoute('downloads', (_) => const DownloadsScreen()));
     return false;
   }
-  final ndl = await _ndlModelFor(context, book);
+  final ndl = await _ndlModelFor(context, book, manga);
   if (!ndl.go) return false;
   final spec = OcrJobSpec(
     bookId: book.id,
@@ -192,16 +192,21 @@ Future<bool> startOcr(
   return true;
 }
 
-/// The NDL text model for an on-device scan of [book]: only Tadoku's graded
-/// readers, scanned text pages whose long lines manga-ocr cannot read, use
-/// it, and they are only scanned with it. When it is missing the user can
-/// open Downloads; there is no scan either way.
+/// The NDL text model for an on-device scan of [book], which reads the long
+/// lines of scanned text pages that manga-ocr cannot. A book imported from a
+/// PDF ([manga]) uses it when it is installed. Tadoku's graded readers are
+/// only scanned with it: when it is missing the user can open Downloads, and
+/// there is no scan either way.
 Future<({bool go, String? dir})> _ndlModelFor(
   BuildContext context,
   Book book,
+  MokuroBook manga,
 ) async {
-  if (!isTadokuDownload(book)) return (go: true, dir: null);
   final model = NdlTextModel.instance;
+  if (!isTadokuDownload(book)) {
+    final use = manga.fromPdf && await model.installed;
+    return (go: true, dir: use ? await model.path : null);
+  }
   if (await model.installed) return (go: true, dir: await model.path);
   if (!context.mounted) return (go: false, dir: null);
   final openDownloads = await showDialog<bool>(

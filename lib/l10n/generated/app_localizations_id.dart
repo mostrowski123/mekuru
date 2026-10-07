@@ -3997,7 +3997,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get ndlTextModelDescription =>
-      'OCR di perangkat memerlukannya untuk bacaan berjenjang hasil pindaian dari Buku gratis, karena membaca baris teks yang panjang jauh lebih akurat. Gambar halaman tetap di perangkat Anda.';
+      'OCR di perangkat menggunakannya untuk buku yang diimpor dari PDF, karena membaca baris teks yang panjang jauh lebih akurat. Bacaan berjenjang hasil pindaian dari Buku gratis memerlukannya. Gambar halaman tetap di perangkat Anda.';
 
   @override
   String get ndlTextModelPromptTitle => 'Perlu pembaca buku pindaian';

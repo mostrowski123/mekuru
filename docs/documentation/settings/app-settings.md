@@ -79,7 +79,7 @@ See [On-device OCR](../manga/on-device-ocr.md) and [Remote OCR (Pro)](../manga/c
 - **Assets**: **Kanji Stroke Order**, **Word Frequency** and the **Enhanced Furigana Dictionary**.
 - **Japanese translation** and **High-quality translation (Gemma 4)**, the translation models. Android only.
 - **Japanese manga OCR — manga-ocr**: the manga OCR model pack.
-- **Scanned-book reader — NDLOCR-Lite**: the NDL text model for scanned free books.
+- **Scanned-book reader — NDLOCR-Lite**: the NDL text model for scanned free books and the PDFs you import.
 
 See [Downloads](../getting-started/downloadable-data.md).
 
