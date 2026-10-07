@@ -20,7 +20,9 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import moe.matthew.mekuru.ocr.Avif
 import java.io.File
+import java.nio.ByteBuffer
 
 class MainActivity : FlutterActivity() {
     companion object {
@@ -28,6 +30,7 @@ class MainActivity : FlutterActivity() {
         private const val ANKI_CHANNEL_NAME = "mekuru/ankidroid_native"
         private const val SYSTEM_UI_CHANNEL_NAME = "mekuru/android_system_ui"
         private const val TEST_LAB_CHANNEL_NAME = "mekuru/test_lab"
+        private const val IMAGE_CONVERT_CHANNEL_NAME = "mekuru/image_convert"
         private const val REQUEST_OPEN_DOCUMENT_TREE = 7312
         private const val REQUEST_OPEN_DOCUMENT = 7313
 
@@ -118,6 +121,32 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Exception) {
                     result.error("system_ui_error", e.message, null)
                 }
+            }
+
+        // `decodeRgba`: AVIF that Flutter cannot decode (Android 7-11 has no
+        // platform AVIF decoder) as {width, height, rgba} through libavif, for
+        // `decodeWithAvifFallback` in Dart. Null when it is not readable AVIF.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, IMAGE_CONVERT_CHANNEL_NAME)
+            .setMethodCallHandler { call, result ->
+                val bytes = call.arguments as? ByteArray
+                if (call.method != "decodeRgba" || bytes == null) {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                Thread {
+                    val reply = try {
+                        Avif.decode(bytes)?.let { bitmap ->
+                            val rgba = ByteBuffer.allocate(bitmap.byteCount)
+                            bitmap.copyPixelsToBuffer(rgba)
+                            val decoded = mapOf("width" to bitmap.width, "height" to bitmap.height, "rgba" to rgba.array())
+                            bitmap.recycle()
+                            decoded
+                        }
+                    } catch (e: Throwable) {
+                        null
+                    }
+                    runOnUiThread { result.success(reply) }
+                }.start()
             }
 
         // Firebase Test Lab (which runs Play's pre-launch report) sets this on

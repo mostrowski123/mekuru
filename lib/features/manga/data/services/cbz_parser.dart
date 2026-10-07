@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:path/path.dart' as p;
 
 /// Metadata extracted from a CBZ archive.
@@ -54,14 +55,16 @@ class ImageDimensions {
 /// directly, because `image`'s own `startDecode` is not a header read for
 /// JPEG: it walks the frame and allocates the full coefficient buffer, which
 /// measures ~31ms on a single 1600x2300 page and scales with pixel count, not
-/// file size. A direct SOF read is ~2µs. Other formats fall back to the
-/// package decoder, which is correct and rare enough not to matter.
+/// file size. A direct SOF read is ~2µs. AVIF, which the package cannot
+/// read, is parsed directly too. Other formats fall back to the package
+/// decoder, which is correct and rare enough not to matter.
 ///
 /// Returns null for bytes that carry no readable header rather than throwing.
 ImageDimensions? readImageDimensionsFromBytes(Uint8List bytes) {
   try {
     return _jpegDimensions(bytes) ??
         _pngDimensions(bytes) ??
+        _avifDimensions(bytes) ??
         _fallbackDimensions(bytes);
   } catch (e) {
     debugPrint('[CbzParser] Failed to read image dimensions: $e');
@@ -119,9 +122,48 @@ ImageDimensions? _pngDimensions(Uint8List b) {
   return width > 0 && height > 0 ? ImageDimensions(width, height) : null;
 }
 
+/// AVIF: the largest `ispe` (image spatial extent) property under
+/// meta/iprp/ipco. The primary image's is the largest: a grid's covers its
+/// tiles, an alpha plane matches it, a thumbnail is smaller.
+// ponytail: ignores `irot`, so a rotated AVIF reports its stored size, which
+// is also what the OCR decoders (ImageIO, libavif, BitmapRegionDecoder) read.
+ImageDimensions? _avifDimensions(Uint8List b) {
+  if (!isAvif(b)) return null;
+  int u32(int i) =>
+      (b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3];
+  ImageDimensions? best;
+  var bestArea = 0;
+  void walk(int start, int end) {
+    for (var i = start; i + 8 <= end;) {
+      final size = u32(i);
+      // 0 (to end of file) and 1 (64-bit size) only appear on mdat, which
+      // follows meta.
+      if (size < 8) return;
+      final boxEnd = i + size < end ? i + size : end;
+      switch (String.fromCharCodes(b, i + 4, i + 8)) {
+        case 'meta':
+          walk(i + 12, boxEnd); // a full box: version and flags come first
+        case 'iprp' || 'ipco':
+          walk(i + 8, boxEnd);
+        case 'ispe' when i + 20 <= boxEnd:
+          final width = u32(i + 12);
+          final height = u32(i + 16);
+          if (width * height > bestArea) {
+            bestArea = width * height;
+            best = ImageDimensions(width, height);
+          }
+      }
+      i += size;
+    }
+  }
+
+  walk(0, b.length);
+  return best;
+}
+
 /// Reads image dimensions from the first 64 KB of the file at [path] —
-/// enough for the JPEG SOF and PNG IHDR headers above without pulling whole
-/// pages into memory.
+/// enough for the JPEG SOF, PNG IHDR and AVIF meta headers above without
+/// pulling whole pages into memory.
 Future<ImageDimensions?> readImageDimensionsFromFile(String path) async {
   final raf = await File(path).open();
   try {
@@ -152,6 +194,7 @@ class CbzParser {
     '.bmp',
     '.tiff',
     '.tif',
+    '.avif',
   };
 
   /// Canonical file name for page [oneBasedIndex] in a converted or exported

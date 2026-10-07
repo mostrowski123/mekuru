@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_highlight_overlay.dart';
@@ -218,10 +219,9 @@ class _MangaPageViewState extends State<MangaPageView> {
       );
     }
 
-    return Image.file(
-      File(imagePath),
+    return Image(
+      image: fileImage(File(imagePath), cacheWidth: cacheWidth),
       fit: fit,
-      cacheWidth: cacheWidth,
       filterQuality: FilterQuality.medium,
       errorBuilder: (_, error, _) => _buildImageError(context),
     );

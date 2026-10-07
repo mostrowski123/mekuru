@@ -29,7 +29,8 @@ import onnxruntime_objc
   }
 
   /// `decodeRgba`: a page as 8-bit RGBA (`{width, height, rgba}`), decoded on
-  /// the CPU with ImageIO like `recognizeLines` does, for manga-ocr's crops.
+  /// the CPU with ImageIO like `recognizeLines` does, for manga-ocr's crops
+  /// and for showing AVIF, which Flutter cannot decode on iOS.
   /// dart:ui's decoder may need the GPU, which iOS refuses while a scan runs
   /// in the background.
   nonisolated static func decodeRgba(_ data: Data) -> Any? {
@@ -172,12 +173,23 @@ import onnxruntime_objc
       }
   }
 
-  /// `mekuru/image_convert`: `toPng` re-encodes a dictionary image Flutter
-  /// cannot decode on iOS (AVIF, Jitendex's graphics) as PNG; UIImage reads
-  /// AVIF since iOS 16. Replies null when it cannot read the image.
+  /// `mekuru/image_convert`: images Flutter cannot decode on iOS (AVIF).
+  /// `toPng` re-encodes a dictionary image (Jitendex's graphics) as PNG;
+  /// UIImage reads AVIF since iOS 16. `decodeRgba` (see above) decodes a manga
+  /// page or cover for display as it is (`decodeWithAvifFallback` in Dart).
+  /// Both reply null when they cannot read the image.
   private func registerImageConvertChannel(messenger: FlutterBinaryMessenger) {
     FlutterMethodChannel(name: "mekuru/image_convert", binaryMessenger: messenger)
       .setMethodCallHandler { call, result in
+        if call.method == "decodeRgba",
+          let bytes = (call.arguments as? FlutterStandardTypedData)?.data
+        {
+          Task.detached(priority: .userInitiated) {
+            let reply = AppDelegate.decodeRgba(bytes)
+            DispatchQueue.main.async { result(reply) }
+          }
+          return
+        }
         guard call.method == "toPng",
           let bytes = (call.arguments as? FlutterStandardTypedData)?.data
         else {

@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
 
 /// [ImageProvider] for images backed by Android SAF (`content://` URI or a
 /// persisted tree grant + relative path).
@@ -55,8 +56,12 @@ class AndroidSafImageProvider extends ImageProvider<AndroidSafImageProvider> {
       PaintingBinding.instance.imageCache.evict(this);
       throw StateError('Could not read SAF image: $_location');
     }
-    final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-    return decode(buffer);
+    // ponytail: AVIF that Android 7-11 cannot decode comes back full-size;
+    // the target size is inside ResizeImage's decode callback.
+    return decodeWithAvifFallback(
+      bytes,
+      () async => decode(await ui.ImmutableBuffer.fromUint8List(bytes)),
+    );
   }
 
   String get _location => uri ?? '$treeUri/$relativePath';

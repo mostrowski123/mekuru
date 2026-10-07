@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
+import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:path/path.dart' as p;
 
 import '../models/mokuro_models.dart';
@@ -18,20 +20,6 @@ import '../models/mokuro_models.dart';
 /// by extracting image filenames from the mokuro HTML file rather than listing
 /// the image directory.
 class MokuroParser {
-  static const Set<String> _imageExtensions = {
-    '.jpg',
-    '.jpeg',
-    '.png',
-    '.gif',
-    '.webp',
-    '.bmp',
-    '.tiff',
-    '.tif',
-  };
-
-  static bool _isImageFile(String fileName) =>
-      _imageExtensions.contains(p.extension(fileName).toLowerCase());
-
   static String _normalizeSafRelativeDir(String relativePath) {
     final normalized = relativePath.replaceAll('\\', '/');
     if (normalized.isEmpty || normalized == '.') return '';
@@ -353,7 +341,8 @@ class MokuroParser {
           safTreeUri,
           relativePath: safImageDirRel,
         );
-        imageFiles = names.where(_isImageFile).toList()..sort(_naturalCompare);
+        imageFiles = names.where(CbzParser.isImageFile).toList()
+          ..sort(_naturalCompare);
       } else {
         imageFiles = await _listSortedImageFiles(imageDirPath);
       }
@@ -541,7 +530,7 @@ class MokuroParser {
       final imageFileName = p.basename(imgPath);
 
       // Skip non-image entries (e.g. .nomedia, .json metadata)
-      if (!_isImageFile(imageFileName)) continue;
+      if (!CbzParser.isImageFile(imageFileName)) continue;
 
       imageFileNames.add(imageFileName);
 
@@ -663,7 +652,7 @@ class MokuroParser {
       final seen = <String>{};
       final unique = <String>[];
       for (final f in imageFiles) {
-        if (_isImageFile(f) && seen.add(f)) unique.add(f);
+        if (CbzParser.isImageFile(f) && seen.add(f)) unique.add(f);
       }
 
       debugPrint(
@@ -979,7 +968,7 @@ class MokuroParser {
     final files = <String>[];
     try {
       await for (final entity in dir.list()) {
-        if (entity is File && _isImageFile(entity.path)) {
+        if (entity is File && CbzParser.isImageFile(entity.path)) {
           files.add(p.basename(entity.path));
         }
       }
@@ -1050,7 +1039,10 @@ class MokuroParser {
     double padding = 2.0,
     int whiteThreshold = 240,
   }) async {
-    final codec = await ui.instantiateImageCodec(bytes);
+    final codec = await decodeWithAvifFallback(
+      bytes,
+      () => ui.instantiateImageCodec(bytes),
+    );
     final frame = await codec.getNextFrame();
     final image = frame.image;
     final width = image.width;

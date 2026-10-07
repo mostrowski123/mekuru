@@ -14,6 +14,8 @@ import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import java.io.Closeable
 import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
 import kotlin.math.*
 
 /** Reads the same private files or persisted SAF tree grants as the reader.
@@ -21,7 +23,12 @@ import kotlin.math.*
 class MangaImageSource(private val context: Context,book: JSONObject,page: JSONObject) : Closeable {
     private val uri: Uri
     private val descriptor: ParcelFileDescriptor
-    private val decoder: BitmapRegionDecoder
+    private val decoder: BitmapRegionDecoder?
+    /** The whole page, when BitmapRegionDecoder cannot read it (AVIF on older
+     * Android). Mutable, so a crop of all of it is still a copy callers may
+     * recycle. */
+    // ponytail: holds the full page for the scan of it; fine at manga sizes.
+    private val whole: Bitmap?
     val width: Int
     val height: Int
     init {
@@ -34,11 +41,13 @@ class MangaImageSource(private val context: Context,book: JSONObject,page: JSONO
         } else Uri.fromFile(File(book.getString("imageDirPath"),name))
         descriptor=open()
         try {
-            @Suppress("DEPRECATION")
-            val region=BitmapRegionDecoder.newInstance(descriptor.fileDescriptor,false)
-                ?: throw IllegalArgumentException("unsupported_image")
-            decoder=region
-            width=decoder.width; height=decoder.height
+            decoder=try {
+                @Suppress("DEPRECATION")
+                BitmapRegionDecoder.newInstance(descriptor.fileDescriptor,false)
+            } catch(e: IOException) { null }
+            whole=if(decoder==null) open().use { Avif.decode(FileInputStream(it.fileDescriptor).readBytes()) }
+                ?: throw IllegalArgumentException("unsupported_image") else null
+            width=decoder?.width ?: whole!!.width; height=decoder?.height ?: whole!!.height
             require(width>0 && height>0 && width.toLong()*height<=200_000_000) { "image_too_large" }
             val expectedWidth=page.optInt("imgWidth")
             val expectedHeight=page.optInt("imgHeight")
@@ -55,9 +64,7 @@ class MangaImageSource(private val context: Context,book: JSONObject,page: JSONO
     fun preview(): Bitmap {
         var sample=1
         while(max(width,height)/sample>2048) sample*=2
-        return decoder.decodeRegion(Rect(0,0,width,height),
-            BitmapFactory.Options().apply { inSampleSize=sample; inPreferredConfig=Bitmap.Config.ARGB_8888 })
-            ?: throw IllegalStateException("image_unreadable")
+        return decodeRegion(Rect(0,0,width,height),sample)
     }
     fun crop(quad: List<P>): Bitmap {
         val box=bounds(quad)
@@ -67,9 +74,7 @@ class MangaImageSource(private val context: Context,book: JSONObject,page: JSONO
         require(rect.width()>0 && rect.height()>0) { "invalid_crop" }
         var sample=1
         while(rect.width().toLong()*rect.height()/(sample*sample)>4_000_000) sample*=2
-        val bitmap=decoder.decodeRegion(rect,BitmapFactory.Options().apply {
-            inSampleSize=sample; inPreferredConfig=Bitmap.Config.ARGB_8888
-        }) ?: throw IllegalStateException("image_unreadable")
+        val bitmap=decodeRegion(rect,sample)
         // Whole rectangular blocks must retain native crop pixels. Warping an
         // already rectangular crop introduces a second resize and border pixels.
         if (quad.zip(box.quad()).all { (a,b) -> (a-b).norm()<.001 }) return bitmap
@@ -92,7 +97,15 @@ class MangaImageSource(private val context: Context,book: JSONObject,page: JSONO
             return Bitmap.createBitmap(outWidth,outHeight,Bitmap.Config.ARGB_8888).also { Utils.matToBitmap(warped,it) }
         } finally { bitmap.recycle(); source.release(); warped.release(); pts.release(); dst.release(); transform?.release() }
     }
-    override fun close() { try { decoder.recycle() } finally { descriptor.close() } }
+    private fun decodeRegion(rect: Rect,sample: Int): Bitmap = (decoder?.decodeRegion(rect,
+        BitmapFactory.Options().apply { inSampleSize=sample; inPreferredConfig=Bitmap.Config.ARGB_8888 })
+        ?: whole?.let {
+            val region=Bitmap.createBitmap(it,rect.left,rect.top,rect.width(),rect.height())
+            if(sample==1) region
+            else Bitmap.createScaledBitmap(region,max(1,rect.width()/sample),max(1,rect.height()/sample),true)
+                .also { scaled -> if(scaled!==region) region.recycle() }
+        }) ?: throw IllegalStateException("image_unreadable")
+    override fun close() { try { decoder?.recycle(); whole?.recycle() } finally { descriptor.close() } }
     companion object {
         private fun resolveTree(context: Context,tree: Uri,path: String): Uri {
             var id=DocumentsContract.getTreeDocumentId(tree)

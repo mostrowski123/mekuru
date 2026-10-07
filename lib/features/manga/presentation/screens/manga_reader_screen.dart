@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/manga/data/services/ocr_page_selection.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -330,16 +331,22 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
 
       final page = mokuroBook.pages[idx];
       final safImagePath = mokuroBook.safImagePathFor(page);
+      // Same keys as the page views build, so a precached page is a hit.
       final provider = safImagePath != null
-          ? AndroidSafImageProvider(
-              treeUri: mokuroBook.safTreeUri,
-              relativePath: safImagePath,
+          ? ResizeImage(
+              AndroidSafImageProvider(
+                treeUri: mokuroBook.safTreeUri,
+                relativePath: safImagePath,
+              ),
+              width: cacheWidth,
             )
-          : FileImage(File('${mokuroBook.imageDirPath}/${page.imageFileName}'))
-                as ImageProvider;
+          : fileImage(
+              File('${mokuroBook.imageDirPath}/${page.imageFileName}'),
+              cacheWidth: cacheWidth,
+            );
 
       precacheImage(
-        ResizeImage(provider, width: cacheWidth),
+        provider,
         context,
         onError: (_, _) {}, // missing/unreadable page images fail on display
       );

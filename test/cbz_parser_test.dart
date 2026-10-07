@@ -1,11 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:path/path.dart' as p;
+
+import 'shared/avif_header.dart';
 
 /// Minimal bytes that won't decode as a real image but pass filename filtering.
 List<int> get fakeJpegBytes => [0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0];
@@ -184,12 +188,14 @@ void main() {
         'page.bmp': fakeJpegBytes,
         'page.tiff': fakeJpegBytes,
         'page.tif': fakeJpegBytes,
+        'page.avif': avifHeader(),
       });
 
       final outputDir = '${tmpDir.path}/output';
       final metadata = await CbzParser.extract(cbzPath, outputDir);
 
-      expect(metadata.imageFileNames.length, 8);
+      expect(metadata.imageFileNames.length, 9);
+      expect(metadata.dimensionsOf('page.avif')?.width, 1200);
     });
 
     test('title is derived from CBZ filename', () async {
@@ -329,6 +335,26 @@ void main() {
 
       final dims = readImageDimensionsFromBytes(headerOnly);
       expect([dims?.width, dims?.height], [640, 480]);
+    });
+
+    test('reads the primary AVIF size, not a thumbnail', () {
+      final dims = readImageDimensionsFromBytes(avifHeader());
+      expect([dims?.width, dims?.height], [1200, 1700]);
+    });
+
+    test('reads the size of a page ImageIO encoded', () {
+      final page = base64Decode(avifPageBase64);
+      expect(isAvif(page), isTrue);
+      final dims = readImageDimensionsFromBytes(page);
+      expect([dims?.width, dims?.height], [96, 128]);
+    });
+
+    test('recognises AVIF by its ftyp brands only', () {
+      expect(isAvif(avifHeader()), isTrue);
+      expect(isAvif(avifHeader(major: 'mif1', compatible: 'avif')), isTrue);
+      expect(isAvif(avifHeader(major: 'heic', compatible: 'heic')), isFalse);
+      expect(isAvif(encoded(img.encodePng)), isFalse);
+      expect(isAvif(encoded(img.encodeJpg)), isFalse);
     });
 
     test('returns null rather than throwing on unusable bytes', () {

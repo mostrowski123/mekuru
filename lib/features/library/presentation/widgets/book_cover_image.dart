@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 
 /// Decode width in device pixels for a cover laid out at [logicalWidth].
@@ -77,18 +78,16 @@ class BookCoverImage extends StatelessWidget {
               // Blurred background fill (no darkening)
               ImageFiltered(
                 imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Image.file(
-                  coverFile,
+                child: Image(
+                  image: fileImage(coverFile, cacheWidth: blurCacheWidth),
                   fit: BoxFit.cover,
-                  cacheWidth: blurCacheWidth,
                   gaplessPlayback: true,
                 ),
               ),
               // Actual cover, fit by height first
-              Image.file(
-                coverFile,
+              Image(
+                image: fileImage(coverFile, cacheWidth: tileCacheWidth),
                 fit: BoxFit.fitHeight,
-                cacheWidth: tileCacheWidth,
                 // Keep the previous frame while a new decode size resolves
                 // instead of blanking; see [coverDecodeWidth].
                 gaplessPlayback: true,

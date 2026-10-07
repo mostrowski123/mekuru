@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
 import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.dart';
@@ -356,10 +357,9 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
       );
     }
 
-    return Image.file(
-      File(imagePath),
+    return Image(
+      image: fileImage(File(imagePath), cacheWidth: cacheWidth),
       fit: fit,
-      cacheWidth: cacheWidth,
       filterQuality: FilterQuality.medium,
     );
   }
