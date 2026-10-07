@@ -98,7 +98,6 @@ On Android, on-device OCR needs a phone with a 64-bit ARM processor. On other ph
 - On mobile data or a hotspot, Mekuru first asks **Download over mobile data?** and shows the size. Tap **Download** to go ahead, or **Cancel**. On Android, a Wi-Fi network set as metered counts as mobile data.
 - On Android, a VPN hides which network you use, so Mekuru asks **Download through your VPN?** instead.
 - A download that started on Wi-Fi stops if Wi-Fi drops. It doesn't continue over mobile data. Tap **Download** (or **Resume**) to try again. OCR models continue from where they stopped.
-- **Enhanced Furigana Dictionary** and **Kanji Stroke Order** don't check your network. Download them on Wi-Fi if you can.
 
 !!! note "On iPhone and iPad"
     Low Data Mode counts like mobile data, so Mekuru asks first. Dictionary downloads keep going after you leave Mekuru, with their progress in a Live Activity. If you stop the Live Activity, or iOS ends it, the download stops.

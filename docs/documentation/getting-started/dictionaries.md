@@ -77,9 +77,8 @@ Furigana are small kana over kanji that show the reading. Mekuru works out the r
 It is a 45 MB download and uses about 250 MB on your device.
 
 1. Open **You › Settings › Downloads**.
-2. Find **Enhanced Furigana Dictionary** and tap **Download**.
-3. Tap **Download** again to confirm.
-4. If you don't see a change, restart Mekuru.
+2. Find **Enhanced Furigana Dictionary** and tap **Download**. On mobile data, Mekuru asks first.
+3. If you don't see a change, restart Mekuru.
 
 If tapping words stops working after you install it, turn off **Use enhanced dictionary** on the same screen and restart Mekuru. The download is kept, so you can turn it back on later.
 
