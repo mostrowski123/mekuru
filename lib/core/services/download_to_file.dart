@@ -3,6 +3,14 @@ import 'dart:io';
 
 import 'package:mekuru/core/platform/network_status.dart';
 
+/// A non-200 answer to [downloadToFile].
+class DownloadHttpException extends HttpException {
+  final int statusCode;
+
+  const DownloadHttpException(this.statusCode, {super.uri})
+    : super('Download failed: HTTP $statusCode');
+}
+
 /// Download [url] to [destinationPath], streaming the response body straight
 /// to disk so large assets are never buffered in memory.
 ///
@@ -43,10 +51,7 @@ Future<void> downloadToFile(
 
     if (response.statusCode != HttpStatus.ok) {
       await response.drain<void>();
-      throw HttpException(
-        'Download failed: HTTP ${response.statusCode}',
-        uri: uri,
-      );
+      throw DownloadHttpException(response.statusCode, uri: uri);
     }
 
     final contentLength = response.contentLength;

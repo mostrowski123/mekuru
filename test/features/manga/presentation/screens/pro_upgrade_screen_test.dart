@@ -14,6 +14,7 @@ import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/settings/presentation/widgets/ocr_attributions.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../test_app.dart';
@@ -91,6 +92,71 @@ Override _modelState({required bool installed}) =>
     );
 
 void main() {
+  group('a billing error is worded in the app language', () {
+    final es = lookupAppLocalizations(const Locale('es'));
+
+    test('store and purchase codes', () {
+      expect(
+        describeBillingError(
+          es,
+          const OcrBillingException(0, 'x', code: 'network_unavailable'),
+        ),
+        es.proErrorOffline,
+      );
+      expect(
+        describeBillingError(
+          es,
+          const OcrBillingException(502, 'x', code: 'payment_declined'),
+        ),
+        es.proErrorPaymentDeclined,
+      );
+      expect(
+        describeBillingError(
+          es,
+          const OcrBillingException(408, 'x', code: 'purchase_timeout'),
+        ),
+        es.proErrorPurchaseTimeout(store: 'Google Play'),
+      );
+    });
+
+    test('App Check rate limiting and failed attestation', () {
+      expect(
+        describeBillingError(
+          es,
+          FirebaseException(
+            plugin: 'firebase_app_check',
+            code: 'too-many-requests',
+            message: 'Too many attempts.',
+          ),
+        ),
+        es.proErrorAppCheck,
+      );
+      expect(
+        describeBillingError(
+          es,
+          FirebaseException(
+            plugin: 'firebase_app_check',
+            code: 'unknown',
+            message:
+                'Error returned from API. code: 403 body: App attestation failed.',
+          ),
+        ),
+        es.proErrorAppCheck,
+      );
+    });
+
+    test('no wording of its own', () {
+      expect(
+        describeBillingError(
+          es,
+          const OcrBillingException(400, 'x', code: 'server_code'),
+        ),
+        isNull,
+      );
+      expect(describeBillingError(es, StateError('boom')), isNull);
+    });
+  });
+
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets(

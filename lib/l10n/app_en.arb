@@ -5571,5 +5571,113 @@
   "localOcrModelInstallFailed": "The downloaded models couldn't be installed. Try again.",
   "@localOcrModelInstallFailed": {
     "description": "OCR model download finished but the files could not be moved into place."
+  },
+  "proErrorLoadBilling": "Couldn't connect to {store}: {details}",
+  "@proErrorLoadBilling": {
+    "description": "Pro screen: the store's billing service could not be started. {store} is 'Google Play' or 'App Store'; {details} says why.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "proErrorLoadAccess": "Couldn't check your Pro access: {details}",
+  "@proErrorLoadAccess": {
+    "description": "Pro screen: whether the user owns Pro could not be checked. {details} says why.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "proErrorLoadPrice": "Couldn't load the price from {store}: {details}",
+  "@proErrorLoadPrice": {
+    "description": "Pro screen: the price could not be loaded. {store} is 'Google Play' or 'App Store'; {details} says why.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "proErrorOffline": "No internet connection. Check your connection and try again.",
+  "@proErrorOffline": {
+    "description": "Pro purchase or check failed: the device has no internet connection."
+  },
+  "proErrorSignInRequired": "Sign in with Google before using OCR billing features.",
+  "@proErrorSignInRequired": {
+    "description": "Pro: a billing feature needs the user to sign in with Google first."
+  },
+  "proErrorAppCheck": "Mekuru couldn't verify itself with the server. Wait a few minutes and try again.",
+  "@proErrorAppCheck": {
+    "description": "Pro: the server could not verify that the request came from a genuine copy of the app (Firebase App Check), or is rate limiting it."
+  },
+  "proErrorStore": "Couldn't reach {store}. Try again later.",
+  "@proErrorStore": {
+    "description": "Pro: the app store (Google Play or the App Store) did not answer as expected. {store} is 'Google Play' or 'App Store'.",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "proErrorPurchasesUnavailable": "Purchases aren't available on this device.",
+  "@proErrorPurchasesUnavailable": {
+    "description": "Pro: in-app purchases are not available on this device or platform."
+  },
+  "proErrorPurchaseNotStarted": "The purchase didn't start. Try again.",
+  "@proErrorPurchaseNotStarted": {
+    "description": "Pro: the store's purchase sheet did not open."
+  },
+  "proErrorPurchaseTimeout": "{store} didn't finish the purchase in time. If you were charged, tap Restore Purchase.",
+  "@proErrorPurchaseTimeout": {
+    "description": "Pro: the store did not report the purchase's result in time. {store} is 'Google Play' or 'App Store'. 'Restore Purchase' is the button on the same screen (proRestorePurchase).",
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "proPurchasePending": "Your payment is being processed. Pro unlocks automatically once it's confirmed.",
+  "@proPurchasePending": {
+    "description": "Pro: the payment was accepted but is still being processed (e.g. a cash or bank payment)."
+  },
+  "proErrorPaymentDeclined": "Your payment couldn't be processed. Try a different payment method.",
+  "@proErrorPaymentDeclined": {
+    "description": "Pro: the store declined the payment."
+  },
+  "proErrorPurchaseCancelled": "The purchase was cancelled.",
+  "@proErrorPurchaseCancelled": {
+    "description": "Pro: the user cancelled the purchase."
+  },
+  "proErrorPurchaseNotConfirmed": "The purchase couldn't be confirmed. Tap Restore Purchase to try again.",
+  "@proErrorPurchaseNotConfirmed": {
+    "description": "Pro: the store reported the purchase but the app could not confirm or record it. 'Restore Purchase' is the button on the same screen (proRestorePurchase)."
+  },
+  "proErrorSignInCancelled": "Google sign-in was cancelled.",
+  "@proErrorSignInCancelled": {
+    "description": "Pro: the user closed the Google sign-in sheet."
+  },
+  "proErrorTooManySignIns": "Too many recent sign-in attempts. Wait a few minutes, then try again.",
+  "@proErrorTooManySignIns": {
+    "description": "Pro: Google sign-in was refused because of too many recent attempts."
+  },
+  "settingsCustomOcrServerUnhealthy": "Connected, but /health reported status \"{status}\" instead of \"ok\".",
+  "@settingsCustomOcrServerUnhealthy": {
+    "description": "Custom OCR server connection test: the server answered but its /health endpoint reported a status other than 'ok'. {status} is the status it reported.",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadInterrupted": "The download was interrupted. Tap Download to try again.",
+  "@downloadInterrupted": {
+    "description": "A download (dictionary, translation model) ended because the system dropped its background job. 'Download' is the button that starts it."
   }
 }

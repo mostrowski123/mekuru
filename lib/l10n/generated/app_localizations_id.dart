@@ -4348,4 +4348,80 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get localOcrModelInstallFailed =>
       'Model yang diunduh tidak dapat dipasang. Coba lagi.';
+
+  @override
+  String proErrorLoadBilling({required String store, required String details}) {
+    return 'Tidak dapat terhubung ke $store: $details';
+  }
+
+  @override
+  String proErrorLoadAccess({required String details}) {
+    return 'Tidak dapat memeriksa akses Pro Anda: $details';
+  }
+
+  @override
+  String proErrorLoadPrice({required String store, required String details}) {
+    return 'Tidak dapat memuat harga dari $store: $details';
+  }
+
+  @override
+  String get proErrorOffline =>
+      'Tidak ada koneksi internet. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get proErrorSignInRequired =>
+      'Masuk dengan Google sebelum memakai fitur penagihan OCR.';
+
+  @override
+  String get proErrorAppCheck =>
+      'Mekuru tidak dapat memverifikasi dirinya ke server. Tunggu beberapa menit lalu coba lagi.';
+
+  @override
+  String proErrorStore({required String store}) {
+    return 'Tidak dapat menjangkau $store. Coba lagi nanti.';
+  }
+
+  @override
+  String get proErrorPurchasesUnavailable =>
+      'Pembelian tidak tersedia di perangkat ini.';
+
+  @override
+  String get proErrorPurchaseNotStarted =>
+      'Pembelian tidak dimulai. Coba lagi.';
+
+  @override
+  String proErrorPurchaseTimeout({required String store}) {
+    return '$store tidak menyelesaikan pembelian tepat waktu. Jika Anda sudah ditagih, ketuk Pulihkan Pembelian.';
+  }
+
+  @override
+  String get proPurchasePending =>
+      'Pembayaran Anda sedang diproses. Pro akan terbuka otomatis setelah dikonfirmasi.';
+
+  @override
+  String get proErrorPaymentDeclined =>
+      'Pembayaran Anda tidak dapat diproses. Coba metode pembayaran lain.';
+
+  @override
+  String get proErrorPurchaseCancelled => 'Pembelian dibatalkan.';
+
+  @override
+  String get proErrorPurchaseNotConfirmed =>
+      'Pembelian tidak dapat dikonfirmasi. Ketuk Pulihkan Pembelian untuk mencoba lagi.';
+
+  @override
+  String get proErrorSignInCancelled => 'Masuk dengan Google dibatalkan.';
+
+  @override
+  String get proErrorTooManySignIns =>
+      'Terlalu banyak percobaan masuk baru-baru ini. Tunggu beberapa menit, lalu coba lagi.';
+
+  @override
+  String settingsCustomOcrServerUnhealthy({required String status}) {
+    return 'Terhubung, tetapi /health melaporkan status \"$status\", bukan \"ok\".';
+  }
+
+  @override
+  String get downloadInterrupted =>
+      'Unduhan terputus. Ketuk Unduh untuk mencoba lagi.';
 }

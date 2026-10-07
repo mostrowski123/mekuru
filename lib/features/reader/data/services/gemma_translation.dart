@@ -9,6 +9,8 @@ import 'package:flutter/services.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/manga/data/services/model_download.dart'
+    show ModelVerificationException;
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
@@ -194,10 +196,14 @@ class GemmaTranslation implements TranslationEngine {
       }
       if (status?.state == ServerDownloadWorkState.failed) {
         throw status?.error == gemmaVerificationError
-            ? const FileSystemException('Model file failed verification')
-            : HttpException(status?.error ?? 'Download failed');
+            ? const ModelVerificationException()
+            : ServerDownloadFailedException(status?.error ?? '');
       }
-      if (!scheduled) throw const HttpException('Download was interrupted');
+      if (!scheduled) {
+        throw const ServerDownloadFailedException(
+          serverDownloadInterruptedError,
+        );
+      }
       if (status != null) {
         onProgress?.call(status.received / gemmaModelFile.bytes);
       }
@@ -462,7 +468,7 @@ Future<bool> runGemmaDownloadWork(
         received: received,
         total: file.bytes,
         failedAttempts: failedAttempts,
-        error: '$e',
+        error: serverDownloadErrorCode(e),
       ),
     );
     if (giveUp) {

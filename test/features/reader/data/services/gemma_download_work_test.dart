@@ -405,7 +405,16 @@ void main() {
       final done = gemma.downloadModel(every: every);
       await workmanager.enqueued.future;
       workmanager.scheduled = false;
-      await expectLater(done, throwsA(isA<HttpException>()));
+      await expectLater(
+        done,
+        throwsA(
+          isA<ServerDownloadFailedException>().having(
+            (e) => e.error,
+            'error',
+            serverDownloadInterruptedError,
+          ),
+        ),
+      );
     });
 
     test('cancel stops following and cancels the job', () async {

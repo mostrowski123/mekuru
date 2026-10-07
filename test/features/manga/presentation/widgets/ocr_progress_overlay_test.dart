@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
+import 'package:mekuru/features/manga/data/services/ocr_failure.dart';
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';

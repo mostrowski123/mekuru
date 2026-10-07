@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mekuru/features/manga/data/services/ocr_failure.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_health_client.dart';
 
 void main() {
@@ -30,9 +31,9 @@ void main() {
         () => client.checkHealth('ocr.example.com'),
         throwsA(
           isA<OcrServerHealthException>().having(
-            (error) => error.message,
-            'message',
-            'OCR server URL is invalid. Use a full http:// or https:// URL.',
+            (error) => error.failure,
+            'failure',
+            OcrFailure.serverUrlInvalid.code(),
           ),
         ),
       );
@@ -51,9 +52,9 @@ void main() {
           isA<OcrServerHealthException>()
               .having((error) => error.statusCode, 'statusCode', 503)
               .having(
-                (error) => error.message,
-                'message',
-                'Service warming up',
+                (error) => error.failure,
+                'failure',
+                OcrFailure.status.code('503:Service warming up'),
               ),
         ),
       );
@@ -70,9 +71,9 @@ void main() {
         () => client.checkHealth('https://ocr.example.com'),
         throwsA(
           isA<OcrServerHealthException>().having(
-            (error) => error.message,
-            'message',
-            'Server reported health status "warming" instead of "ok".',
+            (error) => error.failure,
+            'failure',
+            OcrFailure.unhealthy.code('warming'),
           ),
         ),
       );

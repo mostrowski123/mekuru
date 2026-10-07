@@ -8,7 +8,7 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../data/services/ocr_background_worker.dart';
+import '../../data/services/ocr_failure.dart';
 import '../providers/local_ocr_providers.dart';
 
 String localOcrReason(BuildContext context, String? code) {
@@ -63,7 +63,8 @@ String localOcrReason(BuildContext context, String? code) {
   };
 }
 
-/// [errorMessage] of a failed remote or iOS OCR run in the user's language
+/// [errorMessage] of a failed remote or iOS OCR run (or OCR server test) in
+/// the user's language
 /// (see [OcrFailure]). Text an older version stored is shown as it is.
 String describeOcrFailure(AppLocalizations l, String errorMessage) {
   final parsed = OcrFailure.parse(errorMessage);
@@ -84,10 +85,16 @@ String describeOcrFailure(AppLocalizations l, String errorMessage) {
     OcrFailure.timedOut => l.ocrErrorTimedOut,
     OcrFailure.hostNotFound => l.ocrErrorHostNotFound,
     OcrFailure.network => l.ocrErrorNetwork(details: detail),
-    OcrFailure.status => l.ocrErrorStatus(
-      status: int.tryParse(detail.split(':').first) ?? 0,
-      details: detail.substring(detail.indexOf(':') + 1),
-    ),
+    OcrFailure.status => switch ((
+      int.tryParse(detail.split(':').first) ?? 0,
+      detail.substring(detail.indexOf(':') + 1),
+    )) {
+      (final status, '') => l.serverErrorStatus(status: status),
+      (final status, final details) => l.ocrErrorStatus(
+        status: status,
+        details: details,
+      ),
+    },
     OcrFailure.malformedResponse => l.ocrErrorMalformedResponse,
     OcrFailure.unexpected => l.commonErrorWithDetails(details: detail),
     OcrFailure.serverUrlMissing => l.ocrCustomServerRequiredBody,
@@ -99,6 +106,7 @@ String describeOcrFailure(AppLocalizations l, String errorMessage) {
       path: detail,
     ),
     OcrFailure.recognitionFailed => l.ocrErrorRecognitionFailed,
+    OcrFailure.unhealthy => l.settingsCustomOcrServerUnhealthy(status: detail),
   };
 }
 

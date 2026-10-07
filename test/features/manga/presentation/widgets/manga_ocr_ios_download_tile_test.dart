@@ -228,7 +228,7 @@ void main() {
       await tester.pump();
       finish.completeError(Exception('boom'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('OCR could not continue'), findsOneWidget);
+      expect(find.textContaining('Download failed'), findsOneWidget);
       expect(find.textContaining('boom'), findsOneWidget);
     });
   });

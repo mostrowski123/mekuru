@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/services/manga_ocr_client.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
-import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
+import 'package:mekuru/features/manga/data/services/ocr_failure.dart';
 import 'package:mekuru/features/manga/data/services/vision_page_ocr.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
@@ -73,6 +73,17 @@ void main() {
       );
     });
 
+    test('a custom server\'s connection test', () {
+      expect(
+        describeOcrFailure(es, OcrFailure.unhealthy.code('warming')),
+        es.settingsCustomOcrServerUnhealthy(status: 'warming'),
+      );
+      expect(
+        describeOcrFailure(es, OcrFailure.status.code('404:')),
+        es.serverErrorStatus(status: 404),
+      );
+    });
+
     test('text saved by an older version is shown as it is', () {
       expect(
         describeOcrFailure(es, 'Could not connect to OCR server.'),
@@ -129,7 +140,7 @@ void main() {
     );
     expect(
       modelDownloadFailureReason(es, const ServerDownloadHttpException(404)),
-      es.serverErrorStatus(status: 404),
+      'Error al descargar: El servidor devolvió el error 404.',
     );
     expect(
       modelDownloadFailureReason(es, const SocketException('refused')),

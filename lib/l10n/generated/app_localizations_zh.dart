@@ -4129,6 +4129,72 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get localOcrModelInstallFailed => '无法安装下载的模型。请重试。';
+
+  @override
+  String proErrorLoadBilling({required String store, required String details}) {
+    return '无法连接 $store：$details';
+  }
+
+  @override
+  String proErrorLoadAccess({required String details}) {
+    return '无法检查你的 Pro 权限：$details';
+  }
+
+  @override
+  String proErrorLoadPrice({required String store, required String details}) {
+    return '无法从 $store 加载价格：$details';
+  }
+
+  @override
+  String get proErrorOffline => '没有网络连接。请检查网络连接后重试。';
+
+  @override
+  String get proErrorSignInRequired => '使用 OCR 付费功能前，请先使用 Google 登录。';
+
+  @override
+  String get proErrorAppCheck => 'Mekuru 无法向服务器完成验证。请等待几分钟后重试。';
+
+  @override
+  String proErrorStore({required String store}) {
+    return '无法连接 $store。请稍后再试。';
+  }
+
+  @override
+  String get proErrorPurchasesUnavailable => '此设备不支持购买。';
+
+  @override
+  String get proErrorPurchaseNotStarted => '购买未能开始。请重试。';
+
+  @override
+  String proErrorPurchaseTimeout({required String store}) {
+    return '$store 未能及时完成购买。如果已扣款，请点按“恢复购买”。';
+  }
+
+  @override
+  String get proPurchasePending => '你的付款正在处理中。确认后将自动解锁 Pro。';
+
+  @override
+  String get proErrorPaymentDeclined => '无法处理你的付款。请尝试其他付款方式。';
+
+  @override
+  String get proErrorPurchaseCancelled => '购买已取消。';
+
+  @override
+  String get proErrorPurchaseNotConfirmed => '无法确认这笔购买。请点按“恢复购买”重试。';
+
+  @override
+  String get proErrorSignInCancelled => 'Google 登录已取消。';
+
+  @override
+  String get proErrorTooManySignIns => '最近的登录尝试过多。请等待几分钟后再试。';
+
+  @override
+  String settingsCustomOcrServerUnhealthy({required String status}) {
+    return '已连接，但 /health 返回的状态是“$status”，而不是“ok”。';
+  }
+
+  @override
+  String get downloadInterrupted => '下载已中断。请点按“下载”重试。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -8256,4 +8322,70 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get localOcrModelInstallFailed => '无法安装下载的模型。请重试。';
+
+  @override
+  String proErrorLoadBilling({required String store, required String details}) {
+    return '无法连接 $store：$details';
+  }
+
+  @override
+  String proErrorLoadAccess({required String details}) {
+    return '无法检查你的 Pro 权限：$details';
+  }
+
+  @override
+  String proErrorLoadPrice({required String store, required String details}) {
+    return '无法从 $store 加载价格：$details';
+  }
+
+  @override
+  String get proErrorOffline => '没有网络连接。请检查网络连接后重试。';
+
+  @override
+  String get proErrorSignInRequired => '使用 OCR 付费功能前，请先使用 Google 登录。';
+
+  @override
+  String get proErrorAppCheck => 'Mekuru 无法向服务器完成验证。请等待几分钟后重试。';
+
+  @override
+  String proErrorStore({required String store}) {
+    return '无法连接 $store。请稍后再试。';
+  }
+
+  @override
+  String get proErrorPurchasesUnavailable => '此设备不支持购买。';
+
+  @override
+  String get proErrorPurchaseNotStarted => '购买未能开始。请重试。';
+
+  @override
+  String proErrorPurchaseTimeout({required String store}) {
+    return '$store 未能及时完成购买。如果已扣款，请点按“恢复购买”。';
+  }
+
+  @override
+  String get proPurchasePending => '你的付款正在处理中。确认后将自动解锁 Pro。';
+
+  @override
+  String get proErrorPaymentDeclined => '无法处理你的付款。请尝试其他付款方式。';
+
+  @override
+  String get proErrorPurchaseCancelled => '购买已取消。';
+
+  @override
+  String get proErrorPurchaseNotConfirmed => '无法确认这笔购买。请点按“恢复购买”重试。';
+
+  @override
+  String get proErrorSignInCancelled => 'Google 登录已取消。';
+
+  @override
+  String get proErrorTooManySignIns => '最近的登录尝试过多。请等待几分钟后再试。';
+
+  @override
+  String settingsCustomOcrServerUnhealthy({required String status}) {
+    return '已连接，但 /health 返回的状态是“$status”，而不是“ok”。';
+  }
+
+  @override
+  String get downloadInterrupted => '下载已中断。请点按“下载”重试。';
 }

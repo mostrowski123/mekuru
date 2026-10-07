@@ -7019,6 +7019,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The downloaded models couldn\'t be installed. Try again.'**
   String get localOcrModelInstallFailed;
+
+  /// Pro screen: the store's billing service could not be started. {store} is 'Google Play' or 'App Store'; {details} says why.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect to {store}: {details}'**
+  String proErrorLoadBilling({required String store, required String details});
+
+  /// Pro screen: whether the user owns Pro could not be checked. {details} says why.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check your Pro access: {details}'**
+  String proErrorLoadAccess({required String details});
+
+  /// Pro screen: the price could not be loaded. {store} is 'Google Play' or 'App Store'; {details} says why.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the price from {store}: {details}'**
+  String proErrorLoadPrice({required String store, required String details});
+
+  /// Pro purchase or check failed: the device has no internet connection.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. Check your connection and try again.'**
+  String get proErrorOffline;
+
+  /// Pro: a billing feature needs the user to sign in with Google first.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google before using OCR billing features.'**
+  String get proErrorSignInRequired;
+
+  /// Pro: the server could not verify that the request came from a genuine copy of the app (Firebase App Check), or is rate limiting it.
+  ///
+  /// In en, this message translates to:
+  /// **'Mekuru couldn\'t verify itself with the server. Wait a few minutes and try again.'**
+  String get proErrorAppCheck;
+
+  /// Pro: the app store (Google Play or the App Store) did not answer as expected. {store} is 'Google Play' or 'App Store'.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach {store}. Try again later.'**
+  String proErrorStore({required String store});
+
+  /// Pro: in-app purchases are not available on this device or platform.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases aren\'t available on this device.'**
+  String get proErrorPurchasesUnavailable;
+
+  /// Pro: the store's purchase sheet did not open.
+  ///
+  /// In en, this message translates to:
+  /// **'The purchase didn\'t start. Try again.'**
+  String get proErrorPurchaseNotStarted;
+
+  /// Pro: the store did not report the purchase's result in time. {store} is 'Google Play' or 'App Store'. 'Restore Purchase' is the button on the same screen (proRestorePurchase).
+  ///
+  /// In en, this message translates to:
+  /// **'{store} didn\'t finish the purchase in time. If you were charged, tap Restore Purchase.'**
+  String proErrorPurchaseTimeout({required String store});
+
+  /// Pro: the payment was accepted but is still being processed (e.g. a cash or bank payment).
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment is being processed. Pro unlocks automatically once it\'s confirmed.'**
+  String get proPurchasePending;
+
+  /// Pro: the store declined the payment.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment couldn\'t be processed. Try a different payment method.'**
+  String get proErrorPaymentDeclined;
+
+  /// Pro: the user cancelled the purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'The purchase was cancelled.'**
+  String get proErrorPurchaseCancelled;
+
+  /// Pro: the store reported the purchase but the app could not confirm or record it. 'Restore Purchase' is the button on the same screen (proRestorePurchase).
+  ///
+  /// In en, this message translates to:
+  /// **'The purchase couldn\'t be confirmed. Tap Restore Purchase to try again.'**
+  String get proErrorPurchaseNotConfirmed;
+
+  /// Pro: the user closed the Google sign-in sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was cancelled.'**
+  String get proErrorSignInCancelled;
+
+  /// Pro: Google sign-in was refused because of too many recent attempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many recent sign-in attempts. Wait a few minutes, then try again.'**
+  String get proErrorTooManySignIns;
+
+  /// Custom OCR server connection test: the server answered but its /health endpoint reported a status other than 'ok'. {status} is the status it reported.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected, but /health reported status \"{status}\" instead of \"ok\".'**
+  String settingsCustomOcrServerUnhealthy({required String status});
+
+  /// A download (dictionary, translation model) ended because the system dropped its background job. 'Download' is the button that starts it.
+  ///
+  /// In en, this message translates to:
+  /// **'The download was interrupted. Tap Download to try again.'**
+  String get downloadInterrupted;
 }
 
 class _AppLocalizationsDelegate

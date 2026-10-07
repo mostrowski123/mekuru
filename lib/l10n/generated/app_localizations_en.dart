@@ -4326,4 +4326,80 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get localOcrModelInstallFailed =>
       'The downloaded models couldn\'t be installed. Try again.';
+
+  @override
+  String proErrorLoadBilling({required String store, required String details}) {
+    return 'Couldn\'t connect to $store: $details';
+  }
+
+  @override
+  String proErrorLoadAccess({required String details}) {
+    return 'Couldn\'t check your Pro access: $details';
+  }
+
+  @override
+  String proErrorLoadPrice({required String store, required String details}) {
+    return 'Couldn\'t load the price from $store: $details';
+  }
+
+  @override
+  String get proErrorOffline =>
+      'No internet connection. Check your connection and try again.';
+
+  @override
+  String get proErrorSignInRequired =>
+      'Sign in with Google before using OCR billing features.';
+
+  @override
+  String get proErrorAppCheck =>
+      'Mekuru couldn\'t verify itself with the server. Wait a few minutes and try again.';
+
+  @override
+  String proErrorStore({required String store}) {
+    return 'Couldn\'t reach $store. Try again later.';
+  }
+
+  @override
+  String get proErrorPurchasesUnavailable =>
+      'Purchases aren\'t available on this device.';
+
+  @override
+  String get proErrorPurchaseNotStarted =>
+      'The purchase didn\'t start. Try again.';
+
+  @override
+  String proErrorPurchaseTimeout({required String store}) {
+    return '$store didn\'t finish the purchase in time. If you were charged, tap Restore Purchase.';
+  }
+
+  @override
+  String get proPurchasePending =>
+      'Your payment is being processed. Pro unlocks automatically once it\'s confirmed.';
+
+  @override
+  String get proErrorPaymentDeclined =>
+      'Your payment couldn\'t be processed. Try a different payment method.';
+
+  @override
+  String get proErrorPurchaseCancelled => 'The purchase was cancelled.';
+
+  @override
+  String get proErrorPurchaseNotConfirmed =>
+      'The purchase couldn\'t be confirmed. Tap Restore Purchase to try again.';
+
+  @override
+  String get proErrorSignInCancelled => 'Google sign-in was cancelled.';
+
+  @override
+  String get proErrorTooManySignIns =>
+      'Too many recent sign-in attempts. Wait a few minutes, then try again.';
+
+  @override
+  String settingsCustomOcrServerUnhealthy({required String status}) {
+    return 'Connected, but /health reported status \"$status\" instead of \"ok\".';
+  }
+
+  @override
+  String get downloadInterrupted =>
+      'The download was interrupted. Tap Download to try again.';
 }

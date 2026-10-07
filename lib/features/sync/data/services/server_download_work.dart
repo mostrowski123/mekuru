@@ -44,6 +44,24 @@ const serverDownloadConnectionGoneError = 'connection_gone';
 /// answered (`server_status:0`). The app explains it in the user's language.
 const serverDownloadStatusErrorPrefix = 'server_status:';
 
+/// The HTTP status in a [ServerDownloadWorkStatus.error] code (0: the server
+/// could not be reached), or null for any other error.
+int? serverDownloadErrorStatus(String error) =>
+    error.startsWith(serverDownloadStatusErrorPrefix)
+    ? int.tryParse(error.substring(serverDownloadStatusErrorPrefix.length))
+    : null;
+
+/// A download that a worker recorded as failed, with its
+/// [ServerDownloadWorkStatus.error], for UI that words exceptions.
+class ServerDownloadFailedException implements Exception {
+  final String error;
+
+  const ServerDownloadFailedException(this.error);
+
+  @override
+  String toString() => 'ServerDownloadFailedException: $error';
+}
+
 /// [error] as a [ServerDownloadWorkStatus.error]: a code the app explains
 /// in the user's language, else the error's own text.
 String serverDownloadErrorCode(Object error) => switch (error) {

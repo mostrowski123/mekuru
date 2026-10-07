@@ -1,9 +1,16 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
+import 'package:mekuru/features/manga/data/services/model_download.dart'
+    show ModelVerificationException;
+import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
@@ -169,8 +176,8 @@ class DownloadAttributionText extends StatelessWidget {
   }
 }
 
-/// Why a dictionary download failed, worded for the user; null when it
-/// did not.
+/// Why a download (dictionary, translation or OCR model) failed, worded for
+/// the user; null when it did not.
 String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
     switch (failure) {
       null => null,
@@ -179,5 +186,37 @@ String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
       WifiLostException() => l10n.dictionaryDownloadWifiLost,
       DownloadStoppedInBackgroundException() =>
         l10n.downloadStoppedInBackground,
+      ModelVerificationException() => l10n.localOcrDownloadDamaged,
+      DownloadHttpException(:final statusCode) ||
+      ServerDownloadHttpException(
+        :final statusCode,
+      ) => l10n.serverBrowseDownloadFailed(
+        error: l10n.serverErrorStatus(status: statusCode),
+      ),
+      ServerDownloadFailedException(:final error) => _recordedDownloadFailure(
+        l10n,
+        error,
+      ),
+      SocketException() ||
+      HttpException() ||
+      TlsException() ||
+      TimeoutException() => l10n.localOcrDownloadNetwork,
+      // ENOSPC
+      FileSystemException(osError: OSError(errorCode: 28)) =>
+        l10n.localOcrStorageFull,
       _ => l10n.serverBrowseDownloadFailed(error: '$failure'),
+    };
+
+/// A failure a download worker recorded ([ServerDownloadWorkStatus.error]).
+String _recordedDownloadFailure(AppLocalizations l10n, String error) =>
+    switch ((error, serverDownloadErrorStatus(error))) {
+      (serverDownloadInterruptedError, _) => l10n.downloadInterrupted,
+      (serverDownloadStoppedError, _) => l10n.serverBrowseDownloadStopped,
+      (serverDownloadUntrustedCertificateError, _) =>
+        l10n.serverCertificateUntrusted,
+      (_, 0) => l10n.localOcrDownloadNetwork,
+      (_, final int status) => l10n.serverBrowseDownloadFailed(
+        error: l10n.serverErrorStatus(status: status),
+      ),
+      _ => l10n.serverBrowseDownloadFailed(error: error),
     };

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/services/http_transport.dart';
+import 'package:mekuru/features/manga/data/services/ocr_failure.dart';
 
 import 'ocr_server_config.dart' as ocr_server_config;
 
@@ -15,12 +16,14 @@ class OcrServerHealthResult {
 
 class OcrServerHealthException implements Exception {
   final int statusCode;
-  final String message;
 
-  const OcrServerHealthException(this.statusCode, this.message);
+  /// An [OcrFailure] code, worded for the user by `describeOcrFailure`.
+  final String failure;
+
+  const OcrServerHealthException(this.statusCode, this.failure);
 
   @override
-  String toString() => 'OcrServerHealthException($statusCode): $message';
+  String toString() => 'OcrServerHealthException($statusCode): $failure';
 }
 
 class OcrServerHealthClient {
@@ -36,19 +39,11 @@ class OcrServerHealthClient {
   Future<OcrServerHealthResult> checkHealth(String serverUrl) async {
     final normalized = ocr_server_config.normalizeOcrServerUrl(serverUrl);
     final urlError = ocr_server_config.validateOcrServerUrl(normalized);
-    if (urlError != null) {
-      final message = normalized.isEmpty
-          ? 'OCR server URL is not configured.'
-          : 'OCR server URL is invalid. Use a full http:// or https:// URL.';
-      throw OcrServerHealthException(0, message);
-    }
-
-    final baseUri = ocr_server_config.tryParseOcrServerUrl(normalized);
+    final baseUri = urlError == null
+        ? ocr_server_config.tryParseOcrServerUrl(normalized)
+        : null;
     if (baseUri == null) {
-      throw const OcrServerHealthException(
-        0,
-        'OCR server URL is invalid. Use a full http:// or https:// URL.',
-      );
+      throw OcrServerHealthException(0, OcrFailure.serverUrlInvalid.code());
     }
 
     final uri = baseUri.replace(
@@ -71,16 +66,13 @@ class OcrServerHealthClient {
       final data = json.decode(response.body) as Map<String, dynamic>;
       final status = (data['status'] as String?)?.trim();
       if (status == null || status.isEmpty) {
-        throw const OcrServerHealthException(
+        throw OcrServerHealthException(
           200,
-          'Server returned an unexpected health response.',
+          OcrFailure.malformedResponse.code(),
         );
       }
       if (status.toLowerCase() != 'ok') {
-        throw OcrServerHealthException(
-          200,
-          'Server reported health status "$status" instead of "ok".',
-        );
+        throw OcrServerHealthException(200, OcrFailure.unhealthy.code(status));
       }
 
       return OcrServerHealthResult(status: status);
@@ -88,17 +80,18 @@ class OcrServerHealthClient {
       throw OcrServerHealthException(
         0,
         e.timedOut
-            ? 'OCR server did not respond in time.'
-            : 'Could not connect to OCR server: ${e.message}',
+            ? OcrFailure.timedOut.code()
+            : ocrNetworkErrorCode(e.message),
       );
     } on OcrServerHealthException {
       rethrow;
     } on HandshakeException catch (e) {
       // The dialog explains a rejected certificate itself.
       if (isUntrustedCertificateError(e)) rethrow;
-      throw OcrServerHealthException(0, 'Could not connect to OCR server: $e');
-    } on Exception catch (e) {
-      throw OcrServerHealthException(0, 'Could not connect to OCR server: $e');
+      throw OcrServerHealthException(0, ocrNetworkErrorCode('$e'));
+    } catch (e) {
+      // A body that isn't the JSON /health sends: malformed.
+      throw OcrServerHealthException(0, ocrErrorCode(e));
     }
   }
 
@@ -106,22 +99,18 @@ class OcrServerHealthClient {
     _httpClient.close();
   }
 
+  /// [response]'s error status as an [OcrFailure] code, with the server's
+  /// explanation when it gave one.
   String _describeErrorResponse(http.Response response) {
+    var detail = response.body.trim();
     try {
       final body = json.decode(response.body) as Map<String, dynamic>;
-      final detail = (body['detail'] as String?)?.trim();
-      if (detail != null && detail.isNotEmpty) {
-        return detail;
-      }
+      detail = (body['detail'] as String?)?.trim() ?? detail;
     } catch (_) {
-      // Fall back to the raw body below.
+      // Not JSON: the raw body is the explanation.
     }
-
-    final body = response.body.trim();
-    if (body.isNotEmpty) {
-      return body;
-    }
-
-    return 'OCR server returned HTTP ${response.statusCode}.';
+    return detail.isEmpty && response.statusCode >= 500
+        ? OcrFailure.serverError.code(response.statusCode)
+        : OcrFailure.status.code('${response.statusCode}:$detail');
   }
 }

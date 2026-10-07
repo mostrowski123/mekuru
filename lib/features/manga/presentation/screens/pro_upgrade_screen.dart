@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:confetti/confetti.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,20 +10,65 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/features/settings/presentation/widgets/ocr_attributions.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../data/services/ocr_account_link_service.dart';
 import '../../data/services/ocr_billing_client.dart';
 import '../../data/services/ocr_store_service.dart';
 import '../providers/pro_access_provider.dart';
 import '../widgets/local_ocr_widgets.dart';
 
+/// Why a Pro purchase, restore or check failed, in the user's language;
+/// null for an error with no wording of its own.
+String? describeBillingError(AppLocalizations l, Object error) {
+  final store = defaultTargetPlatform == TargetPlatform.iOS
+      ? 'App Store'
+      : 'Google Play';
+  return switch (error) {
+    OcrBillingException(:final code) => switch (code) {
+      'network_unavailable' => l.proErrorOffline,
+      'auth_required' => l.proErrorSignInRequired,
+      'app_check_required' ||
+      'app_check_rate_limited' ||
+      'app_check_attestation_failed' => l.proErrorAppCheck,
+      'platform_unsupported' => l.proErrorPurchasesUnavailable,
+      'purchase_stream_error' ||
+      'store_query_failed' ||
+      'store_product_missing' ||
+      'restore_query_failed' ||
+      'purchase_token_missing' => l.proErrorStore(store: store),
+      'purchase_not_started' => l.proErrorPurchaseNotStarted,
+      'purchase_timeout' => l.proErrorPurchaseTimeout(store: store),
+      'purchase_pending' => l.proPurchasePending,
+      'payment_declined' => l.proErrorPaymentDeclined,
+      'purchase_cancelled' => l.proErrorPurchaseCancelled,
+      'purchase_delivery_failed' ||
+      'purchase_verify_failed' => l.proErrorPurchaseNotConfirmed,
+      // The billing server's own codes.
+      _ => null,
+    },
+    AccountLinkCancelledException() => l.proErrorSignInCancelled,
+    FirebaseAuthException(code: 'too-many-requests') =>
+      l.proErrorTooManySignIns,
+    FirebaseAuthException() => l.ocrErrorSignInFailed,
+    // App Check rate limiting or a failed attestation.
+    FirebaseException(:final code, :final message)
+        when code == 'too-many-requests' ||
+            (message ?? '').toLowerCase().contains('too many attempts') ||
+            (message ?? '').toLowerCase().contains('app attestation failed') =>
+      l.proErrorAppCheck,
+    _ => null,
+  };
+}
+
 class ProUpgradeSnapshot {
   final bool isUnlocked;
   final String? priceLabel;
-  final String? errorMessage;
+  final String Function(AppLocalizations l10n)? errorMessage;
   final bool servicesAvailable;
 
   const ProUpgradeSnapshot({
@@ -152,7 +198,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   // Runs synchronously from initState, so it must stay context-free; the
   // store-unavailable message is localized in build() instead.
   Future<ProUpgradeSnapshot> _loadSnapshotDefault() async {
-    String? errorMessage;
+    String Function(AppLocalizations l10n)? errorMessage;
     String? priceLabel;
     final store = defaultTargetPlatform == TargetPlatform.iOS
         ? 'App Store'
@@ -161,7 +207,9 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     try {
       await _storeService.initialize();
     } catch (e) {
-      errorMessage ??= 'Failed to initialize $store billing: $e';
+      errorMessage ??= (l) =>
+          describeBillingError(l, e) ??
+          l.proErrorLoadBilling(store: store, details: '$e');
     }
 
     final servicesAvailable =
@@ -178,7 +226,8 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         unlocked = status?.ocrUnlocked ?? unlocked;
       } catch (e) {
         if (!unlocked) {
-          errorMessage ??= 'Failed to load your Pro access: $e';
+          errorMessage ??= (l) =>
+              describeBillingError(l, e) ?? l.proErrorLoadAccess(details: '$e');
         }
       }
 
@@ -188,7 +237,9 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         );
         priceLabel = products[proUnlockProductId]?.price;
       } catch (e) {
-        errorMessage ??= 'Failed to load $store pricing: $e';
+        errorMessage ??= (l) =>
+            describeBillingError(l, e) ??
+            l.proErrorLoadPrice(store: store, details: '$e');
       }
     }
 
@@ -227,7 +278,10 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
           e is OcrBillingException && e.code == 'purchase_pending';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(describeOcrError(e)),
+          content: Text(
+            describeBillingError(context.l10n, e) ??
+                context.l10n.commonErrorWithDetails(details: '$e'),
+          ),
           duration: isPending
               ? const Duration(seconds: 5)
               : const Duration(seconds: 4),
@@ -361,7 +415,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     // billing, the unavailable notice wins over any load error.
     final errorMessage = !_snapshot.servicesAvailable && !_snapshot.isUnlocked
         ? l10n.settingsProUnavailableSubtitle
-        : _snapshot.errorMessage;
+        : _snapshot.errorMessage?.call(l10n);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.proTitle)),

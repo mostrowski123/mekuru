@@ -609,9 +609,7 @@ String describeServerDownloadError(AppLocalizations l10n, String error) {
       error: l10n.serverErrorConnectionGone,
     );
   }
-  final status = error.startsWith(serverDownloadStatusErrorPrefix)
-      ? int.tryParse(error.substring(serverDownloadStatusErrorPrefix.length))
-      : null;
+  final status = serverDownloadErrorStatus(error);
   return l10n.serverBrowseDownloadFailed(
     error: status == null
         ? error

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/services/server_http_client.dart';
+import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/features/settings/data/services/ocr_server_health_client.dart';
@@ -133,8 +134,8 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
       final message = isUntrustedCertificateError(e)
           ? l10n.serverCertificateUntrusted
           : e is OcrServerHealthException
-          ? e.message
-          : '$e';
+          ? describeOcrFailure(l10n, e.failure)
+          : l10n.commonErrorWithDetails(details: '$e');
       setState(() {
         _isTestingConnection = false;
         _testSucceeded = false;

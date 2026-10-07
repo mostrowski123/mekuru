@@ -1,35 +1,19 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/manga/data/services/ndl_text_model.dart';
-import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 /// Why a model download ([downloadModelFiles]) failed, in the user's
 /// language.
 String modelDownloadFailureReason(AppLocalizations l, Object error) =>
-    switch (error) {
-      WifiLostException() => l.localOcrWifiLostIos,
-      DownloadStoppedInBackgroundException() => l.downloadStoppedInBackground,
-      ModelVerificationException() => l.localOcrDownloadDamaged,
-      ServerDownloadHttpException(:final statusCode) => l.serverErrorStatus(
-        status: statusCode,
-      ),
-      SocketException() ||
-      HttpException() ||
-      TlsException() ||
-      TimeoutException() => l.localOcrDownloadNetwork,
-      // ENOSPC
-      FileSystemException(osError: OSError(errorCode: 28)) =>
-        l.localOcrStorageFull,
-      _ => l.localOcrError(details: '$error'),
-    };
+    error is WifiLostException
+    ? l.localOcrWifiLostIos
+    : dictionaryDownloadError(l, error)!;
 
 /// Downloads screen tile for the optional manga-ocr model pack on iOS. The
 /// Android tile talks to the native job service; this one only needs
