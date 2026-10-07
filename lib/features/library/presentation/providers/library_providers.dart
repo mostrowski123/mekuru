@@ -207,11 +207,14 @@ class BookImportNotifier extends Notifier<BookImportState> {
   /// One file through the import pipeline: the repository import (a PDF
   /// that turns out scanned explains itself), pending backup data and
   /// telemetry. [title] names a PDF (free-book downloads); other files
-  /// carry their own. Throws on failure; does not touch [state].
+  /// carry their own. [sourceId] marks a downloaded free book (EPUB or PDF),
+  /// before the scanned-PDF notice can offer OCR, which reads it. Throws on
+  /// failure; does not touch [state].
   Future<Book> importOne(
     String filePath, {
     required String format,
     String? title,
+    String? sourceId,
     void Function(double progress)? onProgress,
   }) async {
     final repo = ref.read(bookRepositoryProvider);
@@ -221,9 +224,14 @@ class BookImportNotifier extends Notifier<BookImportState> {
         'cbz' => repo.importCbz(filePath, onProgress: onProgress),
         'pdf' =>
           repo
-              .importPdf(filePath, title: title, onProgress: onProgress)
+              .importPdf(
+                filePath,
+                title: title,
+                sourceId: sourceId,
+                onProgress: onProgress,
+              )
               .then(explainIfScanned),
-        _ => repo.importEpub(filePath),
+        _ => repo.importEpub(filePath, sourceId: sourceId),
       },
       attributes: {'format': format},
     );

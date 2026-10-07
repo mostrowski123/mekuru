@@ -161,10 +161,11 @@ class BookRepository {
   /// 1. Copies the EPUB to app storage
   /// 2. Unzips and parses metadata
   /// 3. Extracts cover image
-  /// 4. Creates a Book entry in the database
+  /// 4. Creates a Book entry in the database, with [sourceId] when it is a
+  ///    downloaded free book ([Books.sourceId])
   ///
   /// Returns the created [Book].
-  Future<Book> importEpub(String sourcePath) async {
+  Future<Book> importEpub(String sourcePath, {String? sourceId}) async {
     // Reject over-cap files before the copy below — a rejected import must
     // not strand a full-size copy in app storage (Sentry MEKURU-1D).
     await EpubParser.ensureWithinSizeCap(File(sourcePath));
@@ -216,6 +217,7 @@ class BookRepository {
                   ? Value(metadata.primaryWritingMode)
                   : const Value.absent(),
               hasVerticalCss: Value(metadata.hasVerticalCss),
+              sourceId: Value.absentIfNull(sourceId),
             ),
           );
 
@@ -384,11 +386,13 @@ class BookRepository {
   /// without text (scanned) stay open to OCR. [title] defaults to the file
   /// name, like CBZ (servers name downloads after their title, which their
   /// re-linking matches). The caller keeps [sourcePath]; only page images
-  /// are stored. [scanned] is true when most pages had no text: the user
-  /// is told why its words can't be tapped.
+  /// are stored. [sourceId] marks a downloaded free book ([Books.sourceId]).
+  /// [scanned] is true when most pages had no text: the user is told why its
+  /// words can't be tapped.
   Future<({Book book, bool scanned})> importPdf(
     String sourcePath, {
     String? title,
+    String? sourceId,
     void Function(double progress)? onProgress,
   }) async {
     final name = title ?? p.basenameWithoutExtension(sourcePath);
@@ -448,6 +452,7 @@ class BookRepository {
               : verticalPages * 2 >= textPages
               ? 'rtl'
               : 'ltr',
+          sourceId: sourceId,
         );
         return (book: book, scanned: pdfLooksScanned(pagesWithText));
       } finally {
@@ -471,6 +476,7 @@ class BookRepository {
     MokuroBook mokuroBook, {
     String? coverImagePath,
     String? pageProgressionDirection,
+    String? sourceId,
   }) async {
     var book = mokuroBook;
     String? cacheJson;
@@ -509,6 +515,7 @@ class BookRepository {
             pageProgressionDirection: Value.absentIfNull(
               pageProgressionDirection,
             ),
+            sourceId: Value.absentIfNull(sourceId),
           ),
         );
     return (await getBookById(bookId))!;
@@ -814,12 +821,6 @@ class BookRepository {
   Future<void> updateReadingDirectionOverride(int bookId, String? direction) =>
       (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
         BooksCompanion(overrideReadingDirection: Value(direction)),
-      );
-
-  /// Records where a downloaded free book came from ([Books.sourceId]).
-  Future<void> updateSourceId(int bookId, String sourceId) =>
-      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
-        BooksCompanion(sourceId: Value(sourceId)),
       );
 
   /// Save per-book display overrides (verticalText, readingDirection,

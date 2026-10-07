@@ -257,10 +257,10 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
             temp.path,
             format: format,
             title: title,
+            sourceId: key,
             onProgress: (progress) =>
                 report(_downloadShare + (1 - _downloadShare) * progress),
           );
-      await ref.read(bookRepositoryProvider).updateSourceId(book.id, key);
       report(1.0);
       if (!ref.mounted) return;
       logUsage(

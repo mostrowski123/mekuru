@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -315,6 +316,7 @@ class _ReportingImport extends BookImportNotifier {
     String filePath, {
     required String format,
     String? title,
+    String? sourceId,
     void Function(double progress)? onProgress,
   }) async {
     onProgress?.call(0.5);
@@ -322,7 +324,13 @@ class _ReportingImport extends BookImportNotifier {
     final db = ref.read(databaseProvider);
     final id = await db
         .into(db.books)
-        .insert(BooksCompanion.insert(title: title!, filePath: filePath));
+        .insert(
+          BooksCompanion.insert(
+            title: title!,
+            filePath: filePath,
+            sourceId: Value(sourceId),
+          ),
+        );
     return (db.select(db.books)..where((b) => b.id.equals(id))).getSingle();
   }
 }

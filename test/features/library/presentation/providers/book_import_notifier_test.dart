@@ -127,6 +127,19 @@ void main() {
       },
     );
 
+    test('importOne records the source on the book it returns', () async {
+      // The free-book Read action and the scanned-PDF notice hold this
+      // book; OCR reads its source to pick the NDL model.
+      final path = await fixtureEpub(title: '走れメロス', fileName: 'free.epub');
+
+      final book = await container
+          .read(bookImportProvider.notifier)
+          .importOne(path, format: 'epub', sourceId: 'aozora:1567');
+
+      expect(book.sourceId, 'aozora:1567');
+      expect((await db.select(db.books).getSingle()).sourceId, 'aozora:1567');
+    });
+
     test('returns 0 for an empty path list without touching state', () async {
       final imported = await container
           .read(bookImportProvider.notifier)

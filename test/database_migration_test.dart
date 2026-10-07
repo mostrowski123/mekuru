@@ -591,7 +591,9 @@ void main() {
     expect((await repo.getBookById(bookId))!.sourceId, null);
 
     // Missing nullable columns read back as null, so write through them.
-    await repo.updateSourceId(bookId, 'aozora:1567');
+    await (migratedDb.update(migratedDb.books)
+          ..where((b) => b.id.equals(bookId)))
+        .write(const BooksCompanion(sourceId: Value('aozora:1567')));
     expect((await repo.getBookById(bookId))!.sourceId, 'aozora:1567');
   });
 
