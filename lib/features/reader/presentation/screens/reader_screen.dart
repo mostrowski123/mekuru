@@ -1272,19 +1272,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         );
       }
     } else {
-      var chapterTitle = '';
-      if (_chapters.isNotEmpty) {
-        chapterTitle = _chapters.first.title;
-        for (final ch in _chapters) {
-          if (ch.title.trim().isNotEmpty) {
-            chapterTitle = ch.title.trim();
-          }
-        }
-      }
-
+      final cfi = _currentCfi;
+      final chapterTitle = await _epubController.chapterTitleAt(cfi);
       await repo.addBookmark(
         bookId: widget.book.id,
-        cfi: _currentCfi,
+        cfi: cfi,
         progress: _progress,
         chapterTitle: chapterTitle,
       );

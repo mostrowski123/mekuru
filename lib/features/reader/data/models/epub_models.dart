@@ -69,3 +69,28 @@ List<EpubChapter> parseChapterList(dynamic result) {
   final list = result is List ? result : [result];
   return list.map((e) => EpubChapter.fromJson(_toStringKeyMap(e))).toList();
 }
+
+/// A table-of-contents entry placed against a position (`tocPlacement` in
+/// reader_bridge.js): its spine item (-1 when its href names none) and, in
+/// the position's own item, whether its anchor starts after the position
+/// (null when that is unknown).
+typedef TocPlacement = ({String title, int spine, bool? anchorAfter});
+
+/// The title of the chapter a position in spine item [spine] falls under,
+/// or '' when no entry of [toc] (depth first) comes before it: the entry
+/// in the latest item not after [spine]. Within item [spine] the last
+/// entry whose anchor is not after the position wins, or the item's first
+/// entry when its anchors cannot be checked.
+String pickChapterTitle(int spine, List<TocPlacement> toc) {
+  var title = '';
+  var best = -1;
+  for (final entry in toc) {
+    if (entry.title.isEmpty || entry.spine < 0) continue;
+    if (entry.spine > spine || entry.spine < best) continue;
+    // Unknown: after the position unless it is the item's first entry.
+    if (entry.spine == spine && (entry.anchorAfter ?? best == spine)) continue;
+    best = entry.spine;
+    title = entry.title;
+  }
+  return title;
+}

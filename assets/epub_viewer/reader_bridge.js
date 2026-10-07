@@ -694,6 +694,55 @@ function getChapters() {
   return chapters;
 }
 
+// The table of contents placed against the position `cfi`, for Dart's
+// pickChapterTitle(): { spine: the position's spine index, toc: one
+// [title, spine index (-1: none), anchorAfter] per entry, depth first }.
+// Hrefs resolve as the chapter list's navigation does (spine.get()).
+// anchorAfter is only checked in the position's own spine item, which is
+// on screen: whether the entry's #anchor starts after the position, null
+// when that cannot be told.
+function tocPlacement(cfi) {
+  var target = new ePub.CFI(cfi);
+  var doc = null;
+  var at = null;
+  rendition.getContents().forEach(function (contents) {
+    if (contents.sectionIndex !== target.spinePos) return;
+    doc = contents.document;
+    try {
+      at = target.toRange(doc);
+    } catch (e) {
+      console.log('[EPUB_BRIDGE] tocPlacement: CFI not found:', e);
+    }
+  });
+  var toc = [];
+  (function walk(items) {
+    items.forEach(function (item) {
+      var section = book.spine.get(item.href);
+      var index = section ? section.index : -1;
+      var after = index === target.spinePos
+        ? anchorIsAfter(item.href, doc, at)
+        : false;
+      toc.push([item.title, index, after]);
+      walk(item.subitems);
+    });
+  })(chapters);
+  return JSON.stringify({ spine: target.spinePos, toc: toc });
+}
+
+function anchorIsAfter(href, doc, at) {
+  var hash = href.indexOf('#');
+  if (hash === -1) return false; // the file's own start
+  try {
+    var el = doc.getElementById(decodeURIComponent(href.slice(hash + 1)));
+    if (!el) return null;
+    var anchor = doc.createRange();
+    anchor.setStartBefore(el);
+    return anchor.compareBoundaryPoints(Range.START_TO_START, at) > 0;
+  } catch (e) {
+    return null; // section not on screen, CFI not found, bad fragment
+  }
+}
+
 // ── Display settings ──────────────────────────────────────────────────
 
 function setFontSize(size) {

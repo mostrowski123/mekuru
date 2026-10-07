@@ -161,6 +161,27 @@ class CustomEpubController {
     return [for (final cfi in list as List) cfi as String?];
   }
 
+  /// The title of the chapter [cfi], a position in the displayed section,
+  /// falls under (see [pickChapterTitle]); '' when there is none or the web
+  /// view cannot tell.
+  Future<String> chapterTitleAt(String cfi) async {
+    try {
+      final raw = await _evaluateJavascript('tocPlacement(${jsonEncode(cfi)})');
+      final placement = (raw is String ? jsonDecode(raw) : raw) as Map;
+      return pickChapterTitle(placement['spine'] as int, [
+        for (final entry in placement['toc'] as List)
+          (
+            title: entry[0] as String,
+            spine: entry[1] as int,
+            anchorAfter: entry[2] as bool?,
+          ),
+      ]);
+    } catch (error) {
+      debugPrint('[EPUB_DART] chapterTitleAt failed: $error');
+      return '';
+    }
+  }
+
   void addUnderline(String cfi) => _eval('addUnderline("$cfi")');
 
   void removeUnderline(String cfi) => _eval('removeUnderline("$cfi")');
