@@ -66,10 +66,6 @@ class _SentenceTranslationViewState
 
   /// Counts loads so only the one on screen logs it.
   var _loads = 0;
-
-  /// The last load found High quality unable to answer and Standard not
-  /// downloaded ([StandardTranslationNeeded]).
-  bool _standardNeeded = false;
   String? _target;
   bool _downloading = false;
   late bool _revealed = !widget.hidden;
@@ -107,7 +103,6 @@ class _SentenceTranslationViewState
   Future<(TranslationStatus, SentenceTranslation?)> _load() async {
     final target = _target!;
     final load = ++_loads;
-    _standardNeeded = false;
     try {
       final status = await translationStatus(
         target,
@@ -133,7 +128,6 @@ class _SentenceTranslationViewState
       }
       return (status, result);
     } on StandardTranslationNeeded {
-      if (load == _loads) _standardNeeded = true;
       return (TranslationStatus.needsDownload, null);
     } catch (e) {
       logFailure('translation.failed', e);
@@ -348,7 +342,9 @@ class _SentenceTranslationViewState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _standardNeeded
+              // Gemma installed counts as installed, so this download is
+              // Standard's, wanted because Gemma couldn't answer.
+              gemma is GemmaInstalled
                   ? l10n.translationHighQualityNeedsStandard
                   : _isIos
                   ? l10n.sentenceTranslationDownloadIos
