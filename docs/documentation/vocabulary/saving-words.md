@@ -61,7 +61,7 @@ A CSV file is a plain text table. Anki and spreadsheet apps can import it.
 3. Tap **Export selected**.
 4. Choose a folder and save the file. Its name is `vocabulary_export_` followed by the date.
 
-To leave selection mode, tap **Close** (the X).
+Once the file is saved, Mekuru says so and leaves selection mode. To leave selection mode without exporting, tap **Close** (the X).
 
 !!! note "On iPhone and iPad"
     The Files picker opens for step 4. Choose a folder, for example in iCloud Drive or On My iPhone, and confirm.

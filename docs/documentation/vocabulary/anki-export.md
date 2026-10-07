@@ -90,7 +90,7 @@ AnkiMobile does not tell other apps its note types, decks or fields, so you type
 
 When you tap **Add to Anki**, AnkiMobile opens, adds the card and returns you to Mekuru.
 
-Mekuru cannot check AnkiMobile for duplicates. AnkiMobile refuses a duplicate card itself, and it also refuses a card whose note type, deck or field name is misspelled. It shows its own message when it does. Mekuru cannot see that message, so if a card is missing, check AnkiMobile.
+Mekuru cannot check AnkiMobile for duplicates. AnkiMobile refuses a duplicate card itself, and it also refuses a card whose note type, deck or field name is misspelled. It shows its own message when it does. Mekuru cannot see that message, so it says the card was **sent** to AnkiMobile, not added. If a card is missing, check AnkiMobile.
 
 #### Anki on a computer (AnkiConnect)
 

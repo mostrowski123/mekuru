@@ -22,7 +22,7 @@ The same sheet opens in the manga reader. There you tap text found by mokuro (a 
 The sheet lists every word that matches. For each word you see:
 
 - The word and its reading, with furigana (small kana) over the kanji.
-- A frequency badge: **Very Common** (among the 5,000 most used words), **Common** (top 15,000), **Uncommon** (top 30,000) or **Rare**. It comes from a word frequency dictionary, such as the JPDB list in the starter pack.
+- A frequency badge: **Very Common** (among the 5,000 most used words), **Common** (top 15,000), **Uncommon** (top 30,000) or **Rare**. It comes from a word frequency dictionary, such as the JPDB list in the starter pack. A word that no frequency dictionary lists has no badge.
 - Part of speech tags, such as **Noun**, **Godan verb** or **Na-adjective**.
 - Pitch accent diagrams, if you imported a dictionary with pitch accent data. Pitch accent is the pattern of high and low pitch in a word. Mekuru does not download a pitch accent dictionary for you, so import a Yomitan one yourself. See [Import a Yomitan dictionary](../getting-started/dictionaries.md#import-a-yomitan-dictionary).
 - Definitions, grouped by dictionary. Each group is labeled with the dictionary's name. The groups follow your order in the Dictionary Manager.
@@ -88,7 +88,7 @@ Two settings in **You › Settings** change the search:
 - **"Dictionary failed to load. Restart the app to try again."** Close Mekuru completely and open it again.
 - **"No dictionaries imported"** You have no dictionaries yet. Install the starter pack.
 - **"Your dictionaries are turned off"** Turn on at least one dictionary in [Managing Dictionaries](management.md).
-- **Every word shows Rare.** You have no word frequency dictionary, or it is turned off. The starter pack includes one.
+- **No word has a frequency badge.** You have no word frequency dictionary, or it is turned off. The starter pack includes one.
 - **Tapping picks the wrong part of a word.** Try the **Enhanced Furigana Dictionary** in **You › Settings › Downloads**. It also improves word lookups.
 
 ## Related pages
