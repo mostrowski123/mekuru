@@ -8,6 +8,7 @@ import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_pro
 import 'package:mekuru/features/vocabulary/presentation/utils/vocabulary_search.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class VocabularyScreen extends ConsumerStatefulWidget {
   const VocabularyScreen({super.key});
@@ -70,9 +71,27 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
     });
   }
 
-  void _exportSelected() {
+  Future<void> _exportSelected() async {
     if (_selectedIds.isEmpty) return;
-    ref.read(exportVocabularyProvider)(selectedIds: _selectedIds);
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final savedPath = await ref.read(exportVocabularyProvider)(
+        selectedIds: _selectedIds,
+      );
+      if (savedPath == null) return; // Cancelled: keep the selection.
+      if (mounted) _exitSelectionMode();
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.vocabularyCsvExported)),
+      );
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.commonErrorWithDetails(details: e.toString())),
+        ),
+      );
+    }
   }
 
   void _setSearchQuery(String value) {

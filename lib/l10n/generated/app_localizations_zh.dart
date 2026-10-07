@@ -444,6 +444,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get vocabularyExportSelectedTooltip => '导出已选';
 
   @override
+  String get vocabularyCsvExported => 'CSV 已导出';
+
+  @override
   String get vocabularyNoDefinition => '暂无释义';
 
   @override
@@ -4459,6 +4462,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get vocabularyExportSelectedTooltip => '导出已选';
+
+  @override
+  String get vocabularyCsvExported => 'CSV 已导出';
 
   @override
   String get vocabularyNoDefinition => '暂无释义';

@@ -487,6 +487,7 @@
   "@vocabularyExportSelectedTooltip": {
     "description": "Tooltip for exporting selected vocabulary items."
   },
+  "vocabularyCsvExported": "CSV 已导出",
   "vocabularyNoDefinition": "暂无释义",
   "@vocabularyNoDefinition": {
     "description": "Fallback text when a saved word has no definition."

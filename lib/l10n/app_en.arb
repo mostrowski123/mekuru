@@ -591,6 +591,10 @@
   "@vocabularyExportSelectedTooltip": {
     "description": "Tooltip for exporting selected vocabulary items."
   },
+  "vocabularyCsvExported": "CSV exported",
+  "@vocabularyCsvExported": {
+    "description": "Snackbar shown after the selected vocabulary words were saved as a CSV file."
+  },
   "vocabularyNoDefinition": "No definition",
   "@vocabularyNoDefinition": {
     "description": "Fallback text when a saved word has no definition."

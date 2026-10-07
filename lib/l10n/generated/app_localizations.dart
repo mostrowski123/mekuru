@@ -844,6 +844,12 @@ abstract class AppLocalizations {
   /// **'Export selected'**
   String get vocabularyExportSelectedTooltip;
 
+  /// Snackbar shown after the selected vocabulary words were saved as a CSV file.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV exported'**
+  String get vocabularyCsvExported;
+
   /// Fallback text when a saved word has no definition.
   ///
   /// In en, this message translates to:

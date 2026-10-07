@@ -460,6 +460,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get vocabularyExportSelectedTooltip => 'Ekspor yang dipilih';
 
   @override
+  String get vocabularyCsvExported => 'CSV diekspor';
+
+  @override
   String get vocabularyNoDefinition => 'Tidak ada definisi';
 
   @override

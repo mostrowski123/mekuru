@@ -467,6 +467,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get vocabularyExportSelectedTooltip => 'Exportar seleccionadas';
 
   @override
+  String get vocabularyCsvExported => 'CSV exportado';
+
+  @override
   String get vocabularyNoDefinition => 'Sin definición';
 
   @override

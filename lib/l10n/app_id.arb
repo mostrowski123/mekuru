@@ -487,6 +487,7 @@
   "@vocabularyExportSelectedTooltip": {
     "description": "Tooltip for exporting selected vocabulary items."
   },
+  "vocabularyCsvExported": "CSV diekspor",
   "vocabularyNoDefinition": "Tidak ada definisi",
   "@vocabularyNoDefinition": {
     "description": "Fallback text when a saved word has no definition."
