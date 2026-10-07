@@ -150,7 +150,11 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
         _settle(GemmaNotInstalled(hasFiles: await _ops.hasFiles()));
         return;
       }
-      logFailure('translation.high_quality_download_failed', e);
+      logFailure(
+        'translation.high_quality_download_failed',
+        e,
+        attrs: {'route': 'app'},
+      );
       _settle(GemmaDownloadFailed(e));
     } finally {
       _epoch++;
