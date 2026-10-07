@@ -145,6 +145,9 @@ flutter:
     - assets/epub_viewer/
     - assets/free_books/
     - assets/ipadic/
+    # Notices for code built into native libraries and the translation
+    # engine's WebAssembly, which the package license list doesn't cover.
+    - assets/licenses/
     # Mozilla's translation engine for the Sentence tab (Android only).
     - assets/translate/
     - assets/user_dict/

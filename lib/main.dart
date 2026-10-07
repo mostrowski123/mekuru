@@ -16,6 +16,7 @@ import 'core/services/analytics_service.dart';
 import 'core/services/firebase_runtime.dart';
 import 'core/services/sentry_helpers.dart';
 import 'core/services/sentry_setup.dart';
+import 'core/services/third_party_licenses.dart';
 import 'core/services/usage_telemetry.dart';
 import 'features/backup/data/services/staged_full_restore.dart';
 import 'features/backup/data/services/full_backup_service.dart'
@@ -101,6 +102,8 @@ Future<void> main() async {
   // where each decoded page can be several MB.
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
   PaintingBinding.instance.imageCache.maximumSize = 50;
+  // Here, not in _bootApp: iOS runs that twice in one process.
+  registerThirdPartyLicenses();
 
   final audience = await resolveSentryAudience();
   if (audience.isSynthetic) {
