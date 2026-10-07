@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
@@ -78,5 +79,22 @@ void main() {
       ),
     );
     expect(find.byIcon(Icons.broken_image), findsNothing);
+  });
+
+  // The fallback iOS and Android 7-11 take for every AVIF page, forced here so
+  // that it runs on Android 12+ (CI) as well: ImageIO on iOS, libavif on
+  // Android.
+  testWidgets('the platform decodes AVIF Flutter cannot', (tester) async {
+    final codec = await decodeWithAvifFallback(
+      base64Decode(avifPageBase64),
+      () => throw Exception('no engine decode'),
+    );
+    final image = (await codec.getNextFrame()).image;
+    expect([image.width, image.height], [96, 128]);
+    final rgba = (await image.toByteData())!;
+    int red(int x, int y) => rgba.getUint8((y * 96 + x) * 4);
+    expect(red(1, 1), lessThan(60), reason: 'the black frame');
+    expect(red(10, 10), greaterThan(200), reason: 'the white page');
+    expect(red(48, 64), lessThan(100), reason: 'the dark block');
   });
 }
