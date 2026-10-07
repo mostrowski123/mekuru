@@ -106,7 +106,10 @@ class GemmaBridge {
     private fun translate(text: String, language: String): String {
         val loaded = engine ?: error("Gemma is not loaded")
         // A fresh conversation per sentence: no context leaks between taps.
-        loaded.createConversation(conversationConfig(maxOutputToken = 160)).use { conversation ->
+        // Room for a long sentence's whole translation (a reply cut at the
+        // cap reads as complete), but not for one that runs away.
+        val cap = (text.length * 2).coerceIn(160, 512)
+        loaded.createConversation(conversationConfig(maxOutputToken = cap)).use { conversation ->
             val reply = conversation.sendMessage(
                 "Translate the following Japanese text into natural $language. " +
                     "Output only the translation.\n\n$text",
