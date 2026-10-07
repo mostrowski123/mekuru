@@ -1,44 +1,56 @@
-# Remote OCR
+# Remote OCR (Pro)
 
-> **Pro feature** - Remote OCR requires the one-time **Pro** upgrade.
+Remote OCR sends your manga pages to an OCR server that you run yourself. The server reads the text and sends it back, so you can tap words to look them up. OCR means reading the text in an image.
 
-Remote OCR extracts text from CBZ manga pages so you can tap words and look them up.
+Mekuru does not run an OCR server for you. Remote OCR only works with your own server, set up as a custom OCR server.
 
-[On-device OCR](on-device-ocr.md) is the other Pro option: it uses models
-downloaded to your phone and needs no server.
+Use remote OCR when your phone cannot run [on-device OCR](on-device-ocr.md), or scans too slowly. Otherwise, on-device OCR needs no server and keeps your pages on your device.
 
-## How the Workflow Works
+## Before you start
 
-1. Import a `.cbz` file from the **Library** tab.
-2. Open **Settings > Reader Settings > Manga > Custom OCR Server** and enter your own server URL plus shared key. (Settings is behind the gear icon on the **You** tab.)
-3. Long-press the manga item in the library.
-4. Choose **Recognize text → Remote**, then select the pages to process.
-5. Mekuru uploads page images to your configured server and processes pages in the background.
-6. Once text overlays are available, open the manga and tap the detected words.
+You need:
 
-![Library screen showing OCR progress on a manga entry](../screenshots/library-ocr-progress-overlay.jpg)
+- **Mekuru Pro**. If you start a scan without Pro, Mekuru opens the Pro screen.
+- **Your own OCR server** that your phone can reach, entered in Mekuru as a custom OCR server. See [Custom OCR Server](custom-server.md).
 
-## Background Processing
+## Scan with remote OCR
 
-OCR runs in the background, so it can continue after you leave the library screen.
+1. Open the **Recognize text** sheet. Do one of these:
+    - In the reader, press and hold the scan icon at the top of the screen.
+    - In the **Library**, press and hold the manga, then tap **Recognize text**.
+2. Choose **Remote**.
+3. Choose a single page or **Entire manga**.
+4. Leave **Replace existing OCR** off to scan only pages that have no text yet, or turn it on to scan the chosen pages again.
+5. Tap **Recognize 1 page** or **Recognize** followed by the number of pages.
 
-Use the recognition sheet and the library progress overlay to manage work:
+Mekuru sends the page images to your server, one page at a time. It never sends pages to a server unless you choose **Remote**.
 
-- **Resume OCR** - continue a partial pass
-- **Pause OCR** - pause the background job and keep completed work
-- **Delete OCR** - remove OCR text and overlays; for replaced Mokuro/HTML books this restores the original imported OCR
-- Word overlays are repaired when the reader loads existing OCR with missing or stale word segmentation.
+Mekuru remembers your choice. The next time you tap the scan icon in the reader, it scans the pages on screen with **Remote** again.
 
-## Pro Access
+If no server is set up yet, Mekuru shows "Custom OCR Server Required". Tap **Open Settings**, enter your server, and go back. The scan then starts.
 
-- Pro is a one-time purchase.
-- Restoring or buying Pro can require linking a Google account first.
-- The Settings screen can show **Sign In to Restore Pro** until that link is complete.
+## Follow, pause and continue a scan
 
-## Lookup Integration
+While a scan runs:
 
-Once OCR text is available, the detected words behave like Mokuro overlays and open the same dictionary lookup sheet used elsewhere in the app.
+- the manga's cover in the **Library** shows the pages done and the time left;
+- the **Recognize text** sheet shows the pages processed, with **Pause**.
 
-## Server Setup
+![Library screen showing OCR progress on a manga cover](../screenshots/library-ocr-progress-overlay.jpg)
 
-Remote OCR requires a self-hosted OCR server. See the [Custom OCR Server](custom-server.md) guide for setup instructions.
+**Pause** stops the scan and keeps the pages that are done. To continue, open the **Recognize text** sheet and tap **Recognize** again. Pages that already have text are skipped.
+
+If a scan fails, the cover shows **OCR Failed**. Tap it to see why.
+
+To delete the text again, press and hold the manga in the **Library** and tap **Delete OCR**. For a manga made with mokuro (a tool that adds OCR text to manga), this brings back its original mokuro text.
+
+!!! note "On iPhone and iPad"
+    A panel at the bottom of the reader also shows the progress. The scan keeps going after you leave Mekuru, and iOS shows its progress in a Live Activity. If you stop the Live Activity, or iOS ends it, the scan pauses. If Mekuru is closed, the scan stops. Start it again to continue.
+
+On Android, the scan runs in the background, even after you leave Mekuru. It needs a network connection.
+
+## Related pages
+
+- [Custom OCR Server](custom-server.md)
+- [On-device OCR](on-device-ocr.md)
+- [Reading Manga](cbz-reading.md)

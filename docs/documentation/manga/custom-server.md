@@ -1,34 +1,59 @@
 # Custom OCR Server
 
-Mekuru can send manga OCR requests to a compatible self-hosted server for remote manga OCR.
+Connect Mekuru to an OCR server you run yourself, so you can use [remote OCR](cloud-ocr.md) on your manga. This is a Pro feature.
 
-## Pro Requirement
+## Before you start
 
-The **Custom OCR Server** feature is unlocked by the one-time **Pro** upgrade.
+You need:
 
-## Server Repository
+- **Mekuru Pro**. The **Custom OCR Server** setting only appears when Pro is active.
+- **An OCR server that your phone can reach**, for example on a computer on your home network. The reference server is open source: [github.com/mostrowski123/mekuru-ocr](https://github.com/mostrowski123/mekuru-ocr). Its README explains how to install and run it.
+- **The server's shared key**: the secret you set as `AUTH_API_KEY` on the server.
 
-The reference server is public on GitHub:
+## Connect Mekuru to your server
 
-**[github.com/mostrowski123/mekuru-ocr](https://github.com/mostrowski123/mekuru-ocr)**
+1. Open **You › Settings › Reader Settings**.
+2. In the **Manga** section, tap **Custom OCR Server**.
+3. In **Server URL**, enter the server's full address, starting with `http://` or `https://`. For example: `http://192.168.1.100:8000`.
+4. Tap **Test connection**. Mekuru checks that it can reach the server.
+5. In **Custom shared key**, enter the same key as the server's `AUTH_API_KEY`.
+6. Tap **Save**.
 
-## Authentication Contract
+The **Custom OCR Server** row now shows your server's address. You can start a scan with **Remote** in the **Recognize text** sheet. See [Remote OCR (Pro)](cloud-ocr.md).
 
-Custom OCR servers use a shared `AUTH_API_KEY`.
+**Learn how to run your own server**, in the same dialog, opens the reference server's page.
 
-- Configure the same shared secret on the server and in Mekuru.
-- Mekuru sends the key as `Authorization: Bearer <key>`.
-- The custom key is stored locally on-device.
+## Use a server with a self-signed certificate
 
-## Configuring the App
+If your server uses `https://` with its own (self-signed) certificate, turn on **Accept self-signed certificate**. The switch appears once the address starts with `https://`.
 
-1. Open **Settings** from the gear icon on the **You** tab.
-2. Open **Reader Settings** and scroll to the **Manga** section.
-3. Tap **Custom OCR Server**.
-4. Enter the server URL.
-5. Enter the matching shared key.
-6. Save the settings.
+Mekuru then accepts any certificate this server presents. Turn it on only for a server you trust.
 
-## Compatibility
+## What the server must do
 
-Your custom server must implement the same OCR API contract expected by Mekuru. The reference repository above provides the intended behavior and request format.
+The reference server already does all of this. If you write your own server, it needs two endpoints. Mekuru adds their paths to the address you entered.
+
+- **`GET /health`** returns JSON with `"status": "ok"`. **Test connection** uses it, without the key.
+- **`POST /ocr`** receives one page image as a form upload in a field named `image`. Mekuru sends the key in the header `Authorization: Bearer <your key>`. The server returns JSON with `img_width`, `img_height` and `blocks`. Each block is a text block in the format mokuro uses: `box`, `vertical`, `font_size`, `lines_coords` and `lines`.
+
+## Your key and your pages
+
+- Mekuru keeps the key on this device only, in secure storage. Backups do not include it, so enter it again on a new device.
+- Page images go only to the server you set, and only when you choose **Remote**.
+
+!!! note "On iPhone and iPad"
+    The first time Mekuru connects to a server on your home network, iOS asks whether Mekuru may find devices on your local network. Allow it, or Mekuru cannot reach the server. You can change this later in the iOS Settings app, under Mekuru.
+
+## If something goes wrong
+
+- **"Enter a full http:// or https:// server URL."** The address is missing `http://` or `https://` at the start.
+- **"A shared key is required for custom servers."** Enter the key in **Custom shared key**.
+- **"The server's certificate isn't trusted."** The server uses a self-signed certificate. Turn on **Accept self-signed certificate**.
+- **Test connection fails.** Check that the server is running and that your phone is on the same network as the server.
+- **You don't see Custom OCR Server.** Pro is not active on this device. Open **You › Settings › Pro** and tap **Restore Purchase** if you have bought it.
+
+## Related pages
+
+- [Remote OCR (Pro)](cloud-ocr.md)
+- [On-device OCR](on-device-ocr.md)
+- [App Settings](../settings/app-settings.md)
