@@ -23,6 +23,8 @@ The **Custom OCR Server** row now shows your server's address. You can start a s
 
 **Learn how to run your own server**, in the same dialog, opens the reference server's page.
 
+To stop using your server, open **Custom OCR Server**, tap **Clear**, then tap **Save**. Mekuru also deletes the key.
+
 ## Use a server with a self-signed certificate
 
 If your server uses `https://` with its own (self-signed) certificate, turn on **Accept self-signed certificate**. The switch appears once the address starts with `https://`.

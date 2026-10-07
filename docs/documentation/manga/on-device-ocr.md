@@ -26,7 +26,7 @@ Scanning is heavy work. Speed varies a lot from phone to phone, and it uses a lo
 
 You find **Test device speed** in two places:
 
-- on the Pro screen (**You › Settings › Pro**), in the **On-device OCR** card;
+- on the Pro screen (**You › Settings › Pro**), in the **On-device OCR** card. Until the model pack is installed, the card offers its download instead;
 - in **Downloads**, under **Japanese manga OCR — manga-ocr**, once the model pack is installed.
 
 The test needs the model pack installed, but not Pro.
