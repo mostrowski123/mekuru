@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
@@ -588,6 +589,32 @@ void main() {
       );
 
       expect(find.byType(GroupedDictionaryEntryHeader), findsOneWidget);
+    });
+
+    testWidgets('copies the sentence', (tester) async {
+      _fakeTranslation();
+      final copied = <Object?>[];
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied.add((call.arguments as Map)['text']);
+        }
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '梨を食べる。'),
+      );
+      await openSentenceTab(tester);
+
+      // The sentence's button comes first; the translation has its own.
+      await tester.tap(find.byTooltip('Copy').first);
+      await tester.pump();
+
+      expect(copied, ['梨を食べる。']);
     });
 
     testWidgets('only an editable sheet lets the sentence be edited', (

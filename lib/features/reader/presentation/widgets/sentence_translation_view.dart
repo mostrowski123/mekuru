@@ -186,8 +186,8 @@ class _SentenceTranslationViewState
     widget.onEditingEnded?.call();
   }
 
-  void _copy(String translation) {
-    Clipboard.setData(ClipboardData(text: translation));
+  void _copy(String text) {
+    Clipboard.setData(ClipboardData(text: text));
     scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
         content: Text(context.l10n.readerCopiedToClipboard),
@@ -271,16 +271,21 @@ class _SentenceTranslationViewState
             ),
             style: style,
           );
-    if (widget.onSentenceEdited == null) return text;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(child: text),
         IconButton(
-          icon: const Icon(Icons.edit_outlined, size: 20),
-          tooltip: context.l10n.sentenceTranslationEdit,
-          onPressed: _startEditing,
+          icon: const Icon(Icons.copy_outlined, size: 20),
+          tooltip: context.l10n.commonCopy,
+          onPressed: () => _copy(sentence),
         ),
+        if (widget.onSentenceEdited != null)
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            tooltip: context.l10n.sentenceTranslationEdit,
+            onPressed: _startEditing,
+          ),
       ],
     );
   }
