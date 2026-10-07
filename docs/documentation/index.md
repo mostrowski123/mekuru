@@ -1,82 +1,38 @@
-# Mekuru Documentation
+# Welcome to Mekuru
 
-Mekuru is a Japanese-first EPUB and manga reader built for language learners and native readers. It combines vertical EPUB reading, Mokuro and CBZ manga support, offline dictionaries, and vocabulary tools in one app.
+Mekuru (めくる, "to turn a page") is a free app for reading Japanese books and manga while you learn. Tap a word you don't know to see what it means, then save it to review later.
 
-![Library screen with imported books and manga](screenshots/library-screen-imported-books-and-manga.jpg)
+![The Mekuru library with imported books and manga](screenshots/library-screen-imported-books-and-manga.jpg)
 
-## Quick Start
+## What Mekuru does
 
-**0. Install Mekuru**
+- **Manga you can tap.** Import manga that mokuro has processed and tap any word. Mokuro is a free tool that adds the text to manga pages. For other manga, OCR (reading the text in an image) adds the text in the app. OCR is part of Pro. See [Importing Manga](getting-started/importing-manga.md).
+- **Vertical novels with furigana.** EPUB books written in tategaki (vertical writing) open that way. Furigana are small kana over kanji that show the reading. Show them for all kanji, only for kanji above your JLPT level, or only for kanji you haven't learned on WaniKani. The JLPT (Japanese-Language Proficiency Test) goes from N5, the easiest, to N1, the hardest. See [Furigana](reading/furigana.md).
+- **An offline dictionary.** Mekuru keeps your dictionaries on your device, so lookups work without a connection. See [Looking Up Words](dictionary/lookups.md).
+- **Sentence translation.** The **Sentence** tab of the lookup sheet translates the whole sentence on your device. See [Sentence Translation](dictionary/sentence-translation.md).
+- **Vocabulary and Anki.** Save words together with the sentence you found them in, then send them to Anki as flashcards. See [Saving & Managing Words](vocabulary/saving-words.md) and [Exporting to Anki](vocabulary/anki-export.md).
+- **Free books.** Download graded readers for learners and classic literature from Aozora Bunko, right in the app. See [Free Books](getting-started/free-books.md).
+- **Reading stats.** See how long you read, which days you read, and how your vocabulary grows. See [Reading Stats](stats/reading-stats.md).
+- **Book servers.** Download books from your own Komga or Kavita server and keep your reading position in sync. See [Book Servers](library/book-servers.md).
 
-Install Mekuru from [Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru) or download a signed APK from [GitHub Releases](https://github.com/mostrowski123/mekuru/releases). To get early access to updates, join the [beta testing track](getting-started/installing-mekuru.md#beta-testing). See [Installing Mekuru](getting-started/installing-mekuru.md).
+## Where Mekuru runs
 
-**1. Import something to read**
+- **Android:** install Mekuru from [Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru).
+- **iPhone and iPad:** Mekuru is coming to the App Store. Until then, join the beta on [TestFlight](https://testflight.apple.com/join/3HegxezW). It needs iOS 26 or newer.
 
-From the **Library** tab, tap **+** and choose one of the supported import flows:
+[Installing Mekuru](getting-started/installing-mekuru.md) has the details.
 
-- **Import EPUB** - import a single `.epub` file
-- **Import Manga > Mokuro folder** - select the folder that contains a `.mokuro` or `.html` manifest alongside the images
-- **Import Manga > CBZ archive** - import a single `.cbz` archive
-- **Download from _server_** - listed for every Komga or Kavita server you have added; see [Book Servers](library/book-servers.md)
+A few features work differently on iPhone and iPad. Pages point these out in notes marked **On iPhone and iPad** or **Android only**.
 
-See [Importing Books (EPUB)](getting-started/importing-books.md) and [Importing Manga](getting-started/importing-manga.md).
+## Start here
 
-**2. Add dictionaries**
+1. **Install Mekuru.** See [Installing Mekuru](getting-started/installing-mekuru.md).
+2. **Get dictionaries.** Tap **Get Dictionaries** in your empty library. It installs the starter pack: a Japanese–English dictionary plus word frequency data. See [Setting Up Dictionaries](getting-started/dictionaries.md).
+3. **Get something to read.** Import your own [books](getting-started/importing-books.md) or [manga](getting-started/importing-manga.md), or download [free books](getting-started/free-books.md).
+4. **Tap a word.** Open a book and tap any word. The lookup sheet opens with its meaning. See [Looking Up Words](dictionary/lookups.md).
 
-Go to the **Dictionary** tab to import a Yomitan-compatible dictionary, import a Yomitan collection backup, or use **Settings > Downloads** for built-in packs such as JMdict and KANJIDIC. Settings lives behind the gear icon on the **You** tab. See [Setting Up Dictionaries](getting-started/dictionaries.md).
+## Free and Pro
 
-**3. Start reading**
+Mekuru is free. Pro is a one-time purchase. Pro unlocks [**On-device OCR**](manga/on-device-ocr.md), **Auto-Crop** for manga margins, **Book Highlights** for EPUB books, and [**Custom OCR Server**](manga/custom-server.md).
 
-Tap a library item to open it. Long-press a library item to open management actions such as rename, add to collection, export as EPUB, convert to manga, export as CBZ, bookmarks, highlights, OCR controls, or delete. See [Navigation & Gestures](reading/navigation.md) and [Collections & Folders](library/collections.md).
-
-**4. Look up and save words**
-
-Tap a word in EPUB text, Mokuro word overlays, or OCR-generated manga overlays to open dictionary results. Use the save button on the lookup card to add the word to your vocabulary list. See [Looking Up Words](dictionary/lookups.md) and [Saving & Managing Words](vocabulary/saving-words.md).
-
-**5. Export to Anki**
-
-Export selected vocabulary entries to CSV, or send cards directly to AnkiDroid on Android from dictionary lookup cards. See [Exporting to Anki](vocabulary/anki-export.md).
-
-**6. Track your progress**
-
-The **You** tab shows your reading time, an activity heatmap, lookup rate, and vocabulary growth. See [Reading Stats](stats/reading-stats.md).
-
-## Feature Overview
-
-### Free Features
-
-| Feature | Description |
-|-|-|
-| EPUB Reader | Vertical and horizontal reading, RTL or LTR page flow, and automatic progress restore |
-| Manga Reader | Mokuro and CBZ support with single-page, spread, and scroll modes; CBZ archives with embedded `.mokuro` data get lookups on import |
-| Offline Dictionaries | Import Yomitan `.zip` files, collection `.json` backups, or built-in download packs |
-| Built-in Downloads | Jitendex, JMdict, JMdict with examples, KANJIDIC, KanjiVG, JPDB frequency data, and the Enhanced Furigana Dictionary, plus more dictionaries to download in the app: Wiktionary, JMnedict, and JMdict and KANJIDIC in other languages |
-| Collections | Organize books into iOS-style folder tiles with drag-to-reorder and multi-select batch actions |
-| Furigana Display | Per-book furigana modes: off, book default, all kanji, only kanji above a chosen JLPT level, or only kanji not yet learned on WaniKani |
-| WaniKani Integration | Link your WaniKani account and hide furigana for kanji at or above the SRS stage you choose |
-| Furigana EPUB Export | Export a copy of any EPUB with generated furigana baked in |
-| Manga Conversion & CBZ Export | Convert image-only EPUBs into manga, and export any manga as a CBZ with its OCR data embedded |
-| Book Server Sync | Browse and download from Komga or Kavita servers and keep reading progress in sync both ways |
-| Reading Stats | Reading time, activity heatmap, lookup rate, and vocabulary growth on the You tab |
-| Backup & Restore | Reading-data backups of settings, vocabulary, bookmarks, collections, and reading history, plus a full backup of the whole library in one zip |
-| Smart Word Detection | Accurate Japanese word boundary detection for tap-to-lookup |
-| Compound Words | Greedy multi-token matching for longer dictionary hits |
-| Kanji Stroke Order | KanjiVG diagrams for single-kanji searches and compatible lookups |
-| Frequency Data | JPDB rank data shown in dictionary results when installed |
-| Pitch Accents | Pitch accent patterns from compatible dictionaries |
-| Bookmarks | Save positions and notes in EPUB books |
-| Vocabulary Management | Save words with sentence context and review them later |
-| CSV Export | Export selected vocabulary entries to an Anki-friendly CSV file |
-| AnkiDroid Integration | Send cards to AnkiDroid directly from dictionary lookup cards on Android |
-| Reader Customization | Themes, color modes, margins, swipe sensitivity, and per-book quick settings |
-
-### Paid Feature
-
-| Feature | Description |
-|-|-|
-| Pro | One-time upgrade that unlocks auto-crop, book highlights, on-device manga OCR, and custom OCR server support for remote manga OCR. |
-
-> See [Remote OCR](manga/cloud-ocr.md) and [Custom OCR Server](manga/custom-server.md) for setup details.
-
-On-device Japanese manga OCR uses separately downloaded models. Downloading them is free; recognizing your own manga is part of Pro.
-See [On-device OCR](manga/on-device-ocr.md).
+You buy Pro through Google Play on Android and through the App Store on iPhone and iPad. You don't need an account.

@@ -1,38 +1,36 @@
 # Importing Manga
 
-Mekuru supports two manga formats, each with a different workflow:
+Add manga to your library from a mokuro folder or a CBZ file, so you can read it and tap its words.
 
-| Format | Description |
-|-|-|
-| **CBZ** | Comic Book ZIP archives containing page images. Text lookups require OCR later, unless the archive also carries a `.mokuro` entry. |
-| **Mokuro** | Pre-processed manga with text already extracted. Lookups work immediately after import. |
+## Before you start
 
-## Importing Mokuro-Processed Manga
+Mekuru imports manga in two forms:
 
-[Mokuro](https://github.com/kha-white/mokuro) pre-processes manga pages and stores OCR data with page positions. Mekuru supports both `.mokuro` and Mokuro `.html` manifests.
+- **Mokuro folder.** Mokuro is a free tool you run on a computer. It reads the text on manga pages with OCR (reading the text in an image) and saves that text next to the page images. Mekuru uses this text, so you can tap words as soon as the manga is imported.
+- **CBZ archive.** A CBZ file is a `.zip` file of comic page images, renamed to `.cbz`. It usually has pictures only, so you can't tap words until OCR reads the text. OCR in Mekuru needs Pro. A CBZ that also holds mokuro data, such as one exported from Mekuru, keeps its text.
 
-To import:
+| | Mokuro folder | CBZ archive |
+|-|-|-|
+| You choose | A folder | One or more `.cbz` files |
+| Tap words right away | Yes | Only if it holds mokuro data |
+| Needs Pro | No | Only to run OCR |
 
-1. Open the **Library** tab.
-2. Tap **+**.
-3. Choose **Manga (Mokuro)**.
-4. Select the folder that contains the manga data.
-5. Choose the `.mokuro` or `.html` manifest from the picker shown for that folder.
+Pages can be JPEG, PNG, WebP, GIF, BMP or AVIF images.
 
-Mekuru then loads the manifest, finds the matching page-image folder, detects individual words, and builds tap targets for lookups.
+## Import a mokuro folder
 
-### Expected Folder Layout
-
-The page images must be stored in the matching sibling folder used by the selected manifest. Typical layouts look like this:
+Mokuro writes a `.mokuro` file (older versions write an `.html` file) next to a folder of page images with the same name:
 
 ```text
 manga_title.mokuro
 manga_title/
   001.jpg
   002.jpg
+```
 
-or
+Older `.html` output also has an `_ocr` folder:
 
+```text
 manga_title.html
 manga_title/
   001.jpg
@@ -42,57 +40,73 @@ _ocr/manga_title/
   002.json
 ```
 
-Mokuro is the fastest path for instant lookups because the OCR text already exists before import.
-
-## Importing CBZ Files
-
-CBZ files contain page images only.
+To import:
 
 1. Open the **Library** tab.
 2. Tap **+**.
-3. Choose **Manga (CBZ)**.
-4. Select a `.cbz` file from the system file picker.
+3. Tap **Import Manga**.
+4. Tap **Mokuro folder**.
+5. Choose the folder that holds the `.mokuro` or `.html` file. Don't choose the images folder.
+6. Mekuru lists the manga files it found. Tap the one you want.
 
-The import creates the manga entry and extracts the page images, but it does **not** add text overlays yet. The exception is a CBZ that includes a `.mokuro` entry (Mekuru's own [CBZ export](#exporting-manga-as-cbz) writes one): its OCR data is imported and lookups work right away.
+The manga appears in your library, and its words are ready to tap. To learn how to make mokuro files, tap **What is Mokuro?** under **Mokuro folder**.
 
-## Running OCR for CBZ Manga
+!!! note "On iPhone and iPad"
+    Mekuru copies the pages into the app, so the manga uses storage space on your device. You can move or delete the original folder afterwards.
 
-After import, long-press the manga entry in the library to open its actions. From there, Mekuru can show:
+On Android, Mekuru reads the pages from the folder you chose. Keep that folder where it is. If you move, rename or delete it, the pages go missing in Mekuru.
 
-- **Recognize text** - choose on-device OCR or your remote server, and scan missing pages or replace existing OCR
-- **Resume OCR** - continue a partial OCR pass
-- **Pause OCR** - pause the current OCR job and keep progress so far
-- **Delete OCR** - remove OCR text and word overlays; for replaced Mokuro/HTML books this restores the original imported OCR
-- **Build Word Overlays** - rebuild tap targets when OCR text exists but word segmentation is missing
-- **Export as CBZ** - share the page images, and any OCR text, as a comic archive; see below
+## Import a CBZ file
 
-You can also start OCR from inside the manga reader: tap **Recognize** to scan the visible page, or hold it for options. See [On-device OCR](../manga/on-device-ocr.md).
+1. Open the **Library** tab.
+2. Tap **+**.
+3. Tap **Import Manga**.
+4. Tap **CBZ archive**.
+5. Choose one or more `.cbz` files.
 
-Both OCR paths need **Pro**. On-device OCR uses models you download once; remote OCR also needs a configured custom OCR server.
+The manga appears in your library. Mekuru names it after the file.
 
-## Exporting Manga as CBZ
+## Make the words tappable
 
-Long-press any manga and choose **Export as CBZ** to share its page images as a comic archive through the Android share sheet, which includes saving to a folder. When the manga has OCR text, the archive also carries a `.mokuro` entry, so importing that CBZ into Mekuru again brings the lookups back without re-running OCR. Manga linked from a folder outside Mekuru cannot be exported this way, since you already have their images.
+A manga without text needs OCR before you can tap its words. OCR needs Pro. You can run it on your device, or on your own OCR server.
 
-## Converting an Image-Only EPUB
+- **From the library:** press and hold the manga, then tap **Recognize text**.
+- **In the manga reader:** tap the scan icon at the top to read the page you see. Press and hold the icon for more options.
 
-Some manga are sold as EPUBs where every page is a single image. Long-press such a book in the library and choose **Convert to manga**: the book moves to the manga reader with its page-image view modes, its reading position resets, and the EPUB copy stored in the app is removed. Lookups work once you run OCR, or export the book as CBZ and process it with mokuro. To undo, re-import the original file.
+See [On-device OCR](../manga/on-device-ocr.md) and [Custom OCR Server](../manga/custom-server.md).
 
-## Differences from EPUB
+## Convert an image-only EPUB
 
-Because manga pages are images rather than flowing text, some features work differently:
+Some manga are sold as EPUB files where every page is one picture. Convert them, so they open in the manga reader.
 
-| Feature | EPUB | Manga |
-|-|-|-|
-| Dictionary lookups | Tap text directly | Use Mokuro data or OCR-generated overlays |
-| Bookmarks | Yes | Yes |
-| Highlights and notes | Pro (EPUB only) | No |
-| Text layout settings | Yes | No |
-| Image view modes | No | Yes |
+1. Press and hold the book in the library.
+2. Tap **Convert to manga**.
+3. Read the message, then tap **Convert**.
 
-## Next Steps
+The book now opens in the manga reader, and its reading position starts over. Mekuru deletes its own copy of the EPUB. To undo, import the original file again.
 
-- [Reading Manga](../manga/cbz-reading.md) - view modes, reader settings, and overlays
-- [Remote OCR](../manga/cloud-ocr.md) - Pro-powered OCR with your own server
-- [On-device OCR](../manga/on-device-ocr.md) - Japanese manga OCR on your phone with separately downloaded models (Pro)
-- [Custom OCR Server](../manga/custom-server.md) - using your own OCR endpoint
+To tap words afterwards, run OCR, or export the book as CBZ and process it with mokuro.
+
+If the pages are not all single pictures, Mekuru says **This EPUB doesn't look like a manga — its pages aren't single images** and leaves the book as it is.
+
+## Export manga as CBZ
+
+1. Press and hold the manga in the library.
+2. Tap **Export as CBZ**.
+3. In the share sheet, choose where to send or save the file. On iPhone and iPad, tap **Save to Files** to keep it on your device.
+
+If the manga has text from mokuro or OCR, the CBZ also holds that text as mokuro data. Import the CBZ into Mekuru again, for example on a new phone, and its words are tappable without new OCR.
+
+On Android, you can't export manga imported from a mokuro folder. Mekuru says **This book's images are stored outside the app, so it can't be exported**. You already have its pages in that folder.
+
+## If something goes wrong
+
+- **No .mokuro or .html files found in the selected folder:** you chose the wrong folder. Choose the folder that holds the `.mokuro` or `.html` file, not the images folder inside it.
+- **Pages are missing (Android):** the mokuro folder was moved, renamed or deleted. Import the manga again from its new place.
+
+## Related pages
+
+- [Reading Manga](../manga/cbz-reading.md)
+- [On-device OCR](../manga/on-device-ocr.md)
+- [Custom OCR Server](../manga/custom-server.md)
+- [Importing Books (EPUB and PDF)](importing-books.md)

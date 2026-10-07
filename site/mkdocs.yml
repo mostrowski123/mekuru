@@ -1,5 +1,5 @@
 site_name: Mekuru Documentation
-site_description: Documentation for Mekuru, a Japanese EPUB and manga reader for Android.
+site_description: Documentation for Mekuru, a Japanese EPUB and manga reader for Android, iPhone and iPad.
 site_url: https://mekuru.matthew.moe/documentation/
 docs_dir: ../docs/documentation
 site_dir: ../.site-dist/documentation
@@ -35,6 +35,13 @@ theme:
 plugins:
   - search
 
+markdown_extensions:
+  - admonition
+
+validation:
+  anchors: warn
+  omitted_files: warn
+
 hooks:
   - site_hooks.py
 
@@ -48,10 +55,11 @@ nav:
   - Home: index.md
   - Getting Started:
       - Installing Mekuru: getting-started/installing-mekuru.md
-      - Importing Books (EPUB): getting-started/importing-books.md
+      - Importing Books (EPUB and PDF): getting-started/importing-books.md
       - Importing Manga: getting-started/importing-manga.md
       - Setting Up Dictionaries: getting-started/dictionaries.md
       - Downloads: getting-started/downloadable-data.md
+      - Free Books: getting-started/free-books.md
   - Library:
       - Collections & Folders: library/collections.md
       - Furigana EPUB Export: library/furigana-export.md
@@ -63,6 +71,7 @@ nav:
       - Bookmarks & Highlights: reading/bookmarks-highlights.md
   - Dictionary & Lookups:
       - Looking Up Words: dictionary/lookups.md
+      - Sentence Translation: dictionary/sentence-translation.md
       - Managing Dictionaries: dictionary/management.md
   - Vocabulary & Anki:
       - Saving & Managing Words: vocabulary/saving-words.md
@@ -70,7 +79,7 @@ nav:
   - Manga & OCR:
       - Reading Manga: manga/cbz-reading.md
       - On-device OCR: manga/on-device-ocr.md
-      - Pro (Remote OCR): manga/cloud-ocr.md
+      - Remote OCR (Pro): manga/cloud-ocr.md
       - Custom OCR Server: manga/custom-server.md
   - Progress & Stats:
       - Reading Stats: stats/reading-stats.md
