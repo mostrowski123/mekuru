@@ -1,0 +1,10 @@
+# Store image captions: shot | headline (\n = line break) | subline.
+01 | Toca cualquier palabra\ndentro del manga | Gratis con archivos de mokuro, o escanea cualquier página con OCR en el dispositivo (Pro)
+02 | Novelas tal como\nse imprimen | Texto vertical, con furigana solo donde lo necesitas
+03 | Un diccionario que\nentiende la gramática | Los verbos conjugados te llevan a la entrada correcta, sin conexión
+04 | ¿Atascado en una frase?\nTradúcela | Traducción privada en el dispositivo, en la misma ventana
+05 | Convierte palabras\nen tarjetas de Anki | Guarda palabras con su frase y envíalas a Anki con un toque
+06 | Libros gratis\na tu nivel | Lecturas graduadas y clásicos de Aozora Bunko, ordenados por nivel
+07 | Mira cómo crece\ntu japonés | Tiempo de lectura, caracteres leídos y palabras nuevas, día a día
+08 | Tu biblioteca,\na tu manera | Colecciones, copias de seguridad y tu propio servidor Komga o Kavita
+feature | Aprende japonés leyendo\nlo que te gusta | OCR de manga · diccionario sin conexión · Anki

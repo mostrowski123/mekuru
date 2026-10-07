@@ -1,0 +1,10 @@
+# Store image captions: shot | headline (\n = line break) | subline.
+01 | Ketuk kata apa pun\ndi dalam manga | Gratis dengan file mokuro, atau pindai halaman mana pun dengan OCR di perangkat (Pro)
+02 | Novel seperti\nversi cetaknya | Teks vertikal, dengan furigana hanya di tempat yang kamu perlukan
+03 | Kamus yang\npaham tata bahasa | Kata kerja terkonjugasi langsung ke entri yang tepat, offline
+04 | Bingung dengan kalimat?\nTerjemahkan | Terjemahan privat di perangkat, di lembar yang sama
+05 | Jadikan kata\nkartu Anki | Simpan kata beserta kalimatnya dan kirim ke Anki dengan sekali ketuk
+06 | Buku gratis\nsesuai levelmu | Graded reader dan karya klasik Aozora Bunko, diurutkan per level
+07 | Lihat bahasa Jepangmu\nberkembang | Waktu membaca, karakter dibaca, dan kata baru, setiap hari
+08 | Perpustakaanmu,\ncaramu | Koleksi, cadangan, dan server Komga atau Kavita milikmu
+feature | Belajar bahasa Jepang\ndari bacaan favoritmu | OCR manga · kamus offline · Anki

@@ -1,0 +1,11 @@
+# Store image captions: shot | headline (\n = line break) | subline.
+# The shot numbers match the raw captures; tools/compose_store_images.py reads this.
+01 | Tap any word\ninside the manga | Free with mokuro files, or scan any page with on-device OCR (Pro)
+02 | Novels the way\nthey're printed | Vertical text, with furigana only where you need it
+03 | A dictionary that\nknows grammar | Conjugated verbs lead to the right entry, offline
+04 | Stuck on a sentence?\nTranslate it | Private, on-device translation in the same sheet
+05 | Turn words into\nAnki cards | Save words with their sentence and send them to Anki in one tap
+06 | Free books\nat your level | Graded readers and Aozora Bunko classics, sorted by level
+07 | Watch your\nJapanese grow | Reading time, characters read and new words, day by day
+08 | Your library,\nyour way | Collections, backups, and your own Komga or Kavita server
+feature | Learn Japanese by\nreading what you love | Manga OCR · offline dictionary · Anki
