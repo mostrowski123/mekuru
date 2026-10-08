@@ -6,6 +6,7 @@ on:
     paths:
       - 'docs/**'
       - 'site/**'
+      - 'pubspec.yaml'
       - '.github/workflows/deploy-site.yml'
 
 jobs:
@@ -19,6 +20,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The changelog is built from every version bump in the history.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
