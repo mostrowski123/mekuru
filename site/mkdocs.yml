@@ -86,3 +86,4 @@ nav:
   - Settings:
       - App Settings: settings/app-settings.md
       - Backup & Restore: settings/backup-restore.md
+  - Changelog: https://mekuru.matthew.moe/changelog
