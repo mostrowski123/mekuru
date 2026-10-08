@@ -78,8 +78,9 @@ void main() {
       // Characters a file system refuses: see zipFolderName's own tests.
       expect(await stored('..hidden.ttf'), 'hidden.ttf');
       expect(await stored('....ttf'), 'font.ttf');
-      // A long Japanese name would pass 255 bytes with its extension.
-      final long = await stored('${'明' * 100}.ttf');
+      // A Japanese name near the 255-byte file name limit (Linux, Android
+      // and iOS count UTF-8 bytes, 3 per kanji) is cut to zipFolderName's.
+      final long = await stored('${'明' * 80}.ttf');
       expect(long, '${'明' * 50}.ttf');
     });
 
