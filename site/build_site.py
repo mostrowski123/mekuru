@@ -1,5 +1,8 @@
+from datetime import date
 from pathlib import Path
 from html.parser import HTMLParser
+import html
+import re
 import shutil
 import subprocess
 import sys
@@ -11,6 +14,21 @@ SOURCE = ROOT / "docs"
 OUTPUT = ROOT / ".site-dist"
 CONFIG = ROOT / "site" / "mkdocs.yml"
 BASE_URL = "https://mekuru.matthew.moe"
+
+# The same subjects release-ios.yml puts in the TestFlight notes.
+CHANGE = re.compile(r"^(feat|fix|perf|l10n)(?:\(([^)]*)\))?!?: (.+)")
+CHANGE_HEADINGS = {"feat": "New", "l10n": "New", "perf": "Faster", "fix": "Fixed"}
+INTERNAL_SCOPES = {
+    "build", "ci", "deps", "release", "review", "sentry", "site", "store",
+    "telemetry", "test",
+}
+SCOPE_LABELS = {
+    "a11y": "accessibility",
+    "ios": "iOS",
+    "l10n": "translations",
+    "ocr": "OCR",
+    "pdf": "PDF",
+}
 
 
 class MetadataParser(HTMLParser):
@@ -46,6 +64,121 @@ def copy_marketing_site() -> None:
 
     for verification_file in SOURCE.glob("google*.html"):
         shutil.copy2(verification_file, OUTPUT / verification_file.name)
+
+
+def git(*args: str) -> str:
+    return subprocess.run(
+        ["git", *args], cwd=ROOT, check=True, capture_output=True, text=True
+    ).stdout
+
+
+def app_version() -> str:
+    pubspec = (ROOT / "pubspec.yaml").read_text(encoding="utf-8")
+    return re.search(r"^version: *([^+\s]+)", pubspec, re.M)[1]
+
+
+def changelog_versions() -> list[tuple[str, str, list[tuple[str, str, str]]]]:
+    """Each version bump with the user-facing commits since the previous one,
+    newest first. Commits after the latest bump wait for the next one."""
+    if git("rev-parse", "--is-shallow-repository").strip() == "true":
+        raise RuntimeError("The changelog needs the full git history")
+
+    bumps = {}
+    sha = None
+    for line in git(
+        "log", "-G^version:", "--format=%H", "-p", "--unified=0",
+        "--", "pubspec.yaml",
+    ).splitlines():
+        if re.fullmatch(r"[0-9a-f]{40}", line):
+            sha = line
+        elif match := re.match(r"\+version: *([^+\s]+)", line):
+            bumps[sha] = match[1]
+
+    versions = []
+    changes = []
+    for line in git(
+        "log", "--reverse", "--no-merges", "--date=short",
+        "--format=%H%x09%ad%x09%s",
+    ).splitlines():
+        sha, day, subject = line.split("\t", 2)
+        if (match := CHANGE.match(subject)) and match[2] not in INTERNAL_SCOPES:
+            changes.append(match.groups())
+        version = bumps.get(sha)
+        if version and (not versions or versions[-1][0] != version):
+            versions.append((version, day, changes))
+            changes = []
+    return versions[::-1]
+
+
+def changelog_item(scope: str | None, text: str) -> str:
+    tag = SCOPE_LABELS.get(scope, scope)
+    tag = f'<span class="tag">{html.escape(tag)}</span> ' if tag else ""
+    return f"<li>{tag}{html.escape(text[0].upper() + text[1:])}</li>"
+
+
+def changelog_section(
+    version: str, day: str, changes, is_open: bool, empty_text: str
+) -> str:
+    groups = []
+    for heading in dict.fromkeys(CHANGE_HEADINGS.values()):
+        items = "\n".join(
+            changelog_item(scope, text)
+            for kind, scope, text in changes
+            if CHANGE_HEADINGS[kind] == heading
+        )
+        if items:
+            groups.append(f"<h3>{heading}</h3>\n<ul>\n{items}\n</ul>")
+    released = date.fromisoformat(day)
+    return (
+        f'<details{" open" if is_open else ""}>\n'
+        f'<summary><h2>{html.escape(version)}</h2> '
+        f'<time datetime="{day}">{released.day} {released:%B %Y}</time></summary>\n'
+        + ("\n".join(groups) or f"<p>{empty_text}</p>")
+        + "\n</details>"
+    )
+
+
+def write_changelog() -> None:
+    versions = changelog_versions()
+    sections = "\n".join(
+        changelog_section(
+            version,
+            day,
+            changes,
+            is_open=index == 0,
+            empty_text="The first release."
+            if index == len(versions) - 1
+            else "Behind-the-scenes improvements.",
+        )
+        for index, (version, day, changes) in enumerate(versions)
+    )
+    (OUTPUT / "changelog.html").write_text(
+        f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Changelog - Mekuru</title>
+  <meta name="description" content="What changed in each version of Mekuru, the Japanese EPUB and manga reader.">
+  <link rel="canonical" href="{BASE_URL}/changelog">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="icon.png" type="image/png">
+</head>
+<body>
+  <main class="container policy changelog">
+    <p class="eyebrow">Mekuru</p>
+    <h1>Changelog</h1>
+    <p class="effective">What changed in each version, newest first. Android, iPhone and iPad share version numbers; the App Store skips some of them.</p>
+
+{sections}
+
+    <a href="/" class="back">&larr; Back to Mekuru</a>
+  </main>
+</body>
+</html>
+""",
+        encoding="utf-8",
+    )
 
 
 def canonical_url(path: Path) -> str | None:
@@ -95,6 +228,7 @@ def validate_output() -> None:
         "index.html",
         "privacy.html",
         "credits.html",
+        "changelog.html",
         "404.html",
         "robots.txt",
         "sitemap.xml",
@@ -129,6 +263,10 @@ def validate_output() -> None:
             raise RuntimeError(f"Duplicate canonical URL: {canonical}")
         canonical_urls.add(canonical)
 
+    changelog = (OUTPUT / "changelog.html").read_text(encoding="utf-8")
+    if f"<h2>{app_version()}</h2>" not in changelog:
+        raise RuntimeError(f"The changelog is missing version {app_version()}")
+
     sitemap = (OUTPUT / "sitemap.xml").read_text(encoding="utf-8")
     if "404" in sitemap:
         raise RuntimeError("The sitemap must not include 404 pages")
@@ -152,6 +290,7 @@ def main() -> None:
         check=True,
     )
     copy_marketing_site()
+    write_changelog()
     write_sitemap()
     write_robots()
     validate_output()

@@ -44,7 +44,7 @@ Run codegen after editing any `@riverpod`, `@DriftDatabase`, or `environment_con
 
 ## Conventions
 
-- **Commits**: conventional prefix — `feat(scope): …`, `fix(scope): …`, `chore: …`, `refactor(scope): …`. CI / release tooling depends on it.
+- **Commits**: conventional prefix — `feat(scope): …`, `fix(scope): …`, `chore: …`, `refactor(scope): …`. CI / release tooling depends on it. `feat`/`fix`/`perf`/`l10n` subjects are published as they are: in the TestFlight notes, and on the site's `/changelog` under the version bump that follows them (`site/build_site.py`, which leaves out the `INTERNAL_SCOPES` such as `telemetry`, `ci` and `test`). Write them for users; website-only changes go in as `docs(site)`.
 - **Layout**: feature-first under `lib/features/<feature>/{data,presentation}/`. `data/` has `models|repositories|services`; `presentation/` has `providers|screens|widgets`. Shared infra in `lib/core/`.
 - **State**: Riverpod with codegen. The global `databaseProvider` is created once in `lib/main.dart` — **never instantiate `AppDatabase` elsewhere** in app code. Tests use the shared `createTestDatabase()` helper from `test/shared/test_database.dart`, which returns `AppDatabase(NativeDatabase.memory())`.
 - **Pure-logic files** (e.g. `reader_interaction_logic.dart`, `compound_word_resolver.dart`) must stay free of Flutter UI/widget imports so they remain unit-testable (`flutter/foundation.dart` for `debugPrint` is the accepted ceiling).
