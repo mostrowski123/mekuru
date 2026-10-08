@@ -759,17 +759,15 @@ function setFontSize(size) {
   if (!rendition) return;
   rendition.themes.fontSize(size + 'px');
 
-  // Force epub.js to re-layout and re-display at the current position so
-  // annotation highlights (word highlight, persistent highlights) update
-  // their visual position after the text reflows.  Same pattern as
-  // setMargins() — without this, SVG overlays stay at stale coordinates.
+  // Force epub.js to re-layout so annotation highlights (word highlight,
+  // persistent highlights) update their visual position after the text
+  // reflows. Same pattern as setMargins() — without this, SVG overlays stay
+  // at stale coordinates. resize() re-displays the current location itself
+  // (Rendition.onResized).
   if (rendition.manager) {
     rendition.manager._stageSize = undefined;
-    var cfi = rendition.location && rendition.location.start
-        ? rendition.location.start.cfi : null;
     _pendingNavChars = false; // re-layout of the same page, not a navigation
     rendition.resize();
-    if (cfi) rendition.display(cfi);
   }
 }
 
@@ -1197,18 +1195,13 @@ function setMargins(horizontal, vertical) {
   // Update the container CSS rule
   applyMargins();
 
-  // Trigger epub.js re-layout at current position
+  // Trigger epub.js re-layout at current position: resize() clears the views
+  // and re-displays the current location (Rendition.onResized).
   if (rendition && rendition.manager) {
     // Invalidate cached stage size so resize() recalculates with new padding
     rendition.manager._stageSize = undefined;
-    // Save current reading position before resize (which clears views)
-    var cfi = rendition.location && rendition.location.start
-        ? rendition.location.start.cfi : null;
-    console.log('[EPUB_BRIDGE] setMargins resizing, will restore cfi=' + cfi);
     _pendingNavChars = false; // re-layout of the same page, not a navigation
     rendition.resize();
-    // Restore position after re-layout
-    if (cfi) rendition.display(cfi);
   }
 }
 
@@ -2087,20 +2080,22 @@ function snapToNearestPage() {
   var axis = manager.settings.axis;
   var dir = manager.settings.direction;
 
-  // rendition.display(cfi) positions using layout.delta, but prev()/next()
-  // scroll by offsetHeight (vertical) or offsetWidth (horizontal).
-  // We convert from delta-space to offset-space so pages align with the
-  // boundaries used by normal page navigation.
-  var delta = manager.layout ? manager.layout.delta : 0;
+  // prev()/next() scroll by offsetHeight (vertical) or offsetWidth
+  // (horizontal). rendition.display(cfi) places vertical pages by the page
+  // height too (see moveTo() in epub.js), but horizontal ones by
+  // layout.delta, so a horizontal offset is converted from delta-space to
+  // offset-space to align with the boundaries page navigation uses.
   var step = (axis === 'vertical') ? container.offsetHeight : container.offsetWidth;
+  var unit = (axis === 'vertical') ? step
+      : (manager.layout ? manager.layout.delta : 0);
 
-  if (!delta || delta <= 0 || !step || step <= 0) return;
+  if (!unit || unit <= 0 || !step || step <= 0) return;
 
   var currentScroll, pageIndex, snappedOffset, maxScroll;
 
   if (axis === 'vertical') {
     currentScroll = container.scrollTop;
-    pageIndex = Math.round(currentScroll / delta);
+    pageIndex = Math.round(currentScroll / unit);
     snappedOffset = pageIndex * step;
     maxScroll = container.scrollHeight - step;
     if (maxScroll < 0) maxScroll = 0;
@@ -2109,7 +2104,7 @@ function snapToNearestPage() {
     container.scrollTo({ top: snappedOffset, left: 0, behavior: 'instant' });
   } else if (dir === 'rtl') {
     currentScroll = container.scrollLeft;
-    pageIndex = Math.round(Math.abs(currentScroll) / delta);
+    pageIndex = Math.round(Math.abs(currentScroll) / unit);
     snappedOffset = -(pageIndex * step);
     maxScroll = container.scrollWidth - step;
     if (maxScroll < 0) maxScroll = 0;
@@ -2117,7 +2112,7 @@ function snapToNearestPage() {
     container.scrollTo({ top: 0, left: snappedOffset, behavior: 'instant' });
   } else {
     currentScroll = container.scrollLeft;
-    pageIndex = Math.round(currentScroll / delta);
+    pageIndex = Math.round(currentScroll / unit);
     snappedOffset = pageIndex * step;
     maxScroll = container.scrollWidth - step;
     if (maxScroll < 0) maxScroll = 0;

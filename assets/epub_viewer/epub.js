@@ -4237,9 +4237,16 @@ class default_DefaultViewManager {
       if (distX + this.layout.delta > this.container.scrollWidth) {
         distX = this.container.scrollWidth - this.layout.delta;
       }
-      distY = Math.floor(offset.top / this.layout.delta) * this.layout.delta;
-      if (distY + this.layout.delta > this.container.scrollHeight) {
-        distY = this.container.scrollHeight - this.layout.delta;
+      // [MEKURU PATCH] Paginated vertical text turns pages by layout.height
+      // (see next() and prev()). delta is that height only right after a
+      // vertical section renders: every updateLayout(), and each relocation
+      // runs one, puts the column width back, so a display() of the section
+      // already on screen (a bookmark in the same chapter, or re-layouts
+      // queued during a font size drag) landed between two pages.
+      let pageHeight = this.settings.axis === "vertical" ? this.layout.height : this.layout.delta;
+      distY = Math.floor(offset.top / pageHeight) * pageHeight;
+      if (distY + pageHeight > this.container.scrollHeight) {
+        distY = this.container.scrollHeight - pageHeight;
       }
     }
     if (this.settings.direction === 'rtl') {
