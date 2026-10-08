@@ -113,12 +113,19 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   @override
   Future<void> saveLowRamMode(bool value) async => _lowRamMode = value;
 
-  bool? _lowRamHintShown;
+  bool? _lowRamHintNever;
   @override
-  Future<bool?> loadLowRamHintShown() async => _lowRamHintShown;
+  Future<bool?> loadLowRamHintNever() async => _lowRamHintNever;
   @override
-  Future<void> saveLowRamHintShown(bool value) async =>
-      _lowRamHintShown = value;
+  Future<void> saveLowRamHintNever(bool value) async =>
+      _lowRamHintNever = value;
+
+  DateTime? _lowRamHintLastShown;
+  @override
+  Future<DateTime?> loadLowRamHintLastShown() async => _lowRamHintLastShown;
+  @override
+  Future<void> saveLowRamHintLastShown(DateTime value) async =>
+      _lowRamHintLastShown = value;
 
   @override
   Future<String?> loadColorTheme() async => _colorTheme;

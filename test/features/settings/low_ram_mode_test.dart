@@ -36,8 +36,10 @@ import '../../shared/reader_settings_test_helpers.dart';
 import '../../test_app.dart';
 
 const _modeKey = 'app.low_ram_mode';
-const _hintKey = 'app.low_ram_hint_shown';
+const _neverKey = 'app.low_ram_hint_never';
+const _lastShownKey = 'app.low_ram_hint_last_shown';
 const _hintTitle = 'Turn on Low RAM mode?';
+const _dontShowAgain = 'Don\'t show this again';
 
 final _modeOn = lowRamModeProvider.overrideWithBuild((ref, notifier) => true);
 
@@ -59,24 +61,31 @@ void main() {
     resetUsageTagsForTest();
     debugDeviceLowOnMemory = null;
     GemmaTranslation.debugClose = null;
+    resetLowRamHintForTest();
   });
 
-  test('both keys round-trip and stay out of backups', () async {
+  test('the keys round-trip and stay out of backups', () async {
     final storage = SharedPreferencesAppSettingsStorage();
     expect(await storage.loadLowRamMode(), isNull);
-    expect(await storage.loadLowRamHintShown(), isNull);
+    expect(await storage.loadLowRamHintNever(), isNull);
+    expect(await storage.loadLowRamHintLastShown(), isNull);
 
+    final shown = DateTime(2026, 10, 8, 9, 30);
     await storage.saveLowRamMode(true);
-    await storage.saveLowRamHintShown(true);
+    await storage.saveLowRamHintNever(true);
+    await storage.saveLowRamHintLastShown(shown);
     expect(await storage.loadLowRamMode(), isTrue);
-    expect(await storage.loadLowRamHintShown(), isTrue);
+    expect(await storage.loadLowRamHintNever(), isTrue);
+    expect(await storage.loadLowRamHintLastShown(), shown);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool(_modeKey), isTrue);
-    expect(prefs.getBool(_hintKey), isTrue);
+    expect(prefs.getBool(_neverKey), isTrue);
+    expect(prefs.getInt(_lastShownKey), shown.millisecondsSinceEpoch);
 
     // They describe this device, not the library.
-    expect(BackupService.appKeys, isNot(contains(_modeKey)));
-    expect(BackupService.appKeys, isNot(contains(_hintKey)));
+    for (final key in [_modeKey, _neverKey, _lastShownKey]) {
+      expect(BackupService.appKeys, isNot(contains(key)));
+    }
   });
 
   test('the first state is the value main preloaded', () async {
@@ -90,6 +99,21 @@ void main() {
   });
 
   group('the hint', () {
+    final firstShown = DateTime(2026, 10, 8, 9);
+    var now = firstShown;
+    setUp(() => now = firstShown);
+
+    /// A later launch of the app, [after] the first offer.
+    void relaunch(Duration after) {
+      resetLowRamHintForTest();
+      now = firstShown.add(after);
+    }
+
+    Future<void> notNow(WidgetTester tester) async {
+      await tester.tap(find.text('Not now'));
+      await tester.pumpAndSettle();
+    }
+
     Future<void> offer(WidgetTester tester, {bool modeOn = false}) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -97,7 +121,7 @@ void main() {
           child: buildLocalizedTestApp(
             home: Consumer(
               builder: (context, ref, _) => TextButton(
-                onPressed: () => offerLowRamMode(context, ref),
+                onPressed: () => offerLowRamMode(context, ref, now: now),
                 child: const Text('offer'),
               ),
             ),
@@ -108,12 +132,13 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('is offered once, and Turn on turns the mode on', (
+    testWidgets('is offered the first time, and Turn on ends it for good', (
       tester,
     ) async {
       debugDeviceLowOnMemory = true;
       await offer(tester);
       expect(find.text(_hintTitle), findsOneWidget);
+      expect(find.text(_dontShowAgain), findsOneWidget);
 
       await tester.tap(find.text('Turn on'));
       await tester.pumpAndSettle();
@@ -123,27 +148,81 @@ void main() {
       expect(container.read(lowRamModeProvider), isTrue);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool(_modeKey), isTrue);
-      expect(prefs.getBool(_hintKey), isTrue);
+      expect(prefs.getBool(_neverKey), isTrue);
       expect(closes, 1);
       final toggled = logged['low_ram_mode.toggled']!;
       expect(toggled['enabled']!.value, true);
       expect(toggled['source']!.value, 'hint');
       expect(toggled['low_ram_mode']!.value, 'true');
 
+      // Not even once the mode is off again.
+      await container.read(lowRamModeProvider.notifier).setLowRamMode(false);
+      relaunch(const Duration(days: 30));
       await offer(tester);
       expect(find.text(_hintTitle), findsNothing);
     });
 
-    testWidgets('is not offered again after Not now', (tester) async {
+    testWidgets('is not offered again within 7 days of Not now', (
+      tester,
+    ) async {
       debugDeviceLowOnMemory = true;
       await offer(tester);
-      await tester.tap(find.text('Not now'));
-      await tester.pumpAndSettle();
-
-      await offer(tester);
-      expect(find.text(_hintTitle), findsNothing);
+      await notNow(tester);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool(_modeKey), isNull);
+      expect(prefs.getBool(_neverKey), isNull);
+      expect(prefs.getInt(_lastShownKey), firstShown.millisecondsSinceEpoch);
+
+      relaunch(const Duration(days: 7) - const Duration(minutes: 1));
+      await offer(tester);
+      expect(find.text(_hintTitle), findsNothing);
+    });
+
+    testWidgets('is offered again 7 days after it was dismissed', (
+      tester,
+    ) async {
+      debugDeviceLowOnMemory = true;
+      await offer(tester);
+      // A tap outside the dialog, like Not now.
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+      expect(find.text(_hintTitle), findsNothing);
+
+      relaunch(const Duration(days: 7));
+      await offer(tester);
+      expect(find.text(_hintTitle), findsOneWidget);
+    });
+
+    testWidgets('is never offered again after Don\'t show this again', (
+      tester,
+    ) async {
+      debugDeviceLowOnMemory = true;
+      await offer(tester);
+      await tester.tap(find.text(_dontShowAgain));
+      await tester.pump();
+      await notNow(tester);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(_neverKey), isTrue);
+      expect(prefs.getBool(_modeKey), isNull);
+
+      relaunch(const Duration(days: 30));
+      await offer(tester);
+      expect(find.text(_hintTitle), findsNothing);
+    });
+
+    testWidgets('is offered once per process', (tester) async {
+      debugDeviceLowOnMemory = true;
+      await offer(tester);
+      await notNow(tester);
+
+      // A week on, with the library built again in the same process.
+      now = firstShown.add(const Duration(days: 8));
+      await offer(tester);
+      expect(find.text(_hintTitle), findsNothing);
+
+      relaunch(const Duration(days: 8));
+      await offer(tester);
+      expect(find.text(_hintTitle), findsOneWidget);
     });
 
     testWidgets('is never offered when the mode is on', (tester) async {
@@ -163,7 +242,7 @@ void main() {
       await offer(tester);
       expect(find.text(_hintTitle), findsNothing);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool(_hintKey), isNull);
+      expect(prefs.getInt(_lastShownKey), isNull);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
@@ -181,13 +260,16 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('the switch turns the mode on', (tester) async {
+    testWidgets('the switch turns the mode on, and ends the offer', (
+      tester,
+    ) async {
       await pumpSettings(tester);
       await tester.tap(find.text('Low RAM mode'));
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool(_modeKey), isTrue);
+      expect(prefs.getBool(_neverKey), isTrue);
       expect(logged['low_ram_mode.toggled']!['source']!.value, 'settings');
       expect(
         tester
@@ -197,6 +279,12 @@ void main() {
             .value,
         isTrue,
       );
+
+      // Turning it off again doesn't bring the offer back.
+      await tester.tap(find.text('Low RAM mode'));
+      await tester.pumpAndSettle();
+      expect(prefs.getBool(_modeKey), isFalse);
+      expect(prefs.getBool(_neverKey), isTrue);
     });
 
     testWidgets('the switch is hidden on iOS', (tester) async {

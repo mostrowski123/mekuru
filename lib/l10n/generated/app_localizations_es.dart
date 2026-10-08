@@ -4472,6 +4472,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Este dispositivo tiene 4 GB de RAM o menos. El modo de poca RAM hace que Mekuru use menos memoria, así que es menos probable que Android lo cierre cuando cambies de app. Desactiva la traducción de frases, el OCR en el dispositivo, el diccionario de furigana mejorado y las animaciones. Puedes cambiarlo en Configuración › Modo de poca RAM.';
 
   @override
+  String get lowRamModeHintDontShowAgain => 'No volver a mostrar';
+
+  @override
   String get lowRamModeTurnOn => 'Activar';
 
   @override

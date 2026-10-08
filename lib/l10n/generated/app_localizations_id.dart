@@ -4440,6 +4440,9 @@ class AppLocalizationsId extends AppLocalizations {
       'Perangkat ini memiliki RAM 4 GB atau kurang. Mode RAM rendah membuat Mekuru memakai lebih sedikit memori, sehingga Android lebih jarang menutupnya saat Anda berpindah aplikasi. Mode ini menonaktifkan terjemahan kalimat, OCR di perangkat, Kamus Furigana yang Ditingkatkan, dan animasi. Anda dapat mengubahnya di Pengaturan › Mode RAM rendah.';
 
   @override
+  String get lowRamModeHintDontShowAgain => 'Jangan tampilkan lagi';
+
+  @override
   String get lowRamModeTurnOn => 'Aktifkan';
 
   @override

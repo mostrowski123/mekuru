@@ -4210,6 +4210,9 @@ class AppLocalizationsZh extends AppLocalizations {
       '此设备的内存不超过 4 GB。低内存模式会让 Mekuru 占用更少内存，这样你切换应用时，Android 不太会将它关闭。此模式会关闭句子翻译、设备端 OCR、增强振假名词典和动画。你可以在“设置 › 低内存模式”中更改。';
 
   @override
+  String get lowRamModeHintDontShowAgain => '不再显示';
+
+  @override
   String get lowRamModeTurnOn => '开启';
 
   @override
@@ -8430,6 +8433,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get lowRamModeHintBody =>
       '此设备的内存不超过 4 GB。低内存模式会让 Mekuru 占用更少内存，这样你切换应用时，Android 不太会将它关闭。此模式会关闭句子翻译、设备端 OCR、增强振假名词典和动画。你可以在“设置 › 低内存模式”中更改。';
+
+  @override
+  String get lowRamModeHintDontShowAgain => '不再显示';
 
   @override
   String get lowRamModeTurnOn => '开启';

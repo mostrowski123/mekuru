@@ -3181,6 +3181,7 @@
   "settingsLowRamModeSubtitle": "Para lectores de tinta electrónica y dispositivos con 4 GB de RAM o menos",
   "lowRamModeHintTitle": "¿Activar el modo de poca RAM?",
   "lowRamModeHintBody": "Este dispositivo tiene 4 GB de RAM o menos. El modo de poca RAM hace que Mekuru use menos memoria, así que es menos probable que Android lo cierre cuando cambies de app. Desactiva la traducción de frases, el OCR en el dispositivo, el diccionario de furigana mejorado y las animaciones. Puedes cambiarlo en Configuración › Modo de poca RAM.",
+  "lowRamModeHintDontShowAgain": "No volver a mostrar",
   "lowRamModeTurnOn": "Activar",
   "lowRamModeNotNow": "Ahora no",
   "lowRamModeCloseBody": "El diccionario de furigana mejorado ocupa unos 250 MB de memoria hasta que Mekuru se cierra. Cierra Mekuru ahora para liberarla y vuelve a abrirlo.",

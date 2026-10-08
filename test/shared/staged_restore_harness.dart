@@ -37,7 +37,8 @@ class StagedRestoreHarness {
     'review_prompt.request_count': 2,
     'backup.last_auto_at': '2026-09-01T00:00:00Z',
     'app.low_ram_mode': true,
-    'app.low_ram_hint_shown': true,
+    'app.low_ram_hint_never': true,
+    'app.low_ram_hint_last_shown': 1759914000000,
   };
 
   Directory get staging =>

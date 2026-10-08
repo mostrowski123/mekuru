@@ -94,7 +94,8 @@ class StagedFullRestore {
   static const _keepPrefKeys = {
     ocrPendingFinalizationsKey,
     SharedPreferencesAppSettingsStorage.lowRamModeKey,
-    SharedPreferencesAppSettingsStorage.lowRamHintShownKey,
+    SharedPreferencesAppSettingsStorage.lowRamHintNeverKey,
+    SharedPreferencesAppSettingsStorage.lowRamHintLastShownKey,
   };
   static const _keepPrefPrefixes = [
     SharedPreferencesReviewPromptStorage.keyPrefix,

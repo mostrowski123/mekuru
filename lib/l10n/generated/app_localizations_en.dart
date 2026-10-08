@@ -4418,6 +4418,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'This device has 4 GB of RAM or less. Low RAM mode makes Mekuru use less memory, so Android is less likely to close it when you switch apps. It turns off sentence translation, on-device OCR, the Enhanced Furigana Dictionary and animations. You can change this in Settings › Low RAM mode.';
 
   @override
+  String get lowRamModeHintDontShowAgain => 'Don\'t show this again';
+
+  @override
   String get lowRamModeTurnOn => 'Turn on';
 
   @override

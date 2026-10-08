@@ -5690,11 +5690,15 @@
   },
   "lowRamModeHintTitle": "Turn on Low RAM mode?",
   "@lowRamModeHintTitle": {
-    "description": "Title of the dialog offered once on an Android device with 4 GB of RAM or less."
+    "description": "Title of the dialog that offers Low RAM mode on an Android device with 4 GB of RAM or less."
   },
   "lowRamModeHintBody": "This device has 4 GB of RAM or less. Low RAM mode makes Mekuru use less memory, so Android is less likely to close it when you switch apps. It turns off sentence translation, on-device OCR, the Enhanced Furigana Dictionary and animations. You can change this in Settings › Low RAM mode.",
   "@lowRamModeHintBody": {
     "description": "Body of the Low RAM mode offer. \"Settings › Low RAM mode\" names the screen and the switch; keep them matching settingsTitle and settingsLowRamModeTitle. \"Enhanced Furigana Dictionary\" matches downloadsEnhancedFuriganaTitle."
+  },
+  "lowRamModeHintDontShowAgain": "Don't show this again",
+  "@lowRamModeHintDontShowAgain": {
+    "description": "Checkbox in the Low RAM mode offer. Ticked, the offer never comes back; otherwise it can come back a week after it was last shown."
   },
   "lowRamModeTurnOn": "Turn on",
   "@lowRamModeTurnOn": {

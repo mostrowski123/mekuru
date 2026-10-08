@@ -159,8 +159,10 @@ abstract class AppSettingsStorage {
   Future<void> saveAutoFocusSearch(bool value);
   Future<bool?> loadLowRamMode();
   Future<void> saveLowRamMode(bool value);
-  Future<bool?> loadLowRamHintShown();
-  Future<void> saveLowRamHintShown(bool value);
+  Future<bool?> loadLowRamHintNever();
+  Future<void> saveLowRamHintNever(bool value);
+  Future<DateTime?> loadLowRamHintLastShown();
+  Future<void> saveLowRamHintLastShown(DateTime value);
   Future<String?> loadColorTheme();
   Future<void> saveColorTheme(String theme);
   Future<int?> loadAutoCropWhiteThreshold();
@@ -225,10 +227,11 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _translationModelKey = 'app.translation_model';
   static const _autoFocusSearchKey = 'app.auto_focus_search';
 
-  /// Low RAM mode and its one-time offer belong to the device, not to the
-  /// library: left out of [allKeys], and kept by a full restore.
+  /// Low RAM mode and its offer belong to the device, not to the library:
+  /// left out of [allKeys], and kept by a full restore.
   static const lowRamModeKey = 'app.low_ram_mode';
-  static const lowRamHintShownKey = 'app.low_ram_hint_shown';
+  static const lowRamHintNeverKey = 'app.low_ram_hint_never';
+  static const lowRamHintLastShownKey = 'app.low_ram_hint_last_shown';
 
   static const _colorThemeKey = 'app.color_theme';
   static const _autoCropWhiteThresholdKey = 'app.auto_crop_white_threshold';
@@ -419,15 +422,28 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   }
 
   @override
-  Future<bool?> loadLowRamHintShown() async {
+  Future<bool?> loadLowRamHintNever() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(lowRamHintShownKey);
+    return prefs.getBool(lowRamHintNeverKey);
   }
 
   @override
-  Future<void> saveLowRamHintShown(bool value) async {
+  Future<void> saveLowRamHintNever(bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(lowRamHintShownKey, value);
+    await prefs.setBool(lowRamHintNeverKey, value);
+  }
+
+  @override
+  Future<DateTime?> loadLowRamHintLastShown() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ms = prefs.getInt(lowRamHintLastShownKey);
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  @override
+  Future<void> saveLowRamHintLastShown(DateTime value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(lowRamHintLastShownKey, value.millisecondsSinceEpoch);
   }
 
   @override

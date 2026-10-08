@@ -53,7 +53,8 @@ void main() {
       expect(h.prefs.getInt('review_prompt.request_count'), 2);
       // Low RAM mode belongs to the device, not to the backup.
       expect(h.prefs.getBool('app.low_ram_mode'), isTrue);
-      expect(h.prefs.getBool('app.low_ram_hint_shown'), isTrue);
+      expect(h.prefs.getBool('app.low_ram_hint_never'), isTrue);
+      expect(h.prefs.getInt('app.low_ram_hint_last_shown'), 1759914000000);
       expect(h.prefs.getString('app.color_theme'), 'mekuruRed');
     });
 

@@ -23,9 +23,12 @@ Future<void> setLowRamMode(
 }) async {
   // Read before any await: the caller can unmount.
   final exitApp = ref.read(appExitProvider);
+  final storage = ref.read(appSettingsStorageProvider);
   await ref.read(lowRamModeProvider.notifier).setLowRamMode(on);
   logUsage('low_ram_mode.toggled', attrs: {'enabled': on, 'source': source});
   if (!on) return;
+  // The user knows the mode now: never offer it again.
+  await storage.saveLowRamHintNever(true);
   unawaited(MozillaTranslation.instance.stop());
   unawaited(GemmaTranslation.instance.close());
 
@@ -55,29 +58,69 @@ Future<void> setLowRamMode(
   if (close == true) await exitApp();
 }
 
-/// Offers Low RAM mode once, on an Android device with 4 GB of RAM or less
+/// Whether this process has shown [offerLowRamMode]'s dialog.
+bool _lowRamHintShown = false;
+
+@visibleForTesting
+void resetLowRamHintForTest() => _lowRamHintShown = false;
+
+/// Offers Low RAM mode on an Android device with 4 GB of RAM or less
 /// (Android reports a 4 GB phone as about 3.6-3.8 GB), while the mode is off
-/// and nothing covers [context]'s route.
-Future<void> offerLowRamMode(BuildContext context, WidgetRef ref) async {
+/// and nothing covers [context]'s route. At most once per process, and only
+/// 7 days or more after it was last shown; never again once the user ticks
+/// "Don't show this again" or turns the mode on. [now] stands in for the
+/// clock in tests.
+Future<void> offerLowRamMode(
+  BuildContext context,
+  WidgetRef ref, {
+  DateTime? now,
+}) async {
   if (defaultTargetPlatform != TargetPlatform.android ||
       ref.read(lowRamModeProvider)) {
     return;
   }
+  now ??= DateTime.now();
   final storage = ref.read(appSettingsStorageProvider);
+  final lastShown = await storage.loadLowRamHintLastShown();
   if (!await deviceLowOnMemory(minTotalMb: 4608, minFreeMb: 0) ||
-      await storage.loadLowRamHintShown() == true ||
+      await storage.loadLowRamHintNever() == true ||
+      (lastShown != null &&
+          now.difference(lastShown) < const Duration(days: 7)) ||
+      // Checked after the awaits, so two calls can't both show it.
+      _lowRamHintShown ||
       !context.mounted ||
       !(ModalRoute.of(context)?.isCurrent ?? true)) {
     return;
   }
-  await storage.saveLowRamHintShown(true);
+  _lowRamHintShown = true;
+  await storage.saveLowRamHintLastShown(now);
   if (!context.mounted) return;
   final l10n = context.l10n;
+  var dontShowAgain = false;
   final turnOn = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(l10n.lowRamModeHintTitle),
-      content: Text(l10n.lowRamModeHintBody),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.lowRamModeHintBody),
+            const SizedBox(height: 12),
+            StatefulBuilder(
+              builder: (context, setState) => CheckboxListTile(
+                value: dontShowAgain,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(l10n.lowRamModeHintDontShowAgain),
+                onChanged: (value) =>
+                    setState(() => dontShowAgain = value ?? false),
+              ),
+            ),
+          ],
+        ),
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, false),
@@ -90,6 +133,7 @@ Future<void> offerLowRamMode(BuildContext context, WidgetRef ref) async {
       ],
     ),
   );
+  if (dontShowAgain) await storage.saveLowRamHintNever(true);
   if (turnOn == true && context.mounted) {
     await setLowRamMode(context, ref, on: true, source: 'hint');
   }

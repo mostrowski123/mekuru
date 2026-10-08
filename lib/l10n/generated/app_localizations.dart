@@ -7140,7 +7140,7 @@ abstract class AppLocalizations {
   /// **'For e-ink readers and devices with 4 GB of RAM or less'**
   String get settingsLowRamModeSubtitle;
 
-  /// Title of the dialog offered once on an Android device with 4 GB of RAM or less.
+  /// Title of the dialog that offers Low RAM mode on an Android device with 4 GB of RAM or less.
   ///
   /// In en, this message translates to:
   /// **'Turn on Low RAM mode?'**
@@ -7151,6 +7151,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This device has 4 GB of RAM or less. Low RAM mode makes Mekuru use less memory, so Android is less likely to close it when you switch apps. It turns off sentence translation, on-device OCR, the Enhanced Furigana Dictionary and animations. You can change this in Settings › Low RAM mode.'**
   String get lowRamModeHintBody;
+
+  /// Checkbox in the Low RAM mode offer. Ticked, the offer never comes back; otherwise it can come back a week after it was last shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show this again'**
+  String get lowRamModeHintDontShowAgain;
 
   /// Button in the Low RAM mode offer that turns the mode on.
   ///
