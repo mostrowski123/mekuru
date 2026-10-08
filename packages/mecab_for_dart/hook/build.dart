@@ -32,6 +32,10 @@ void main(List<String> args) async {
       return; 
     }
 
+    // Mekuru: no Windows sources were vendored. The only Windows build is
+    // `flutter test` on a Windows host, and unit tests never load MeCab.
+    if (input.config.code.targetOS == OS.windows) return;
+
     String platform = input.config.code.targetOS == OS.windows ? "windows" : "unix";
 
     final builder = CBuilder.library(
