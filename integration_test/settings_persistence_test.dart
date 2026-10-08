@@ -132,8 +132,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Drill into the Reading subpage from the main settings screen.
-    await tester.tap(find.text(l10n.settingsReadingSubtitle));
+    // Drill into the Reading subpage from the main settings screen. On
+    // CI's 320x640 screen its tile is below the fold.
+    final readingTile = find.text(l10n.settingsReadingSubtitle);
+    await tester.scrollUntilVisible(
+      readingTile,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    await tester.tap(readingTile);
     await tester.pumpAndSettle();
     expect(find.text(l10n.settingsReadingSectionShared), findsOneWidget);
 
