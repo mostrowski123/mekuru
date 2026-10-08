@@ -364,6 +364,9 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
               controller: _controller,
               focusNode: _searchFocusNode,
               autofocus: false,
+              // Touch taps outside a field don't unfocus it on mobile by
+              // default, and iOS's search keyboard has no dismiss key.
+              onTapOutside: (_) => _searchFocusNode.unfocus(),
               decoration: InputDecoration(
                 hintText: context.l10n.dictionarySearchHint,
                 prefixIcon: const Icon(Icons.search),

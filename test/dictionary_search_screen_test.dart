@@ -162,6 +162,25 @@ void main() {
     expect(built, lessThan(40));
   });
 
+  testWidgets('tapping outside the search field dismisses the keyboard', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final service = _FakeDictionaryQueryService(db, resultsByTerm: const {});
+
+    await _pumpSearchScreen(tester, db, service);
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    final focusNode = tester.widget<TextField>(find.byType(TextField)).focusNode!;
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tapAt(const Offset(400, 500));
+    await tester.pump();
+    expect(focusNode.hasFocus, isFalse);
+  }, variant: TargetPlatformVariant.mobile());
+
   testWidgets('shows guidance when all imported dictionaries are disabled', (
     tester,
   ) async {
