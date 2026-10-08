@@ -1,9 +1,11 @@
 package moe.matthew.mekuru
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
@@ -31,6 +33,7 @@ class MainActivity : FlutterActivity() {
         private const val ANKI_CHANNEL_NAME = "mekuru/ankidroid_native"
         private const val SYSTEM_UI_CHANNEL_NAME = "mekuru/android_system_ui"
         private const val TEST_LAB_CHANNEL_NAME = "mekuru/test_lab"
+        private const val PROCESS_EXIT_CHANNEL_NAME = "mekuru/process_exit"
         private const val IMAGE_CONVERT_CHANNEL_NAME = "mekuru/image_convert"
         private const val REQUEST_OPEN_DOCUMENT_TREE = 7312
         private const val REQUEST_OPEN_DOCUMENT = 7313
@@ -54,6 +57,12 @@ class MainActivity : FlutterActivity() {
          * at once.
          */
         private val avifDecoder = Executors.newFixedThreadPool(2)
+
+        /**
+         * The previous process's exit is told once per process: a new
+         * activity (and engine) in the same process asks again.
+         */
+        private var processExitReported = false
     }
 
     private var pendingTreePickerResult: MethodChannel.Result? = null
@@ -177,6 +186,27 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TEST_LAB_CHANNEL_NAME)
             .setMethodCallHandler { _, result ->
                 result.success(Settings.System.getString(contentResolver, "firebase.test.lab") == "true")
+            }
+
+        // Why the previous process ended (a low-memory kill in the
+        // background, a crash, the user), as {reason, importance} from
+        // ApplicationExitInfo. Null before Android 11 and after the first
+        // answer.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PROCESS_EXIT_CHANNEL_NAME)
+            .setMethodCallHandler { _, result ->
+                if (processExitReported || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    result.success(null)
+                    return@setMethodCallHandler
+                }
+                processExitReported = true
+                val exit = try {
+                    getSystemService(ActivityManager::class.java)
+                        ?.getHistoricalProcessExitReasons(packageName, 0, 1)
+                        ?.firstOrNull()
+                } catch (e: Exception) {
+                    null
+                }
+                result.success(exit?.let { mapOf("reason" to it.reason, "importance" to it.importance) })
             }
     }
 

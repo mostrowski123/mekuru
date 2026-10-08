@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'core/platform/device_memory.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/background_work.dart';
 import 'core/services/usage_telemetry.dart';
@@ -159,6 +160,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
           isPro: PreloadedProEntitlement.isInitiallyUnlocked,
         ),
       );
+      unawaited(reportMemoryAtLaunch());
     });
   }
 
