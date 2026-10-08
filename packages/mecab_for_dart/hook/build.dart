@@ -6,6 +6,10 @@
 // Only the files the Android and iOS builds need were copied (no src/windows,
 // web build or example). scripts/verify_native_libs.py and build-ios-pr.yml
 // check that the built library imports munmap.
+// Also changed: on Android the bundled libc++_shared.so is a copy in this
+// hook's output directory, not the NDK's own file (see _bundleAndroidStdLib).
+import 'dart:io';
+
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
@@ -123,11 +127,18 @@ Future<void> _bundleAndroidStdLib(BuildInput input, BuildOutputBuilder output) a
       final androidArch = RunCBuilder.androidNdkClangTargetFlags[targetArchitecture];
       final libPath = '$sysroot/usr/lib/$androidArch/libc++_shared.so';
 
+      // Bundle a copy: Flutter records asset files as build outputs and
+      // deletes the ones a later build no longer produces, so pointing at
+      // the NDK's file let an arm64-only build after an all-ABI build delete
+      // the NDK's other libc++_shared.so files.
+      final copy = input.outputDirectory.resolve('libc++_shared.so');
+      await File(libPath).copy(copy.toFilePath());
+
       output.assets.code.add(
         CodeAsset(
           package: input.packageName,
           name: 'libc++_shared.so',
-          file: Uri.file(libPath),
+          file: copy,
           linkMode: DynamicLoadingBundled(),
         ),
       );
