@@ -78,12 +78,14 @@ Future<bool> _detectSyntheticClient() async {
       hardware: info.hardware,
       product: info.product,
       model: info.model,
+      manufacturer: info.manufacturer,
+      supportedAbis: info.supportedAbis,
     )) {
       return true;
     }
-    // Play's pre-launch report devices pass as retail phones (a
-    // "OnePlus8Pro"); only Test Lab's own flag gives them away. Background
-    // isolates have no MainActivity channel: that throws, and fails open.
+    // Test Lab devices can pass as retail phones; its own flag gives them
+    // away. Background isolates have no MainActivity channel: that throws,
+    // and fails open.
     return await const MethodChannel(
           'mekuru/test_lab',
         ).invokeMethod<bool>('isFirebaseTestLab') ??

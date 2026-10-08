@@ -9,7 +9,8 @@
 ///
 /// - `test-keys` / `userdebug` builds. LineageOS and other self-signed ROMs
 ///   ship these, and those users are exactly the GitHub sideload audience.
-/// - x86 / x86_64 ABIs. ChromeOS runs Android apps on real x86 hardware.
+/// - x86 / x86_64 ABIs on their own. ChromeOS runs Android apps on real x86
+///   hardware. Only a phone maker that never shipped x86 gives them away.
 ///
 /// Both would trade a little bot noise for real users' data, which is the
 /// wrong trade. The signals below are emulator kernels and AOSP build
@@ -49,8 +50,18 @@ bool isSyntheticAndroidClient({
   required String hardware,
   required String product,
   required String model,
+  required String manufacturer,
+  required List<String> supportedAbis,
 }) {
   if (!isPhysicalDevice) return true;
+
+  // OnePlus never made an x86 device. Play's pre-launch report runs an x86_64
+  // VM that passes as a retail "OnePlus8Pro" and does not set Test Lab's
+  // flag (MEKURU-29).
+  if (manufacturer.trim().toLowerCase() == 'oneplus' &&
+      supportedAbis.any((abi) => abi.startsWith('x86'))) {
+    return true;
+  }
 
   if (_syntheticHardware.contains(hardware.trim().toLowerCase())) return true;
 

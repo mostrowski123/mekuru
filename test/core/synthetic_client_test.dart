@@ -9,12 +9,16 @@ bool check({
   String hardware = 'zuma',
   String product = 'shiba',
   String model = 'Pixel 8',
+  String manufacturer = 'Google',
+  List<String> supportedAbis = const ['arm64-v8a'],
 }) => isSyntheticAndroidClient(
   isPhysicalDevice: isPhysicalDevice,
   fingerprint: fingerprint,
   hardware: hardware,
   product: product,
   model: model,
+  manufacturer: manufacturer,
+  supportedAbis: supportedAbis,
 );
 
 void main() {
@@ -58,6 +62,17 @@ void main() {
       expect(check(model: 'Android SDK built for arm64'), isTrue);
     });
 
+    test('Play pre-launch VM dressed as a OnePlus 8 Pro', () {
+      expect(
+        check(
+          model: 'OnePlus8Pro',
+          manufacturer: 'OnePlus',
+          supportedAbis: ['x86_64', 'arm64-v8a', 'x86', 'armeabi-v7a'],
+        ),
+        isTrue,
+      );
+    });
+
     test('platform reports a non-physical device', () {
       expect(check(isPhysicalDevice: false), isTrue);
     });
@@ -81,6 +96,17 @@ void main() {
           hardware: 'qcom',
           product: 'e1qksx',
           model: 'SM-S921N',
+        ),
+        isFalse,
+      );
+    });
+
+    test('retail OnePlus', () {
+      expect(
+        check(
+          model: 'IN2023',
+          manufacturer: 'OnePlus',
+          supportedAbis: ['arm64-v8a', 'armeabi-v7a', 'armeabi'],
         ),
         isFalse,
       );
@@ -111,6 +137,8 @@ void main() {
           hardware: 'hatch_cheets',
           product: 'hatch_cheets',
           model: 'kohaku',
+          manufacturer: 'HP',
+          supportedAbis: ['x86_64', 'x86', 'arm64-v8a', 'armeabi-v7a'],
         ),
         isFalse,
       );
