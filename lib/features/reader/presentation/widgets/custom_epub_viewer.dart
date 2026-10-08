@@ -212,6 +212,11 @@ class CustomEpubViewer extends StatefulWidget {
   /// `ArrowLeft` (see `forwardPageTurnKey` in reader_bridge.js).
   final void Function(String key, bool shift)? onPageKey;
 
+  /// Test-only: viewers ignore the page's `readyToLoad` call, standing in for
+  /// it being lost (seen after an Activity pause/resume).
+  @visibleForTesting
+  static bool debugDropReadyToLoad = false;
+
   @override
   State<CustomEpubViewer> createState() => _CustomEpubViewerState();
 }
@@ -320,6 +325,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     controller.addJavaScriptHandler(
       handlerName: 'readyToLoad',
       callback: (_) {
+        if (CustomEpubViewer.debugDropReadyToLoad) return null;
         if (!_isActiveController(controller)) return null;
         unawaited(_loadBook());
         return null;
@@ -630,8 +636,11 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     );
   }
 
+  // Compares platform controllers: the plugin hands onLoadStop a different
+  // wrapper than onWebViewCreated, around the same platform controller.
   bool _isActiveController(InAppWebViewController controller) {
-    return mounted && identical(_webViewController, controller);
+    return mounted &&
+        identical(_webViewController?.platform, controller.platform);
   }
 
   Future<bool> _runJavascript(String source) async {
