@@ -118,24 +118,26 @@ function clearUserFont() {
   _userFontFamily = null;
 }
 
-function _reportUserFontFailed() {
-  callDart('userFontFailed');
+// Names the family, so Dart can ignore a late failure of a replaced font.
+function _reportUserFontFailed(family) {
+  callDart('userFontFailed', family);
 }
 
 // Built with the chapter's own FontFace: a FontFace belongs to the window
 // that made it, and each chapter is its own iframe.
 function _registerUserFont(win, doc) {
   if (!_userFontBuf || !win || !win.FontFace || !doc || !doc.fonts) return;
+  var family = _userFontFamily;
   try {
-    var face = new win.FontFace(_userFontFamily, _userFontBuf);
+    var face = new win.FontFace(family, _userFontBuf);
     doc.fonts.add(face);
     face.loaded.then(null, function (e) {
       console.log('[EPUB_BRIDGE] user font failed to load: ' + e);
-      _reportUserFontFailed();
+      _reportUserFontFailed(family);
     });
   } catch (e) {
     console.log('[EPUB_BRIDGE] user font rejected: ' + e);
-    _reportUserFontFailed();
+    _reportUserFontFailed(family);
   }
 }
 

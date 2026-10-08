@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, compute, defaultTargetPlatform, setEquals;
 import 'package:flutter/material.dart';
@@ -99,6 +98,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // The added font sent to the viewer and the CSS family it was registered
   // under; null for the built-in fonts or when the file is missing.
   UserFontSend? _userFont;
+  // The settings' font choice (`_fontChoice`) the viewer was last given.
+  String? _userFontChoice;
   int _userFontGeneration = 0;
   int _fontChangeToken = 0;
   // The bridge has one font buffer, so font changes run one at a time.
@@ -419,7 +420,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       final fontChanged =
           previous.fontFamily != next.fontFamily ||
           previous.customFontFile != next.customFontFile;
-      if (fontChanged && _isEpubLoaded) _queueFontChange();
+      // While the viewer loads or rebuilds, onLoaded picks the change up.
+      if (fontChanged && _isEpubLoaded && !_isRebuildingForDirection) {
+        _queueFontChange();
+      }
     });
 
     final readerTheme = _readerTheme(settings);
@@ -492,7 +496,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             furiganaJlptLevel: settings.furiganaJlptLevel,
                             furiganaKnownKanji: wanikaniKnownKanji,
                             userFont: _userFont,
-                            onUserFontFailed: _showUserFontFailed,
+                            onUserFontFailed: _onUserFontFailed,
                             onLoaded: () {
                               if (!mounted) return;
                               _loadWatchdog?.cancel();
@@ -500,6 +504,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                 _isLoading = false;
                                 _isEpubLoaded = true;
                               });
+                              // A font chosen while this viewer loaded was
+                              // not sent to it.
+                              if (_userFontChoice !=
+                                  _fontChoice(
+                                    ref.read(readerSettingsProvider),
+                                  )) {
+                                _queueFontChange();
+                              }
                               _restoreHighlights();
                               // Sync disableLinks setting to the JS bridge
                               final s = ref.read(readerSettingsProvider);
@@ -755,12 +767,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
       if (!mounted) return;
 
-      final userFont = await _resolveUserFont(ref.read(readerSettingsProvider));
+      final fontChoice = _fontChoice(ref.read(readerSettingsProvider));
+      final userFont = await ref
+          .read(userFontStoreProvider)
+          .fileFor(fontChoice);
       if (!mounted) return;
 
       // The viewer streams the book from disk itself; only the path is kept.
       setState(() {
         _epubPath = epubPath;
+        _userFontChoice = fontChoice;
         _userFont = userFont == null
             ? null
             : (file: userFont, family: _nextUserFontFamily());
@@ -789,11 +805,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
-  Future<File?> _resolveUserFont(ReaderSettings s) => ref
-      .read(userFontStoreProvider)
-      .fileFor(
-        s.fontFamily == ReaderFontFamily.custom ? s.customFontFile : null,
-      );
+  /// The added font [s] asks for, by file name; null for a built-in font.
+  String? _fontChoice(ReaderSettings s) =>
+      s.fontFamily == ReaderFontFamily.custom ? s.customFontFile : null;
 
   // A new name per transfer, so two added fonts never collide in a chapter.
   String _nextUserFontFamily() => 'mekuru-user-font-${++_userFontGeneration}';
@@ -825,7 +839,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// Sends the chosen added font (if any), then re-themes and re-lays out
   /// at the current position.
   Future<void> _applyFontChange() async {
-    final file = await _resolveUserFont(ref.read(readerSettingsProvider));
+    final choice = _fontChoice(ref.read(readerSettingsProvider));
+    final file = await ref.read(userFontStoreProvider).fileFor(choice);
     UserFontSend? font;
     if (file != null) {
       font = (file: file, family: _nextUserFontFamily());
@@ -834,6 +849,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (!mounted) return;
     if (font == null) _epubController.clearUserFont();
     _userFont = font;
+    _userFontChoice = choice;
     final settings = ref.read(readerSettingsProvider);
     _pushTheme(settings);
     // Same size, but it re-lays out the reflowed text at the current
@@ -841,12 +857,34 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _epubController.setFontSize(settings.fontSize);
   }
 
-  void _showUserFontFailed() {
-    if (!mounted || _userFontFailureShown) return;
+  /// The bridge could not read the added font [family]: show the book's own
+  /// fonts, as the message says, and say so once per reader session.
+  void _onUserFontFailed(String? family) {
+    if (!mounted) return;
+    final font = _userFont;
+    // A late failure of a font already replaced changes nothing.
+    if (font == null || (family != null && family != font.family)) return;
+    _userFont = null;
+    _epubController.clearUserFont();
+    final settings = ref.read(readerSettingsProvider);
+    _pushTheme(settings);
+    _epubController.setFontSize(settings.fontSize);
+    if (_userFontFailureShown) return;
     _userFontFailureShown = true;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.readerUserFontFailed)));
+    // A dialog, not a snack bar: the quick-settings sheet the font was
+    // chosen from would cover one.
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        content: Text(dialogContext.l10n.readerUserFontFailed),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(dialogContext.l10n.commonOk),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _openAllReaderSettings() async {
@@ -884,6 +922,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       'vertical=${settings.verticalText}',
     );
     try {
+      // A font still being sent must finish first: once the new viewer
+      // attaches, the rest of the transfer would go to it. The chain never
+      // fails (_queueFontChange catches).
+      await _fontChange;
       String? currentCfi;
       try {
         final location = await _epubController.getCurrentLocation();

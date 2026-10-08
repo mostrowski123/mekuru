@@ -6,7 +6,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -121,6 +121,17 @@ void main() {
     final probe = await evalJson(controller, _probe);
     expect(probe['family'], isNot(contains('mekuru-user-font-')));
 
+    // A file with a font's header but no font behind it: the reader says so
+    // where it can be seen and shows the book's own fonts, as it says.
+    final broken = await add('Broken.ttf', [0, 1, 0, 0, ...List.filled(64, 0)]);
+    settings.setCustomFont(broken);
+    await tester.pump(settle);
+    expect(find.byType(AlertDialog).hitTestable(), findsOneWidget);
+    final fallback = await evalJson(controller, _probe);
+    expect(fallback['family'], isNot(contains('mekuru-user-font-')));
+    await tester.tap(find.text('OK'));
+    await tester.pump(const Duration(seconds: 1));
+
     // A viewer rebuild makes a new WebView, which must be sent the font
     // again before its book loads. A second WebView in one test process
     // renders blank (see the integration-test WebView notes), so this reads
@@ -136,19 +147,25 @@ void main() {
       oldViewer,
       timeout: const Duration(seconds: 20),
     );
+    // Chosen while the new viewer loads: it must still end up there. (One
+    // rebuild per test process: the blank second WebView never reports a
+    // location, so a further rebuild would wait for it forever.)
+    settings.setCustomFont(wide);
     await pumpUntilGone(
       tester,
       find.byKey(const Key('reader-loading-overlay')),
       timeout: const Duration(seconds: 20),
     );
-    final sent = await evalJson(
-      controller,
-      '(function () { return JSON.stringify({family: _userFontFamily,'
-      ' bytes: _userFontBuf ? _userFontBuf.length : 0,'
-      ' loaded: typeof rendition !== "undefined"}); })()',
-    );
+    await tester.pump(settle);
+    final sent = await evalJson(controller, _sentFont);
     expect(sent['family'], startsWith('mekuru-user-font-'));
-    expect(sent['bytes'], testFontWider.length);
+    expect(sent['bytes'], testFontWide.length);
     expect(sent['loaded'], isTrue);
   });
 }
+
+// What the bridge holds of the added font, in whichever WebView is current.
+const _sentFont =
+    '(function () { return JSON.stringify({family: _userFontFamily,'
+    ' bytes: _userFontBuf ? _userFontBuf.length : 0,'
+    ' loaded: typeof rendition !== "undefined"}); })()';

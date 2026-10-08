@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' show FileSystemException;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -135,12 +135,11 @@ class _ReaderFontPickerSheet extends ConsumerWidget {
     // Read before the picker opens: on Android it answers only once it has
     // copied the file, and the sheet is closed by then.
     final container = ProviderScope.containerOf(context, listen: false);
-    final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
     final path = await container.read(userFontFilePickerProvider)();
     if (path == null) return;
-    if (context.mounted) Navigator.of(context).pop();
 
+    String? error;
     try {
       final font = await container.read(userFontStoreProvider).import(path);
       container.invalidate(userFontsProvider);
@@ -149,20 +148,33 @@ class _ReaderFontPickerSheet extends ConsumerWidget {
           .setCustomFont(font.fileName);
       onSettingChanged?.call('font_family', ReaderFontFamily.custom.name);
     } on UserFontImportException catch (e) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(switch (e.error) {
-            UserFontImportError.notAFont => l10n.settingsFontAddNotAFont,
-            UserFontImportError.collection => l10n.settingsFontAddCollection,
-            UserFontImportError.tooLarge => l10n.settingsFontAddTooLarge,
-          }),
-        ),
-      );
+      error = switch (e.error) {
+        UserFontImportError.notAFont => l10n.settingsFontAddNotAFont,
+        UserFontImportError.collection => l10n.settingsFontAddCollection,
+        UserFontImportError.tooLarge => l10n.settingsFontAddTooLarge,
+      };
     } on FileSystemException {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.settingsFontAddFailed)),
-      );
+      error = l10n.settingsFontAddFailed;
     }
+    if (!context.mounted) return;
+    if (error == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+    // A dialog, not a snack bar: in the reader this sheet sits on the
+    // quick-settings sheet, which would cover one.
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        content: Text(error!),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.commonOk),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _remove(BuildContext context, UserFont font) async {

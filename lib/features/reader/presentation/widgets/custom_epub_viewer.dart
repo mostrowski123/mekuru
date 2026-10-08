@@ -101,8 +101,8 @@ class CustomEpubViewer extends StatefulWidget {
   /// theme names it by. Null for the built-in fonts.
   final UserFontSend? userFont;
 
-  /// The WebView could not read the added font.
-  final VoidCallback? onUserFontFailed;
+  /// The WebView could not read the added font registered as [family].
+  final void Function(String? family)? onUserFontFailed;
 
   final CustomEpubController controller;
   final String epubPath;
@@ -321,7 +321,9 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
 
     controller.addJavaScriptHandler(
       handlerName: 'userFontFailed',
-      callback: (_) => widget.onUserFontFailed?.call(),
+      callback: (args) => widget.onUserFontFailed?.call(
+        args.isNotEmpty && args[0] is String ? args[0] as String : null,
+      ),
     );
 
     controller.addJavaScriptHandler(
@@ -699,7 +701,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         if (!await sendUserFont(font.file, font.family, _runJavascript)) return;
       } on IOException catch (error) {
         debugPrint('[EPUB_DART] added font not sent: $error');
-        widget.onUserFontFailed?.call();
+        widget.onUserFontFailed?.call(font.family);
       }
     }
 

@@ -152,6 +152,52 @@ void main() {
     );
   });
 
+  testWidgets('a refused file is explained above the reader settings sheet', (
+    tester,
+  ) async {
+    // In the reader the picker opens from the quick-settings sheet, which
+    // would cover a snack bar.
+    store.nextImport = const UserFontImportException(
+      UserFontImportError.notAFont,
+    );
+    container = ProviderContainer(
+      overrides: [
+        userFontStoreProvider.overrideWithValue(store),
+        userFontFilePickerProvider.overrideWithValue(() async => pickedPath),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: buildLocalizedTestApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  builder: (sheetContext) => TextButton(
+                    onPressed: () => showReaderFontPicker(sheetContext),
+                    child: const Text('fonts'),
+                  ),
+                ),
+                child: const Text('sheet'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('sheet'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('fonts'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add font…'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("This file isn't a font.").hitTestable(), findsOneWidget);
+  });
+
   testWidgets('cancelling the file picker changes nothing', (tester) async {
     pickedPath = null;
     await openPicker(tester);
