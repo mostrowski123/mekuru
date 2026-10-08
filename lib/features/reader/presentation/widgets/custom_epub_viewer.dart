@@ -11,6 +11,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../data/models/epub_models.dart';
 import '../../data/models/reader_settings.dart';
+import '../../data/services/epub_locations_cache.dart';
 import '../../data/services/furigana_generator.dart';
 import '../reader_interaction_logic.dart';
 import 'custom_epub_controller.dart';
@@ -391,7 +392,13 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
 
     controller.addJavaScriptHandler(
       handlerName: 'locationsReady',
-      callback: (_) {
+      callback: (data) {
+        // Freshly generated locations come along, saved for the next open.
+        if (data.isNotEmpty && data[0] is String) {
+          unawaited(
+            EpubLocationsCache.write(widget.epubPath, data[0] as String),
+          );
+        }
         widget.onLocationsReady?.call();
       },
     );
@@ -688,6 +695,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       return;
     }
 
+    // Locations an earlier open saved spare epub.js generating them again.
+    final cachedLocations = await EpubLocationsCache.read(widget.epubPath);
     await _runJavascript(
       'loadBook('
       '$cfiParam, '
@@ -701,7 +710,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       '${widget.verticalMargin}, '
       '${widget.forceHorizontalAxis}, '
       '$furiganaParam, '
-      '${widget.verticalTextBlocks}'
+      '${widget.verticalTextBlocks}, '
+      '${cachedLocations ?? 'null'}'
       ')',
     );
 

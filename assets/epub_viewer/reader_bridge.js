@@ -88,7 +88,7 @@ function appendEpubChunk(base64) {
   for (var i = 0; i < bin.length; i++) _epubBuf[_epubOffset++] = bin.charCodeAt(i);
 }
 
-function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks) {
+function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks, cachedLocations) {
   if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
   _scrollView = (flow === 'scrolled');
   var uint8 = _epubBuf;
@@ -233,10 +233,20 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
 
   // ── Locations (for progress) ──────────────────────────────────────
 
+  // Generating them loads every section of the book, so Dart saves them per
+  // book and passes them back as cachedLocations (null when there are none
+  // yet). A change to how they are made (the 1600 below, or epub.js) must
+  // bump EpubLocationsCache.version.
   book.ready.then(function () {
+    if (cachedLocations) {
+      book.locations.load(cachedLocations);
+      console.log('[EPUB_BRIDGE] locations loaded from cache');
+      callDart('locationsReady');
+      return;
+    }
     book.locations.generate(1600).then(function () {
       console.log('[EPUB_BRIDGE] locations generated');
-      callDart('locationsReady');
+      callDart('locationsReady', book.locations.save());
     }).catch(function (err) {
       console.warn('[EPUB_BRIDGE] locations generation failed (non-fatal):', err);
       callDart('locationsReady');
