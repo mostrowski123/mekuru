@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:mekuru/app.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/device_memory.dart';
 import 'package:path/path.dart' as p;
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
@@ -105,6 +106,19 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   @override
   Future<void> saveAutoFocusSearch(bool value) async =>
       _autoFocusSearch = value;
+
+  bool? _lowRamMode;
+  @override
+  Future<bool?> loadLowRamMode() async => _lowRamMode;
+  @override
+  Future<void> saveLowRamMode(bool value) async => _lowRamMode = value;
+
+  bool? _lowRamHintShown;
+  @override
+  Future<bool?> loadLowRamHintShown() async => _lowRamHintShown;
+  @override
+  Future<void> saveLowRamHintShown(bool value) async =>
+      _lowRamHintShown = value;
 
   @override
   Future<String?> loadColorTheme() async => _colorTheme;
@@ -297,6 +311,8 @@ Widget buildIntegrationTestApp({
   List<Override> extraOverrides = const [],
   GlobalKey<NavigatorState>? navigatorKey,
 }) {
+  // CI's 2 GB emulator would otherwise be offered Low RAM mode.
+  debugDeviceLowOnMemory = false;
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),
@@ -322,6 +338,8 @@ Widget buildIntegrationTestRealApp({
   required AppDatabase db,
   List<Override> extraOverrides = const [],
 }) {
+  // CI's 2 GB emulator would otherwise be offered Low RAM mode.
+  debugDeviceLowOnMemory = false;
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),

@@ -12,6 +12,8 @@ import 'package:mekuru/features/backup/data/services/restore_service.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart'
     show ocrPendingFinalizationsKey;
+import 'package:mekuru/features/settings/data/services/app_settings_storage.dart'
+    show SharedPreferencesAppSettingsStorage;
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -86,9 +88,14 @@ class StagedFullRestore {
   /// not belong to (SQLite would replay it into the new file); bare file last.
   static const _databaseSuffixes = ['-journal', '-wal', '-shm', ''];
 
-  /// The only preferences that survive the wipe: device history, never app
-  /// state keyed by book ids that mean something else in the restored library.
-  static const _keepPrefKeys = {ocrPendingFinalizationsKey};
+  /// The only preferences that survive the wipe: device history and device
+  /// settings, never app state keyed by book ids that mean something else in
+  /// the restored library.
+  static const _keepPrefKeys = {
+    ocrPendingFinalizationsKey,
+    SharedPreferencesAppSettingsStorage.lowRamModeKey,
+    SharedPreferencesAppSettingsStorage.lowRamHintShownKey,
+  };
   static const _keepPrefPrefixes = [
     SharedPreferencesReviewPromptStorage.keyPrefix,
   ];

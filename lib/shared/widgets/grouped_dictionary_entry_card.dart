@@ -293,8 +293,8 @@ class _GroupedDictionaryEntryHeaderState
   }
 
   /// The sentence's translation, fetched only when an Anki field is mapped
-  /// to it. A device that can't translate right now leaves the field empty;
-  /// the card screen lets the user fill it in.
+  /// to it. A device that can't translate right now (or is in Low RAM mode)
+  /// leaves the field empty; the card screen lets the user fill it in.
   Future<String?> _ankiSentenceTranslation(
     Map<String, String> fieldMapping,
     String target,
@@ -302,7 +302,8 @@ class _GroupedDictionaryEntryHeaderState
     final sentence = widget.sentenceContext;
     if (sentence == null ||
         sentence.isEmpty ||
-        !fieldMapping.containsValue(AppDataSource.sentenceTranslation.key)) {
+        !fieldMapping.containsValue(AppDataSource.sentenceTranslation.key) ||
+        ref.read(lowRamModeProvider)) {
       return null;
     }
     return translateIfInstalled(

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_review/in_app_review.dart';
@@ -14,6 +15,7 @@ import 'package:mekuru/features/reader/presentation/providers/gemma_download_pro
 import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/settings/presentation/widgets/low_ram_mode_prompts.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_settings_screen.dart';
 import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:mekuru/features/wanikani/presentation/screens/wanikani_settings_screen.dart';
@@ -50,6 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final colorTheme = ref.watch(appColorThemeProvider);
     final startupScreen = ref.watch(startupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
+    final lowRamMode = ref.watch(lowRamModeProvider);
     final (wanikaniLinked, wanikaniUsername) = ref.watch(
       wanikaniProvider.select((s) => (s.linked, s.snapshot?.username)),
     );
@@ -92,6 +95,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _showStartupScreenPicker(startupScreen);
             },
           ),
+          if (defaultTargetPlatform == TargetPlatform.android)
+            SwitchListTile(
+              secondary: Icon(
+                Icons.memory_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text(l10n.settingsLowRamModeTitle),
+              subtitle: Text(l10n.settingsLowRamModeSubtitle),
+              value: lowRamMode,
+              onChanged: (value) {
+                AppHaptics.light();
+                setLowRamMode(context, ref, on: value, source: 'settings');
+              },
+            ),
           const Divider(),
 
           // ── Appearance ──
@@ -205,27 +222,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
           ),
-          ListTile(
-            leading: Icon(
-              Icons.g_translate_outlined,
-              color: theme.colorScheme.primary,
-            ),
-            title: Text(l10n.settingsSentenceTranslationTitle),
-            subtitle: Text(
-              _sentenceTranslationLabel(
-                l10n,
-                ref.watch(sentenceTranslationModeProvider),
+          if (!lowRamMode)
+            ListTile(
+              leading: Icon(
+                Icons.g_translate_outlined,
+                color: theme.colorScheme.primary,
               ),
+              title: Text(l10n.settingsSentenceTranslationTitle),
+              subtitle: Text(
+                _sentenceTranslationLabel(
+                  l10n,
+                  ref.watch(sentenceTranslationModeProvider),
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                AppHaptics.light();
+                _showSentenceTranslationPicker(
+                  ref.read(sentenceTranslationModeProvider),
+                );
+              },
             ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              AppHaptics.light();
-              _showSentenceTranslationPicker(
-                ref.read(sentenceTranslationModeProvider),
-              );
-            },
-          ),
-          if (GemmaTranslation.supported)
+          if (GemmaTranslation.supported && !lowRamMode)
             ListTile(
               leading: Icon(
                 Icons.auto_awesome_outlined,

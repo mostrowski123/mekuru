@@ -409,7 +409,9 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
 
   bool get _showSentenceTab =>
       _sentence != null &&
-      ref.watch(sentenceTranslationModeProvider) != SentenceTranslationMode.off;
+      ref.watch(sentenceTranslationModeProvider) !=
+          SentenceTranslationMode.off &&
+      !ref.watch(lowRamModeProvider);
 
   Widget _buildTabsOrDivider(BuildContext context) {
     if (!_showSentenceTab) return const Divider(height: 1);

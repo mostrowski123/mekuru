@@ -51,6 +51,9 @@ void main() {
       expect(h.prefs.containsKey('backup.last_auto_at'), isFalse);
       expect(h.prefs.getString('ocr.pending_finalizations'), '["job-1"]');
       expect(h.prefs.getInt('review_prompt.request_count'), 2);
+      // Low RAM mode belongs to the device, not to the backup.
+      expect(h.prefs.getBool('app.low_ram_mode'), isTrue);
+      expect(h.prefs.getBool('app.low_ram_hint_shown'), isTrue);
       expect(h.prefs.getString('app.color_theme'), 'mekuruRed');
     });
 

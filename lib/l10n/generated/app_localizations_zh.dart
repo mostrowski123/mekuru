@@ -4195,6 +4195,35 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get downloadInterrupted => '下载已中断。请点按“下载”重试。';
+
+  @override
+  String get settingsLowRamModeTitle => '低内存模式';
+
+  @override
+  String get settingsLowRamModeSubtitle => '适用于电子墨水屏阅读器和内存不超过 4 GB 的设备';
+
+  @override
+  String get lowRamModeHintTitle => '开启低内存模式？';
+
+  @override
+  String get lowRamModeHintBody =>
+      '此设备的内存不超过 4 GB。低内存模式会让 Mekuru 占用更少内存，这样你切换应用时，Android 不太会将它关闭。此模式会关闭句子翻译、设备端 OCR、增强振假名词典和动画。你可以在“设置 › 低内存模式”中更改。';
+
+  @override
+  String get lowRamModeTurnOn => '开启';
+
+  @override
+  String get lowRamModeNotNow => '暂不';
+
+  @override
+  String get lowRamModeCloseBody =>
+      '增强振假名词典在 Mekuru 关闭前会一直占用约 250 MB 内存。现在关闭 Mekuru 即可释放，然后再重新打开。';
+
+  @override
+  String get lowRamModeCloseNow => '立即关闭 Mekuru';
+
+  @override
+  String get lowRamModeOffHere => '低内存模式下已关闭';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -8388,4 +8417,33 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadInterrupted => '下载已中断。请点按“下载”重试。';
+
+  @override
+  String get settingsLowRamModeTitle => '低内存模式';
+
+  @override
+  String get settingsLowRamModeSubtitle => '适用于电子墨水屏阅读器和内存不超过 4 GB 的设备';
+
+  @override
+  String get lowRamModeHintTitle => '开启低内存模式？';
+
+  @override
+  String get lowRamModeHintBody =>
+      '此设备的内存不超过 4 GB。低内存模式会让 Mekuru 占用更少内存，这样你切换应用时，Android 不太会将它关闭。此模式会关闭句子翻译、设备端 OCR、增强振假名词典和动画。你可以在“设置 › 低内存模式”中更改。';
+
+  @override
+  String get lowRamModeTurnOn => '开启';
+
+  @override
+  String get lowRamModeNotNow => '暂不';
+
+  @override
+  String get lowRamModeCloseBody =>
+      '增强振假名词典在 Mekuru 关闭前会一直占用约 250 MB 内存。现在关闭 Mekuru 即可释放，然后再重新打开。';
+
+  @override
+  String get lowRamModeCloseNow => '立即关闭 Mekuru';
+
+  @override
+  String get lowRamModeOffHere => '低内存模式下已关闭';
 }

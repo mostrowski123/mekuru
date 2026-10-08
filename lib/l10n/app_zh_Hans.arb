@@ -3176,5 +3176,14 @@
   "proErrorSignInCancelled": "Google 登录已取消。",
   "proErrorTooManySignIns": "最近的登录尝试过多。请等待几分钟后再试。",
   "settingsCustomOcrServerUnhealthy": "已连接，但 /health 返回的状态是“{status}”，而不是“ok”。",
-  "downloadInterrupted": "下载已中断。请点按“下载”重试。"
+  "downloadInterrupted": "下载已中断。请点按“下载”重试。",
+  "settingsLowRamModeTitle": "低内存模式",
+  "settingsLowRamModeSubtitle": "适用于电子墨水屏阅读器和内存不超过 4 GB 的设备",
+  "lowRamModeHintTitle": "开启低内存模式？",
+  "lowRamModeHintBody": "此设备的内存不超过 4 GB。低内存模式会让 Mekuru 占用更少内存，这样你切换应用时，Android 不太会将它关闭。此模式会关闭句子翻译、设备端 OCR、增强振假名词典和动画。你可以在“设置 › 低内存模式”中更改。",
+  "lowRamModeTurnOn": "开启",
+  "lowRamModeNotNow": "暂不",
+  "lowRamModeCloseBody": "增强振假名词典在 Mekuru 关闭前会一直占用约 250 MB 内存。现在关闭 Mekuru 即可释放，然后再重新打开。",
+  "lowRamModeCloseNow": "立即关闭 Mekuru",
+  "lowRamModeOffHere": "低内存模式下已关闭"
 }

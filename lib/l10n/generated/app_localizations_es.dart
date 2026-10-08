@@ -4456,4 +4456,34 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get downloadInterrupted =>
       'La descarga se interrumpió. Toca Descargar para volver a intentarlo.';
+
+  @override
+  String get settingsLowRamModeTitle => 'Modo de poca RAM';
+
+  @override
+  String get settingsLowRamModeSubtitle =>
+      'Para lectores de tinta electrónica y dispositivos con 4 GB de RAM o menos';
+
+  @override
+  String get lowRamModeHintTitle => '¿Activar el modo de poca RAM?';
+
+  @override
+  String get lowRamModeHintBody =>
+      'Este dispositivo tiene 4 GB de RAM o menos. El modo de poca RAM hace que Mekuru use menos memoria, así que es menos probable que Android lo cierre cuando cambies de app. Desactiva la traducción de frases, el OCR en el dispositivo, el diccionario de furigana mejorado y las animaciones. Puedes cambiarlo en Configuración › Modo de poca RAM.';
+
+  @override
+  String get lowRamModeTurnOn => 'Activar';
+
+  @override
+  String get lowRamModeNotNow => 'Ahora no';
+
+  @override
+  String get lowRamModeCloseBody =>
+      'El diccionario de furigana mejorado ocupa unos 250 MB de memoria hasta que Mekuru se cierra. Cierra Mekuru ahora para liberarla y vuelve a abrirlo.';
+
+  @override
+  String get lowRamModeCloseNow => 'Cerrar Mekuru ahora';
+
+  @override
+  String get lowRamModeOffHere => 'Desactivado en el modo de poca RAM';
 }

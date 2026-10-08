@@ -443,6 +443,7 @@ void main() {
       LookupSheet sheet, {
       SentenceTranslationMode mode = SentenceTranslationMode.shown,
       bool highQuality = false,
+      bool lowRamMode = false,
     }) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -455,6 +456,8 @@ void main() {
             ),
             if (highQuality)
               translationModelProvider.overrideWith(_HighQualityChosen.new),
+            if (lowRamMode)
+              lowRamModeProvider.overrideWithBuild((ref, notifier) => true),
           ],
           child: buildLocalizedTestApp(
             home: Scaffold(body: SizedBox.expand(child: sheet)),
@@ -485,6 +488,17 @@ void main() {
         tester,
         const LookupSheet(selectedText: '食べる', sentenceContext: '朝ご飯を食べる。'),
         mode: SentenceTranslationMode.off,
+      );
+
+      expect(find.text('Sentence'), findsNothing);
+    });
+
+    testWidgets('has no tabs in Low RAM mode', (tester) async {
+      _fakeTranslation();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '朝ご飯を食べる。'),
+        lowRamMode: true,
       );
 
       expect(find.text('Sentence'), findsNothing);

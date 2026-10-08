@@ -1115,6 +1115,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   @override
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(mangaPagesProvider(widget.book.id));
+    final lowRamMode = ref.watch(lowRamModeProvider);
     // Select a record so unrelated settings churn (brightness, font size)
     // can't rebuild the whole reader behind an open settings sheet.
     final (
@@ -1347,21 +1348,22 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              IconButton(
-                                tooltip: context.l10n.localOcrRecognizeQuick,
-                                icon: const Icon(
-                                  Icons.document_scanner,
-                                  color: Colors.white,
+                              if (!lowRamMode)
+                                IconButton(
+                                  tooltip: context.l10n.localOcrRecognizeQuick,
+                                  icon: const Icon(
+                                    Icons.document_scanner,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () => _quickOcr(
+                                    mokuroBook,
+                                    _visiblePageIndexes(viewMode, spreads),
+                                  ),
+                                  onLongPress: () => _showOcrOptions(
+                                    mokuroBook,
+                                    _visiblePageIndexes(viewMode, spreads),
+                                  ),
                                 ),
-                                onPressed: () => _quickOcr(
-                                  mokuroBook,
-                                  _visiblePageIndexes(viewMode, spreads),
-                                ),
-                                onLongPress: () => _showOcrOptions(
-                                  mokuroBook,
-                                  _visiblePageIndexes(viewMode, spreads),
-                                ),
-                              ),
                               IconButton(
                                 tooltip: context.l10n.settingsTitle,
                                 icon: const Icon(

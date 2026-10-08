@@ -109,6 +109,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
     unawaited(
       ref.read(autoFocusSearchProvider.notifier).loadPersistedSettings(),
     );
+    unawaited(ref.read(lowRamModeProvider.notifier).loadPersistedSettings());
     unawaited(
       ref.read(autoCropWhiteThresholdProvider.notifier).loadPersistedSettings(),
     );

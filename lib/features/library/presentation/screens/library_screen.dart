@@ -36,7 +36,9 @@ import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/features/settings/presentation/widgets/low_ram_mode_prompts.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.dart';
@@ -79,6 +81,22 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   // their folder). Vocabulary-screen pattern.
   bool _isSelectionMode = false;
   final Set<int> _selectedIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_offerLowRamMode());
+  }
+
+  /// Once the books have loaded, so the offer never covers a loading library.
+  Future<void> _offerLowRamMode() async {
+    try {
+      await ref.read(booksProvider.future);
+    } catch (_) {
+      return; // The library shows the error.
+    }
+    if (mounted) await offerLowRamMode(context, ref);
+  }
 
   void _enterSelectionMode() {
     AppHaptics.light();
@@ -1365,6 +1383,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     // Resolved before the sheet opens: the tile can unmount while it's up.
     final container = ProviderScope.containerOf(context, listen: false);
     final deleteOcrFuture = book.bookType == 'manga' ? _loadDeleteOcr() : null;
+    final lowRamMode = ref.read(lowRamModeProvider);
     showModalBottomSheet(
       context: context,
       // The sheet can exceed the default max height on small screens
@@ -1458,19 +1477,20 @@ class _BookTileState extends ConsumerState<_BookTile>
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        ListTile(
-                          leading: const Icon(Icons.document_scanner),
-                          title: Text(context.l10n.localOcrRecognize),
-                          subtitle: Text(
-                            defaultTargetPlatform == TargetPlatform.iOS
-                                ? context.l10n.localOcrOnDeviceSubtitleIos
-                                : context.l10n.localOcrOnDeviceSubtitle,
+                        if (!lowRamMode)
+                          ListTile(
+                            leading: const Icon(Icons.document_scanner),
+                            title: Text(context.l10n.localOcrRecognize),
+                            subtitle: Text(
+                              defaultTargetPlatform == TargetPlatform.iOS
+                                  ? context.l10n.localOcrOnDeviceSubtitleIos
+                                  : context.l10n.localOcrOnDeviceSubtitle,
+                            ),
+                            onTap: () {
+                              Navigator.of(sheetContext).pop();
+                              showOcrActionSheet(context, book);
+                            },
                           ),
-                          onTap: () {
-                            Navigator.of(sheetContext).pop();
-                            showOcrActionSheet(context, book);
-                          },
-                        ),
                         if (deleteOcr != null)
                           ListTile(
                             leading: const Icon(Icons.delete_sweep_outlined),

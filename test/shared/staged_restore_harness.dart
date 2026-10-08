@@ -36,6 +36,8 @@ class StagedRestoreHarness {
     'ocr.pending_finalizations': '["job-1"]',
     'review_prompt.request_count': 2,
     'backup.last_auto_at': '2026-09-01T00:00:00Z',
+    'app.low_ram_mode': true,
+    'app.low_ram_hint_shown': true,
   };
 
   Directory get staging =>

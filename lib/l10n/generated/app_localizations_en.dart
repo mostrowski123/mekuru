@@ -4402,4 +4402,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get downloadInterrupted =>
       'The download was interrupted. Tap Download to try again.';
+
+  @override
+  String get settingsLowRamModeTitle => 'Low RAM mode';
+
+  @override
+  String get settingsLowRamModeSubtitle =>
+      'For e-ink readers and devices with 4 GB of RAM or less';
+
+  @override
+  String get lowRamModeHintTitle => 'Turn on Low RAM mode?';
+
+  @override
+  String get lowRamModeHintBody =>
+      'This device has 4 GB of RAM or less. Low RAM mode makes Mekuru use less memory, so Android is less likely to close it when you switch apps. It turns off sentence translation, on-device OCR, the Enhanced Furigana Dictionary and animations. You can change this in Settings › Low RAM mode.';
+
+  @override
+  String get lowRamModeTurnOn => 'Turn on';
+
+  @override
+  String get lowRamModeNotNow => 'Not now';
+
+  @override
+  String get lowRamModeCloseBody =>
+      'The Enhanced Furigana Dictionary keeps about 250 MB of memory until Mekuru closes. Close Mekuru now to free it, then open it again.';
+
+  @override
+  String get lowRamModeCloseNow => 'Close Mekuru now';
+
+  @override
+  String get lowRamModeOffHere => 'Off in Low RAM mode';
 }

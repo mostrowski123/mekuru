@@ -57,6 +57,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     final jpdbFreqState = ref.watch(jpdbFreqProvider);
     final kanjidicState = ref.watch(kanjidicProvider);
     final enhancedFuriganaState = ref.watch(enhancedFuriganaDictProvider);
+    final lowRamMode = ref.watch(lowRamModeProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -206,7 +207,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // files; Android's pack and its download run in the native service.
           if (defaultTargetPlatform == TargetPlatform.iOS)
             const MangaOcrIosDownloadTile()
-          else ...[
+          else if (!lowRamMode) ...[
             // iOS language packs belong to the system (Settings > Apps >
             // Translate); the Sentence tab asks Apple for them.
             const _SentenceTranslationTile(),
@@ -216,7 +217,9 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // On-device scans of books imported from PDFs read long lines with it;
           // on Android only devices that run on-device OCR can use it.
           if (defaultTargetPlatform == TargetPlatform.iOS ||
-              ref.watch(localOcrModelProvider).asData?.value.supported == true)
+              (!lowRamMode &&
+                  ref.watch(localOcrModelProvider).asData?.value.supported ==
+                      true))
             const NdlTextModelDownloadTile(),
           const SizedBox(height: 16),
         ],

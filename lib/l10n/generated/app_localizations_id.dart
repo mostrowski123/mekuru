@@ -4424,4 +4424,34 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get downloadInterrupted =>
       'Unduhan terputus. Ketuk Unduh untuk mencoba lagi.';
+
+  @override
+  String get settingsLowRamModeTitle => 'Mode RAM rendah';
+
+  @override
+  String get settingsLowRamModeSubtitle =>
+      'Untuk e-reader e-ink dan perangkat dengan RAM 4 GB atau kurang';
+
+  @override
+  String get lowRamModeHintTitle => 'Aktifkan mode RAM rendah?';
+
+  @override
+  String get lowRamModeHintBody =>
+      'Perangkat ini memiliki RAM 4 GB atau kurang. Mode RAM rendah membuat Mekuru memakai lebih sedikit memori, sehingga Android lebih jarang menutupnya saat Anda berpindah aplikasi. Mode ini menonaktifkan terjemahan kalimat, OCR di perangkat, Kamus Furigana yang Ditingkatkan, dan animasi. Anda dapat mengubahnya di Pengaturan › Mode RAM rendah.';
+
+  @override
+  String get lowRamModeTurnOn => 'Aktifkan';
+
+  @override
+  String get lowRamModeNotNow => 'Nanti saja';
+
+  @override
+  String get lowRamModeCloseBody =>
+      'Kamus Furigana yang Ditingkatkan memakai sekitar 250 MB memori sampai Mekuru ditutup. Tutup Mekuru sekarang untuk mengosongkannya, lalu buka lagi.';
+
+  @override
+  String get lowRamModeCloseNow => 'Tutup Mekuru sekarang';
+
+  @override
+  String get lowRamModeOffHere => 'Nonaktif dalam mode RAM rendah';
 }

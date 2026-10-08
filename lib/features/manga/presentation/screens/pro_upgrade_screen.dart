@@ -9,6 +9,7 @@ import 'package:mekuru/core/platform/ios_sandbox_refund.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/widgets/ocr_attributions.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -574,7 +575,8 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                             ),
                             // The speed test needs the models: the tile
                             // offers their download, then the test.
-                            const LocalOcrDownloadTile(),
+                            if (!ref.watch(lowRamModeProvider))
+                              const LocalOcrDownloadTile(),
                           ],
                         ),
                       ),

@@ -157,6 +157,10 @@ abstract class AppSettingsStorage {
   Future<void> saveTranslationModel(String model);
   Future<bool?> loadAutoFocusSearch();
   Future<void> saveAutoFocusSearch(bool value);
+  Future<bool?> loadLowRamMode();
+  Future<void> saveLowRamMode(bool value);
+  Future<bool?> loadLowRamHintShown();
+  Future<void> saveLowRamHintShown(bool value);
   Future<String?> loadColorTheme();
   Future<void> saveColorTheme(String theme);
   Future<int?> loadAutoCropWhiteThreshold();
@@ -169,12 +173,14 @@ abstract class AppSettingsStorage {
   Future<void> saveEnhancedFuriganaDictEnabled(bool enabled);
 }
 
-/// Holds theme values pre-loaded in [main] so Riverpod notifiers can use
-/// them as initial state on the very first frame (no async gap).
+/// Holds theme values and Low RAM mode pre-loaded in [main] so Riverpod
+/// notifiers can use them as initial state on the very first frame (no
+/// async gap).
 class PreloadedAppSettings {
   static AppLanguage initialAppLanguage = AppLanguage.system;
   static ThemeMode initialThemeMode = ThemeMode.dark;
   static String? initialColorThemeName;
+  static bool initialLowRamMode = false;
 
   static void setAppLanguageFromValue(String? language) {
     initialAppLanguage = AppLanguage.fromStorageValue(language);
@@ -199,6 +205,9 @@ class PreloadedAppSettings {
     setAppLanguageFromValue(prefs.getString('app.language'));
     setThemeModeFromName(prefs.getString('app.theme_mode'));
     setColorThemeName(prefs.getString('app.color_theme'));
+    initialLowRamMode =
+        prefs.getBool(SharedPreferencesAppSettingsStorage.lowRamModeKey) ??
+        false;
   }
 }
 
@@ -215,15 +224,22 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _sentenceTranslationModeKey = 'app.sentence_translation_mode';
   static const _translationModelKey = 'app.translation_model';
   static const _autoFocusSearchKey = 'app.auto_focus_search';
+
+  /// Low RAM mode and its one-time offer belong to the device, not to the
+  /// library: left out of [allKeys], and kept by a full restore.
+  static const lowRamModeKey = 'app.low_ram_mode';
+  static const lowRamHintShownKey = 'app.low_ram_hint_shown';
+
   static const _colorThemeKey = 'app.color_theme';
   static const _autoCropWhiteThresholdKey = 'app.auto_crop_white_threshold';
   static const _ocrServerUrlKey = 'app.ocr_server_url';
   static const _ocrServerAllowSelfSignedKey =
       'app.ocr_server_allow_self_signed';
 
-  /// Every SharedPreferences key this storage reads or writes. The backup
-  /// service derives its app key list from this, so a key added here is
-  /// automatically included in backups.
+  /// Every SharedPreferences key this storage reads or writes, but the
+  /// device's own (Low RAM mode). The backup service derives its app key
+  /// list from this, so a key added here is automatically included in
+  /// backups.
   static const List<String> allKeys = [
     _appLanguageKey,
     _themeModeKey,
@@ -388,6 +404,30 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveAutoFocusSearch(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_autoFocusSearchKey, value);
+  }
+
+  @override
+  Future<bool?> loadLowRamMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(lowRamModeKey);
+  }
+
+  @override
+  Future<void> saveLowRamMode(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(lowRamModeKey, value);
+  }
+
+  @override
+  Future<bool?> loadLowRamHintShown() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(lowRamHintShownKey);
+  }
+
+  @override
+  Future<void> saveLowRamHintShown(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(lowRamHintShownKey, value);
   }
 
   @override

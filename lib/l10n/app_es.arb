@@ -3176,5 +3176,14 @@
   "proErrorSignInCancelled": "Se canceló el inicio de sesión con Google.",
   "proErrorTooManySignIns": "Demasiados intentos recientes de inicio de sesión. Espera unos minutos y vuelve a intentarlo.",
   "settingsCustomOcrServerUnhealthy": "Conectado, pero /health devolvió el estado «{status}» en lugar de «ok».",
-  "downloadInterrupted": "La descarga se interrumpió. Toca Descargar para volver a intentarlo."
+  "downloadInterrupted": "La descarga se interrumpió. Toca Descargar para volver a intentarlo.",
+  "settingsLowRamModeTitle": "Modo de poca RAM",
+  "settingsLowRamModeSubtitle": "Para lectores de tinta electrónica y dispositivos con 4 GB de RAM o menos",
+  "lowRamModeHintTitle": "¿Activar el modo de poca RAM?",
+  "lowRamModeHintBody": "Este dispositivo tiene 4 GB de RAM o menos. El modo de poca RAM hace que Mekuru use menos memoria, así que es menos probable que Android lo cierre cuando cambies de app. Desactiva la traducción de frases, el OCR en el dispositivo, el diccionario de furigana mejorado y las animaciones. Puedes cambiarlo en Configuración › Modo de poca RAM.",
+  "lowRamModeTurnOn": "Activar",
+  "lowRamModeNotNow": "Ahora no",
+  "lowRamModeCloseBody": "El diccionario de furigana mejorado ocupa unos 250 MB de memoria hasta que Mekuru se cierra. Cierra Mekuru ahora para liberarla y vuelve a abrirlo.",
+  "lowRamModeCloseNow": "Cerrar Mekuru ahora",
+  "lowRamModeOffHere": "Desactivado en el modo de poca RAM"
 }

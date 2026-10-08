@@ -5679,5 +5679,41 @@
   "downloadInterrupted": "The download was interrupted. Tap Download to try again.",
   "@downloadInterrupted": {
     "description": "A download (dictionary, translation model) ended because the system dropped its background job. 'Download' is the button that starts it."
+  },
+  "settingsLowRamModeTitle": "Low RAM mode",
+  "@settingsLowRamModeTitle": {
+    "description": "Settings › General (Android): title of the switch that makes Mekuru use less memory."
+  },
+  "settingsLowRamModeSubtitle": "For e-ink readers and devices with 4 GB of RAM or less",
+  "@settingsLowRamModeSubtitle": {
+    "description": "Subtitle of the Low RAM mode switch (settingsLowRamModeTitle): who it is for."
+  },
+  "lowRamModeHintTitle": "Turn on Low RAM mode?",
+  "@lowRamModeHintTitle": {
+    "description": "Title of the dialog offered once on an Android device with 4 GB of RAM or less."
+  },
+  "lowRamModeHintBody": "This device has 4 GB of RAM or less. Low RAM mode makes Mekuru use less memory, so Android is less likely to close it when you switch apps. It turns off sentence translation, on-device OCR, the Enhanced Furigana Dictionary and animations. You can change this in Settings › Low RAM mode.",
+  "@lowRamModeHintBody": {
+    "description": "Body of the Low RAM mode offer. \"Settings › Low RAM mode\" names the screen and the switch; keep them matching settingsTitle and settingsLowRamModeTitle. \"Enhanced Furigana Dictionary\" matches downloadsEnhancedFuriganaTitle."
+  },
+  "lowRamModeTurnOn": "Turn on",
+  "@lowRamModeTurnOn": {
+    "description": "Button in the Low RAM mode offer that turns the mode on."
+  },
+  "lowRamModeNotNow": "Not now",
+  "@lowRamModeNotNow": {
+    "description": "Button that closes a Low RAM mode dialog without doing anything."
+  },
+  "lowRamModeCloseBody": "The Enhanced Furigana Dictionary keeps about 250 MB of memory until Mekuru closes. Close Mekuru now to free it, then open it again.",
+  "@lowRamModeCloseBody": {
+    "description": "Shown after Low RAM mode is turned on while the Enhanced Furigana Dictionary (downloadsEnhancedFuriganaTitle) is loaded: only closing the app frees its memory."
+  },
+  "lowRamModeCloseNow": "Close Mekuru now",
+  "@lowRamModeCloseNow": {
+    "description": "Button that closes the app to free the Enhanced Furigana Dictionary's memory."
+  },
+  "lowRamModeOffHere": "Off in Low RAM mode",
+  "@lowRamModeOffHere": {
+    "description": "Subtitle of a feature that Low RAM mode turns off."
   }
 }

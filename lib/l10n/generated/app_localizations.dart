@@ -7127,6 +7127,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The download was interrupted. Tap Download to try again.'**
   String get downloadInterrupted;
+
+  /// Settings › General (Android): title of the switch that makes Mekuru use less memory.
+  ///
+  /// In en, this message translates to:
+  /// **'Low RAM mode'**
+  String get settingsLowRamModeTitle;
+
+  /// Subtitle of the Low RAM mode switch (settingsLowRamModeTitle): who it is for.
+  ///
+  /// In en, this message translates to:
+  /// **'For e-ink readers and devices with 4 GB of RAM or less'**
+  String get settingsLowRamModeSubtitle;
+
+  /// Title of the dialog offered once on an Android device with 4 GB of RAM or less.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on Low RAM mode?'**
+  String get lowRamModeHintTitle;
+
+  /// Body of the Low RAM mode offer. "Settings › Low RAM mode" names the screen and the switch; keep them matching settingsTitle and settingsLowRamModeTitle. "Enhanced Furigana Dictionary" matches downloadsEnhancedFuriganaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has 4 GB of RAM or less. Low RAM mode makes Mekuru use less memory, so Android is less likely to close it when you switch apps. It turns off sentence translation, on-device OCR, the Enhanced Furigana Dictionary and animations. You can change this in Settings › Low RAM mode.'**
+  String get lowRamModeHintBody;
+
+  /// Button in the Low RAM mode offer that turns the mode on.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get lowRamModeTurnOn;
+
+  /// Button that closes a Low RAM mode dialog without doing anything.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get lowRamModeNotNow;
+
+  /// Shown after Low RAM mode is turned on while the Enhanced Furigana Dictionary (downloadsEnhancedFuriganaTitle) is loaded: only closing the app frees its memory.
+  ///
+  /// In en, this message translates to:
+  /// **'The Enhanced Furigana Dictionary keeps about 250 MB of memory until Mekuru closes. Close Mekuru now to free it, then open it again.'**
+  String get lowRamModeCloseBody;
+
+  /// Button that closes the app to free the Enhanced Furigana Dictionary's memory.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Mekuru now'**
+  String get lowRamModeCloseNow;
+
+  /// Subtitle of a feature that Low RAM mode turns off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off in Low RAM mode'**
+  String get lowRamModeOffHere;
 }
 
 class _AppLocalizationsDelegate

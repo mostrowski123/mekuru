@@ -3176,5 +3176,14 @@
   "proErrorSignInCancelled": "Masuk dengan Google dibatalkan.",
   "proErrorTooManySignIns": "Terlalu banyak percobaan masuk baru-baru ini. Tunggu beberapa menit, lalu coba lagi.",
   "settingsCustomOcrServerUnhealthy": "Terhubung, tetapi /health melaporkan status \"{status}\", bukan \"ok\".",
-  "downloadInterrupted": "Unduhan terputus. Ketuk Unduh untuk mencoba lagi."
+  "downloadInterrupted": "Unduhan terputus. Ketuk Unduh untuk mencoba lagi.",
+  "settingsLowRamModeTitle": "Mode RAM rendah",
+  "settingsLowRamModeSubtitle": "Untuk e-reader e-ink dan perangkat dengan RAM 4 GB atau kurang",
+  "lowRamModeHintTitle": "Aktifkan mode RAM rendah?",
+  "lowRamModeHintBody": "Perangkat ini memiliki RAM 4 GB atau kurang. Mode RAM rendah membuat Mekuru memakai lebih sedikit memori, sehingga Android lebih jarang menutupnya saat Anda berpindah aplikasi. Mode ini menonaktifkan terjemahan kalimat, OCR di perangkat, Kamus Furigana yang Ditingkatkan, dan animasi. Anda dapat mengubahnya di Pengaturan › Mode RAM rendah.",
+  "lowRamModeTurnOn": "Aktifkan",
+  "lowRamModeNotNow": "Nanti saja",
+  "lowRamModeCloseBody": "Kamus Furigana yang Ditingkatkan memakai sekitar 250 MB memori sampai Mekuru ditutup. Tutup Mekuru sekarang untuk mengosongkannya, lalu buka lagi.",
+  "lowRamModeCloseNow": "Tutup Mekuru sekarang",
+  "lowRamModeOffHere": "Nonaktif dalam mode RAM rendah"
 }

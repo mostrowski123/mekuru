@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
@@ -358,6 +359,42 @@ class AutoFocusSearchNotifier extends Notifier<bool> {
 /// Provider for the auto-focus search setting.
 final autoFocusSearchProvider = NotifierProvider<AutoFocusSearchNotifier, bool>(
   AutoFocusSearchNotifier.new,
+);
+
+/// Low RAM mode (Android): Mekuru keeps less in memory, for e-ink readers
+/// and devices with 4 GB of RAM or less. Starts from the value `main`
+/// preloaded, so the first frame already follows it. Off by default.
+class LowRamModeNotifier extends Notifier<bool> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  bool build() => PreloadedAppSettings.initialLowRamMode;
+
+  /// Load persisted setting from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadLowRamMode();
+    if (persisted != null) {
+      state = persisted;
+    }
+    setUsageTag('low_ram_mode', '$state');
+  }
+
+  /// Set the value and persist to storage.
+  Future<void> setLowRamMode(bool value) async {
+    state = value;
+    setUsageTag('low_ram_mode', '$value');
+    await ref.read(appSettingsStorageProvider).saveLowRamMode(value);
+  }
+}
+
+/// Provider for Low RAM mode.
+final lowRamModeProvider = NotifierProvider<LowRamModeNotifier, bool>(
+  LowRamModeNotifier.new,
 );
 
 /// Manages the white threshold used for future manga auto-crop scans.
