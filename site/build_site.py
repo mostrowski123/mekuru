@@ -1,6 +1,7 @@
 from datetime import date
 from pathlib import Path
 from html.parser import HTMLParser
+import hashlib
 import html
 import re
 import shutil
@@ -140,6 +141,8 @@ def changelog_section(
 
 def write_changelog() -> None:
     versions = changelog_versions()
+    # Browsers keep style.css for hours; a new name makes them fetch new rules.
+    css_version = hashlib.sha256((SOURCE / "style.css").read_bytes()).hexdigest()[:8]
     sections = "\n".join(
         changelog_section(
             version,
@@ -161,7 +164,7 @@ def write_changelog() -> None:
   <title>Changelog - Mekuru</title>
   <meta name="description" content="What changed in each version of Mekuru, the Japanese EPUB and manga reader.">
   <link rel="canonical" href="{BASE_URL}/changelog">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v={css_version}">
   <link rel="icon" href="icon.png" type="image/png">
 </head>
 <body>
