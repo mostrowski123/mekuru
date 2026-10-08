@@ -30,6 +30,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
   Widget build(BuildContext context) {
     final settings = ref.watch(readerSettingsProvider);
     final notifier = ref.read(readerSettingsProvider.notifier);
+    final lowRamMode = ref.watch(lowRamModeProvider);
     final autoCropWhiteThreshold = ref.watch(autoCropWhiteThresholdProvider);
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final theme = Theme.of(context);
@@ -48,12 +49,15 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
             value: settings.keepScreenOn,
             onChanged: notifier.setKeepScreenOn,
           ),
+          // Low RAM mode turns animations off without changing the setting.
           SettingsSwitchRow(
             icon: Icons.animation,
             title: l10n.readerAnimationsTitle,
-            subtitle: l10n.readerAnimationsSubtitle,
-            value: settings.readerAnimations,
-            onChanged: notifier.setReaderAnimations,
+            subtitle: lowRamMode
+                ? l10n.lowRamModeOffHere
+                : l10n.readerAnimationsSubtitle,
+            value: settings.readerAnimations && !lowRamMode,
+            onChanged: lowRamMode ? null : notifier.setReaderAnimations,
           ),
           // Android only; see VolumeKeyPageTurn.
           if (defaultTargetPlatform == TargetPlatform.android)

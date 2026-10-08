@@ -929,4 +929,60 @@ void main() {
       expect(service.pitchAccentBatchQueries, isEmpty);
     });
   });
+
+  testWidgets('in Low RAM mode, a word tapped at depth 3 replaces the screen', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final service = _buildService(db);
+
+    Future<void> tapWordAtDepth(int depth, {required bool lowRamMode}) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          // A new app each time, so no screen is left over.
+          key: UniqueKey(),
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(service),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value([_enabledDictionary()]),
+            ),
+            lowRamModeProvider.overrideWithBuild((ref, _) => lowRamMode),
+          ],
+          child: buildLocalizedTestApp(
+            home: DictionarySearchScreen(initialQuery: '食べる', depth: depth),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+      tester
+          .widget<GroupedDictionaryEntryHeader>(
+            find.byType(GroupedDictionaryEntryHeader),
+          )
+          .onWordTap!('食べる');
+      await tester.pumpAndSettle();
+    }
+
+    Finder screenAtDepth(int depth) => find.byWidgetPredicate(
+      (widget) => widget is DictionarySearchScreen && widget.depth == depth,
+      skipOffstage: false,
+    );
+
+    await tapWordAtDepth(3, lowRamMode: true);
+    expect(screenAtDepth(3), findsNothing);
+    expect(screenAtDepth(4), findsOneWidget);
+
+    // Not as deep, or with the mode off, the word opens on top.
+    await tapWordAtDepth(2, lowRamMode: true);
+    expect(screenAtDepth(2), findsOneWidget);
+    expect(screenAtDepth(3), findsOneWidget);
+
+    await tapWordAtDepth(3, lowRamMode: false);
+    expect(screenAtDepth(3), findsOneWidget);
+    expect(screenAtDepth(4), findsOneWidget);
+  });
 }

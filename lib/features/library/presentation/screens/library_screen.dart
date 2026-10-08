@@ -1836,7 +1836,7 @@ class _CoverTilt extends StatelessWidget {
   }
 }
 
-class _CollectionFolderTile extends StatelessWidget {
+class _CollectionFolderTile extends ConsumerWidget {
   const _CollectionFolderTile({
     super.key,
     required this.collection,
@@ -1847,7 +1847,7 @@ class _CollectionFolderTile extends StatelessWidget {
   final List<Book> books;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     // Each cover on the face flies to its own place in the opened grid,
     // the way an iOS folder's icons do. Morphing the face into the grid
@@ -1856,7 +1856,9 @@ class _CollectionFolderTile extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         AppHaptics.light();
-        Navigator.of(context).push(_folderRoute(collection.id));
+        Navigator.of(context).push(
+          _folderRoute(collection.id, instant: ref.read(lowRamModeProvider)),
+        );
       },
       onLongPress: () {
         AppHaptics.heavy();
@@ -1943,13 +1945,15 @@ Widget _maybeHero(String? tag, Widget child) => tag == null
     : Hero(tag: tag, flightShuttleBuilder: _coverFlightShuttle, child: child);
 
 /// Fades the folder screen in while the covers fly to their places. The
-/// default route slides the page, which fights the flights.
-Route<void> _folderRoute(int collectionId) {
+/// default route slides the page, which fights the flights. [instant]
+/// (Low RAM mode) opens and closes it at once, with no flights.
+Route<void> _folderRoute(int collectionId, {required bool instant}) {
   countUsage('collection.opened');
+  final duration = instant ? Duration.zero : const Duration(milliseconds: 320);
   return PageRouteBuilder<void>(
     settings: const RouteSettings(name: 'collection'),
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 320),
+    transitionDuration: duration,
+    reverseTransitionDuration: duration,
     pageBuilder: (_, _, _) =>
         CollectionFolderScreen(collectionId: collectionId),
     transitionsBuilder: (_, animation, _, child) =>

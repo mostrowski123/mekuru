@@ -161,7 +161,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // Kill-switch: lets the user disable the enhanced dictionary
           // without deleting the ~250 MB download. Useful as a recovery step
           // if word tapping ever stops working on a particular device.
-          if (enhancedFuriganaState.isInstalled)
+          if (enhancedFuriganaState.isInstalled && !lowRamMode)
             SwitchListTile(
               secondary: Icon(
                 Icons.tune_outlined,
@@ -707,22 +707,32 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final subtitle = state.isInstalled
+    // Low RAM mode never loads it (MeCab stays on IPADIC). Its files can
+    // still be deleted.
+    final lowRamMode = ref.watch(lowRamModeProvider);
+    final subtitle = lowRamMode
+        ? l10n.lowRamModeOffHere
+        : state.isInstalled
         ? l10n.downloadsEnhancedFuriganaInstalled
         : l10n.downloadsEnhancedFuriganaDescription;
 
     return ListTile(
+      enabled: !lowRamMode,
       leading: Icon(
         Icons.spellcheck_outlined,
         color: theme.colorScheme.primary,
       ),
       title: Text(l10n.downloadsEnhancedFuriganaTitle),
       subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref),
+      trailing: _buildTrailing(context, ref, lowRamMode: lowRamMode),
     );
   }
 
-  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
+  Widget _buildTrailing(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool lowRamMode,
+  }) {
     if (state.isDownloading || state.isUninstalling) {
       return const SizedBox(
         width: 24,
@@ -744,11 +754,13 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
 
     // No confirmation of its own: the subtitle already gives both sizes.
     return FilledButton.tonal(
-      onPressed: () => askThenDownload(
-        context,
-        _enhancedFuriganaSize,
-        ref.read(enhancedFuriganaDictProvider.notifier).download,
-      ),
+      onPressed: lowRamMode
+          ? null
+          : () => askThenDownload(
+              context,
+              _enhancedFuriganaSize,
+              ref.read(enhancedFuriganaDictProvider.notifier).download,
+            ),
       child: Text(context.l10n.commonDownload),
     );
   }

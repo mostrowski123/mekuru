@@ -23,9 +23,14 @@ import 'package:mekuru/shared/widgets/glass_tab_bar.dart';
 /// When [initialQuery] is provided (e.g., from tapping a word in a definition),
 /// the search is triggered immediately and the screen shows a back button.
 class DictionarySearchScreen extends ConsumerStatefulWidget {
-  const DictionarySearchScreen({super.key, this.initialQuery});
+  const DictionarySearchScreen({super.key, this.initialQuery, this.depth = 0});
 
   final String? initialQuery;
+
+  /// How many words were tapped in definitions to get here: 0 for a search
+  /// opened directly, 1 for a word tapped in the lookup sheet or on a
+  /// search screen of depth 0, and so on.
+  final int depth;
 
   @override
   DictionarySearchScreenState createState() => DictionarySearchScreenState();
@@ -247,12 +252,18 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   }
 
   void _navigateToWord(String word) {
-    Navigator.of(context).push(
-      namedRoute(
-        'dictionary_search',
-        (_) => DictionarySearchScreen(initialQuery: word),
-      ),
+    final route = namedRoute<void>(
+      'dictionary_search',
+      (_) =>
+          DictionarySearchScreen(initialQuery: word, depth: widget.depth + 1),
     );
+    // Low RAM mode keeps the trail of tapped words short: from depth 3 on,
+    // the next word replaces the screen it was tapped on.
+    if (ref.read(lowRamModeProvider) && widget.depth >= 3) {
+      Navigator.of(context).pushReplacement(route);
+    } else {
+      Navigator.of(context).push(route);
+    }
   }
 
   Future<List<_GroupedSearchResultData>> _buildGroupedResults(

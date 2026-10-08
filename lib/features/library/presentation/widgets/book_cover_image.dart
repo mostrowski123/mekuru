@@ -2,9 +2,11 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/platform/image_convert.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 
 /// Decode width in device pixels for a cover laid out at [logicalWidth].
@@ -21,21 +23,28 @@ int coverDecodeWidth(double logicalWidth, double devicePixelRatio) {
   return ((pixels / bucket).ceil() * bucket).clamp(bucket, 4096);
 }
 
-/// A book's cover image with a blurred background fill, falling back to a
-/// titled placeholder when the cover is missing or fails to decode.
+/// A book's cover image with a blurred background fill (a plain one in Low
+/// RAM mode), falling back to a titled placeholder when the cover is missing
+/// or fails to decode.
 ///
 /// Handles both Android SAF content URIs and plain file paths, and decodes
 /// at the laid-out width to keep memory usage bounded.
-class BookCoverImage extends StatelessWidget {
+class BookCoverImage extends ConsumerWidget {
   const BookCoverImage({super.key, required this.book});
 
   final Book book;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final coverPath = book.coverImagePath;
     if (coverPath == null) return _buildPlaceholder(theme);
+    // Low RAM mode fills behind the cover with a plain color: no second
+    // decode of the cover, and no blur.
+    final lowRamMode = ref.watch(lowRamModeProvider);
+    final plainFill = ColoredBox(
+      color: theme.colorScheme.surfaceContainerHighest,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -49,16 +58,19 @@ class BookCoverImage extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: AndroidSafImage(
-                  uri: coverPath,
-                  fit: BoxFit.cover,
-                  cacheWidth: blurCacheWidth,
-                  gaplessPlayback: true,
-                  errorBuilder: (_, _, _) => _buildPlaceholder(theme),
+              if (lowRamMode)
+                plainFill
+              else
+                ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: AndroidSafImage(
+                    uri: coverPath,
+                    fit: BoxFit.cover,
+                    cacheWidth: blurCacheWidth,
+                    gaplessPlayback: true,
+                    errorBuilder: (_, _, _) => _buildPlaceholder(theme),
+                  ),
                 ),
-              ),
               AndroidSafImage(
                 uri: coverPath,
                 fit: BoxFit.fitHeight,
@@ -76,14 +88,17 @@ class BookCoverImage extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               // Blurred background fill (no darkening)
-              ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Image(
-                  image: fileImage(coverFile, cacheWidth: blurCacheWidth),
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
+              if (lowRamMode)
+                plainFill
+              else
+                ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Image(
+                    image: fileImage(coverFile, cacheWidth: blurCacheWidth),
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                  ),
                 ),
-              ),
               // Actual cover, fit by height first
               Image(
                 image: fileImage(coverFile, cacheWidth: tileCacheWidth),

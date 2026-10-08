@@ -174,7 +174,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
     Navigator.of(context).push(
       namedRoute(
         'dictionary_search',
-        (_) => DictionarySearchScreen(initialQuery: word),
+        (_) => DictionarySearchScreen(initialQuery: word, depth: 1),
       ),
     );
   }

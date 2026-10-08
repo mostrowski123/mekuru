@@ -26,6 +26,7 @@ import 'package:mekuru/features/reader/presentation/widgets/reader_settings/read
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_page_navigation.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
@@ -1062,9 +1063,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  /// Whether the lookup sheet slides in and out (off for e-reader displays).
+  /// Whether the lookup sheet slides in and out (off for e-reader displays,
+  /// and in Low RAM mode, which leaves the setting itself alone).
   bool get _animateLookupSheet =>
-      ref.read(readerSettingsProvider).readerAnimations;
+      ref.read(readerSettingsProvider).readerAnimations &&
+      !ref.read(lowRamModeProvider);
 
   void _showLookupSheet(WordLookupResult result, double normalizedY) {
     _setControlsVisible(false);

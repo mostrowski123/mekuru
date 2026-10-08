@@ -54,6 +54,15 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     BackgroundWork.instance.text = _backgroundWorkText;
+    // Cap Flutter's image cache to reduce memory pressure on low-end devices.
+    // Defaults are 1000 images / 100 MB which is excessive for a manga reader
+    // where each decoded page can be several MB. Low RAM mode lowers it
+    // further, at once when it is turned on.
+    ref.listenManual(lowRamModeProvider, fireImmediately: true, (_, lowRam) {
+      PaintingBinding.instance.imageCache
+        ..maximumSizeBytes = (lowRam ? 20 : 50) * 1024 * 1024
+        ..maximumSize = 50;
+    });
     _bootstrapAppState();
   }
 
@@ -231,12 +240,22 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
     final appLanguage = ref.watch(appLanguageProvider);
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);
+    final lowRamMode = ref.watch(lowRamModeProvider);
+    // Low RAM mode: no ink ripples, and Android pages change at once.
+    ThemeData applyLowRamMode(ThemeData theme) => lowRamMode
+        ? theme.copyWith(
+            splashFactory: NoSplash.splashFactory,
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {TargetPlatform.android: _InstantPageTransitions()},
+            ),
+          )
+        : theme;
 
     return MaterialApp(
       onGenerateTitle: (context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme(colorTheme.seedColor),
-      darkTheme: AppTheme.darkTheme(colorTheme.seedColor),
+      theme: applyLowRamMode(AppTheme.lightTheme(colorTheme.seedColor)),
+      darkTheme: applyLowRamMode(AppTheme.darkTheme(colorTheme.seedColor)),
       themeMode: themeMode,
       locale: appLanguageLocaleOverride(appLanguage),
       localeResolutionCallback: resolveSupportedAppLocale,
@@ -257,12 +276,40 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
         SentryNavigatorObserver(),
         ?AnalyticsService.instance.navigatorObserver,
       ],
-      // Covers every route and dialog while a full backup or restore runs.
-      builder: (context, child) =>
-          FullBackupJobGate(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+        // Low RAM mode stills what follows the system's reduce motion
+        // setting: the cover tilt, manga page turns, the stats charts.
+        // Always wrapped, so turning it on keeps the navigator's state.
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            disableAnimations: mediaQuery.disableAnimations || lowRamMode,
+          ),
+          // Covers every route and dialog while a full backup or restore
+          // runs.
+          child: FullBackupJobGate(child: child ?? const SizedBox.shrink()),
+        );
+      },
       home: const _MainShell(),
     );
   }
+}
+
+/// Low RAM mode's Android page transition: none, and no frames spent on it.
+class _InstantPageTransitions extends PageTransitionsBuilder {
+  const _InstantPageTransitions();
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => child;
 }
 
 /// Main shell with bottom navigation.
@@ -365,6 +412,10 @@ class _MainShellState extends ConsumerState<_MainShell> {
       }
     }
 
+    // Low RAM mode keeps only the current tab built; a tab comes back fresh.
+    if (ref.watch(lowRamModeProvider)) {
+      _loadedScreens.removeWhere((index, _) => index != _currentIndex);
+    }
     _ensureScreenLoaded(_currentIndex);
 
     return Scaffold(

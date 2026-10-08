@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,14 +54,18 @@ class EnhancedFuriganaDictDownloadService {
   /// settings storage interface) to decide which dictionary to load.
   static const enabledPreferenceKey = 'app.enhanced_furigana_dict_enabled';
 
-  /// `true` if the user has opted in AND the dict files are installed.
+  /// `true` if the user has opted in AND the dict files are installed, and
+  /// Low RAM mode is off (it keeps MeCab on the bundled IPADIC).
   /// Used by MecabService to pick between IPADIC + user-dict (default)
   /// and the downloaded UniDic-lite layout.
   static Future<bool> shouldUse() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final enabled = prefs.getBool(enabledPreferenceKey) ?? false;
-      if (!enabled) return false;
+      final lowRamMode =
+          prefs.getBool(SharedPreferencesAppSettingsStorage.lowRamModeKey) ??
+          false;
+      if (!enabled || lowRamMode) return false;
       return await isInstalled();
     } catch (e) {
       debugPrint('[EnhancedFurigana] shouldUse check failed: $e');

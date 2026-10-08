@@ -68,10 +68,14 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
         },
       );
       ref.read(enhancedFuriganaDictEnabledProvider.notifier).setEnabled(true);
-      state = const EnhancedFuriganaDictState(
+      state = EnhancedFuriganaDictState(
         isInstalled: true,
-        successMessage:
-            'Enhanced dictionary installed. Restart the app to use it.',
+        // Low RAM mode never loads it (the download can outlast turning the
+        // mode on).
+        successMessage: ref.read(lowRamModeProvider)
+            ? 'Enhanced dictionary installed. Turn off Low RAM mode and '
+                  'restart the app to use it.'
+            : 'Enhanced dictionary installed. Restart the app to use it.',
       );
     } catch (e) {
       state = EnhancedFuriganaDictState(

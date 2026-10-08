@@ -324,8 +324,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
 
     // Forward pages first (the common reading direction), then one backward
     // so instant (no-animation) back-taps also have pixels ready. Kept small:
-    // decoded pages are large relative to the image cache budget.
-    const offsets = [1, 2, 3, -1];
+    // decoded pages are large relative to the image cache budget. Low RAM
+    // mode's smaller budget holds only the next page.
+    final offsets = ref.read(lowRamModeProvider)
+        ? const [1]
+        : const [1, 2, 3, -1];
     final screenWidth = MediaQuery.sizeOf(context).width;
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final cacheWidth = (screenWidth * dpr).toInt();
@@ -1450,8 +1453,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           controller: _pageController,
           reverse: isRtl,
           // Keep the adjacent pages built and decoded so instant
-          // (no-animation) jumps have pixels ready on the jump frame.
-          allowImplicitScrolling: true,
+          // (no-animation) jumps have pixels ready on the jump frame. Low
+          // RAM mode builds only the page on screen; the next one is
+          // precached.
+          allowImplicitScrolling: !ref.watch(lowRamModeProvider),
           // Swipes come through each page's MangaZoomViewer (or, unzoomed
           // in e-reader mode, the raw-pointer Listener in build()), so the
           // PageView's own drag can't race pinch-zoom. The Clamping parent
