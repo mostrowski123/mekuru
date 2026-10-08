@@ -69,7 +69,7 @@ This section has the same **Display** and **Behavior** settings as Quick Setting
 
 ### Manga
 
-This section sets the defaults for the manga reader: **View Mode**, **Reading Direction**, **Page Turn Edge Zone** and **Transparent Lookup**. With Pro you also see **White Threshold** (for Auto-Crop) and **Custom OCR Server**.
+This section sets the defaults for the manga reader: **View Mode**, **Reading Direction**, **Page Turn Edge Zone** and **Transparent Lookup**. With Pro you also see **White Threshold** (for [Auto-Crop](../manga/cbz-reading.md#trim-empty-margins-with-auto-crop-pro)) and **Custom OCR Server**.
 
 **Page Turn Edge Zone** sets how much of each screen edge turns pages in the manga reader, from 5% to 25%. The default is 15%. It does not change the EPUB reader, where the outer quarter of each side turns pages.
 

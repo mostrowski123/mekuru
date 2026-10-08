@@ -96,6 +96,17 @@ The **All settings** button at the top of the sheet opens **Reader Settings** in
 
 Auto-Crop cuts the empty white margins around each page, so the art fills more of the screen.
 
+![The same manga page with Auto-Crop off and on](../assets/auto-crop-example.svg)
+
+For example, most manga pages have a white border around the panels, often with the page number in it. A phone screen is narrower than a page, so Mekuru shrinks the whole page, border included, to fit. On the left, the border takes up space and the speech bubbles are small. With Auto-Crop on, Mekuru finds where the drawing starts on each side of the page and shows only the part inside the dashed line. On the right, the panels fill the width of the screen, and the text in the bubbles is bigger and easier to read. A page with a margin of a tenth of its width on each side shows about a quarter bigger.
+
+- Mekuru measures every page on its own, so a page with wide margins loses more than a page with narrow ones. In **Spread** view, both pages keep the same top, bottom and inner edge, so they still line up.
+- Page numbers and small specks in the margin are cut off with the margin. They do not stop the crop.
+- Only white and near-white margins are cut. Black borders, colored backgrounds and art that runs to the edge of the page stay as they are.
+- Your files do not change. Turn **Auto-Crop** off to see the whole pages again. Tapping words works the same either way.
+
+To turn it on:
+
 1. In the reader, tap the gear icon.
 2. Under **Image**, turn on **Auto-Crop**.
 3. The first time, Mekuru asks to scan every page of this manga. Tap **Continue** and wait. This can take a minute.
@@ -105,7 +116,9 @@ Auto-Crop cuts the empty white margins around each page, so the art fills more o
 If Auto-Crop cuts too much or too little:
 
 1. Open **You › Settings › Reader Settings**.
-2. In the **Manga** section, change **White Threshold**. Lower values ignore more near-white marks in the margins. The default is 240.
+2. In the **Manga** section, change **White Threshold**. It sets how light a mark must be to count as empty margin, from 200 to 255: at 255 only pure white counts, and lower values also count light gray. The default is 240.
+    - If Auto-Crop leaves a border, for example on a scan with a gray tint or smudges near the edge, lower it to about 220.
+    - If Auto-Crop cuts into pale art near the edge of the page, raise it.
 3. Go back to the manga, open the reader settings and tap **Re-run Auto-Crop**.
 
 Without Pro, the **Auto-Crop** row shows **Unlock**, which opens the Pro screen.

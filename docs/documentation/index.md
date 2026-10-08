@@ -33,6 +33,6 @@ A few features work differently on iPhone and iPad. Pages point these out in not
 
 ## Free and Pro
 
-Mekuru is free. Pro is a one-time purchase. Pro unlocks [**On-device OCR**](manga/on-device-ocr.md), **Auto-Crop** for manga margins, **Book Highlights** for EPUB books, and [**Custom OCR Server**](manga/custom-server.md).
+Mekuru is free. Pro is a one-time purchase. Pro unlocks [**On-device OCR**](manga/on-device-ocr.md), [**Auto-Crop**](manga/cbz-reading.md#trim-empty-margins-with-auto-crop-pro) for manga margins, **Book Highlights** for EPUB books, and [**Custom OCR Server**](manga/custom-server.md).
 
 You buy Pro through Google Play on Android and through the App Store on iPhone and iPad. You don't need an account.

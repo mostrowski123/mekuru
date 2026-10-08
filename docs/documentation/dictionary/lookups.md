@@ -79,8 +79,18 @@ If you search for a single kanji, its stroke order shows above the results. This
 
 Two settings in **You › Settings** change the search:
 
-- **Filter Roman Letter Entries** hides entries that use English letters in the headword.
+- **Filter Roman Letter Entries** hides entries that use English letters in the headword. See below.
 - **Auto-Focus Search** opens the keyboard when you open the **Dictionary** tab.
+
+### Filter Roman Letter Entries
+
+The headword is the word at the top of an entry. Some dictionaries have entries whose headword is spelled with English letters, such as abbreviations and brand names like **CD** or **Tシャツ**. When you search in English or romaji, these entries can fill the top of the list, above the Japanese words you want.
+
+With **Filter Roman Letter Entries** on, Mekuru hides every result whose headword has a letter from A to Z in it. For example, an entry written **CD** or **Tシャツ** is hidden, but **食べる** and **シーディー** still show.
+
+- It is off by default.
+- It changes only the search in the **Dictionary** tab. Words you tap in a book or manga are never filtered.
+- Full-width letters, like the **Ｔ** in **Ｔシャツ**, do not count. Entries written that way still show.
 
 ## If something goes wrong
 

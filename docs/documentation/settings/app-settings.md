@@ -34,7 +34,7 @@ The sections below follow the order of the **Settings** screen.
 - **Lookup Font Size**: the text size in the lookup sheet.
 - **Sentence translation**: what the **Sentence** tab of the lookup sheet does with its translation: **Show translation**, **Hide until tapped** or **Off**.
 - **Translation model**: **Standard**, or **High quality**, a larger model (about 2.6 GB to download) that translates better on phones with plenty of memory.
-- **Filter Roman Letter Entries**: hides entries whose headword is written in English letters.
+- **Filter Roman Letter Entries**: hides entries whose headword is written in English letters, such as **CD**, from the **Dictionary** tab search. See [Looking Up Words](../dictionary/lookups.md#filter-roman-letter-entries).
 - **Auto-Focus Search**: opens the keyboard when you switch to the **Dictionary** tab.
 
 !!! note "Android only"
@@ -52,7 +52,7 @@ The sections below follow the order of the **Settings** screen.
 
 **Pro** opens the Mekuru Pro screen. Pro is a one-time purchase. It unlocks:
 
-- **Auto-Crop**: trims empty margins from manga pages.
+- **Auto-Crop**: trims the empty white margins around manga pages, so the art fills more of the screen. See [Reading Manga](../manga/cbz-reading.md#trim-empty-margins-with-auto-crop-pro).
 - **Book Highlights**: save and review highlighted passages in EPUB books.
 - **On-device OCR**: reads the text in manga pages on your device, offline. OCR means reading the text in an image.
 - **Custom OCR Server**: remote manga OCR with your own server.
