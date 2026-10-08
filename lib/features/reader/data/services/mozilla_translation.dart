@@ -263,6 +263,9 @@ class MozillaTranslation implements TranslationEngine {
     final webView = HeadlessInAppWebView(
       initialUrlRequest: URLRequest(url: WebUri(_page)),
       initialSettings: InAppWebViewSettings(
+        // Without it, a renderer killed for memory takes the whole app
+        // down; the next translation starts a new WebView instead.
+        useOnRenderProcessGone: true,
         webViewAssetLoader: WebViewAssetLoader(
           pathHandlers: [
             AssetsPathHandler(path: '/assets/'),
@@ -278,6 +281,7 @@ class MozillaTranslation implements TranslationEngine {
           loaded.completeError(Exception(error.description));
         }
       },
+      onRenderProcessGone: (_, _) => stop(),
     );
     _webView = webView;
     try {

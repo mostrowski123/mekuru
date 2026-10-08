@@ -25,6 +25,12 @@ class CustomEpubController {
   Future<dynamic> debugEvaluateJavascript(String source) =>
       _evaluateJavascript(source);
 
+  /// Test-only: crashes the WebView's renderer, standing in for Android
+  /// killing it for memory. Android only: WKWebView has no such page.
+  @visibleForTesting
+  Future<void> debugCrashRenderer() async =>
+      _webView?.loadUrl(urlRequest: URLRequest(url: WebUri('chrome://crash')));
+
   void detach([InAppWebViewController? controller]) {
     if (controller != null && !identical(_webView, controller)) {
       return;

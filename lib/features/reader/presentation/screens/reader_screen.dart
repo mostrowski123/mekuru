@@ -105,6 +105,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // deferred rebuild after returning.
   bool _suppressViewerRebuilds = false;
   bool _viewerRebuildDeferred = false;
+
+  // The WebView's renderer died; a new viewer is built once the reader is
+  // on top again (see _rebuildIfRendererGone).
+  bool _rendererGone = false;
+
   bool _hasActiveSelection = false;
   bool _locationsReady = false;
 
@@ -626,20 +631,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                     settings.swipeSensitivity,
                                   );
                                 },
-                            onLoadError: (description) {
-                              if (!mounted) return;
-                              // Terminal outcome: without this the load watchdog
-                              // stays armed and overwrites the real error with a
-                              // bogus timeout message.
-                              _loadWatchdog?.cancel();
-                              setState(() {
-                                _isLoading = false;
-                                _errorMessage = context.l10n
-                                    .readerFailedToLoadContent(
-                                      details: description,
-                                    );
-                              });
-                            },
+                            onLoadError: _onLoadError,
+                            onRendererGone: _onRendererGone,
                           ),
                         ),
                       ),
@@ -843,6 +836,49 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     } finally {
       _isRebuildingForDirection = false;
     }
+  }
+
+  void _onLoadError(String description) {
+    if (!mounted) return;
+    // Terminal outcome: without this the load watchdog stays armed and
+    // overwrites the real error with a bogus timeout message.
+    _loadWatchdog?.cancel();
+    setState(() {
+      _isLoading = false;
+      _errorMessage = context.l10n.readerFailedToLoadContent(
+        details: description,
+      );
+    });
+  }
+
+  /// The WebView's renderer died (killed for memory, or crashed) and took
+  /// the page with it. A book that had loaded comes back at the page it
+  /// showed; one still loading offers Retry, so a book that crashes the
+  /// renderer cannot loop.
+  void _onRendererGone() {
+    if (!mounted) return;
+    if (!_isEpubLoaded) {
+      _onLoadError('The web view stopped.');
+      return;
+    }
+    if (_isEpubCfi(_currentCfi)) _initialCfi = _currentCfi;
+    _rendererGone = true;
+    _rebuildIfRendererGone();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _rebuildIfRendererGone();
+  }
+
+  /// Builds the new viewer once no other route covers the reader: one built
+  /// under a route never finishes loading (see [_suppressViewerRebuilds]).
+  /// Reading isCurrent here brings its change to [didChangeDependencies].
+  void _rebuildIfRendererGone() {
+    if (!_rendererGone || !(ModalRoute.isCurrentOf(context) ?? true)) return;
+    _rendererGone = false;
+    unawaited(_rebuildViewerForDirectionChange());
   }
 
   void _handleTouchUp(

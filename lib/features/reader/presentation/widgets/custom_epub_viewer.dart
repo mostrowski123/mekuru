@@ -116,6 +116,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.onWordTapped,
     this.onSentenceSelected,
     this.onLoadError,
+    this.onRendererGone,
     this.onPageCharacters,
     this.onPageKey,
   });
@@ -191,6 +192,11 @@ class CustomEpubViewer extends StatefulWidget {
   final ValueChanged<EpubSelectionData>? onSentenceSelected;
   final void Function(String description)? onLoadError;
 
+  /// The web view's renderer died: Android killed it for memory (or it
+  /// crashed), or iOS ended its web content process. The page went with it
+  /// and this viewer is dead; only a new viewer shows the book again.
+  final VoidCallback? onRendererGone;
+
   /// Approximate visible-character count of the page just displayed, reported
   /// by the JS bridge on navigation-caused `relocated` events. [pageKey] is
   /// the page's start CFI, letting the session tracker drop duplicate reports
@@ -232,6 +238,9 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     // iOS only stops the vertical bounce, so it keeps the flag when paginated.
     disableVerticalScroll:
         defaultTargetPlatform == TargetPlatform.iOS && !widget.scrollView,
+    // Without it, Android takes the whole app down when the renderer dies
+    // (killed for memory, or crashed); see onRenderProcessGone below.
+    useOnRenderProcessGone: true,
   );
 
   @override
@@ -282,7 +291,20 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       shouldOverrideUrlLoading: (controller, action) async {
         return NavigationActionPolicy.ALLOW;
       },
+      onRenderProcessGone: (_, _) => _onRendererGone(),
+      onWebContentProcessDidTerminate: (_) => _onRendererGone(),
     );
+  }
+
+  // Not the callback's controller: the plugin hands these callbacks a
+  // different wrapper object than onWebViewCreated, so it never matches
+  // the one attached.
+  void _onRendererGone() {
+    final controller = _webViewController;
+    if (!mounted || controller == null) return;
+    _webViewController = null;
+    widget.controller.detach(controller);
+    widget.onRendererGone?.call();
   }
 
   @override
