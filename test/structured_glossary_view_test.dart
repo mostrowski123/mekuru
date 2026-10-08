@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
@@ -394,6 +395,46 @@ void main() {
       await show();
 
       expect(reads.mediaReads, 1);
+    });
+
+    testWidgets('an image decodes at its shown size, full screen at its own', (
+      tester,
+    ) async {
+      final id = await tester.runAsync(() async {
+        final id = await repo.insertDictionary('Jitendex.org [2026-10-03]');
+        await repo.insertMedia(id, [
+          ('wide.png', img.encodePng(img.Image(width: 1000, height: 500))),
+        ]);
+        return id;
+      });
+      final item = jsonEncode({
+        'type': 'structured-content',
+        'content': {'tag': 'img', 'path': 'wide.png', 'width': 100},
+      });
+      Future<int> decodedWidth(Finder image) async {
+        // The image cache loads outside the test's fake clock.
+        for (var i = 0; i < 3; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pump();
+        }
+        return tester.widget<RawImage>(image).image!.width;
+      }
+
+      await pump(tester, item, dictionaryId: id!);
+      expect(
+        await decodedWidth(find.byType(RawImage)),
+        (100 * tester.view.devicePixelRatio).ceil(),
+      );
+
+      await tester.tap(find.byType(Image));
+      await tester.pumpAndSettle();
+      final fullScreen = find.descendant(
+        of: find.byType(InteractiveViewer),
+        matching: find.byType(RawImage),
+      );
+      expect(await decodedWidth(fullScreen), 1000);
     });
 
     testWidgets('a missing image takes no space', (tester) async {

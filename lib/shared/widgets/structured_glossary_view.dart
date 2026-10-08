@@ -842,6 +842,12 @@ class _ScImageViewState extends ConsumerState<_ScImageView>
       svg,
       width: width,
       height: height,
+      // Decoded no larger than it is shown; the full-screen viewer decodes
+      // the whole picture to zoom into.
+      cacheWidth:
+          ((width ?? MediaQuery.sizeOf(context).width) *
+                  MediaQuery.devicePixelRatioOf(context))
+              .ceil(),
       color: widget.color,
     );
     child = GestureDetector(
@@ -858,6 +864,7 @@ class _ScImageViewState extends ConsumerState<_ScImageView>
     Uint8List? svg, {
     double? width,
     double? height,
+    int? cacheWidth,
     required Color color,
   }) {
     final monochrome = widget.image.monochrome;
@@ -875,6 +882,7 @@ class _ScImageViewState extends ConsumerState<_ScImageView>
               ref.read(dictionaryRepositoryProvider),
               widget.dictionaryId,
               widget.image.path,
+              cacheWidth: cacheWidth,
             ),
             width: width,
             height: height,
@@ -923,16 +931,25 @@ class _ScImageViewState extends ConsumerState<_ScImageView>
   }
 }
 
-/// A dictionary image, kept in Flutter's image cache under its dictionary
-/// and path: a definition scrolled back into view reads and decodes it
-/// only once.
+/// A dictionary image, kept in Flutter's image cache under its dictionary,
+/// path and [cacheWidth]: a definition scrolled back into view reads and
+/// decodes it only once.
 @immutable
 class _MediaImage extends ImageProvider<_MediaImage> {
-  const _MediaImage(this.repository, this.dictionaryId, this.path);
+  const _MediaImage(
+    this.repository,
+    this.dictionaryId,
+    this.path, {
+    this.cacheWidth,
+  });
 
   final DictionaryRepository repository;
   final int dictionaryId;
   final String path;
+
+  /// Decodes it scaled down to this width, like `Image`'s `cacheWidth`
+  /// (never up); null decodes it whole.
+  final int? cacheWidth;
 
   @override
   Future<_MediaImage> obtainKey(ImageConfiguration configuration) =>
@@ -958,10 +975,18 @@ class _MediaImage extends ImageProvider<_MediaImage> {
       rethrow;
     }
     final image = bytes ?? (throw StateError('No image at $path'));
+    final width = cacheWidth;
     // Jitendex's AVIF pictures, which Android 7-11 can't decode itself.
     return decodeWithAvifFallback(
       image,
-      () async => decode(await ui.ImmutableBuffer.fromUint8List(image)),
+      () async => decode(
+        await ui.ImmutableBuffer.fromUint8List(image),
+        getTargetSize: (intrinsicWidth, _) =>
+            width != null && width < intrinsicWidth
+            ? ui.TargetImageSize(width: width)
+            : const ui.TargetImageSize(),
+      ),
+      targetWidth: width,
     );
   }
 
@@ -969,8 +994,9 @@ class _MediaImage extends ImageProvider<_MediaImage> {
   bool operator ==(Object other) =>
       other is _MediaImage &&
       other.dictionaryId == dictionaryId &&
-      other.path == path;
+      other.path == path &&
+      other.cacheWidth == cacheWidth;
 
   @override
-  int get hashCode => Object.hash(dictionaryId, path);
+  int get hashCode => Object.hash(dictionaryId, path, cacheWidth);
 }
