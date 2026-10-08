@@ -1646,6 +1646,10 @@
   "@readerLoadTimeout": {
     "description": "Shown when the reader's load watchdog trips before the EPUB finishes opening."
   },
+  "readerUserFontFailed": "No se pudo cargar esta fuente; se muestra la fuente del libro.",
+  "@readerUserFontFailed": {
+    "description": "Snackbar in the reader when the font the user added cannot be read by the reader; the text falls back to the book's fonts."
+  },
   "readerVerticalTextNonNativeWarning": "Este libro no fue originalmente formateado para texto vertical. Puede haber problemas de visualización.",
   "@readerVerticalTextNonNativeWarning": {
     "description": "Warning shown when vertical text is forced for a non-vertical book."

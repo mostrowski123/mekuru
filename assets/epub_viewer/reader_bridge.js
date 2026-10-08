@@ -88,6 +88,55 @@ function appendEpubChunk(base64) {
   for (var i = 0; i < bin.length; i++) _epubBuf[_epubOffset++] = bin.charCodeAt(i);
 }
 
+// A font the user added arrives the same way, before loadBook() or while a
+// book is open: beginFontTransfer() + appendFontChunk(). Every chapter
+// registers it under _userFontFamily (a new name per transfer, so two added
+// fonts never collide); the theme CSS names that family.
+var _userFontBuf = null;
+var _userFontOffset = 0;
+var _userFontFamily = null;
+var _userFontFailedFamily = null;
+
+function beginFontTransfer(totalBytes, family) {
+  _userFontBuf = new Uint8Array(totalBytes);
+  _userFontOffset = 0;
+  _userFontFamily = family;
+}
+
+function appendFontChunk(base64) {
+  var bin = atob(base64);
+  for (var i = 0; i < bin.length; i++) _userFontBuf[_userFontOffset++] = bin.charCodeAt(i);
+}
+
+function _reportUserFontFailed() {
+  if (_userFontFailedFamily === _userFontFamily) return;
+  _userFontFailedFamily = _userFontFamily;
+  callDart('userFontFailed');
+}
+
+// Built with the chapter's own FontFace: a FontFace belongs to the window
+// that made it, and each chapter is its own iframe.
+function _registerUserFont(win, doc) {
+  if (!_userFontBuf || !win || !win.FontFace || !doc || !doc.fonts) return;
+  try {
+    var face = new win.FontFace(_userFontFamily, _userFontBuf);
+    doc.fonts.add(face);
+    face.loaded.then(null, function (e) {
+      console.log('[EPUB_BRIDGE] user font failed to load: ' + e);
+      _reportUserFontFailed();
+    });
+  } catch (e) {
+    console.log('[EPUB_BRIDGE] user font rejected: ' + e);
+    _reportUserFontFailed();
+  }
+}
+
+// After a transfer while a book is open: the chapters already on screen.
+function applyUserFont() {
+  var docs = _renderedIframeDocs();
+  for (var i = 0; i < docs.length; i++) _registerUserFont(docs[i].defaultView, docs[i]);
+}
+
 function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks, cachedLocations) {
   if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
   _scrollView = (flow === 'scrolled');
@@ -295,6 +344,7 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   // Monitor for selection clearing
   rendition.hooks.content.register(function (contents) {
     var doc = contents.window.document;
+    _registerUserFont(contents.window, doc);
 
     // Screen readers pick their voice from the page's language, and many
     // books never declare one: fall back to the book's own, else Japanese.

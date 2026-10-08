@@ -71,6 +71,23 @@ Stream<String> epubBase64Chunks(
   if (buffer.isNotEmpty) yield base64Encode(buffer.takeBytes());
 }
 
+/// Sends an added font to the bridge in the same bounded base64 chunks as
+/// the book, as CSS family [family]. False when the web view went away.
+Future<bool> sendUserFont(
+  File file,
+  String family,
+  Future<bool> Function(String source) run,
+) async {
+  final length = await file.length();
+  if (!await run('beginFontTransfer($length, ${jsonEncode(family)})')) {
+    return false;
+  }
+  await for (final chunk in epubBase64Chunks(file.openRead())) {
+    if (!await run("appendFontChunk('$chunk')")) return false;
+  }
+  return true;
+}
+
 /// Selection data reported by the JS bridge.
 class EpubSelectionData {
   final String cfi;
@@ -120,7 +137,18 @@ class CustomEpubViewer extends StatefulWidget {
     this.onRendererGone,
     this.onPageCharacters,
     this.onPageKey,
+    this.userFontFile,
+    this.userFontFamily,
+    this.onUserFontFailed,
   });
+
+  /// A font the user added, sent before the book; [userFontFamily] is the
+  /// CSS family the theme names. Both null for the built-in fonts.
+  final File? userFontFile;
+  final String? userFontFamily;
+
+  /// The WebView could not read the added font.
+  final VoidCallback? onUserFontFailed;
 
   final CustomEpubController controller;
   final String epubPath;
@@ -335,6 +363,11 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     controller.addJavaScriptHandler(
       handlerName: 'loaded',
       callback: (_) => widget.onLoaded?.call(),
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'userFontFailed',
+      callback: (_) => widget.onUserFontFailed?.call(),
     );
 
     controller.addJavaScriptHandler(
@@ -704,8 +737,22 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       return;
     }
 
+    // The added font goes before loadBook(), so the first chapter already
+    // has it. A font that cannot be read must not stop the book.
+    final fontFile = widget.userFontFile;
+    final fontFamily = widget.userFontFamily;
+    if (fontFile != null && fontFamily != null) {
+      try {
+        if (!await sendUserFont(fontFile, fontFamily, _runJavascript)) return;
+      } on IOException catch (error) {
+        debugPrint('[EPUB_DART] added font not sent: $error');
+        widget.onUserFontFailed?.call();
+      }
+    }
+
     // Locations an earlier open saved spare epub.js generating them again.
     final cachedLocations = await EpubLocationsCache.read(widget.epubPath);
+
     await _runJavascript(
       'loadBook('
       '$cfiParam, '

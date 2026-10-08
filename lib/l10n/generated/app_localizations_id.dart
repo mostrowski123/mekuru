@@ -1419,6 +1419,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Pembaca terlalu lama memuat. Ketuk coba lagi untuk mengulang.';
 
   @override
+  String get readerUserFontFailed =>
+      'Font ini tidak dapat dimuat; menampilkan font bawaan buku.';
+
+  @override
   String get readerVerticalTextNonNativeWarning =>
       'Buku ini awalnya tidak diformat untuk teks vertikal. Beberapa tampilan mungkin bermasalah.';
 

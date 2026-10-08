@@ -2413,6 +2413,12 @@ abstract class AppLocalizations {
   /// **'Reader took too long to load. Tap retry to try again.'**
   String get readerLoadTimeout;
 
+  /// Snackbar in the reader when the font the user added cannot be read by the reader; the text falls back to the book's fonts.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this font; showing the book\'s own font.'**
+  String get readerUserFontFailed;
+
   /// Warning shown when vertical text is forced for a non-vertical book.
   ///
   /// In en, this message translates to:

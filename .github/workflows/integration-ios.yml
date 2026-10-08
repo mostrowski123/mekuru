@@ -144,3 +144,4 @@ jobs:
           integration_test/reader_ready_signal_lost_test.dart
           integration_test/library_bookmark_open_test.dart
           integration_test/reader_relayout_page_alignment_test.dart
+          integration_test/reader_custom_font_test.dart

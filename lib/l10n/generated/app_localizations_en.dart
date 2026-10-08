@@ -1414,6 +1414,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Reader took too long to load. Tap retry to try again.';
 
   @override
+  String get readerUserFontFailed =>
+      'Couldn\'t load this font; showing the book\'s own font.';
+
+  @override
   String get readerVerticalTextNonNativeWarning =>
       'This book was not originally formatted for vertical text. Some display issues may occur.';
 

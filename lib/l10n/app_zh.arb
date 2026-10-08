@@ -1646,6 +1646,10 @@
   "@readerLoadTimeout": {
     "description": "Shown when the reader's load watchdog trips before the EPUB finishes opening."
   },
+  "readerUserFontFailed": "无法加载此字体，正在显示书籍自带的字体。",
+  "@readerUserFontFailed": {
+    "description": "Snackbar in the reader when the font the user added cannot be read by the reader; the text falls back to the book's fonts."
+  },
   "readerVerticalTextNonNativeWarning": "此书最初未为竖排文本设计，可能会出现显示问题。",
   "@readerVerticalTextNonNativeWarning": {
     "description": "Warning shown when vertical text is forced for a non-vertical book."

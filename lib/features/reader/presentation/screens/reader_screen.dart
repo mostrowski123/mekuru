@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, compute, defaultTargetPlatform, setEquals;
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ import 'package:mekuru/features/reader/data/services/epub_file_resolver.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/data/services/reader_progress_persistence.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/features/reader/presentation/providers/user_font_providers.dart';
 import 'package:mekuru/features/reader/presentation/reader_display_settings_mapper.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 import 'package:mekuru/features/reader/data/models/highlight_color.dart';
@@ -92,6 +94,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   ReaderSettings? _lastSettings;
 
   String? _epubPath;
+
+  // The added font sent to the viewer and the CSS family it was registered
+  // under; null for the built-in fonts or when the file is missing.
+  File? _userFontFile;
+  String? _userFontFamily;
+  int _userFontGeneration = 0;
+  int _fontChangeToken = 0;
+  // The bridge has one font buffer, so font changes run one at a time.
+  Future<void> _fontChange = Future.value();
+  bool _userFontFailureShown = false;
+
   List<_FlattenedChapter> _chapters = const [];
   bool _isLoading = true;
   // Opens immersive (controls and system bars hidden), same as the manga
@@ -402,23 +415,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           previous.colorMode != next.colorMode ||
           (next.colorMode == ColorMode.sepia &&
               previous.sepiaIntensity != next.sepiaIntensity);
-      final fontFamilyChanged = previous.fontFamily != next.fontFamily;
-      if ((colorChanged || fontFamilyChanged) && _isEpubLoaded) {
-        final newTheme = buildReaderTheme(settings: next);
+      if (colorChanged && _isEpubLoaded) {
+        final newTheme = _readerTheme(next);
         _epubController.updateTheme(
           foregroundColor: newTheme.foregroundColor,
           customCss: newTheme.customCss,
         );
         _epubController.setBodyBackground(newTheme.backgroundColor);
       }
-      if (fontFamilyChanged && _isEpubLoaded) {
-        // Same size, but it re-lays out the reflowed text at the current
-        // position, so highlights follow the new glyph metrics.
-        _epubController.setFontSize(next.fontSize);
-      }
+      final fontChanged =
+          previous.fontFamily != next.fontFamily ||
+          previous.customFontFile != next.customFontFile;
+      if (fontChanged && _isEpubLoaded) _queueFontChange();
     });
 
-    final readerTheme = buildReaderTheme(settings: settings);
+    final readerTheme = _readerTheme(settings);
     // iOS never letterboxes the Dynamic Island / notch, and the reader draws
     // edge to edge, so keep the page itself clear of it. Android is unchanged.
     final viewerInsets = defaultTargetPlatform == TargetPlatform.iOS
@@ -487,6 +498,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             furiganaMode: settings.furiganaMode,
                             furiganaJlptLevel: settings.furiganaJlptLevel,
                             furiganaKnownKanji: wanikaniKnownKanji,
+                            userFontFile: _userFontFile,
+                            userFontFamily: _userFontFamily,
+                            onUserFontFailed: _showUserFontFailed,
                             onLoaded: () {
                               if (!mounted) return;
                               _loadWatchdog?.cancel();
@@ -749,9 +763,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
       if (!mounted) return;
 
+      final userFont = await _resolveUserFont(ref.read(readerSettingsProvider));
+      if (!mounted) return;
+
       // The viewer streams the book from disk itself; only the path is kept.
       setState(() {
         _epubPath = epubPath;
+        _userFontFile = userFont;
+        _userFontFamily = userFont == null
+            ? null
+            : 'mekuru-user-font-${++_userFontGeneration}';
         _initialCfi = initialCfi;
         _progress = latestBook?.readProgress ?? widget.book.readProgress;
         _viewerEpoch += 1;
@@ -775,6 +796,58 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         );
       });
     }
+  }
+
+  Future<File?> _resolveUserFont(ReaderSettings s) =>
+      s.fontFamily == ReaderFontFamily.custom
+      ? ref.read(userFontStoreProvider).fileFor(s.customFontFile)
+      : Future.value(null);
+
+  ReaderTheme _readerTheme(ReaderSettings s) =>
+      buildReaderTheme(settings: s, userFontFamily: _userFontFamily);
+
+  /// Queues a font change made while the book is open. Changes run one at
+  /// a time (two transfers would interleave in the bridge's one buffer),
+  /// and a change that a newer one superseded before it started is skipped.
+  void _queueFontChange() {
+    final token = ++_fontChangeToken;
+    _fontChange = _fontChange
+        .then((_) => token == _fontChangeToken ? _applyFontChange() : null)
+        .catchError((Object error) {
+          debugPrint('[READER] font change failed: $error');
+        });
+  }
+
+  /// Sends the chosen added font (if any), then re-themes and re-lays out
+  /// at the current position.
+  Future<void> _applyFontChange() async {
+    final file = await _resolveUserFont(ref.read(readerSettingsProvider));
+    String? family;
+    if (file != null) {
+      family = 'mekuru-user-font-${++_userFontGeneration}';
+      if (!await _epubController.applyUserFont(file, family)) family = null;
+    }
+    if (!mounted) return;
+    _userFontFile = family == null ? null : file;
+    _userFontFamily = family;
+    final settings = ref.read(readerSettingsProvider);
+    final theme = _readerTheme(settings);
+    _epubController.updateTheme(
+      foregroundColor: theme.foregroundColor,
+      customCss: theme.customCss,
+    );
+    _epubController.setBodyBackground(theme.backgroundColor);
+    // Same size, but it re-lays out the reflowed text at the current
+    // position, so highlights follow the new glyph metrics.
+    _epubController.setFontSize(settings.fontSize);
+  }
+
+  void _showUserFontFailed() {
+    if (!mounted || _userFontFailureShown) return;
+    _userFontFailureShown = true;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.readerUserFontFailed)));
   }
 
   Future<void> _openAllReaderSettings() async {

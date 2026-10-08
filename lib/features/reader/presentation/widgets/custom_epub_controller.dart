@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../data/models/epub_models.dart';
+import 'custom_epub_viewer.dart' show sendUserFont;
 
 /// Dart-side controller for the custom epub.js bridge.
 ///
@@ -101,6 +103,27 @@ class CustomEpubController {
     final fgHex = foregroundColor != null ? _colorToHex(foregroundColor) : '';
     final cssJson = customCss != null ? jsonEncode(customCss) : 'null';
     _eval('updateTheme("$fgHex", $cssJson)');
+  }
+
+  /// Sends [file] to the open book as CSS family [family] and registers it
+  /// in the chapters on screen. False when the web view is gone or the
+  /// file cannot be read.
+  Future<bool> applyUserFont(File file, String family) async {
+    Future<bool> run(String source) async {
+      try {
+        await _evaluateJavascript(source);
+        return true;
+      } on StateError {
+        return false;
+      }
+    }
+
+    try {
+      if (!await sendUserFont(file, family, run)) return false;
+    } on IOException {
+      return false;
+    }
+    return run('applyUserFont()');
   }
 
   void setMargins(int horizontal, int vertical) {

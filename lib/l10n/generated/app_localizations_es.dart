@@ -1432,6 +1432,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'El lector tardó demasiado en cargar. Toca reintentar para volver a intentarlo.';
 
   @override
+  String get readerUserFontFailed =>
+      'No se pudo cargar esta fuente; se muestra la fuente del libro.';
+
+  @override
   String get readerVerticalTextNonNativeWarning =>
       'Este libro no fue originalmente formateado para texto vertical. Puede haber problemas de visualización.';
 
