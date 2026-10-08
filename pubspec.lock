@@ -1004,12 +1004,11 @@ packages:
     source: hosted
     version: "1.5.0"
   mecab_for_dart:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: mecab_for_dart
-      sha256: "4618280ce24debe58f576fdc755d4a60d693fe892cb4bcd1594dcf787e97546d"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/mecab_for_dart"
+      relative: true
+    source: path
     version: "2.0.3"
   mecab_for_flutter:
     dependency: "direct main"

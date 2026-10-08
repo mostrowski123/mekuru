@@ -223,7 +223,8 @@ class StagedFullRestore {
   /// Moves the live item (under [into], default [root]) aside into the
   /// rollback dir, then the staged item into place. Returns false without
   /// touching anything when the staged item is gone: a previous run already
-  /// moved it in, or the archive never had it.
+  /// moved it in, or the archive never had it. Renames only: after iOS's
+  /// in-process restart, MeCab still has the live dictionary memory-mapped.
   bool _swapIn(
     String name, {
     List<String> suffixes = const [''],

@@ -136,6 +136,12 @@ dev_dependencies:
   build_runner: ^2.4.0
   environment_config: ^4.0.0+1
 
+dependency_overrides:
+  # Vendored so MeCab memory-maps its dictionaries; see the note at the top of
+  # packages/mecab_for_dart/hook/build.dart.
+  mecab_for_dart:
+    path: packages/mecab_for_dart
+
 flutter:
   default-flavor: play
   generate: true

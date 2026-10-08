@@ -35,6 +35,10 @@ def errors(archive: str, abis=ABIS) -> list[str]:
                 if (len(header) < 20 or header[:4] != b"\x7fELF" or header[5] != 1
                         or struct.unpack_from("<H", header, 18)[0] != MACHINES[abi]):
                     problems.append(f"Wrong or invalid ELF ABI: {name}")
+                # An imported symbol's name sits NUL-terminated in .dynstr;
+                # MeCab only calls munmap when it memory-maps its dictionaries.
+                if lib == "libmecab_dart.so" and b"\0munmap\0" not in zf.read(name):
+                    problems.append(f"MeCab built without mmap (no munmap import): {name}")
         for abi in abis:
             for lib in LIBS:
                 if (abi, lib) not in libraries:

@@ -126,6 +126,7 @@ class EnhancedFuriganaDictDownloadService {
 
     final dir = await getStorageDir();
     final outputDir = Directory(dir);
+    // MeCab memory-maps these files: delete them, never rewrite in place.
     if (await outputDir.exists()) {
       await outputDir.delete(recursive: true);
     }

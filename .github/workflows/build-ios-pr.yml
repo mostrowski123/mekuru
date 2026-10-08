@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - 'lib/**'
-      - 'packages/local_manga_ocr/**'
+      - 'packages/**'
       - 'ios/**'
       - 'assets/**'
       - 'pubspec.yaml'
@@ -78,12 +78,14 @@ jobs:
         run: flutter build ios --no-codesign --no-pub
 
       # iOS counterpart of scripts/verify_native_libs.py: the MeCab and sqlite
-      # build hooks must have produced frameworks inside the app bundle.
+      # build hooks must have produced frameworks inside the app bundle, and
+      # MeCab must memory-map its dictionaries (it imports munmap).
       - name: Verify native frameworks
         run: |
           app=build/ios/iphoneos/Runner.app
           ls "$app/Frameworks"
           test -d "$app/Frameworks/mecab_dart.framework"
+          nm -u "$app/Frameworks/mecab_dart.framework/mecab_dart" | grep -qx _munmap
           test -d "$app/Frameworks/sqlite3.framework"
           test ! -e "$app/Frameworks/GoogleAppMeasurementIdentitySupport.framework"
           test ! -e "$app/Frameworks/GoogleAdsOnDeviceConversion.framework"

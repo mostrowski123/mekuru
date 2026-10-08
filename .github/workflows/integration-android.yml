@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - 'lib/**'
-      - 'packages/local_manga_ocr/**'
+      - 'packages/**'
       - 'android/**'
       - 'assets/**'
       - 'integration_test/**'
@@ -15,7 +15,7 @@ on:
     branches: [main]
     paths:
       - 'lib/**'
-      - 'packages/local_manga_ocr/**'
+      - 'packages/**'
       - 'android/**'
       - 'assets/**'
       - 'integration_test/**'

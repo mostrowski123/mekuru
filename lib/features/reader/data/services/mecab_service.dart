@@ -453,6 +453,7 @@ class MecabService {
           data.offsetInBytes,
           data.lengthInBytes,
         );
+        // MeCab memory-maps these files: replace by rename, never in place.
         await writeBytesAtomic(destFile, bytes);
       }
       if (loadAsset == null) {

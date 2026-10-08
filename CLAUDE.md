@@ -12,7 +12,7 @@ A feature or fix is for both platforms unless the task says otherwise. Android m
 - **Copy**: text that names Android things (Google Play, AnkiDroid, background notifications) gets an `…Ios` l10n key next to the original, e.g. `backupFullExportSubtitleIos`.
 - **Reader**: `reader_bridge.js` and `epub.js` run in WKWebView on iOS and in the Chromium WebView on Android. Verify a change there on both.
 - **New plugin or native API**: it must support iOS 26 (Swift Package Manager preferred). Add the `Info.plist` usage string it needs (a missing one crashes on first use) and declare required-reason APIs in `ios/Runner/PrivacyInfo.xcprivacy`.
-- **Checking**: `build-ios-pr.yml` builds iOS for every PR that touches `lib/`, `ios/`, `assets/`, `packages/local_manga_ocr/` or `pubspec.*`. Run `flutter build ios --no-codesign` yourself after changing `ios/`, plugins or native assets.
+- **Checking**: `build-ios-pr.yml` builds iOS for every PR that touches `lib/`, `ios/`, `assets/`, `packages/` or `pubspec.*`. Run `flutter build ios --no-codesign` yourself after changing `ios/`, plugins or native assets.
 
 ## Build & test commands
 

@@ -12,6 +12,8 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+    # Vendored third-party code, kept as close to upstream as possible.
+    - packages/mecab_for_dart/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

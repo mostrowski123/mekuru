@@ -8,7 +8,8 @@ from verify_native_libs import errors, LIBS
 
 
 class NativePackagingTests(unittest.TestCase):
-    def check_archive(self, *, missing=None, machine=183, prefix="", extra=None, manifest=True):
+    def check_archive(self, *, missing=None, machine=183, prefix="", extra=None, manifest=True,
+                      mmap=True):
         with tempfile.TemporaryDirectory() as directory:
             archive = Path(directory) / "test.apk"
             with zipfile.ZipFile(archive, "w") as z:
@@ -17,7 +18,8 @@ class NativePackagingTests(unittest.TestCase):
                 struct.pack_into("<H", header, 18, machine)
                 for lib in LIBS:
                     if lib != missing:
-                        z.writestr(f"{prefix}lib/arm64-v8a/{lib}", header)
+                        dynstr = b"\0munmap\0" if mmap and lib == "libmecab_dart.so" else b""
+                        z.writestr(f"{prefix}lib/arm64-v8a/{lib}", bytes(header) + dynstr)
                 if manifest:
                     entries = {lib: ["absolute", lib] for lib in LIBS}
                     if extra:
@@ -34,6 +36,9 @@ class NativePackagingTests(unittest.TestCase):
         for lib in ["libsqlite3.so", "libmecab_dart.so"]:
             failures = self.check_archive(missing=lib)
             self.assertTrue(any("Missing lib/arm64-v8a/" + lib in f for f in failures))
+
+    def test_mecab_without_mmap_fails(self):
+        self.assertTrue(any("no munmap import" in f for f in self.check_archive(mmap=False)))
 
     def test_library_with_wrong_architecture_fails(self):
         self.assertTrue(any("Wrong or invalid ELF ABI" in f for f in self.check_archive(machine=62)))
