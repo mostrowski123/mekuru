@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../data/models/epub_models.dart';
-import 'custom_epub_viewer.dart' show sendUserFont;
+import 'bridge_transfer.dart';
 
 /// Dart-side controller for the custom epub.js bridge.
 ///
@@ -125,6 +125,9 @@ class CustomEpubController {
     }
     return run('applyUserFont()');
   }
+
+  /// Drops the added font from the bridge (a built-in font was chosen).
+  void clearUserFont() => _eval('clearUserFont()');
 
   void setMargins(int horizontal, int vertical) {
     _eval('setMargins($horizontal, $vertical)');

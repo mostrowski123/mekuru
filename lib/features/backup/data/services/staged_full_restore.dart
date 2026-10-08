@@ -105,6 +105,13 @@ class StagedFullRestore {
 
   final List<Directory> _leftovers = [];
 
+  /// Items an archive may lack, and where each lives; restoring an archive
+  /// without one leaves the device's own copy alone.
+  List<(String, Directory)> get _optionalItems => [
+    (unidicDirName, documentsRoot),
+    (fontsDirName, root),
+  ];
+
   Directory get _staging => Directory(p.join(root.path, stagingDirName));
   Directory get _rollback => Directory(p.join(root.path, rollbackDirName));
   File get _ready => File(p.join(_staging.path, readyMarkerName));
@@ -167,20 +174,20 @@ class StagedFullRestore {
       return _fail(const StagedRestoreException('incomplete_staging'));
     }
 
-    var movedUnidic = false;
-    var movedFonts = false;
+    final moved = <String>{};
     try {
       _rollback.createSync(recursive: true);
       _swapIn(databaseFileName, suffixes: _databaseSuffixes);
       _swapIn(booksDirName);
-      movedUnidic = _swapIn(unidicDirName, into: documentsRoot);
-      movedFonts = _swapIn(fontsDirName);
+      for (final (name, home) in _optionalItems) {
+        if (_swapIn(name, into: home)) moved.add(name);
+      }
       await _replacePrefs();
       await prefs.setString(resultPrefKey, resultOk);
       _ready.deleteSync();
       return StagedRestoreOutcome.applied;
     } catch (e, st) {
-      _rollBack(movedUnidic: movedUnidic, movedFonts: movedFonts);
+      _rollBack(moved);
       return _fail(e, st);
     }
   }
@@ -260,12 +267,11 @@ class StagedFullRestore {
   /// live slot), then the old item returns from the rollback dir.
   ///
   /// The database and books are always staged, so "live present, staged
-  /// gone" identifies the item as ours even across a crash. The optional
-  /// dictionary and fonts are ours when this run moved them ([movedUnidic],
-  /// [movedFonts]) or when an old copy waits in the rollback dir; a crash
-  /// between runs on a device that had none leaves the restored copy in
-  /// place, which works either way.
-  void _rollBack({required bool movedUnidic, required bool movedFonts}) {
+  /// gone" identifies the item as ours even across a crash. An optional item
+  /// is ours when this run moved it ([moved]) or when an old copy waits in
+  /// the rollback dir; a crash between runs on a device that had none leaves
+  /// the restored copy in place, which works either way.
+  void _rollBack(Set<String> moved) {
     void attempt(void Function() step) {
       try {
         step();
@@ -274,13 +280,10 @@ class StagedFullRestore {
 
     // Not the books/db rule below: an archive without one of these must
     // leave the device's own copy alone.
-    for (final (name, home, moved) in [
-      (unidicDirName, documentsRoot, movedUnidic),
-      (fontsDirName, root, movedFonts),
-    ]) {
+    for (final (name, home) in _optionalItems) {
       final stagedPath = p.join(_staging.path, name);
       final old = _existing(p.join(_rollback.path, name));
-      if (moved || old != null) {
+      if (moved.contains(name) || old != null) {
         final live = _existing(p.join(home.path, name));
         if (live != null && _existing(stagedPath) == null) {
           attempt(() => live.renameSync(stagedPath));

@@ -35,24 +35,6 @@ void main() {
     });
   });
 
-  group('safeFontBaseName', () {
-    test('keeps readable names, Japanese included', () {
-      expect(safeFontBaseName('游明朝 Bold'), '游明朝 Bold');
-      expect(
-        safeFontBaseName('Noto Serif JP (Regular)'),
-        'Noto Serif JP (Regular)',
-      );
-    });
-
-    test('replaces characters that break paths and trims leading dots', () {
-      expect(safeFontBaseName('a:b?c*"d<e>f|g'), 'a_b_c__d_e_f_g');
-      expect(safeFontBaseName('..hidden'), 'hidden');
-      expect(safeFontBaseName('dir/name'), 'dir_name');
-      expect(safeFontBaseName('...'), 'font');
-      expect(safeFontBaseName(''), 'font');
-    });
-  });
-
   group('UserFontStore', () {
     late Directory root;
     late Directory source;
@@ -88,6 +70,18 @@ void main() {
         expect(stored!.readAsBytesSync(), _ttf);
       },
     );
+
+    test('names that break file systems are cleaned and shortened', () async {
+      Future<String> stored(String name) async =>
+          (await store.import(sourceFile(name, _ttf).path)).fileName;
+
+      // Characters a file system refuses: see zipFolderName's own tests.
+      expect(await stored('..hidden.ttf'), 'hidden.ttf');
+      expect(await stored('....ttf'), 'font.ttf');
+      // A long Japanese name would pass 255 bytes with its extension.
+      final long = await stored('${'明' * 100}.ttf');
+      expect(long, '${'明' * 50}.ttf');
+    });
 
     test('a woff2 named .ttf is stored as .woff2', () async {
       final font = await store.import(

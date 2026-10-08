@@ -11,10 +11,23 @@ import 'dart:io';
 ///
 /// Rename is atomic on POSIX filesystems (Android); on Windows Dart's
 /// `File.rename` replaces an existing destination, which keeps tests portable.
-Future<void> writeBytesAtomic(File file, List<int> bytes) async {
+Future<void> writeBytesAtomic(File file, List<int> bytes) => _replaceViaTmp(
+  file,
+  (tmp) async => await tmp.writeAsBytes(bytes, flush: true),
+);
+
+/// Copy variant of [writeBytesAtomic]: [destination] only ever holds a
+/// complete copy of [source].
+Future<void> copyFileAtomic(File source, File destination) =>
+    _replaceViaTmp(destination, (tmp) async => await source.copy(tmp.path));
+
+Future<void> _replaceViaTmp(
+  File file,
+  Future<void> Function(File tmp) write,
+) async {
   final tmp = File('${file.path}.tmp');
   try {
-    await tmp.writeAsBytes(bytes, flush: true);
+    await write(tmp);
     await tmp.rename(file.path);
   } catch (_) {
     try {

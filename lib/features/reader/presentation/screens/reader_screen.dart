@@ -21,6 +21,7 @@ import 'package:mekuru/features/reader/presentation/reader_display_settings_mapp
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 import 'package:mekuru/features/reader/data/models/highlight_color.dart';
 import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
+import 'package:mekuru/features/reader/presentation/widgets/bridge_transfer.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/epub_reader_settings_sheet.dart';
@@ -97,8 +98,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   // The added font sent to the viewer and the CSS family it was registered
   // under; null for the built-in fonts or when the file is missing.
-  File? _userFontFile;
-  String? _userFontFamily;
+  UserFontSend? _userFont;
   int _userFontGeneration = 0;
   int _fontChangeToken = 0;
   // The bridge has one font buffer, so font changes run one at a time.
@@ -415,14 +415,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           previous.colorMode != next.colorMode ||
           (next.colorMode == ColorMode.sepia &&
               previous.sepiaIntensity != next.sepiaIntensity);
-      if (colorChanged && _isEpubLoaded) {
-        final newTheme = _readerTheme(next);
-        _epubController.updateTheme(
-          foregroundColor: newTheme.foregroundColor,
-          customCss: newTheme.customCss,
-        );
-        _epubController.setBodyBackground(newTheme.backgroundColor);
-      }
+      if (colorChanged && _isEpubLoaded) _pushTheme(next);
       final fontChanged =
           previous.fontFamily != next.fontFamily ||
           previous.customFontFile != next.customFontFile;
@@ -498,8 +491,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             furiganaMode: settings.furiganaMode,
                             furiganaJlptLevel: settings.furiganaJlptLevel,
                             furiganaKnownKanji: wanikaniKnownKanji,
-                            userFontFile: _userFontFile,
-                            userFontFamily: _userFontFamily,
+                            userFont: _userFont,
                             onUserFontFailed: _showUserFontFailed,
                             onLoaded: () {
                               if (!mounted) return;
@@ -769,10 +761,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       // The viewer streams the book from disk itself; only the path is kept.
       setState(() {
         _epubPath = epubPath;
-        _userFontFile = userFont;
-        _userFontFamily = userFont == null
+        _userFont = userFont == null
             ? null
-            : 'mekuru-user-font-${++_userFontGeneration}';
+            : (file: userFont, family: _nextUserFontFamily());
         _initialCfi = initialCfi;
         _progress = latestBook?.readProgress ?? widget.book.readProgress;
         _viewerEpoch += 1;
@@ -798,13 +789,26 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
-  Future<File?> _resolveUserFont(ReaderSettings s) =>
-      s.fontFamily == ReaderFontFamily.custom
-      ? ref.read(userFontStoreProvider).fileFor(s.customFontFile)
-      : Future.value(null);
+  Future<File?> _resolveUserFont(ReaderSettings s) => ref
+      .read(userFontStoreProvider)
+      .fileFor(
+        s.fontFamily == ReaderFontFamily.custom ? s.customFontFile : null,
+      );
+
+  // A new name per transfer, so two added fonts never collide in a chapter.
+  String _nextUserFontFamily() => 'mekuru-user-font-${++_userFontGeneration}';
 
   ReaderTheme _readerTheme(ReaderSettings s) =>
-      buildReaderTheme(settings: s, userFontFamily: _userFontFamily);
+      buildReaderTheme(settings: s, userFontFamily: _userFont?.family);
+
+  void _pushTheme(ReaderSettings s) {
+    final theme = _readerTheme(s);
+    _epubController.updateTheme(
+      foregroundColor: theme.foregroundColor,
+      customCss: theme.customCss,
+    );
+    _epubController.setBodyBackground(theme.backgroundColor);
+  }
 
   /// Queues a font change made while the book is open. Changes run one at
   /// a time (two transfers would interleave in the bridge's one buffer),
@@ -822,21 +826,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// at the current position.
   Future<void> _applyFontChange() async {
     final file = await _resolveUserFont(ref.read(readerSettingsProvider));
-    String? family;
+    UserFontSend? font;
     if (file != null) {
-      family = 'mekuru-user-font-${++_userFontGeneration}';
-      if (!await _epubController.applyUserFont(file, family)) family = null;
+      font = (file: file, family: _nextUserFontFamily());
+      if (!await _epubController.applyUserFont(file, font.family)) font = null;
     }
     if (!mounted) return;
-    _userFontFile = family == null ? null : file;
-    _userFontFamily = family;
+    if (font == null) _epubController.clearUserFont();
+    _userFont = font;
     final settings = ref.read(readerSettingsProvider);
-    final theme = _readerTheme(settings);
-    _epubController.updateTheme(
-      foregroundColor: theme.foregroundColor,
-      customCss: theme.customCss,
-    );
-    _epubController.setBodyBackground(theme.backgroundColor);
+    _pushTheme(settings);
     // Same size, but it re-lays out the reflowed text at the current
     // position, so highlights follow the new glyph metrics.
     _epubController.setFontSize(settings.fontSize);

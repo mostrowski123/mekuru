@@ -83,9 +83,15 @@ function beginEpubTransfer(totalBytes) {
   _epubOffset = 0;
 }
 
-function appendEpubChunk(base64) {
+// Decodes one base64 chunk into buf at offset; returns the next offset.
+function _decodeInto(buf, offset, base64) {
   var bin = atob(base64);
-  for (var i = 0; i < bin.length; i++) _epubBuf[_epubOffset++] = bin.charCodeAt(i);
+  for (var i = 0; i < bin.length; i++) buf[offset++] = bin.charCodeAt(i);
+  return offset;
+}
+
+function appendEpubChunk(base64) {
+  _epubOffset = _decodeInto(_epubBuf, _epubOffset, base64);
 }
 
 // A font the user added arrives the same way, before loadBook() or while a
@@ -95,7 +101,6 @@ function appendEpubChunk(base64) {
 var _userFontBuf = null;
 var _userFontOffset = 0;
 var _userFontFamily = null;
-var _userFontFailedFamily = null;
 
 function beginFontTransfer(totalBytes, family) {
   _userFontBuf = new Uint8Array(totalBytes);
@@ -104,13 +109,16 @@ function beginFontTransfer(totalBytes, family) {
 }
 
 function appendFontChunk(base64) {
-  var bin = atob(base64);
-  for (var i = 0; i < bin.length; i++) _userFontBuf[_userFontOffset++] = bin.charCodeAt(i);
+  _userFontOffset = _decodeInto(_userFontBuf, _userFontOffset, base64);
+}
+
+// Back to a built-in font: later chapters stop parsing the added one.
+function clearUserFont() {
+  _userFontBuf = null;
+  _userFontFamily = null;
 }
 
 function _reportUserFontFailed() {
-  if (_userFontFailedFamily === _userFontFamily) return;
-  _userFontFailedFamily = _userFontFamily;
   callDart('userFontFailed');
 }
 

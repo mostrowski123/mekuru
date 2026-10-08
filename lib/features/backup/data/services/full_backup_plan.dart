@@ -231,16 +231,7 @@ FullBackupPlan buildExportPlan(BuildExportPlanArgs args) {
 
   final fontsDirPath = args.fontsDirPath;
   if (fontsDirPath != null && Directory(fontsDirPath).existsSync()) {
-    for (final entity in Directory(
-      fontsDirPath,
-    ).listSync(followLinks: false)..sort(_byPath)) {
-      if (entity is File && !entity.path.endsWith('.tmp')) {
-        add(
-          entity,
-          '${FullBackupManifest.fontsPrefix}${p.basename(entity.path)}',
-        );
-      }
-    }
+    addTree(Directory(fontsDirPath), FullBackupManifest.fontsPrefix);
   }
 
   return FullBackupPlan(

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data' show BytesBuilder;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -14,6 +13,7 @@ import '../../data/models/reader_settings.dart';
 import '../../data/services/epub_locations_cache.dart';
 import '../../data/services/furigana_generator.dart';
 import '../reader_interaction_logic.dart';
+import 'bridge_transfer.dart';
 import 'custom_epub_controller.dart';
 
 /// Builds the set of gesture recognizers that allow the iOS UiKitView
@@ -42,50 +42,6 @@ Set<Factory<OneSequenceGestureRecognizer>> buildEpubGestureRecognizers() {
     ),
     Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
   };
-}
-
-/// Re-chunks [bytes] into base64 chunks for transfer to the JS bridge.
-///
-/// [chunkSize] must be a multiple of 3 so every chunk encodes without
-/// padding and the independently decoded chunks concatenate back into the
-/// original bytes. Stream event boundaries are arbitrary (e.g. the 64 KiB
-/// blocks of `File.openRead`); every yielded chunk except the last holds
-/// exactly [chunkSize] bytes. Each `yield` suspends the source stream, so
-/// only about one chunk is ever resident at a time.
-Stream<String> epubBase64Chunks(
-  Stream<List<int>> bytes, {
-  int chunkSize = 3 * 1024 * 1024,
-}) async* {
-  assert(chunkSize > 0 && chunkSize % 3 == 0);
-  final buffer = BytesBuilder(copy: false);
-  await for (final data in bytes) {
-    buffer.add(data);
-    while (buffer.length >= chunkSize) {
-      final buffered = buffer.takeBytes();
-      yield base64Encode(Uint8List.sublistView(buffered, 0, chunkSize));
-      // sublist (not sublistView): a view would pin the whole chunk-sized
-      // backing array for the life of the small tail.
-      buffer.add(buffered.sublist(chunkSize));
-    }
-  }
-  if (buffer.isNotEmpty) yield base64Encode(buffer.takeBytes());
-}
-
-/// Sends an added font to the bridge in the same bounded base64 chunks as
-/// the book, as CSS family [family]. False when the web view went away.
-Future<bool> sendUserFont(
-  File file,
-  String family,
-  Future<bool> Function(String source) run,
-) async {
-  final length = await file.length();
-  if (!await run('beginFontTransfer($length, ${jsonEncode(family)})')) {
-    return false;
-  }
-  await for (final chunk in epubBase64Chunks(file.openRead())) {
-    if (!await run("appendFontChunk('$chunk')")) return false;
-  }
-  return true;
 }
 
 /// Selection data reported by the JS bridge.
@@ -137,15 +93,13 @@ class CustomEpubViewer extends StatefulWidget {
     this.onRendererGone,
     this.onPageCharacters,
     this.onPageKey,
-    this.userFontFile,
-    this.userFontFamily,
+    this.userFont,
     this.onUserFontFailed,
   });
 
-  /// A font the user added, sent before the book; [userFontFamily] is the
-  /// CSS family the theme names. Both null for the built-in fonts.
-  final File? userFontFile;
-  final String? userFontFamily;
+  /// A font the user added, sent before the book, and the CSS family the
+  /// theme names it by. Null for the built-in fonts.
+  final UserFontSend? userFont;
 
   /// The WebView could not read the added font.
   final VoidCallback? onUserFontFailed;
@@ -725,13 +679,13 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     // if the WebView goes away mid-transfer (e.g. the user backs out of a
     // large book).
     try {
-      final file = File(widget.epubPath);
-      if (!await _runJavascript('beginEpubTransfer(${await file.length()})')) {
-        return;
-      }
-      await for (final chunk in epubBase64Chunks(file.openRead())) {
-        if (!await _runJavascript("appendEpubChunk('$chunk')")) return;
-      }
+      final sent = await sendFileToBridge(
+        File(widget.epubPath),
+        begin: (length) => 'beginEpubTransfer($length)',
+        append: 'appendEpubChunk',
+        run: _runJavascript,
+      );
+      if (!sent) return;
     } on IOException catch (error) {
       widget.onLoadError?.call('$error');
       return;
@@ -739,11 +693,10 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
 
     // The added font goes before loadBook(), so the first chapter already
     // has it. A font that cannot be read must not stop the book.
-    final fontFile = widget.userFontFile;
-    final fontFamily = widget.userFontFamily;
-    if (fontFile != null && fontFamily != null) {
+    final font = widget.userFont;
+    if (font != null) {
       try {
-        if (!await sendUserFont(fontFile, fontFamily, _runJavascript)) return;
+        if (!await sendUserFont(font.file, font.family, _runJavascript)) return;
       } on IOException catch (error) {
         debugPrint('[EPUB_DART] added font not sent: $error');
         widget.onUserFontFailed?.call();

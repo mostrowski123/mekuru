@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:mekuru/core/utils/atomic_file.dart';
+import 'package:mekuru/features/backup/data/models/zip_folder_name.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -24,7 +26,17 @@ class UserFont {
   String toString() => 'UserFont($fileName)';
 }
 
-enum FontFileFormat { trueType, openType, woff, woff2 }
+enum FontFileFormat {
+  trueType('ttf'),
+  openType('otf'),
+  woff('woff'),
+  woff2('woff2');
+
+  const FontFileFormat(this.extension);
+
+  /// The extension a stored font of this format gets.
+  final String extension;
+}
 
 enum UserFontImportError { notAFont, collection, tooLarge }
 
@@ -60,16 +72,6 @@ FontFileFormat detectFontFormat(List<int> head) {
     ),
     _ => throw const UserFontImportException(UserFontImportError.notAFont),
   };
-}
-
-/// Keeps the user's name, Unicode included; only characters that break a
-/// path or a file system go, and leading dots (hidden files).
-String safeFontBaseName(String base) {
-  final cleaned = base
-      .replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1F]'), '_')
-      .replaceFirst(RegExp(r'^[. ]+'), '')
-      .trim();
-  return cleaned.isEmpty ? 'font' : cleaned;
 }
 
 /// The fonts the user added: `<app support>/fonts/`, flat. The folder
@@ -116,27 +118,20 @@ class UserFontStore {
 
     final dir = await _dir();
     await dir.create(recursive: true);
-    final base = safeFontBaseName(p.basenameWithoutExtension(sourcePath));
-    final extension = switch (format) {
-      FontFileFormat.trueType => 'ttf',
-      FontFileFormat.openType => 'otf',
-      FontFileFormat.woff => 'woff',
-      FontFileFormat.woff2 => 'woff2',
-    };
+    // The user's name, Unicode included, made safe and short enough for
+    // every file system (the same rule as the full backup's folder names).
+    final base = zipFolderName(
+      p.basenameWithoutExtension(sourcePath),
+      fallback: 'font',
+    );
+    final extension = format.extension;
     var fileName = '$base.$extension';
     for (var n = 2; File(p.join(dir.path, fileName)).existsSync(); n++) {
       fileName = '$base ($n).$extension';
     }
 
-    // Copy then rename, so a font never appears half-copied.
-    final tmp = File(p.join(dir.path, '$fileName.tmp'));
-    try {
-      await source.copy(tmp.path);
-      await tmp.rename(p.join(dir.path, fileName));
-    } catch (_) {
-      if (await tmp.exists()) await tmp.delete();
-      rethrow;
-    }
+    // A font never appears half-copied.
+    await copyFileAtomic(source, File(p.join(dir.path, fileName)));
     return UserFont(fileName: fileName);
   }
 

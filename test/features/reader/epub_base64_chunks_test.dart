@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
+import 'package:mekuru/features/reader/presentation/widgets/bridge_transfer.dart';
 
 void main() {
   test('decoded chunks concatenate back into the original bytes', () async {
