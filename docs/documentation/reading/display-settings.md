@@ -33,8 +33,9 @@ If you switch a book away from its original layout, a note warns that some pages
 
 ### Display
 
-- **Font Size** goes from 12 to 32. The default is 18.
-- The font row has **Book default**, **Mincho** and **Gothic**. **Book default** uses the book's own font. **Mincho** is a serif style, like most printed novels. **Gothic** is a sans-serif style.
+- **Font Size** goes from 12 to 48. The default is 18.
+- **Font** opens a list: **Book default**, **Mincho**, **Gothic**, the fonts you added, and **Add font…**. **Book default** uses the book's own font. **Mincho** is a serif style, like most printed novels. **Gothic** is a sans-serif style. See [Fonts you add](#fonts-you-add).
+- **Lookup Font Size** sets the text size in the lookup sheet, furigana included, from 12 to 32. The default is 16. The same setting is in **You › Settings**.
 - **Brightness** sets the screen brightness while a book is open. Tap **Follow system brightness** (the icon at the right end of the slider) to use your phone's brightness again. When you leave the book, your phone's own brightness comes back.
 - The color row has **Normal**, **Sepia** and **Dark**. With **Sepia**, a slider below sets how warm the page looks.
 
@@ -43,6 +44,19 @@ If you switch a book away from its original layout, a note warns that some pages
 - **Scroll View**: "Slide through each chapter instead of turning pages". See [Navigation & Gestures](navigation.md).
 - **Split Vertical Text**: "Show two stacked text blocks per page". It works only with **Vertical Text** on and **Scroll View** off.
 - **Disable Links**: "Tap linked text to look up words instead of navigating". Linked text still shows in blue.
+
+## Fonts you add
+
+You can read EPUB books in a font of your own. It changes the book text only, not the lookup sheet, manga or the rest of the app.
+
+1. Open **Font** in Quick Settings or Reader Settings.
+2. Tap **Add font…** and pick the font file.
+
+Mekuru takes **.ttf**, **.otf**, **.woff** and **.woff2** files up to 29.99 MB. Font collections (**.ttc**) don't work: pick a single **.ttf** or **.otf** font instead. The font shows in the list under its file name.
+
+Mekuru keeps its own copy of the font, so you can move or delete the file you picked. To remove a font from Mekuru, tap the trash icon next to it and confirm. If you were using that font, the book goes back to **Book default**.
+
+A [full backup](../settings/backup-restore.md) includes the fonts you added. A reading data backup only remembers which font you chose.
 
 ## Reader Settings
 
@@ -61,7 +75,7 @@ The screen has three sections: **All books**, **EPUB** and **Manga**. Brightness
 
 ### EPUB
 
-This section has the same **Display** and **Behavior** settings as Quick Settings, except brightness. It also has these:
+This section has the same **Display** and **Behavior** settings as Quick Settings, except brightness and **Lookup Font Size** (which is in **You › Settings**). It also has these:
 
 - **Sepia Intensity** shows when **Color Mode** is **Sepia**.
 - **Horizontal Margin** and **Vertical Margin** set the space around the text, from 0 to 100 px. The default is 28 px.
@@ -80,6 +94,9 @@ See [Reading Manga](../manga/cbz-reading.md) and [Custom OCR Server](../manga/cu
 - **Vertical Text is grayed out.** The book's language is not Japanese, Chinese or Korean.
 - **Split Vertical Text is grayed out.** Turn off **Scroll View**. In Quick Settings, also turn on **Vertical Text**.
 - **"This book was not originally formatted for vertical text. Some display issues may occur."** Turn **Vertical Text** off again if the pages look wrong. The opposite note appears when you turn a vertical book horizontal.
+- **"Couldn't load this font; showing the book's own font."** The font you chose is damaged, or its file is no longer in Mekuru (for example after restoring a reading data backup on another phone). Add the font again or pick another one.
+- **"This font is too large (over 29.99 MB)."** The reader can't use fonts this big. Many fonts come in smaller versions, for example one weight instead of all of them.
+- **"This file isn't a font."** Pick a **.ttf**, **.otf**, **.woff** or **.woff2** file.
 
 ## Related pages
 

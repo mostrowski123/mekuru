@@ -35,7 +35,7 @@ When a word has long definitions, its header (the word, badge and buttons) stays
 
 To look up something you see in the sheet, tap a kanji in the word, or a Japanese word in a definition. Mekuru opens a dictionary search for it.
 
-To change the text size in the sheet, go to **You › Settings › Lookup Font Size**.
+To change the text size in the sheet, use **Lookup Font Size** in the reader's Quick Settings, or go to **You › Settings › Lookup Font Size**.
 
 ## Conjugated words and compound words
 
