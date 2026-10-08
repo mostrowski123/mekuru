@@ -177,5 +177,42 @@ void main() {
         '"Hiragino Sans", sans-serif !important',
       );
     });
+
+    test('an added font is named first, serif after it', () {
+      final theme = buildReaderTheme(
+        settings: const ReaderSettings(
+          fontFamily: ReaderFontFamily.custom,
+          customFontFile: 'Mine.ttf',
+        ),
+        userFontFamily: 'mekuru-user-font-3',
+      );
+      final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+      final descendantCss = theme.customCss!['body *'] as Map<String, dynamic>;
+      const expected = '"mekuru-user-font-3", serif !important';
+      expect(bodyCss['font-family'], expected);
+      expect(descendantCss['font-family'], expected);
+    });
+
+    test('an added font that was not sent leaves the book fonts alone', () {
+      // The reader passes no family when the file is missing or unreadable.
+      final theme = buildReaderTheme(
+        settings: const ReaderSettings(
+          fontFamily: ReaderFontFamily.custom,
+          customFontFile: 'Gone.ttf',
+        ),
+      );
+      final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+      expect(bodyCss.containsKey('font-family'), isFalse);
+      expect(theme.customCss!.containsKey('body *'), isFalse);
+    });
+
+    test('a family left over from an added font is ignored for Mincho', () {
+      final theme = buildReaderTheme(
+        settings: const ReaderSettings(fontFamily: ReaderFontFamily.mincho),
+        userFontFamily: 'mekuru-user-font-1',
+      );
+      final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+      expect(bodyCss['font-family'], contains('Hiragino Mincho ProN'));
+    });
   });
 }

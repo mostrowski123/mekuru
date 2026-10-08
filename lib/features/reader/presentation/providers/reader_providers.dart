@@ -155,6 +155,15 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(fontFamily: family));
   }
 
+  void setCustomFont(String fileName) {
+    _update(
+      state.copyWith(
+        fontFamily: ReaderFontFamily.custom,
+        customFontFile: fileName,
+      ),
+    );
+  }
+
   void setColorMode(ColorMode mode) {
     _update(state.copyWith(colorMode: mode));
   }

@@ -14,7 +14,13 @@ class ReaderTheme {
   });
 }
 
-ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
+/// [userFontFamily] is the family the reader registered the added font
+/// under; null when no font was sent (file missing or unreadable), which
+/// leaves the book's own fonts.
+ReaderTheme buildReaderTheme({
+  required ReaderSettings settings,
+  String? userFontFamily,
+}) {
   // Note: margins are handled separately via setMargins() in reader_bridge.js
   // by applying padding to the .epub-container div. epub.js Stage.size()
   // automatically subtracts container padding from layout dimensions.
@@ -103,7 +109,7 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
   }
 
   // Descendants too: Japanese EPUBs often set fonts on their own classes.
-  final fontFamily = _fontFamilyCss(settings.fontFamily);
+  final fontFamily = _fontFamilyCss(settings.fontFamily, userFontFamily);
   if (fontFamily != null) {
     bodyCss['font-family'] = '$fontFamily !important';
     descendantCss['font-family'] = '$fontFamily !important';
@@ -129,8 +135,12 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
 /// iOS has the Hiragino faces. Android has no font by those names, so the
 /// generic family decides: Chromium falls back to Noto Serif CJK or Noto
 /// Sans CJK for Japanese text (sans where the device has no serif CJK font).
-String? _fontFamilyCss(ReaderFontFamily family) => switch (family) {
-  ReaderFontFamily.book => null,
-  ReaderFontFamily.mincho => '"Hiragino Mincho ProN", serif',
-  ReaderFontFamily.gothic => '"Hiragino Sans", sans-serif',
-};
+String? _fontFamilyCss(ReaderFontFamily family, String? userFontFamily) =>
+    switch (family) {
+      ReaderFontFamily.book => null,
+      ReaderFontFamily.mincho => '"Hiragino Mincho ProN", serif',
+      ReaderFontFamily.gothic => '"Hiragino Sans", sans-serif',
+      // serif fills in what the added font lacks (Latin in a Japanese font).
+      ReaderFontFamily.custom =>
+        userFontFamily == null ? null : '"$userFontFamily", serif',
+    };

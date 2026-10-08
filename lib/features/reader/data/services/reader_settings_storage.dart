@@ -10,6 +10,7 @@ abstract class ReaderSettingsStorage {
 class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _fontSizeKey = 'reader.font_size';
   static const _fontFamilyKey = 'reader.font_family';
+  static const _customFontKey = 'reader.custom_font';
   static const _horizontalPaddingKey = 'reader.horizontal_padding';
   static const _verticalPaddingKey = 'reader.vertical_padding';
   static const _swipeSensitivityKey = 'reader.swipe_sensitivity';
@@ -41,6 +42,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const List<String> allKeys = [
     _fontSizeKey,
     _fontFamilyKey,
+    _customFontKey,
     _horizontalPaddingKey,
     _verticalPaddingKey,
     _swipeSensitivityKey,
@@ -75,6 +77,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     return ReaderSettings(
       fontSize: prefs.getDouble(_fontSizeKey) ?? 18,
       fontFamily: readerFontFamilyFromString(prefs.getString(_fontFamilyKey)),
+      customFontFile: prefs.getString(_customFontKey),
       // verticalText and readingDirection are per-book settings stored in the
       // Books table — not loaded from global preferences. Use class defaults.
       horizontalPadding: prefs.getInt(_horizontalPaddingKey) ?? 28,
@@ -116,6 +119,12 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_fontSizeKey, settings.fontSize);
     await prefs.setString(_fontFamilyKey, settings.fontFamily.storageValue);
+    final customFontFile = settings.customFontFile;
+    if (customFontFile == null) {
+      await prefs.remove(_customFontKey);
+    } else {
+      await prefs.setString(_customFontKey, customFontFile);
+    }
     // verticalText and readingDirection are per-book — not saved globally.
     await prefs.setInt(_horizontalPaddingKey, settings.horizontalPadding);
     await prefs.setInt(_verticalPaddingKey, settings.verticalPadding);

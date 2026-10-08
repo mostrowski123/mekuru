@@ -93,18 +93,28 @@ List<ButtonSegment<ColorMode>> colorModeSegments(AppLocalizations l10n) {
   ];
 }
 
+/// The fonts Mekuru offers itself, in picker order; added fonts follow.
+const builtInReaderFontFamilies = [
+  ReaderFontFamily.book,
+  ReaderFontFamily.mincho,
+  ReaderFontFamily.gothic,
+];
+
 String readerFontFamilyLabel(AppLocalizations l10n, ReaderFontFamily family) =>
     switch (family) {
       ReaderFontFamily.book => l10n.settingsFontFamilyBook,
       ReaderFontFamily.mincho => l10n.settingsFontFamilyMincho,
       ReaderFontFamily.gothic => l10n.settingsFontFamilyGothic,
+      // Callers show the added font's own name; without one, the book's
+      // fonts are what the reader shows.
+      ReaderFontFamily.custom => l10n.settingsFontFamilyBook,
     };
 
 List<ButtonSegment<ReaderFontFamily>> readerFontFamilySegments(
   AppLocalizations l10n,
 ) {
   return [
-    for (final family in ReaderFontFamily.values)
+    for (final family in builtInReaderFontFamilies)
       ButtonSegment(
         value: family,
         label: Text(readerFontFamilyLabel(l10n, family)),

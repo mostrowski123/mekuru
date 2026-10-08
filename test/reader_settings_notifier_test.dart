@@ -106,6 +106,21 @@ void main() {
       expect(settings.mangaPageTurnEdgeZoneWidthFraction, 0.12);
     });
 
+    test('setCustomFont selects the added font by file name', () async {
+      final fakeStorage = _FakeReaderSettingsStorage();
+      final harness = _createHarness(storage: fakeStorage);
+      addTearDown(harness.dispose);
+      final container = harness.container;
+
+      container.read(readerSettingsProvider.notifier).setCustomFont('Mine.ttf');
+      await Future<void>.delayed(Duration.zero);
+
+      final settings = container.read(readerSettingsProvider);
+      expect(settings.fontFamily, ReaderFontFamily.custom);
+      expect(settings.customFontFile, 'Mine.ttf');
+      expect(fakeStorage.savedSettings!.customFontFile, 'Mine.ttf');
+    });
+
     test('persists updates for global reader settings', () async {
       final fakeStorage = _FakeReaderSettingsStorage();
       final harness = _createHarness(storage: fakeStorage);

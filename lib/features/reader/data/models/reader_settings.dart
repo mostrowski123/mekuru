@@ -26,13 +26,15 @@ extension ColorModeStorage on ColorMode {
   String get storageValue => name;
 }
 
-/// Typeface for EPUB text. [book] keeps the fonts the EPUB's own CSS asks for.
-enum ReaderFontFamily { book, mincho, gothic }
+/// Typeface for EPUB text. [book] keeps the fonts the EPUB's own CSS asks
+/// for; [custom] is a font the user added ([ReaderSettings.customFontFile]).
+enum ReaderFontFamily { book, mincho, gothic, custom }
 
 ReaderFontFamily readerFontFamilyFromString(String? value) {
   return switch (value) {
     'mincho' => ReaderFontFamily.mincho,
     'gothic' => ReaderFontFamily.gothic,
+    'custom' => ReaderFontFamily.custom,
     _ => ReaderFontFamily.book,
   };
 }
@@ -137,6 +139,12 @@ double mangaCenterTapZoneWidthFromEdgeZoneWidth(double edgeZoneWidthFraction) {
 class ReaderSettings {
   final double fontSize;
   final ReaderFontFamily fontFamily;
+
+  /// File name in the fonts folder of the font the user added, used while
+  /// [fontFamily] is [ReaderFontFamily.custom]. A name only: the folder
+  /// moves with the app container on iOS.
+  final String? customFontFile;
+
   final bool verticalText;
 
   /// When true, vertical text is laid out in two stacked blocks per page
@@ -225,6 +233,7 @@ class ReaderSettings {
   const ReaderSettings({
     this.fontSize = 18,
     this.fontFamily = ReaderFontFamily.book,
+    this.customFontFile,
     this.verticalText = true,
     this.splitVerticalText = false,
     this.scrollView = false,
@@ -253,6 +262,7 @@ class ReaderSettings {
   ReaderSettings copyWith({
     double? fontSize,
     ReaderFontFamily? fontFamily,
+    String? customFontFile,
     bool? verticalText,
     bool? splitVerticalText,
     bool? scrollView,
@@ -280,6 +290,7 @@ class ReaderSettings {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
       fontFamily: fontFamily ?? this.fontFamily,
+      customFontFile: customFontFile ?? this.customFontFile,
       verticalText: verticalText ?? this.verticalText,
       splitVerticalText: splitVerticalText ?? this.splitVerticalText,
       scrollView: scrollView ?? this.scrollView,

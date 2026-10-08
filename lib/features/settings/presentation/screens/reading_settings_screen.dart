@@ -288,7 +288,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
     showSettingsOptionPickerSheet(
       context: context,
       title: l10n.settingsFontFamilyTitle,
-      values: ReaderFontFamily.values,
+      values: builtInReaderFontFamilies,
       selected: current,
       labelOf: (family) => readerFontFamilyLabel(l10n, family),
       onSelected: (family) =>

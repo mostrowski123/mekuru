@@ -26,5 +26,34 @@ void main() {
         expect(loaded!.fontFamily, ReaderFontFamily.book);
       },
     );
+
+    test('saves an added font and reloads it', () async {
+      final storage = SharedPreferencesReaderSettingsStorage();
+      await storage.save(
+        const ReaderSettings(
+          fontFamily: ReaderFontFamily.custom,
+          customFontFile: '游明朝.ttf',
+        ),
+      );
+
+      final loaded = await storage.load();
+      expect(loaded!.fontFamily, ReaderFontFamily.custom);
+      expect(loaded.customFontFile, '游明朝.ttf');
+    });
+
+    test('no added font leaves the key absent', () async {
+      await SharedPreferencesReaderSettingsStorage().save(
+        const ReaderSettings(),
+      );
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.containsKey('reader.custom_font'), isFalse);
+    });
+
+    test('the key is backed up with the other reader keys', () {
+      expect(
+        SharedPreferencesReaderSettingsStorage.allKeys,
+        contains('reader.custom_font'),
+      );
+    });
   });
 }
