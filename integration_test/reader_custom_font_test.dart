@@ -1,7 +1,9 @@
 // A font the user added reaches the reader: the chapter text names its
 // family and lays out with its glyphs, it survives a colour change and a
 // viewer rebuild, the last of two quick choices wins, and going back to
-// the book's fonts drops it.
+// the book's fonts drops it. A missing font at open is in
+// reader_custom_font_missing_test.dart: one reader per file (see
+// shared/scroll_view_fixture.dart).
 
 import 'dart:io';
 import 'dart:typed_data';
@@ -180,23 +182,6 @@ void main() {
     expect(sent['family'], startsWith('mekuru-user-font-'));
     expect(sent['bytes'], testFontWide.length);
     expect(sent['loaded'], isTrue);
-  });
-
-  // A reading-data backup restored on another phone names a font that was
-  // never added there.
-  testWidgets('a book opened with a missing added font says so', (
-    tester,
-  ) async {
-    await openReader(
-      tester,
-      await writeScrollViewEpub(tempDir, title: _title, vertical: true),
-      _title,
-      settings: const ReaderSettings(
-        fontFamily: ReaderFontFamily.custom,
-        customFontFile: 'Missing.ttf',
-      ),
-    );
-    expect(find.widgetWithText(SnackBar, _fallback), findsOneWidget);
   });
 }
 

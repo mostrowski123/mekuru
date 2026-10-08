@@ -34,7 +34,7 @@ concurrency:
 jobs:
   android-integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 110
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -146,8 +146,8 @@ jobs:
           echo "no" | "$AVDMANAGER" create avd -n test -k "system-images;android-34;google_atd;x86_64" --device "pixel_6" --force
 
       - name: Run Android integration tests
-        # A passing run takes 33 to 45 minutes (29 files, cold Gradle build first).
-        timeout-minutes: 75
+        # A passing run takes about 75 minutes (44 files, cold Gradle build first).
+        timeout-minutes: 95
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -171,7 +171,7 @@ jobs:
           # scalar keeps these in one shell so the test status survives the logcat dump.
           script: >-
             mkdir -p build;
-            flutter test integration_test/app_smoke_test.dart integration_test/dictionary_search_flow_test.dart integration_test/vocabulary_lifecycle_test.dart integration_test/settings_persistence_test.dart integration_test/cross_feature_navigation_test.dart integration_test/backup_restore_roundtrip_test.dart integration_test/bookmark_highlight_persistence_test.dart integration_test/pending_restore_flow_test.dart integration_test/reader_progress_persistence_flow_test.dart integration_test/dictionary_import_flow_test.dart integration_test/vocabulary_csv_export_test.dart integration_test/library_import_flow_test.dart integration_test/orphan_sweep_flow_test.dart integration_test/collections_flow_test.dart integration_test/mecab_enhanced_dict_upgrade_test.dart integration_test/epub_furigana_export_flow_test.dart integration_test/furigana_generator_flow_test.dart integration_test/manga_word_segmentation_test.dart integration_test/reader_indesign_vertical_epub_test.dart integration_test/reader_scroll_view_vertical_test.dart integration_test/reader_scroll_view_horizontal_test.dart integration_test/reader_scroll_view_resume_test.dart integration_test/reader_controls_gestures_test.dart integration_test/pro_entitlement_flow_test.dart integration_test/full_backup_roundtrip_test.dart integration_test/full_restore_crash_resume_test.dart integration_test/full_backup_ui_flow_test.dart integration_test/full_backup_abort_resume_test.dart integration_test/full_backup_service_lifecycle_test.dart integration_test/full_backup_boot_gate_test.dart integration_test/local_ocr_lifecycle_test.dart integration_test/local_ocr_reader_test.dart integration_test/local_ocr_detector_test.dart integration_test/free_books_flow_test.dart integration_test/pdf_import_flow_test.dart integration_test/server_sync_flow_test.dart integration_test/word_tap_lookup_anchor_ruby_test.dart integration_test/reader_bridge_regression_test.dart integration_test/reader_renderer_gone_test.dart integration_test/reader_ready_signal_lost_test.dart integration_test/library_bookmark_open_test.dart integration_test/reader_relayout_page_alignment_test.dart integration_test/reader_custom_font_test.dart -d emulator-5554 --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded --file-reporter=json:build/android-integration-results.json;
+            flutter test integration_test/app_smoke_test.dart integration_test/dictionary_search_flow_test.dart integration_test/vocabulary_lifecycle_test.dart integration_test/settings_persistence_test.dart integration_test/cross_feature_navigation_test.dart integration_test/backup_restore_roundtrip_test.dart integration_test/bookmark_highlight_persistence_test.dart integration_test/pending_restore_flow_test.dart integration_test/reader_progress_persistence_flow_test.dart integration_test/dictionary_import_flow_test.dart integration_test/vocabulary_csv_export_test.dart integration_test/library_import_flow_test.dart integration_test/orphan_sweep_flow_test.dart integration_test/collections_flow_test.dart integration_test/mecab_enhanced_dict_upgrade_test.dart integration_test/epub_furigana_export_flow_test.dart integration_test/furigana_generator_flow_test.dart integration_test/manga_word_segmentation_test.dart integration_test/reader_indesign_vertical_epub_test.dart integration_test/reader_scroll_view_vertical_test.dart integration_test/reader_scroll_view_horizontal_test.dart integration_test/reader_scroll_view_resume_test.dart integration_test/reader_controls_gestures_test.dart integration_test/pro_entitlement_flow_test.dart integration_test/full_backup_roundtrip_test.dart integration_test/full_restore_crash_resume_test.dart integration_test/full_backup_ui_flow_test.dart integration_test/full_backup_abort_resume_test.dart integration_test/full_backup_service_lifecycle_test.dart integration_test/full_backup_boot_gate_test.dart integration_test/local_ocr_lifecycle_test.dart integration_test/local_ocr_reader_test.dart integration_test/local_ocr_detector_test.dart integration_test/free_books_flow_test.dart integration_test/pdf_import_flow_test.dart integration_test/server_sync_flow_test.dart integration_test/word_tap_lookup_anchor_ruby_test.dart integration_test/reader_bridge_regression_test.dart integration_test/reader_renderer_gone_test.dart integration_test/reader_ready_signal_lost_test.dart integration_test/library_bookmark_open_test.dart integration_test/reader_relayout_page_alignment_test.dart integration_test/reader_custom_font_test.dart integration_test/reader_custom_font_missing_test.dart -d emulator-5554 --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded --file-reporter=json:build/android-integration-results.json;
             status=$?;
             adb -s emulator-5554 logcat -d -s MekuruLocalOcr AndroidRuntime > build/android-ocr-logcat.txt || true;
             exit "$status"
