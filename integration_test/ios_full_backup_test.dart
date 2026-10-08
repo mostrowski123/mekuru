@@ -46,6 +46,11 @@ void main() {
               300000,
               (_) => random.nextInt(256),
             ),
+            // A font the user added.
+            '${FullBackupManifest.fontsPrefix}Kaisei.ttf': List.generate(
+              5000,
+              (i) => i % 256,
+            ),
           };
           final jobDir = await Directory(
             p.join(root.path, StagedFullRestore.jobDirName),
@@ -113,6 +118,9 @@ void main() {
                     p.join(staging, 'books', 'book_1_test', '0001.jpg'),
                   ).lengthSync()
                 : -1,
+            font: File(p.join(staging, 'fonts', 'Kaisei.ttf')).existsSync()
+                ? File(p.join(staging, 'fonts', 'Kaisei.ttf')).lengthSync()
+                : -1,
             marker: File(p.join(staging, 'EXTRACTED')).existsSync(),
             free: await IosFullBackup.freeBytes(),
           );
@@ -129,6 +137,7 @@ void main() {
       expect(outcome.manifest, '{"formatVersion":1}');
       expect(outcome.restored, FullBackupJobLifecycle.done);
       expect(outcome.page, 300000);
+      expect(outcome.font, 5000);
       expect(outcome.marker, isTrue);
       // The native free-space call answers with something plausible.
       expect(outcome.free, greaterThan(1000000));

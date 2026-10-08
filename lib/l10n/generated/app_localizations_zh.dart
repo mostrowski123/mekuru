@@ -921,7 +921,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsFontAddCollection => '不支持字体集（.ttc）。请选择 .ttf 或 .otf 文件。';
 
   @override
-  String get settingsFontAddTooLarge => '此字体太大（超过 50 MB）。';
+  String get settingsFontAddTooLarge => '此字体太大（超过 29.99 MB）。';
 
   @override
   String get settingsFontAddFailed => '无法添加此字体。';
@@ -5175,7 +5175,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get settingsFontAddCollection => '不支持字体集（.ttc）。请选择 .ttf 或 .otf 文件。';
 
   @override
-  String get settingsFontAddTooLarge => '此字体太大（超过 50 MB）。';
+  String get settingsFontAddTooLarge => '此字体太大（超过 29.99 MB）。';
 
   @override
   String get settingsFontAddFailed => '无法添加此字体。';

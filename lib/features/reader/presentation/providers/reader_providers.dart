@@ -164,6 +164,20 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     );
   }
 
+  /// The added font [fileName] was removed: drop its name, and go back to
+  /// the book's own fonts if it was the one in use.
+  void forgetCustomFont(String fileName) {
+    if (state.customFontFile != fileName) return;
+    _update(
+      state.copyWith(
+        fontFamily: state.fontFamily == ReaderFontFamily.custom
+            ? ReaderFontFamily.book
+            : null,
+        clearCustomFontFile: true,
+      ),
+    );
+  }
+
   void setColorMode(ColorMode mode) {
     _update(state.copyWith(colorMode: mode));
   }

@@ -100,6 +100,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   UserFontSend? _userFont;
   // The settings' font choice (`_fontChoice`) the viewer was last given.
   String? _userFontChoice;
+  // The chosen added font was missing at open; say so once the page shows.
+  bool _fontFallbackPending = false;
   int _userFontGeneration = 0;
   int _fontChangeToken = 0;
   // The bridge has one font buffer, so font changes run one at a time.
@@ -417,9 +419,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           (next.colorMode == ColorMode.sepia &&
               previous.sepiaIntensity != next.sepiaIntensity);
       if (colorChanged && _isEpubLoaded) _pushTheme(next);
+      // The choice in effect: removing an added font while a built-in one
+      // is in use changes the settings but not what the page shows.
       final fontChanged =
           previous.fontFamily != next.fontFamily ||
-          previous.customFontFile != next.customFontFile;
+          _fontChoice(previous) != _fontChoice(next);
       // While the viewer loads or rebuilds, onLoaded picks the change up.
       if (fontChanged && _isEpubLoaded && !_isRebuildingForDirection) {
         _queueFontChange();
@@ -504,6 +508,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                 _isLoading = false;
                                 _isEpubLoaded = true;
                               });
+                              if (_fontFallbackPending) {
+                                _fontFallbackPending = false;
+                                _showFontFallback();
+                              }
                               // A font chosen while this viewer loaded was
                               // not sent to it.
                               if (_userFontChoice !=
@@ -777,6 +785,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       setState(() {
         _epubPath = epubPath;
         _userFontChoice = fontChoice;
+        _fontFallbackPending = fontChoice != null && userFont == null;
         _userFont = userFont == null
             ? null
             : (file: userFont, family: _nextUserFontFamily());
@@ -847,14 +856,28 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (!await _epubController.applyUserFont(file, font.family)) font = null;
     }
     if (!mounted) return;
+    if (choice != null && font == null) _showFontFallback();
+    _userFontChoice = choice;
+    _showFont(font);
+  }
+
+  /// Re-themes with [font] (null: the book's own fonts) and re-lays out at
+  /// the current position, so highlights follow the new glyph metrics.
+  void _showFont(UserFontSend? font) {
     if (font == null) _epubController.clearUserFont();
     _userFont = font;
-    _userFontChoice = choice;
     final settings = ref.read(readerSettingsProvider);
     _pushTheme(settings);
-    // Same size, but it re-lays out the reflowed text at the current
-    // position, so highlights follow the new glyph metrics.
     _epubController.setFontSize(settings.fontSize);
+  }
+
+  /// The chosen added font's file is gone (removed outside Mekuru, or a
+  /// backup from another phone), so the book's own fonts show.
+  void _showFontFallback() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.readerUserFontFailed)));
   }
 
   /// The bridge could not read the added font [family]: show the book's own
@@ -864,11 +887,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final font = _userFont;
     // A late failure of a font already replaced changes nothing.
     if (font == null || (family != null && family != font.family)) return;
-    _userFont = null;
-    _epubController.clearUserFont();
-    final settings = ref.read(readerSettingsProvider);
-    _pushTheme(settings);
-    _epubController.setFontSize(settings.fontSize);
+    _showFont(null);
     if (_userFontFailureShown) return;
     _userFontFailureShown = true;
     // A dialog, not a snack bar: the quick-settings sheet the font was

@@ -112,10 +112,20 @@ function appendFontChunk(base64) {
   _userFontOffset = _decodeInto(_userFontBuf, _userFontOffset, base64);
 }
 
-// Back to a built-in font: later chapters stop parsing the added one.
+// Back to a built-in font: later chapters stop parsing the added one, and
+// the chapters on screen let go of it.
 function clearUserFont() {
   _userFontBuf = null;
   _userFontFamily = null;
+  var docs = _renderedIframeDocs();
+  for (var i = 0; i < docs.length; i++) _dropUserFonts(docs[i]);
+}
+
+// One added font per chapter: each is a full copy of the font in memory.
+function _dropUserFonts(doc) {
+  if (!doc || !doc._mekuruUserFace) return;
+  doc.fonts.delete(doc._mekuruUserFace);
+  doc._mekuruUserFace = null;
 }
 
 // Names the family, so Dart can ignore a late failure of a replaced font.
@@ -128,9 +138,11 @@ function _reportUserFontFailed(family) {
 function _registerUserFont(win, doc) {
   if (!_userFontBuf || !win || !win.FontFace || !doc || !doc.fonts) return;
   var family = _userFontFamily;
+  _dropUserFonts(doc);
   try {
     var face = new win.FontFace(family, _userFontBuf);
     doc.fonts.add(face);
+    doc._mekuruUserFace = face;
     face.loaded.then(null, function (e) {
       console.log('[EPUB_BRIDGE] user font failed to load: ' + e);
       _reportUserFontFailed(family);

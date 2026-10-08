@@ -49,9 +49,10 @@ class UserFontImportException implements Exception {
   String toString() => 'UserFontImportException(${error.name})';
 }
 
-/// Larger fonts are refused: the reader holds the whole font in the WebView
-/// and sends it there as base64 every time a book opens.
-const int maxUserFontBytes = 50 * 1024 * 1024;
+/// Larger fonts are refused: Chromium and WebKit reject web fonts of 30 MB
+/// or more, and the reader sends the whole font to the WebView every time a
+/// book opens.
+const int maxUserFontBytes = 2999 * 1024 * 1024 ~/ 100; // 29.99 MB
 
 /// Identifies a font file by its first four bytes. Collections (`ttcf`) are
 /// refused: neither WebView engine is guaranteed to load one.

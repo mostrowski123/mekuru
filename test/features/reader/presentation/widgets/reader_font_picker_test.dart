@@ -16,7 +16,10 @@ void main() {
   late ProviderContainer container;
   String? pickedPath;
 
-  Future<void> openPicker(WidgetTester tester) async {
+  Future<void> openPicker(
+    WidgetTester tester, {
+    void Function(String setting, Object value)? onSettingChanged,
+  }) async {
     container = ProviderContainer(
       overrides: [
         userFontStoreProvider.overrideWithValue(store),
@@ -31,7 +34,10 @@ void main() {
           home: Scaffold(
             body: Builder(
               builder: (context) => TextButton(
-                onPressed: () => showReaderFontPicker(context),
+                onPressed: () => showReaderFontPicker(
+                  context,
+                  onSettingChanged: onSettingChanged,
+                ),
                 child: const Text('open'),
               ),
             ),
@@ -226,6 +232,67 @@ void main() {
         container.read(readerSettingsProvider).fontFamily,
         ReaderFontFamily.book,
       );
+      expect(container.read(readerSettingsProvider).customFontFile, isNull);
     },
   );
+
+  testWidgets('removing a font clears its name from the settings', (
+    tester,
+  ) async {
+    await openPicker(tester);
+    final notifier = container.read(readerSettingsProvider.notifier);
+    notifier.setCustomFont('Kaisei.ttf');
+    // A built-in font chosen since still remembers the added one by name.
+    notifier.setFontFamily(ReaderFontFamily.mincho);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Remove font'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
+
+    final settings = container.read(readerSettingsProvider);
+    expect(settings.customFontFile, isNull);
+    expect(settings.fontFamily, ReaderFontFamily.mincho);
+  });
+
+  testWidgets('Book default replaces a chosen font whose file is gone', (
+    tester,
+  ) async {
+    final logged = <Object>[];
+    await openPicker(
+      tester,
+      onSettingChanged: (setting, value) => logged.add(value),
+    );
+    container.read(readerSettingsProvider.notifier).setCustomFont('Gone.ttf');
+    await tester.pumpAndSettle();
+    // Book default shows as chosen (it is what the reader shows), but
+    // tapping it must still drop the missing font from the settings.
+    await tester.tap(find.text('Book default'));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(readerSettingsProvider).fontFamily,
+      ReaderFontFamily.book,
+    );
+    expect(logged, ['book']);
+  });
+
+  testWidgets('choosing the font already chosen logs nothing', (tester) async {
+    final logged = <Object>[];
+    await openPicker(
+      tester,
+      onSettingChanged: (setting, value) => logged.add(value),
+    );
+    await tester.tap(find.text('Book default'));
+    await tester.pumpAndSettle();
+    expect(logged, isEmpty);
+    expect(find.text('Add font…'), findsNothing); // the sheet still closes
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kaisei'));
+    await tester.pumpAndSettle();
+    expect(logged, ['custom']);
+  });
 }

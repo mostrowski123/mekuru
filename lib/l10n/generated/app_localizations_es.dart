@@ -972,7 +972,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsFontAddTooLarge =>
-      'Esta fuente es demasiado grande (más de 50 MB).';
+      'Esta fuente es demasiado grande (más de 29,99 MB).';
 
   @override
   String get settingsFontAddFailed => 'No se pudo añadir esta fuente.';

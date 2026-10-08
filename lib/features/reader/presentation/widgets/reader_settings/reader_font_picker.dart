@@ -67,13 +67,18 @@ class _ReaderFontPickerSheet extends ConsumerWidget {
     final check = Icon(Icons.check, color: theme.colorScheme.primary);
     final notifier = ref.read(readerSettingsProvider.notifier);
 
+    // Logged only when the settings change: tapping the font in use is not
+    // a change. (A missing added font shows as Book default, and tapping
+    // that must still replace it, so this compares settings, not ticks.)
     void choose(void Function() apply) {
       AppHaptics.medium();
+      final before = ref.read(readerSettingsProvider);
       apply();
-      onSettingChanged?.call(
-        'font_family',
-        ref.read(readerSettingsProvider).fontFamily.name,
-      );
+      final after = ref.read(readerSettingsProvider);
+      if (after.fontFamily != before.fontFamily ||
+          after.customFontFile != before.customFontFile) {
+        onSettingChanged?.call('font_family', after.fontFamily.name);
+      }
       Navigator.of(context).pop();
     }
 
@@ -96,9 +101,7 @@ class _ReaderFontPickerSheet extends ConsumerWidget {
                 for (final family in builtInReaderFontFamilies)
                   ListTile(
                     title: Text(readerFontFamilyLabel(l10n, family)),
-                    trailing: selected.font == null && selected.family == family
-                        ? check
-                        : null,
+                    trailing: selected.family == family ? check : null,
                     onTap: () => choose(() => notifier.setFontFamily(family)),
                   ),
                 for (final font in fonts)
@@ -200,13 +203,9 @@ class _ReaderFontPickerSheet extends ConsumerWidget {
     if (confirmed != true) return;
 
     // Stop naming the font before its file goes.
-    final settings = container.read(readerSettingsProvider);
-    if (settings.fontFamily == ReaderFontFamily.custom &&
-        settings.customFontFile == font.fileName) {
-      container
-          .read(readerSettingsProvider.notifier)
-          .setFontFamily(ReaderFontFamily.book);
-    }
+    container
+        .read(readerSettingsProvider.notifier)
+        .forgetCustomFont(font.fileName);
     await container.read(userFontStoreProvider).delete(font.fileName);
     container.invalidate(userFontsProvider);
   }

@@ -108,6 +108,27 @@ void main() {
       expect(await store.list(), isEmpty);
     });
 
+    test('the cap stays under the WebView engines\' 30 MB web-font limit', () {
+      expect(maxUserFontBytes / (1024 * 1024), closeTo(29.99, 0.0001));
+      expect(maxUserFontBytes, lessThan(30 * 1024 * 1024));
+    });
+
+    test(
+      'an added font is Mekuru\'s own copy: the picked file can go',
+      () async {
+        final picked = sourceFile('Kept.ttf', _ttf);
+        final font = await store.import(picked.path);
+        picked.deleteSync();
+
+        expect(await store.list(), [font]);
+        expect((await store.fileFor(font.fileName))!.readAsBytesSync(), _ttf);
+        expect(
+          p.isWithin(root.path, (await store.fileFor(font.fileName))!.path),
+          isTrue,
+        );
+      },
+    );
+
     test('refuses a font over the size cap before copying', () async {
       final big = File(p.join(source.path, 'big.ttf'));
       final raf = big.openSync(mode: FileMode.write)

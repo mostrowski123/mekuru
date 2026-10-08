@@ -14,6 +14,7 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/user_font_store.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
+import 'package:mekuru/l10n/generated/app_localizations_en.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -99,6 +100,9 @@ void main() {
     }
 
     await expectFont(2, 'on opening');
+    // The font is there before layout, so the first page is a whole page.
+    final first = await evalJson(controller, _offPage);
+    expect((first['off'] as num).toDouble(), lessThan(1), reason: '$first');
 
     // The theme is rebuilt from settings on a colour change; it must still
     // name the added font.
@@ -115,11 +119,19 @@ void main() {
     settings.setCustomFont(wider);
     await tester.pump(settle);
     await expectFont(3, 'after switching fonts');
+    // Switching within a chapter replaces the font; old copies don't pile up,
+    // even when nothing re-lays the chapter out in between.
+    expect((await evalJson(controller, _userFaces))['faces'], 1);
+    await controller.debugEvaluateJavascript(
+      'applyUserFont(); applyUserFont();',
+    );
+    expect((await evalJson(controller, _userFaces))['faces'], 1);
 
     settings.setFontFamily(ReaderFontFamily.book);
     await tester.pump(settle);
     final probe = await evalJson(controller, _probe);
     expect(probe['family'], isNot(contains('mekuru-user-font-')));
+    expect((await evalJson(controller, _userFaces))['faces'], 0);
 
     // A file with a font's header but no font behind it: the reader says so
     // where it can be seen and shows the book's own fonts, as it says.
@@ -131,6 +143,13 @@ void main() {
     expect(fallback['family'], isNot(contains('mekuru-user-font-')));
     await tester.tap(find.text('OK'));
     await tester.pump(const Duration(seconds: 1));
+
+    // A chosen font whose file is gone: a snack bar says the book's own
+    // font is shown.
+    settings.setCustomFont('Gone.ttf');
+    await tester.pump(settle);
+    expect(find.widgetWithText(SnackBar, _fallback), findsOneWidget);
+    await tester.pump(const Duration(seconds: 5));
 
     // A viewer rebuild makes a new WebView, which must be sent the font
     // again before its book loads. A second WebView in one test process
@@ -162,7 +181,47 @@ void main() {
     expect(sent['bytes'], testFontWide.length);
     expect(sent['loaded'], isTrue);
   });
+
+  // A reading-data backup restored on another phone names a font that was
+  // never added there.
+  testWidgets('a book opened with a missing added font says so', (
+    tester,
+  ) async {
+    await openReader(
+      tester,
+      await writeScrollViewEpub(tempDir, title: _title, vertical: true),
+      _title,
+      settings: const ReaderSettings(
+        fontFamily: ReaderFontFamily.custom,
+        customFontFile: 'Missing.ttf',
+      ),
+    );
+    expect(find.widgetWithText(SnackBar, _fallback), findsOneWidget);
+  });
 }
+
+// How far the view is from a page boundary, in pixels (page turns scroll by
+// the container's own size, see snapToNearestPage in the bridge).
+const _offPage =
+    '(function () {'
+    '  var m = rendition.manager, c = m.container;'
+    '  var vertical = m.settings.axis === "vertical";'
+    '  var step = vertical ? c.offsetHeight : c.offsetWidth;'
+    '  var off = Math.abs(vertical ? c.scrollTop : c.scrollLeft) % step;'
+    '  return JSON.stringify({off: Math.min(off, step - off)});'
+    '})()';
+
+// How many added-font faces the chapter holds.
+const _userFaces =
+    '(function () {'
+    '  var n = 0;'
+    '  rendition.getContents()[0].document.fonts.forEach(function (f) {'
+    '    if (String(f.family).indexOf("mekuru-user-font-") !== -1) n++;'
+    '  });'
+    '  return JSON.stringify({faces: n});'
+    '})()';
+
+final _fallback = AppLocalizationsEn().readerUserFontFailed;
 
 // What the bridge holds of the added font, in whichever WebView is current.
 const _sentFont =

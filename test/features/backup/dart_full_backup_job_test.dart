@@ -70,6 +70,7 @@ void main() {
     ),
     ('books/manga_2_00000000/001.jpg', 'Manga/漫画/001.jpg', 0),
     ('books/manga_2_00000000/pages_cache.json', 'Manga/漫画/pages_cache.json', 0),
+    ('fonts/Kaisei.ttf', 'Mekuru data/fonts/Kaisei.ttf', 0),
   ];
 
   /// Seeds the library and its `plan.jsonl`; returns entry name → bytes.

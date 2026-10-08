@@ -263,6 +263,7 @@ class ReaderSettings {
     double? fontSize,
     ReaderFontFamily? fontFamily,
     String? customFontFile,
+    bool clearCustomFontFile = false,
     bool? verticalText,
     bool? splitVerticalText,
     bool? scrollView,
@@ -290,7 +291,9 @@ class ReaderSettings {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
       fontFamily: fontFamily ?? this.fontFamily,
-      customFontFile: customFontFile ?? this.customFontFile,
+      customFontFile: clearCustomFontFile
+          ? null
+          : (customFontFile ?? this.customFontFile),
       verticalText: verticalText ?? this.verticalText,
       splitVerticalText: splitVerticalText ?? this.splitVerticalText,
       scrollView: scrollView ?? this.scrollView,

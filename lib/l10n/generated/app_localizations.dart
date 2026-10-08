@@ -1717,10 +1717,10 @@ abstract class AppLocalizations {
   /// **'Font collections (.ttc) aren\'t supported. Pick a .ttf or .otf file.'**
   String get settingsFontAddCollection;
 
-  /// Snackbar when the picked font file is over 50 MB.
+  /// Shown when the picked font file is over 29.99 MB (WebView engines refuse web fonts of 30 MB or more).
   ///
   /// In en, this message translates to:
-  /// **'This font is too large (over 50 MB).'**
+  /// **'This font is too large (over 29.99 MB).'**
   String get settingsFontAddTooLarge;
 
   /// Snackbar when copying the picked font into Mekuru fails.

@@ -1090,9 +1090,9 @@
   "@settingsFontAddCollection": {
     "description": "Snackbar when the picked file is a TrueType collection."
   },
-  "settingsFontAddTooLarge": "Esta fuente es demasiado grande (más de 50 MB).",
+  "settingsFontAddTooLarge": "Esta fuente es demasiado grande (más de 29,99 MB).",
   "@settingsFontAddTooLarge": {
-    "description": "Snackbar when the picked font file is over 50 MB."
+    "description": "Shown when the picked font file is over 29.99 MB (WebView engines refuse web fonts of 30 MB or more)."
   },
   "settingsFontAddFailed": "No se pudo añadir esta fuente.",
   "@settingsFontAddFailed": {

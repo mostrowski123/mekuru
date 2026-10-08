@@ -957,7 +957,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Font collections (.ttc) aren\'t supported. Pick a .ttf or .otf file.';
 
   @override
-  String get settingsFontAddTooLarge => 'This font is too large (over 50 MB).';
+  String get settingsFontAddTooLarge =>
+      'This font is too large (over 29.99 MB).';
 
   @override
   String get settingsFontAddFailed => 'Couldn\'t add this font.';

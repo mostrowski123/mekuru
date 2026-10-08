@@ -962,7 +962,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsFontAddTooLarge =>
-      'Font ini terlalu besar (lebih dari 50 MB).';
+      'Font ini terlalu besar (lebih dari 29,99 MB).';
 
   @override
   String get settingsFontAddFailed => 'Font ini tidak dapat ditambahkan.';
