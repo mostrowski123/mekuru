@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/features/reader/presentation/widgets/reader_settings/lookup_font_size_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_brightness_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_setting_segments.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
@@ -157,15 +158,16 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
           label: l10n.settingsFontSizeTitle,
           valueLabel: '${settings.fontSize.round()}',
           value: settings.fontSize,
-          min: 12,
-          max: 32,
-          divisions: 20,
+          min: kMinReaderFontSize,
+          max: kMaxReaderFontSize,
+          divisions: kReaderFontSizeDivisions,
           onChanged: notifier.setFontSize,
           // onChangeEnd so a drag logs once, not per tick.
           onChangeEnd: (value) => onSettingChanged('font_size', value.round()),
         ),
         const SizedBox(height: 8),
         SettingsSegmentedRow<ReaderFontFamily>(
+          label: l10n.settingsFontFamilyTitle,
           segments: readerFontFamilySegments(l10n),
           selected: settings.fontFamily,
           onSelected: (family) {
@@ -173,6 +175,8 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
             onSettingChanged('font_family', family.name);
           },
         ),
+        const SizedBox(height: 8),
+        LookupFontSizeRow(onSettingChanged: onSettingChanged),
         ReaderBrightnessRow(onSettingChanged: onSettingChanged),
         const SizedBox(height: 8),
         SettingsSegmentedRow<ColorMode>(

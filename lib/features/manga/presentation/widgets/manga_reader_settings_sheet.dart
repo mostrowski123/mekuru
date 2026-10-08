@@ -5,6 +5,7 @@ import 'package:mekuru/features/manga/presentation/providers/pro_access_provider
 import 'package:mekuru/features/manga/presentation/widgets/manga_settings_rows.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/features/reader/presentation/widgets/reader_settings/lookup_font_size_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_brightness_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -118,6 +119,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
         // ── Lookup ──
         SettingsSectionHeader.sheet(title: l10n.mangaSettingsSectionLookup),
         MangaTransparentLookupRow(onSettingChanged: onSettingChanged),
+        LookupFontSizeRow(onSettingChanged: onSettingChanged),
         SettingsSwitchRow(
           icon: Icons.grid_on,
           title: l10n.mangaDebugWordOverlayTitle,

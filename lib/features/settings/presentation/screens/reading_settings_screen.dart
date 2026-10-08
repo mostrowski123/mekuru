@@ -85,9 +85,9 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SettingsSliderRow(
               value: settings.fontSize,
-              min: 12,
-              max: 32,
-              divisions: 20,
+              min: kMinReaderFontSize,
+              max: kMaxReaderFontSize,
+              divisions: kReaderFontSizeDivisions,
               sliderLabel: settings.fontSize.round().toString(),
               onChanged: notifier.setFontSize,
             ),

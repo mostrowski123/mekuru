@@ -85,7 +85,10 @@ final appThemeModeProvider = NotifierProvider<AppThemeNotifier, ThemeMode>(
 class LookupFontSizeNotifier extends Notifier<double> {
   static const double defaultSize = 16.0;
   static const double minSize = 12.0;
-  static const double maxSize = 24.0;
+  static const double maxSize = 32.0;
+
+  /// Slider stops, one per point.
+  static const int divisions = (maxSize - minSize) ~/ 1;
 
   bool _hasLoadedPersistedSettings = false;
 

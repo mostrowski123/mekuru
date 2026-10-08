@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/epub_reader_settings_sheet.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -247,5 +248,36 @@ void main() {
     await tester.drag(fontSizeSlider, const Offset(60, 0));
     await tester.pumpAndSettle();
     expect(changes, contains('font_size'));
+  });
+
+  testWidgets('display section labels the font and sizes the lookup text', (
+    tester,
+  ) async {
+    final changes = <String>[];
+    final container = await _pumpSheet(
+      tester,
+      onSettingChanged: (setting, value) => changes.add(setting),
+    );
+
+    await scrollSettingsTo(tester, find.text('Font'));
+    expect(find.text('Font'), findsOneWidget);
+
+    final lookupRow = find.ancestor(
+      of: find.text('Lookup Font Size'),
+      matching: find.byType(SettingsSliderRow),
+    );
+    await scrollSettingsTo(tester, lookupRow);
+    final slider = find.descendant(
+      of: lookupRow,
+      matching: find.byType(Slider),
+    );
+    await tester.drag(slider, const Offset(60, 0));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(lookupFontSizeProvider),
+      greaterThan(LookupFontSizeNotifier.defaultSize),
+    );
+    expect(changes, contains('lookup_font_size'));
   });
 }

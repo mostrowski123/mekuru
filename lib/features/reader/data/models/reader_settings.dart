@@ -103,6 +103,12 @@ extension VolumeKeyPageTurnStorage on VolumeKeyPageTurn {
 /// the manga reader.
 const double kDefaultMangaPageTurnEdgeZoneWidthFraction = 0.15;
 
+/// EPUB text size range offered by the font size sliders, one stop per point.
+const double kMinReaderFontSize = 12;
+const double kMaxReaderFontSize = 48;
+const int kReaderFontSizeDivisions =
+    (kMaxReaderFontSize - kMinReaderFontSize) ~/ 1;
+
 /// Minimum width fraction reserved for page-turn taps on each device edge in
 /// the manga reader.
 const double kMinMangaPageTurnEdgeZoneWidthFraction = 0.05;

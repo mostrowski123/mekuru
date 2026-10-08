@@ -214,7 +214,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: lookupFontSize,
               min: LookupFontSizeNotifier.minSize,
               max: LookupFontSizeNotifier.maxSize,
-              divisions: 12,
+              divisions: LookupFontSizeNotifier.divisions,
               label: lookupFontSize.round().toString(),
               onChanged: (value) {
                 AppHaptics.light();
