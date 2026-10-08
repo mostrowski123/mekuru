@@ -110,18 +110,6 @@ String readerFontFamilyLabel(AppLocalizations l10n, ReaderFontFamily family) =>
       ReaderFontFamily.custom => l10n.settingsFontFamilyBook,
     };
 
-List<ButtonSegment<ReaderFontFamily>> readerFontFamilySegments(
-  AppLocalizations l10n,
-) {
-  return [
-    for (final family in builtInReaderFontFamilies)
-      ButtonSegment(
-        value: family,
-        label: Text(readerFontFamilyLabel(l10n, family)),
-      ),
-  ];
-}
-
 List<ButtonSegment<VolumeKeyPageTurn>> volumeKeyPageTurnSegments(
   AppLocalizations l10n,
 ) {

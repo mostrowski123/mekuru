@@ -1699,6 +1699,54 @@ abstract class AppLocalizations {
   /// **'Gothic'**
   String get settingsFontFamilyGothic;
 
+  /// Last row of the font picker: opens the file picker to add a font file.
+  ///
+  /// In en, this message translates to:
+  /// **'Add font…'**
+  String get settingsFontAdd;
+
+  /// Snackbar when the picked file is not a TTF, OTF, WOFF or WOFF2 font.
+  ///
+  /// In en, this message translates to:
+  /// **'This file isn\'t a font.'**
+  String get settingsFontAddNotAFont;
+
+  /// Snackbar when the picked file is a TrueType collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Font collections (.ttc) aren\'t supported. Pick a .ttf or .otf file.'**
+  String get settingsFontAddCollection;
+
+  /// Snackbar when the picked font file is over 50 MB.
+  ///
+  /// In en, this message translates to:
+  /// **'This font is too large (over 50 MB).'**
+  String get settingsFontAddTooLarge;
+
+  /// Snackbar when copying the picked font into Mekuru fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t add this font.'**
+  String get settingsFontAddFailed;
+
+  /// Tooltip and screen-reader label of the remove button next to an added font.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove font'**
+  String get settingsFontRemoveTooltip;
+
+  /// Title of the dialog confirming removal of an added font.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove font?'**
+  String get settingsFontRemoveTitle;
+
+  /// Body of the dialog confirming removal of an added font.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” will be removed from Mekuru. The file you added it from is not affected.'**
+  String settingsFontRemoveBody({required String name});
+
   /// Label for the sepia intensity slider.
   ///
   /// In en, this message translates to:

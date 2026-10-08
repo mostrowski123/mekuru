@@ -1241,6 +1241,43 @@
   "@settingsFontFamilyGothic": {
     "description": "Font option: Japanese Gothic (sans-serif) typeface."
   },
+  "settingsFontAdd": "Add font…",
+  "@settingsFontAdd": {
+    "description": "Last row of the font picker: opens the file picker to add a font file."
+  },
+  "settingsFontAddNotAFont": "This file isn't a font.",
+  "@settingsFontAddNotAFont": {
+    "description": "Snackbar when the picked file is not a TTF, OTF, WOFF or WOFF2 font."
+  },
+  "settingsFontAddCollection": "Font collections (.ttc) aren't supported. Pick a .ttf or .otf file.",
+  "@settingsFontAddCollection": {
+    "description": "Snackbar when the picked file is a TrueType collection."
+  },
+  "settingsFontAddTooLarge": "This font is too large (over 50 MB).",
+  "@settingsFontAddTooLarge": {
+    "description": "Snackbar when the picked font file is over 50 MB."
+  },
+  "settingsFontAddFailed": "Couldn't add this font.",
+  "@settingsFontAddFailed": {
+    "description": "Snackbar when copying the picked font into Mekuru fails."
+  },
+  "settingsFontRemoveTooltip": "Remove font",
+  "@settingsFontRemoveTooltip": {
+    "description": "Tooltip and screen-reader label of the remove button next to an added font."
+  },
+  "settingsFontRemoveTitle": "Remove font?",
+  "@settingsFontRemoveTitle": {
+    "description": "Title of the dialog confirming removal of an added font."
+  },
+  "settingsFontRemoveBody": "“{name}” will be removed from Mekuru. The file you added it from is not affected.",
+  "@settingsFontRemoveBody": {
+    "description": "Body of the dialog confirming removal of an added font.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settingsSepiaIntensityTitle": "Sepia Intensity",
   "@settingsSepiaIntensityTitle": {
     "description": "Label for the sepia intensity slider."

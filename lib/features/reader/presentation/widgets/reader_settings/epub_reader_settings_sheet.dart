@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/features/reader/presentation/providers/user_font_providers.dart';
+import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_font_picker.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/lookup_font_size_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_brightness_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_setting_segments.dart';
@@ -166,14 +168,22 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
           onChangeEnd: (value) => onSettingChanged('font_size', value.round()),
         ),
         const SizedBox(height: 8),
-        SettingsSegmentedRow<ReaderFontFamily>(
-          label: l10n.settingsFontFamilyTitle,
-          segments: readerFontFamilySegments(l10n),
-          selected: settings.fontFamily,
-          onSelected: (family) {
-            notifier.setFontFamily(family);
-            onSettingChanged('font_family', family.name);
-          },
+        ListTile(
+          key: const Key('reader-font'),
+          leading: const Icon(Icons.font_download_outlined),
+          title: Text(l10n.settingsFontFamilyTitle),
+          trailing: Text(
+            readerFontChoiceLabel(
+              l10n,
+              settings,
+              ref.watch(userFontsProvider).value ?? const [],
+            ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          onTap: () =>
+              showReaderFontPicker(context, onSettingChanged: onSettingChanged),
         ),
         const SizedBox(height: 8),
         LookupFontSizeRow(onSettingChanged: onSettingChanged),

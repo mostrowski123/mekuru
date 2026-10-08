@@ -951,6 +951,34 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsFontFamilyGothic => 'Gothic';
 
   @override
+  String get settingsFontAdd => 'Tambah font…';
+
+  @override
+  String get settingsFontAddNotAFont => 'File ini bukan font.';
+
+  @override
+  String get settingsFontAddCollection =>
+      'Koleksi font (.ttc) tidak didukung. Pilih file .ttf atau .otf.';
+
+  @override
+  String get settingsFontAddTooLarge =>
+      'Font ini terlalu besar (lebih dari 50 MB).';
+
+  @override
+  String get settingsFontAddFailed => 'Font ini tidak dapat ditambahkan.';
+
+  @override
+  String get settingsFontRemoveTooltip => 'Keluarkan font';
+
+  @override
+  String get settingsFontRemoveTitle => 'Keluarkan font?';
+
+  @override
+  String settingsFontRemoveBody({required String name}) {
+    return '“$name” akan dikeluarkan dari Mekuru. File asal yang Anda tambahkan tidak terpengaruh.';
+  }
+
+  @override
   String get settingsSepiaIntensityTitle => 'Intensitas Sepia';
 
   @override

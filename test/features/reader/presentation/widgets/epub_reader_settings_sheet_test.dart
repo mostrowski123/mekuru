@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/features/reader/presentation/providers/user_font_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/epub_reader_settings_sheet.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../shared/fake_user_font_store.dart';
 import '../../../../shared/reader_settings_test_helpers.dart';
 import '../../../../shared/wanikani_test_fakes.dart';
 import '../../../../test_app.dart';
@@ -22,6 +24,7 @@ Future<ProviderContainer> _pumpSheet(
   final container = ProviderContainer(
     overrides: [
       readerBrightnessProvider.overrideWith(FakeReaderBrightnessNotifier.new),
+      userFontStoreProvider.overrideWithValue(FakeUserFontStore()),
       if (wanikaniStorage != null)
         wanikaniStorageProvider.overrideWithValue(wanikaniStorage),
     ],
@@ -248,6 +251,21 @@ void main() {
     await tester.drag(fontSizeSlider, const Offset(60, 0));
     await tester.pumpAndSettle();
     expect(changes, contains('font_size'));
+  });
+
+  testWidgets('the Font row shows the choice and opens the picker', (
+    tester,
+  ) async {
+    await _pumpSheet(tester);
+    final row = find.byKey(const Key('reader-font'));
+    await scrollSettingsTo(tester, row);
+    expect(
+      find.descendant(of: row, matching: find.text('Book default')),
+      findsOneWidget,
+    );
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    expect(find.text('Add font…'), findsOneWidget);
   });
 
   testWidgets('display section labels the font and sizes the lookup text', (

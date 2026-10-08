@@ -7,6 +7,8 @@ import 'package:mekuru/features/manga/presentation/providers/pro_access_provider
 import 'package:mekuru/features/manga/presentation/widgets/manga_settings_rows.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/features/reader/presentation/providers/user_font_providers.dart';
+import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_font_picker.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_setting_segments.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/widgets/ocr_server_url_dialog.dart';
@@ -98,11 +100,17 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
               color: theme.colorScheme.primary,
             ),
             title: Text(l10n.settingsFontFamilyTitle),
-            subtitle: Text(readerFontFamilyLabel(l10n, settings.fontFamily)),
+            subtitle: Text(
+              readerFontChoiceLabel(
+                l10n,
+                settings,
+                ref.watch(userFontsProvider).value ?? const [],
+              ),
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              _showFontFamilyPicker(settings.fontFamily);
+              showReaderFontPicker(context);
             },
           ),
           ListTile(
@@ -279,20 +287,6 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
           const SizedBox(height: 16),
         ],
       ),
-    );
-  }
-
-  void _showFontFamilyPicker(ReaderFontFamily current) {
-    final l10n = context.l10n;
-
-    showSettingsOptionPickerSheet(
-      context: context,
-      title: l10n.settingsFontFamilyTitle,
-      values: builtInReaderFontFamilies,
-      selected: current,
-      labelOf: (family) => readerFontFamilyLabel(l10n, family),
-      onSelected: (family) =>
-          ref.read(readerSettingsProvider.notifier).setFontFamily(family),
     );
   }
 

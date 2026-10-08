@@ -912,6 +912,32 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsFontFamilyGothic => '黑体';
 
   @override
+  String get settingsFontAdd => '添加字体…';
+
+  @override
+  String get settingsFontAddNotAFont => '此文件不是字体。';
+
+  @override
+  String get settingsFontAddCollection => '不支持字体集（.ttc）。请选择 .ttf 或 .otf 文件。';
+
+  @override
+  String get settingsFontAddTooLarge => '此字体太大（超过 50 MB）。';
+
+  @override
+  String get settingsFontAddFailed => '无法添加此字体。';
+
+  @override
+  String get settingsFontRemoveTooltip => '移除字体';
+
+  @override
+  String get settingsFontRemoveTitle => '移除字体？';
+
+  @override
+  String settingsFontRemoveBody({required String name}) {
+    return '“$name”将从 Mekuru 中移除。你添加它时所用的文件不受影响。';
+  }
+
+  @override
   String get settingsSepiaIntensityTitle => '仿古色强度';
 
   @override
@@ -5138,6 +5164,32 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get settingsFontFamilyGothic => '黑体';
+
+  @override
+  String get settingsFontAdd => '添加字体…';
+
+  @override
+  String get settingsFontAddNotAFont => '此文件不是字体。';
+
+  @override
+  String get settingsFontAddCollection => '不支持字体集（.ttc）。请选择 .ttf 或 .otf 文件。';
+
+  @override
+  String get settingsFontAddTooLarge => '此字体太大（超过 50 MB）。';
+
+  @override
+  String get settingsFontAddFailed => '无法添加此字体。';
+
+  @override
+  String get settingsFontRemoveTooltip => '移除字体';
+
+  @override
+  String get settingsFontRemoveTitle => '移除字体？';
+
+  @override
+  String settingsFontRemoveBody({required String name}) {
+    return '“$name”将从 Mekuru 中移除。你添加它时所用的文件不受影响。';
+  }
 
   @override
   String get settingsSepiaIntensityTitle => '仿古色强度';

@@ -961,6 +961,34 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsFontFamilyGothic => 'Gótica';
 
   @override
+  String get settingsFontAdd => 'Añadir fuente…';
+
+  @override
+  String get settingsFontAddNotAFont => 'Este archivo no es una fuente.';
+
+  @override
+  String get settingsFontAddCollection =>
+      'No se admiten colecciones de fuentes (.ttc). Elige un archivo .ttf u .otf.';
+
+  @override
+  String get settingsFontAddTooLarge =>
+      'Esta fuente es demasiado grande (más de 50 MB).';
+
+  @override
+  String get settingsFontAddFailed => 'No se pudo añadir esta fuente.';
+
+  @override
+  String get settingsFontRemoveTooltip => 'Quitar fuente';
+
+  @override
+  String get settingsFontRemoveTitle => '¿Quitar fuente?';
+
+  @override
+  String settingsFontRemoveBody({required String name}) {
+    return '“$name” se quitará de Mekuru. El archivo desde el que la añadiste no se modifica.';
+  }
+
+  @override
   String get settingsSepiaIntensityTitle => 'Intensidad de sepia';
 
   @override
