@@ -59,7 +59,7 @@ class FreeBookActions extends StatelessWidget {
                       onPressed: () {
                         final navigator = Navigator.of(context);
                         navigator.pop();
-                        navigator.push(bookReaderRoute(copy));
+                        openBookReader(navigator, copy);
                       },
                     )
                   : FilledButton.icon(

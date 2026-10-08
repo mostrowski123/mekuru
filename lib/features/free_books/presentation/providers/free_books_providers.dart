@@ -275,8 +275,10 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
         (l10n) => l10n.serverBrowseAddedToLibrary(title: book.title),
         action: (l10n) => SnackBarAction(
           label: l10n.freeBooksRead,
-          onPressed: () =>
-              navigatorKey.currentState?.push(bookReaderRoute(book)),
+          onPressed: () {
+            final navigator = navigatorKey.currentState;
+            if (navigator != null) openBookReader(navigator, book);
+          },
         ),
       );
     } catch (error, stackTrace) {

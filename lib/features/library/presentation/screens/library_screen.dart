@@ -32,7 +32,6 @@ import 'package:mekuru/features/manga/presentation/providers/pro_access_provider
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
-import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';
@@ -249,7 +248,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   : () {
                       final book = importState.importedBook!;
                       ref.read(bookImportProvider.notifier).clearState();
-                      Navigator.of(context).push(bookReaderRoute(book));
+                      openBookReader(Navigator.of(context), book);
                     },
               onDismiss: () =>
                   ref.read(bookImportProvider.notifier).clearState(),
@@ -487,8 +486,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             sliver: SliverToBoxAdapter(
               child: ContinueReadingCard(
                 book: recent,
-                onTap: () =>
-                    Navigator.of(context).push(bookReaderRoute(recent)),
+                onTap: () => openBookReader(Navigator.of(context), recent),
               ),
             ),
           ),
@@ -1220,7 +1218,7 @@ class _BookTileState extends ConsumerState<_BookTile>
       AppHaptics.light();
       widget.onToggleSelection?.call();
     } else {
-      Navigator.of(context).push(bookReaderRoute(book));
+      openBookReader(Navigator.of(context), book);
     }
   }
 
@@ -1558,12 +1556,7 @@ class _BookTileState extends ConsumerState<_BookTile>
       isScrollControlled: true,
       builder: (context) => BookmarksSheet(
         bookId: book.id,
-        onNavigate: (cfi) => navigator.push(
-          namedRoute(
-            'reader',
-            (_) => ReaderScreen(book: book, initialCfi: cfi),
-          ),
-        ),
+        onNavigate: (cfi) => openBookReader(navigator, book, initialCfi: cfi),
       ),
     );
   }
@@ -1575,12 +1568,8 @@ class _BookTileState extends ConsumerState<_BookTile>
       isScrollControlled: true,
       builder: (context) => HighlightsSheet(
         bookId: book.id,
-        onNavigate: (cfiRange) => navigator.push(
-          namedRoute(
-            'reader',
-            (_) => ReaderScreen(book: book, initialCfi: cfiRange),
-          ),
-        ),
+        onNavigate: (cfiRange) =>
+            openBookReader(navigator, book, initialCfi: cfiRange),
       ),
     );
   }

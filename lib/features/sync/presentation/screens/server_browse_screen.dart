@@ -311,7 +311,7 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
       );
       return;
     }
-    Navigator.of(context).push(bookReaderRoute(linked));
+    openBookReader(Navigator.of(context), linked);
   }
 
   @override

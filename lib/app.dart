@@ -246,6 +246,10 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
       supportedLocales: AppLocalizations.supportedLocales,
       scaffoldMessengerKey: scaffoldMessengerKey,
       navigatorKey: navigatorKey,
+      // Brings an open book back after the system kills the app in the
+      // background (state restoration; see openBookReader).
+      restorationScopeId: 'app',
+      onGenerateRoute: onGenerateAppRoute,
       navigatorObservers: [
         SentryNavigatorObserver(),
         ?AnalyticsService.instance.navigatorObserver,
@@ -273,6 +277,15 @@ class _MainShellState extends ConsumerState<_MainShell> {
   bool _hasAppliedStartup = false;
   final _dictionaryKey = GlobalKey<DictionarySearchScreenState>();
   final Map<int, Widget> _loadedScreens = <int, Widget>{};
+
+  @override
+  void initState() {
+    super.initState();
+    // A route above the shell from the start is a reader the navigator
+    // restored after the system killed the app. The startup screen is for
+    // fresh launches, and must not wait to apply until that reader closes.
+    _hasAppliedStartup = Navigator.of(context).canPop();
+  }
 
   Widget _buildScreen(int index) {
     return switch (index) {
@@ -422,7 +435,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
     final book = await repo.getMostRecentlyReadBook();
     if (book != null && mounted) {
       // Any book type can be the most recent one.
-      Navigator.of(context).push(bookReaderRoute(book));
+      openBookReader(Navigator.of(context), book);
     }
   }
 }

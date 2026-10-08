@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 
 Widget buildLocalizedTestApp({
   required Widget home,
@@ -16,5 +17,7 @@ Widget buildLocalizedTestApp({
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: home,
+    // Opening a book pushes the reader by name, as in MekuruApp.
+    onGenerateRoute: onGenerateAppRoute,
   );
 }
