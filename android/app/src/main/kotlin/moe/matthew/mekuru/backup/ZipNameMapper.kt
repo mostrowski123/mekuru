@@ -18,6 +18,8 @@ object ZipLayout {
     const val SETTINGS = DATA_PREFIX + SETTINGS_FILE
     const val UNIDIC_DIR = "unidic-lite"
     const val UNIDIC_PREFIX = DATA_PREFIX + UNIDIC_DIR + "/"
+    const val FONTS_DIR = "fonts"
+    const val FONTS_PREFIX = DATA_PREFIX + FONTS_DIR + "/"
     const val BOOKS_DIR = "books"
 }
 
@@ -48,6 +50,11 @@ class ZipNameMapper(folders: Map<String, String>) {
             val rest = name.removePrefix(ZipLayout.UNIDIC_PREFIX)
             if (rest.isEmpty()) return null
             return "${ZipLayout.UNIDIC_DIR}/$rest"
+        }
+        if (name.startsWith(ZipLayout.FONTS_PREFIX)) {
+            val rest = name.removePrefix(ZipLayout.FONTS_PREFIX)
+            if (rest.isEmpty() || rest.contains('/')) return null
+            return "${ZipLayout.FONTS_DIR}/$rest"
         }
         for ((prefix, dir) in folders) {
             if (!name.startsWith(prefix)) continue

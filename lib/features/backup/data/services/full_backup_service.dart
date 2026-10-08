@@ -158,6 +158,7 @@ class FullBackupService implements FullBackupApi {
         unidicDirPath: documents == null
             ? null
             : p.join(documents.path, FullBackupManifest.unidicDirName),
+        fontsDirPath: p.join(root.path, FullBackupManifest.fontsDirName),
       );
       final plan = await Isolate.run(() => buildExportPlan(args));
       final linked = await _linkedPages(plan.linkedManga);

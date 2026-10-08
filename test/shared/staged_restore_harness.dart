@@ -66,6 +66,8 @@ class StagedRestoreHarness {
   File get liveDictionary => File(
     p.join(documentsRoot.path, StagedFullRestore.unidicDirName, 'sys.dic'),
   );
+  File get liveFont =>
+      File(p.join(root.path, StagedFullRestore.fontsDirName, 'Mine.ttf'));
 
   File write(String path, String content) {
     final file = File(path);
@@ -91,11 +93,12 @@ class StagedRestoreHarness {
 
   /// The device before the restore: old DB with a hot journal, one old book,
   /// optionally a downloaded dictionary.
-  void seedLive({bool withDictionary = false}) {
+  void seedLive({bool withDictionary = false, bool withFonts = false}) {
     write(liveDb.path, 'OLD-DB');
     write(liveJournal.path, 'OLD-JOURNAL');
     write(p.join(liveBooks.path, 'book_1', 'a.txt'), 'old book');
     if (withDictionary) write(liveDictionary.path, 'OLD-DIC');
+    if (withFonts) write(liveFont.path, 'OLD-FONT');
   }
 
   /// What the import step leaves behind, READY written last.
@@ -103,8 +106,15 @@ class StagedRestoreHarness {
     bool withDb = true,
     bool withBooks = true,
     bool withDictionary = false,
+    bool withFonts = false,
   }) {
     if (withDb) write(p.join(staging.path, db), 'NEW-DB');
+    if (withFonts) {
+      write(
+        p.join(staging.path, StagedFullRestore.fontsDirName, 'Mine.ttf'),
+        'NEW-FONT',
+      );
+    }
     if (withBooks) {
       write(p.join(staging.path, 'books', 'book_9', 'b.txt'), 'new book');
     }

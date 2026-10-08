@@ -2811,7 +2811,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupFullScopeBody =>
-      'Everything in one large .zip file: books, manga, dictionaries, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.';
+      'Everything in one large .zip file: books, manga, dictionaries, fonts, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.';
 
   @override
   String get backupFullNotIncluded =>

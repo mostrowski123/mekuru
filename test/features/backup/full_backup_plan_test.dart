@@ -17,6 +17,7 @@ void main() {
   late Directory root;
   late Directory books;
   late Directory unidic;
+  late Directory fonts;
   late String snapshotPath;
 
   File write(String path, String content) {
@@ -75,6 +76,7 @@ void main() {
     root = await Directory.systemTemp.createTemp('plan_root_');
     books = Directory(p.join(root.path, 'books'))..createSync();
     unidic = Directory(p.join(root.path, 'docs', 'unidic-lite'));
+    fonts = Directory(p.join(root.path, 'fonts'));
     snapshotPath = p.join(root.path, 'snapshot.sqlite');
     await seedSnapshot();
 
@@ -112,13 +114,15 @@ void main() {
     if (await root.exists()) await root.delete(recursive: true);
   });
 
-  FullBackupPlan build({String? unidicDirPath}) => buildExportPlan(
-    BuildExportPlanArgs(
-      snapshotDbPath: snapshotPath,
-      booksDirPath: books.path,
-      unidicDirPath: unidicDirPath,
-    ),
-  );
+  FullBackupPlan build({String? unidicDirPath, String? fontsDirPath}) =>
+      buildExportPlan(
+        BuildExportPlanArgs(
+          snapshotDbPath: snapshotPath,
+          booksDirPath: books.path,
+          unidicDirPath: unidicDirPath,
+          fontsDirPath: fontsDirPath,
+        ),
+      );
 
   test('maps claimed directories to titled folders and nothing else', () {
     final plan = build();
@@ -209,6 +213,23 @@ void main() {
     );
   });
 
+  test('ships the added fonts under Mekuru data', () {
+    write(p.join(fonts.path, 'Kaisei.ttf'), 'TTF');
+    write(p.join(fonts.path, 'Half.ttf.tmp'), 'x');
+
+    final names = build(
+      fontsDirPath: fonts.path,
+    ).entries.map((e) => e.name).toList();
+
+    expect(names.where((n) => n.startsWith(FullBackupManifest.fontsPrefix)), [
+      'Mekuru data/fonts/Kaisei.ttf',
+    ]);
+    expect(
+      build().entries.any((e) => e.name.startsWith('Mekuru data/fonts')),
+      isFalse,
+    );
+  });
+
   test('a missing books directory yields an empty payload', () {
     books.deleteSync(recursive: true);
     final plan = build();
@@ -244,6 +265,7 @@ void main() {
       'Mekuru data/',
       'pages/',
       'unidic-lite/',
+      'fonts/',
       FullBackupManifest.manifestEntry,
       'Restore full backup (.zip)',
       'replaces everything in Mekuru',

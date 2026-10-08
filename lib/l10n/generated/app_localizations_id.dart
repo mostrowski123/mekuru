@@ -2823,7 +2823,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupFullScopeBody =>
-      'Semuanya dalam satu file .zip berukuran besar: buku, manga, kamus, pengaturan, dan data bacaan. Memulihkannya akan mengganti semua yang ada di Mekuru pada perangkat ini; aplikasi dan file lain tidak tersentuh. Hanya manual.';
+      'Semuanya dalam satu file .zip berukuran besar: buku, manga, kamus, font, pengaturan, dan data bacaan. Memulihkannya akan mengganti semua yang ada di Mekuru pada perangkat ini; aplikasi dan file lain tidak tersentuh. Hanya manual.';
 
   @override
   String get backupFullNotIncluded =>

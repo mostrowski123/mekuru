@@ -58,6 +58,7 @@ void main() {
         mapper.map('Mekuru data/unidic-lite/.install_complete'),
         'unidic-lite/.install_complete',
       );
+      expect(mapper.map('Mekuru data/fonts/Kaisei.ttf'), 'fonts/Kaisei.ttf');
     });
 
     test('skips sidecars and directories', () {
@@ -66,12 +67,14 @@ void main() {
       expect(mapper.map('Books/メロス/'), isNull);
       expect(mapper.map('Books/'), isNull);
       expect(mapper.map('Mekuru data/unidic-lite/'), isNull);
+      expect(mapper.map('Mekuru data/fonts/'), isNull);
     });
 
     test('skips entries that belong nowhere', () {
       expect(mapper.map('Unknown/x.txt'), isNull);
       expect(mapper.map('Books/Other title/a.epub'), isNull);
       expect(mapper.map('Mekuru data/covers/nested/x.jpg'), isNull);
+      expect(mapper.map('Mekuru data/fonts/nested/x.ttf'), isNull);
     });
 
     test('resolveInside refuses escapes', () {

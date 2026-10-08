@@ -1,4 +1,5 @@
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/reader/data/services/user_font_store.dart';
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 
 /// Describes one full-backup archive (`mekuru-full-backup-*.zip`).
@@ -17,6 +18,7 @@ import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_do
 /// Mekuru data/mekuru_db.sqlite
 /// Mekuru data/covers/<loose files from books/>
 /// Mekuru data/unidic-lite/...  the downloaded dictionary, when installed
+/// Mekuru data/fonts/<file>     fonts the user added
 /// Books/<Title>/...            one folder per EPUB, contents as on disk
 /// Manga/<Title>/...            one folder per manga
 /// Manga/<Title>/pages/...      pages copied from a linked folder
@@ -38,6 +40,8 @@ class FullBackupManifest {
   static const String unidicDirName =
       EnhancedFuriganaDictDownloadService.localDirName;
   static const String unidicPrefix = '$dataPrefix$unidicDirName/';
+  static const String fontsDirName = UserFontStore.dirName;
+  static const String fontsPrefix = '$dataPrefix$fontsDirName/';
   static const String booksPrefix = 'Books/';
   static const String mangaPrefix = 'Manga/';
 
@@ -59,7 +63,8 @@ class FullBackupManifest {
   final int externalMangaCount;
   final int dbBytes;
 
-  /// Every payload byte: books, manga (linked pages included), UniDic-lite.
+  /// Every payload byte: books, manga (linked pages included), UniDic-lite,
+  /// fonts.
   final int booksBytes;
 
   /// Zip folder prefix (with trailing slash) → import directory name.

@@ -63,6 +63,11 @@ class ZipNameMapper {
       if (rest.isEmpty) return null;
       return '${FullBackupManifest.unidicDirName}/$rest';
     }
+    if (name.startsWith(FullBackupManifest.fontsPrefix)) {
+      final rest = name.substring(FullBackupManifest.fontsPrefix.length);
+      if (rest.isEmpty || rest.contains('/')) return null;
+      return '${FullBackupManifest.fontsDirName}/$rest';
+    }
     for (final MapEntry(key: prefix, value: dir) in _folders.entries) {
       if (!name.startsWith(prefix)) continue;
       final rest = name.substring(prefix.length);

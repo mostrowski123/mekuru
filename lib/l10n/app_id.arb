@@ -2800,7 +2800,7 @@
   "backupWrongKindFullBackup": "Ini adalah file .zip, bukan cadangan data bacaan. Jika ini cadangan lengkap Mekuru, gunakan Pulihkan cadangan lengkap.",
   "backupWrongKindReadingData": "Ini adalah cadangan data bacaan (.mekuru), bukan cadangan lengkap. Gunakan Impor data bacaan.",
   "backupFullSectionTitle": "Cadangan lengkap",
-  "backupFullScopeBody": "Semuanya dalam satu file .zip berukuran besar: buku, manga, kamus, pengaturan, dan data bacaan. Memulihkannya akan mengganti semua yang ada di Mekuru pada perangkat ini; aplikasi dan file lain tidak tersentuh. Hanya manual.",
+  "backupFullScopeBody": "Semuanya dalam satu file .zip berukuran besar: buku, manga, kamus, font, pengaturan, dan data bacaan. Memulihkannya akan mengganti semua yang ada di Mekuru pada perangkat ini; aplikasi dan file lain tidak tersentuh. Hanya manual.",
   "backupFullNotIncluded": "Tidak disertakan: data urutan goresan KanjiVG, model OCR, dan model terjemahan yang diunduh (unduh lagi dari Pengaturan), serta riwayat cadangan data bacaan.",
   "backupFullNotIncludedIos": "Tidak disertakan: data urutan goresan KanjiVG dan model OCR yang diunduh (unduh lagi dari Pengaturan), serta riwayat cadangan data bacaan.",
   "backupFullExportTitle": "Ekspor cadangan lengkap (.zip)…",

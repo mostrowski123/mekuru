@@ -3640,7 +3640,7 @@
   "@backupFullSectionTitle": {
     "description": "Header of the full backup card."
   },
-  "backupFullScopeBody": "Everything in one large .zip file: books, manga, dictionaries, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.",
+  "backupFullScopeBody": "Everything in one large .zip file: books, manga, dictionaries, fonts, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.",
   "@backupFullScopeBody": {
     "description": "Summary text on the full backup card."
   },

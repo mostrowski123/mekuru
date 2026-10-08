@@ -84,6 +84,26 @@ void main() {
       },
     );
 
+    test('staged fonts replace the device fonts', () async {
+      h.seedLive(withFonts: true);
+      h.seedStaging(withFonts: true);
+
+      expect(await h.run(), StagedRestoreOutcome.applied);
+
+      h.expectRestoredEndState();
+      expect(h.read(h.liveFont.path), 'NEW-FONT');
+    });
+
+    test('an archive without fonts leaves the device fonts alone', () async {
+      h.seedLive(withFonts: true);
+      h.seedStaging();
+
+      expect(await h.run(), StagedRestoreOutcome.applied);
+
+      h.expectRestoredEndState();
+      expect(h.read(h.liveFont.path), 'OLD-FONT');
+    });
+
     test('a device without UniDic-lite gains the staged one', () async {
       h.seedLive();
       h.seedStaging(withDictionary: true);
@@ -276,6 +296,37 @@ void main() {
         expect(h.read(h.liveDictionary.path), 'OLD-DIC');
         expect(h.staging.existsSync(), isFalse);
         expect(h.rollback.existsSync(), isFalse);
+      },
+    );
+
+    test('a failure after the fonts swapped restores the old ones', () async {
+      h.seedLive(withFonts: true);
+      h.seedStaging(withFonts: true);
+      h.write(
+        p.join(h.staging.path, StagedFullRestore.settingsEntryName),
+        'not a settings file',
+      );
+
+      expect(await h.run(), StagedRestoreOutcome.rolledBack);
+
+      h.expectUntouchedEndState();
+      expect(h.read(h.liveFont.path), 'OLD-FONT');
+    });
+
+    test(
+      'a failure with an archive without fonts keeps the device fonts',
+      () async {
+        h.seedLive(withFonts: true);
+        h.seedStaging();
+        h.write(
+          p.join(h.staging.path, StagedFullRestore.settingsEntryName),
+          'not a settings file',
+        );
+
+        expect(await h.run(), StagedRestoreOutcome.rolledBack);
+
+        h.expectUntouchedEndState();
+        expect(h.read(h.liveFont.path), 'OLD-FONT');
       },
     );
 

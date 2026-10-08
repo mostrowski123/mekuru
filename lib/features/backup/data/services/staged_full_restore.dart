@@ -41,7 +41,7 @@ class StagedRestoreException implements Exception {
 ///
 /// The swap is a handful of same-filesystem renames driven purely by what
 /// exists on disk, so a process death at any point is repaired by simply
-/// running again: for each item X in {database, books, unidic-lite},
+/// running again: for each item X in {database, books, unidic-lite, fonts},
 /// `staging/X` present means the live X is still the old one. The old items
 /// wait in `<root>/restore_rollback/`; that directory is never deleted while
 /// `READY` exists, and `READY` goes away only once an apply or a rollback has
@@ -49,9 +49,10 @@ class StagedRestoreException implements Exception {
 /// to a `*.trash` tombstone first, so the path is free at once and a
 /// concurrent job can never write into a tree that is being removed.
 ///
-/// The database and `books/` live under [root] (app support); the downloaded
-/// UniDic-lite lives under [documentsRoot] (app documents) and is optional:
-/// an archive without it leaves the device's own copy alone.
+/// The database, `books/` and the added `fonts/` live under [root] (app
+/// support); the downloaded UniDic-lite lives under [documentsRoot] (app
+/// documents). UniDic-lite and fonts are optional: an archive without them
+/// leaves the device's own copy alone.
 class StagedFullRestore {
   StagedFullRestore({
     required this.root,
@@ -78,6 +79,7 @@ class StagedFullRestore {
   static const booksDirName = BookRepository.booksSegment;
   static const settingsEntryName = FullBackupManifest.settingsFileName;
   static const unidicDirName = FullBackupManifest.unidicDirName;
+  static const fontsDirName = FullBackupManifest.fontsDirName;
 
   /// `ok`, or `error:<code>`; consumed once by the UI after the restart.
   static const resultPrefKey = 'backup.full_restore_result';
@@ -166,17 +168,19 @@ class StagedFullRestore {
     }
 
     var movedUnidic = false;
+    var movedFonts = false;
     try {
       _rollback.createSync(recursive: true);
       _swapIn(databaseFileName, suffixes: _databaseSuffixes);
       _swapIn(booksDirName);
       movedUnidic = _swapIn(unidicDirName, into: documentsRoot);
+      movedFonts = _swapIn(fontsDirName);
       await _replacePrefs();
       await prefs.setString(resultPrefKey, resultOk);
       _ready.deleteSync();
       return StagedRestoreOutcome.applied;
     } catch (e, st) {
-      _rollBack(movedUnidic: movedUnidic);
+      _rollBack(movedUnidic: movedUnidic, movedFonts: movedFonts);
       return _fail(e, st);
     }
   }
@@ -257,29 +261,34 @@ class StagedFullRestore {
   ///
   /// The database and books are always staged, so "live present, staged
   /// gone" identifies the item as ours even across a crash. The optional
-  /// dictionary is ours when this run moved it ([movedUnidic]) or when an
-  /// old one waits in the rollback dir; a crash between runs on a device
-  /// that had none leaves the restored dictionary in place, which is a
-  /// working dictionary either way.
-  void _rollBack({required bool movedUnidic}) {
+  /// dictionary and fonts are ours when this run moved them ([movedUnidic],
+  /// [movedFonts]) or when an old copy waits in the rollback dir; a crash
+  /// between runs on a device that had none leaves the restored copy in
+  /// place, which works either way.
+  void _rollBack({required bool movedUnidic, required bool movedFonts}) {
     void attempt(void Function() step) {
       try {
         step();
       } catch (_) {}
     }
 
-    final stagedUnidic = p.join(_staging.path, unidicDirName);
-    final oldUnidic = _existing(p.join(_rollback.path, unidicDirName));
-    if (movedUnidic || oldUnidic != null) {
-      final live = _existing(p.join(documentsRoot.path, unidicDirName));
-      if (live != null && _existing(stagedUnidic) == null) {
-        attempt(() => live.renameSync(stagedUnidic));
+    // Not the books/db rule below: an archive without one of these must
+    // leave the device's own copy alone.
+    for (final (name, home, moved) in [
+      (unidicDirName, documentsRoot, movedUnidic),
+      (fontsDirName, root, movedFonts),
+    ]) {
+      final stagedPath = p.join(_staging.path, name);
+      final old = _existing(p.join(_rollback.path, name));
+      if (moved || old != null) {
+        final live = _existing(p.join(home.path, name));
+        if (live != null && _existing(stagedPath) == null) {
+          attempt(() => live.renameSync(stagedPath));
+        }
       }
-    }
-    if (oldUnidic != null) {
-      attempt(
-        () => oldUnidic.renameSync(p.join(documentsRoot.path, unidicDirName)),
-      );
+      if (old != null) {
+        attempt(() => old.renameSync(p.join(home.path, name)));
+      }
     }
 
     for (final (name, suffixes) in [

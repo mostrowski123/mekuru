@@ -2800,7 +2800,7 @@
   "backupWrongKindFullBackup": "这是一个 .zip 文件，不是阅读数据备份。如果它是 Mekuru 的完整备份，请改用“恢复完整备份”。",
   "backupWrongKindReadingData": "这是阅读数据备份（.mekuru），不是完整备份。请改用“导入阅读数据”。",
   "backupFullSectionTitle": "完整备份",
-  "backupFullScopeBody": "所有内容都在一个较大的 .zip 文件中：书籍、漫画、词典、设置和阅读数据。恢复时会替换此设备上 Mekuru 中的所有内容；其他应用和文件不受影响。仅支持手动操作。",
+  "backupFullScopeBody": "所有内容都在一个较大的 .zip 文件中：书籍、漫画、词典、字体、设置和阅读数据。恢复时会替换此设备上 Mekuru 中的所有内容；其他应用和文件不受影响。仅支持手动操作。",
   "backupFullNotIncluded": "不包含：已下载的 KanjiVG 笔顺数据、OCR 模型和翻译模型（可在设置中重新下载），以及阅读数据备份历史。",
   "backupFullNotIncludedIos": "不包含：已下载的 KanjiVG 笔顺数据和 OCR 模型（可在设置中重新下载），以及阅读数据备份历史。",
   "backupFullExportTitle": "导出完整备份（.zip）…",

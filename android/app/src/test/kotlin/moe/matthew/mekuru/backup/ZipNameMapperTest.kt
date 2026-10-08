@@ -27,6 +27,7 @@ class ZipNameMapperTest {
         assertEquals("books/manga_2_00000000/pages/001.jpg", mapper.map("Manga/漫画/pages/001.jpg"))
         assertEquals("unidic-lite/sys.dic", mapper.map("Mekuru data/unidic-lite/sys.dic"))
         assertEquals("unidic-lite/.install_complete", mapper.map("Mekuru data/unidic-lite/.install_complete"))
+        assertEquals("fonts/Kaisei.ttf", mapper.map("Mekuru data/fonts/Kaisei.ttf"))
     }
 
     @Test
@@ -36,6 +37,7 @@ class ZipNameMapperTest {
         assertNull(mapper.map("Books/メロス/"))
         assertNull(mapper.map("Books/"))
         assertNull(mapper.map("Mekuru data/unidic-lite/"))
+        assertNull(mapper.map("Mekuru data/fonts/"))
     }
 
     @Test
@@ -43,6 +45,7 @@ class ZipNameMapperTest {
         assertNull(mapper.map("Unknown/x.txt"))
         assertNull(mapper.map("Books/Other title/a.epub"))
         assertNull(mapper.map("Mekuru data/covers/nested/x.jpg"))
+        assertNull(mapper.map("Mekuru data/fonts/nested/x.ttf"))
     }
 
     @Test

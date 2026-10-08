@@ -4708,7 +4708,7 @@ abstract class AppLocalizations {
   /// Summary text on the full backup card.
   ///
   /// In en, this message translates to:
-  /// **'Everything in one large .zip file: books, manga, dictionaries, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.'**
+  /// **'Everything in one large .zip file: books, manga, dictionaries, fonts, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.'**
   String get backupFullScopeBody;
 
   /// Limitations text on the full backup card (Android). The OCR models are the on-device manga-ocr pack and the NDL scanned-book model; the translation models are the offline translation downloads.

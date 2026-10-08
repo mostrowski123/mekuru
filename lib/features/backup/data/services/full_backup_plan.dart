@@ -77,10 +77,14 @@ class BuildExportPlanArgs {
   /// there. Null when the caller has no documents directory.
   final String? unidicDirPath;
 
+  /// The fonts the user added (flat). Null or missing ships none.
+  final String? fontsDirPath;
+
   const BuildExportPlanArgs({
     required this.snapshotDbPath,
     required this.booksDirPath,
     this.unidicDirPath,
+    this.fontsDirPath,
   });
 }
 
@@ -94,6 +98,7 @@ class BuildExportPlanArgs {
 ///   `Mekuru data/covers/`;
 /// - the UniDic-lite directory, when installed, goes under
 ///   `Mekuru data/unidic-lite/`;
+/// - fonts the user added go under `Mekuru data/fonts/`;
 /// - orphan directories, `.trash` and `*.tmp` never ship.
 ///
 /// Manga whose pages live in a linked folder are reported in
@@ -224,6 +229,20 @@ FullBackupPlan buildExportPlan(BuildExportPlanArgs args) {
     addTree(Directory(unidicDirPath), FullBackupManifest.unidicPrefix);
   }
 
+  final fontsDirPath = args.fontsDirPath;
+  if (fontsDirPath != null && Directory(fontsDirPath).existsSync()) {
+    for (final entity in Directory(
+      fontsDirPath,
+    ).listSync(followLinks: false)..sort(_byPath)) {
+      if (entity is File && !entity.path.endsWith('.tmp')) {
+        add(
+          entity,
+          '${FullBackupManifest.fontsPrefix}${p.basename(entity.path)}',
+        );
+      }
+    }
+  }
+
   return FullBackupPlan(
     entries: entries,
     folders: folders,
@@ -280,7 +299,8 @@ Mekuru data/   Mekuru's own files. mekuru_db.sqlite holds your dictionaries,
                reading progress, vocabulary, statistics and collections;
                settings.mekuru holds the app settings; covers/ holds custom
                covers; unidic-lite/ is the downloaded UniDic-lite dictionary,
-               present only if you had installed it.
+               present only if you had installed it; fonts/ holds the fonts
+               you added.
 manifest.json  A summary of this backup that Mekuru checks before restoring.
 
 How to restore

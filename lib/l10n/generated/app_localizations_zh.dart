@@ -2694,7 +2694,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupFullScopeBody =>
-      '所有内容都在一个较大的 .zip 文件中：书籍、漫画、词典、设置和阅读数据。恢复时会替换此设备上 Mekuru 中的所有内容；其他应用和文件不受影响。仅支持手动操作。';
+      '所有内容都在一个较大的 .zip 文件中：书籍、漫画、词典、字体、设置和阅读数据。恢复时会替换此设备上 Mekuru 中的所有内容；其他应用和文件不受影响。仅支持手动操作。';
 
   @override
   String get backupFullNotIncluded =>
@@ -6948,7 +6948,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupFullScopeBody =>
-      '所有内容都在一个较大的 .zip 文件中：书籍、漫画、词典、设置和阅读数据。恢复时会替换此设备上 Mekuru 中的所有内容；其他应用和文件不受影响。仅支持手动操作。';
+      '所有内容都在一个较大的 .zip 文件中：书籍、漫画、词典、字体、设置和阅读数据。恢复时会替换此设备上 Mekuru 中的所有内容；其他应用和文件不受影响。仅支持手动操作。';
 
   @override
   String get backupFullNotIncluded =>

@@ -66,7 +66,7 @@ What happens to your data:
 
 ## Full backup (.zip)
 
-A full backup is one file with everything in Mekuru: your books, manga, dictionaries, settings and reading data. It also holds custom covers, and the **Enhanced Furigana Dictionary** if you downloaded it.
+A full backup is one file with everything in Mekuru: your books, manga, dictionaries, settings and reading data. It also holds custom covers, the fonts you added, and the **Enhanced Furigana Dictionary** if you downloaded it.
 
 Not included:
 
@@ -153,7 +153,7 @@ You can open a full backup on a computer and copy single books out of it. Do not
 |-|-|
 | `Books/<title>/` | one folder per EPUB, with the original `.epub` file |
 | `Manga/<title>/` | one folder per manga, with its page images |
-| `Mekuru data/` | Mekuru's own files: the database (dictionaries, progress, vocabulary, stats, collections), the settings, custom covers and the Enhanced Furigana Dictionary |
+| `Mekuru data/` | Mekuru's own files: the database (dictionaries, progress, vocabulary, stats, collections), the settings, custom covers, the fonts you added and the Enhanced Furigana Dictionary |
 | `README.txt` | a short description of the layout and how to restore |
 | `manifest.json` | a summary that Mekuru checks before it restores |
 

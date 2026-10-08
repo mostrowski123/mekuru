@@ -39,6 +39,7 @@ void main() {
   late Directory root;
   late Directory documents;
   late Directory unidicDir;
+  late Directory fontsDir;
   late Directory tempDir;
 
   Future<void> wipeLiveData() async {
@@ -51,6 +52,7 @@ void main() {
       if (await file.exists()) await file.delete();
     }
     if (await unidicDir.exists()) await unidicDir.delete(recursive: true);
+    if (await fontsDir.exists()) await fontsDir.delete(recursive: true);
   }
 
   setUp(() async {
@@ -59,6 +61,7 @@ void main() {
     unidicDir = Directory(
       p.join(documents.path, FullBackupManifest.unidicDirName),
     );
+    fontsDir = Directory(p.join(root.path, FullBackupManifest.fontsDirName));
     tempDir = await Directory.systemTemp.createTemp('full_backup_it_');
     await wipeLiveData();
   });
@@ -158,6 +161,13 @@ void main() {
       );
       File(p.join(unidicDir.path, 'sys.dic')).writeAsBytesSync(dicBytes);
 
+      // A font the user added lives in app support.
+      fontsDir.createSync(recursive: true);
+      final fontBytes = Uint8List.fromList(
+        List.generate(2048, (i) => i & 0xFF),
+      );
+      File(p.join(fontsDir.path, 'Kaisei.ttf')).writeAsBytesSync(fontBytes);
+
       final zipPath = p.join(tempDir.path, 'mekuru-full-backup.zip');
       await realFullBackupService(
         db,
@@ -206,6 +216,7 @@ void main() {
       expect(entries['Manga/リンク漫画/pages/002.png'], page);
       expect(entries['Mekuru data/unidic-lite/sys.dic'], dicBytes);
       expect(entries['Mekuru data/unidic-lite/.install_complete'], isNotNull);
+      expect(entries['Mekuru data/fonts/Kaisei.ttf'], fontBytes);
       final expectedBookFiles = filesUnder(bookDir);
       for (final MapEntry(key: rel, value: bytes)
           in expectedBookFiles.entries) {
@@ -304,6 +315,11 @@ void main() {
       expect(
         File(p.join(unidicDir.path, 'sys.dic')).readAsBytesSync(),
         dicBytes,
+      );
+      // The added font is back in app support.
+      expect(
+        File(p.join(fontsDir.path, 'Kaisei.ttf')).readAsBytesSync(),
+        fontBytes,
       );
       expect(
         await db.select(db.dictionaryMetas).get(),
