@@ -50,6 +50,7 @@ class _FreeBooksSearchFieldState extends State<FreeBooksSearchField> {
       valueListenable: _controller,
       builder: (context, value, _) => TextField(
         controller: _controller,
+        onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
         onChanged: _changed,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(

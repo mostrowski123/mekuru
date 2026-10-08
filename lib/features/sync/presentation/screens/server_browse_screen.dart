@@ -136,6 +136,8 @@ class _SeriesListScreenState extends State<_SeriesListScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(
               controller: _searchController,
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
               decoration: InputDecoration(
                 hintText: l10n.serverBrowseSearchHint,
                 prefixIcon: const Icon(Icons.search),

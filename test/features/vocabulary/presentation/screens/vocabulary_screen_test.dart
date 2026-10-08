@@ -93,6 +93,23 @@ void main() {
     );
   });
 
+  testWidgets('tapping outside the search field dismisses the keyboard', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app([_taberu]));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    final focusNode = tester
+        .widget<EditableText>(find.byType(EditableText))
+        .focusNode;
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tapAt(const Offset(400, 500));
+    await tester.pump();
+    expect(focusNode.hasFocus, isFalse);
+  }, variant: TargetPlatformVariant.mobile());
+
   testWidgets('a saved CSV export confirms and leaves selection mode', (
     tester,
   ) async {
