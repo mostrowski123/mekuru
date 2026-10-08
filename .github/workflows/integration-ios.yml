@@ -141,4 +141,5 @@ jobs:
           integration_test/free_books_flow_test.dart
           integration_test/pdf_import_flow_test.dart
           integration_test/reader_bridge_regression_test.dart
+          integration_test/reader_ready_signal_lost_test.dart
           integration_test/library_bookmark_open_test.dart
