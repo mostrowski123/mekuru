@@ -25,10 +25,11 @@ Rename `version/<version>/` when the draft version changes. Drafts only: never s
 
 1. Prepare the screenshot devices once (Android emulators `Shots_Phone` and `Shots_Tablet`, iPhone 17 Pro Max and iPad Pro 13" simulators): a debug build with `--dart-define=MEKURU_FORCE_PRO=true`, the dictionary starter pack, the five Aozora Bunko books with covers, the Black Jack CBZ (`example/blackjack/`, from https://densho810.com/free/) with on-device OCR on page 28, about ten saved words, a collection and seeded reading stats.
 2. Capture: `python3 tools/capture_android_store_shots.py <phone|tablet> en es id zh` on Android. Raw files go to `build/store_images/raw/<device>/<lang>/<nn>.png`.
-3. Compose: `python3 tools/compose_store_images.py --raw build/store_images/raw --out build/store_images` (macOS fonts). Check the `contact-*.png` sheets.
+3. Compose: `python3 tools/compose_store_images.py --raw build/store_images/raw --out build/store_images` (macOS fonts). Check the `contact-*.png` sheets. The iPhone Duo set (`duo/`) is made from the iPad captures, because the Duo simulator needs Xcode 27.1 beta. The App Store creative assets (`creative/header.png`, `creative/search.png`) keep the headline, the credit and the manga phone inside the art safe area from Apple's templates.
 4. Upload:
    - Play: `python3 tools/publish_play_store_images.py` checks the files; `--commit` replaces every locale's screenshots and feature graphic in one edit (key: `~/.config/google-play-mcp/service-account.json`, packages: `tools/requirements-play-store.txt`). It never touches the listing text.
-   - App Store: `asc screenshots upload` per locale, device types `IPHONE_67` and `IPAD_PRO_3GEN_129`.
+   - App Store screenshots: `asc screenshots upload` per locale, device types `IPHONE_67`, `IPAD_PRO_3GEN_129` and `IPHONE_DUO`.
+   - App Store creative assets: `asc asset-library images upload --library-id 6814013845 --file <file>`, then per locale `asc localizations placements create --localization-id <id> --image-id <id> --placement-type PRODUCT_PAGE_HEADER_ASSET` (or `APP_STORE_SEARCH_RESULTS_ASSET`). To replace one later, use `placements swap`. Give each file a unique name first (`mekuru-header-en.png`), since the library lists files by name.
 
 Every image that shows Black Jack must carry the credit "Give My Regards to Black Jack SHUHO SATO" (Japanese: ブラックジャックによろしく　佐藤秀峰), and the author asks for a short note to info@densho810.com within a month of publishing.
 

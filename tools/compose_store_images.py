@@ -9,7 +9,8 @@ English UI, since the app has no Japanese UI. Output, flattened RGB PNGs:
 
   <out>/play/<lang>/{phone,tablet-7,tablet-10}/<nn>.png
   <out>/play/<lang>/feature/feature.png
-  <out>/app_store/<lang>/{iphone,ipad}/<nn>.png
+  <out>/app_store/<lang>/{iphone,ipad,duo}/<nn>.png
+  <out>/app_store/<lang>/creative/{header,search}.png   (product page header, search results)
   <out>/contact-<store>-<lang>.png   (one sheet per store and language, for review)
 
 Fonts are macOS's Hiragino Sans (Hiragino Sans GB for Chinese).
@@ -69,7 +70,18 @@ TARGETS = (
     Target('play', 'tablet-10', 'tablet', (1600, 2560), True),
     Target('app_store', 'iphone', 'iphone', (1320, 2868), False),
     Target('app_store', 'ipad', 'ipad', (2064, 2752), True),
+    # iPhone Duo's inner display (669 x 951 pt). Its simulator ships only with
+    # Xcode 27.1 beta; until it is captured, the iPad shots stand in.
+    Target('app_store', 'duo', 'ipad', (2007, 2853), True),
 )
+
+# App Store creative assets: canvas and the centred "art safe area" in Apple's
+# templates (developer.apple.com/app-store/asset-best-practices), the part that
+# every device and orientation shows.
+CREATIVES = {
+    'header': ((3840, 1646), (1646, 661)),   # product page header, 21:9
+    'search': ((3840, 2560), (2168, 1030)),  # search results, 3:2
+}
 
 
 def font(lang: str, bold: bool, size: int) -> ImageFont.FreeTypeFont:
@@ -245,6 +257,49 @@ def feature_graphic(raw: Image.Image, lang: str, captions) -> Image.Image:
     return image
 
 
+def creative(manga: Image.Image, novel: Image.Image, name: str, lang: str, captions) -> Image.Image:
+    """The feature headline beside the manga phone, with the novel phone behind it.
+
+    The headline, the credit and the manga phone's middle stay inside the art
+    safe area; the novel phone and the background fill what bigger screens add.
+    """
+    (w, h), (sw, sh) = CREATIVES[name]
+    sx0, sy0 = (w - sw) // 2, (h - sh) // 2
+    image = background((w, h))
+
+    front, back = device(manga, False), device(novel, False)
+    fit = sh * 1.45 / front.height
+    front = front.resize((int(front.width * fit), int(front.height * fit)), Image.LANCZOS)
+    back = back.resize(front.size, Image.LANCZOS)
+    fx, fy = sx0 + sw - front.width, (h - front.height) // 2
+    bx, by = fx + int(front.width * 0.62), fy - int(front.height * 0.08)
+    for phone, (x, y) in ((back, (bx, by)), (front, (fx, fy))):
+        box = (x, y, x + phone.width, y + phone.height)
+        image = Image.composite(Image.new('RGB', (w, h), (60, 25, 28)), image, shadow((w, h), box, phone.width // 9))
+        image.paste(phone, (x, y), phone)
+
+    draw = ImageDraw.Draw(image)
+    x = sx0 + int(sw * 0.03)
+    width = fx - int(sw * 0.04) - x
+    headline = captions['feature'][0]
+    size = int(sh * 0.18)
+    hfont = font(lang, True, size)
+    while size > sh * 0.085 and any(draw.textlength(line, font=hfont) > width for line in headline.split('\n')):
+        size -= 2
+        hfont = font(lang, True, size)
+    lines = wrap_lines(draw, headline, hfont, width)
+    cfont = font('ja' if lang == 'ja' else 'en', False, int(sh * 0.055))
+    bar, line_height = int(size * 0.18), int(size * 1.22)
+    y = h // 2 - (bar + int(size * 0.64) + len(lines) * line_height + int(cfont.size * 1.6)) // 2
+    draw.rounded_rectangle((x, y, x + int(size * 1.32), y + bar), radius=bar // 2, fill=RED)
+    y += bar + int(size * 0.64)
+    for line in lines:
+        draw.text((x, y), line, font=hfont, fill=INK)
+        y += line_height
+    draw.text((x, y + int(cfont.size * 0.4)), CREDIT['ja'] if lang == 'ja' else CREDIT[None], font=cfont, fill=MUTED)
+    return image
+
+
 def contact_sheet(paths: list[Path], out: Path) -> None:
     thumbs = []
     for path in paths:
@@ -295,6 +350,14 @@ def main() -> None:
             dest.parent.mkdir(parents=True, exist_ok=True)
             feature_graphic(Image.open(feature_raw), lang, captions).save(dest, optimize=True)
             written.setdefault(('play', lang), []).append(dest)
+        phone_raw = args.raw / 'iphone' / UI_LANG[lang]
+        if not only and (phone_raw / '01.png').exists():
+            for name in CREATIVES:
+                dest = args.out / 'app_store' / lang / 'creative' / f'{name}.png'
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                creative(Image.open(phone_raw / '01.png'), Image.open(phone_raw / '02.png'), name, lang,
+                         captions).save(dest, optimize=True)
+                written.setdefault(('app_store', lang), []).append(dest)
     for (store, lang), paths in written.items():
         contact_sheet(paths, args.out / f'contact-{store}-{lang}.png')
         print(f'{store} {lang}: {len(paths)} images')
