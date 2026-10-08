@@ -6,6 +6,7 @@ import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
+import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 
 import '../test/test_app.dart';
 import 'test_helpers.dart';
@@ -35,6 +36,12 @@ void main() {
       'Pro screen', (tester) async {
     final l10n = await loadExpectedL10n();
     final client = OcrBillingClient();
+    // The model tile's Download button is a FilledButton too.
+    final purchaseButton = find.byElementPredicate(
+      (e) =>
+          e.widget is FilledButton &&
+          e.findAncestorWidgetOfExactType<LocalOcrDownloadTile>() == null,
+    );
     addTearDown(() async {
       await client.setPlayEntitlement(false);
       client.dispose();
@@ -68,7 +75,7 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.byType(FilledButton), findsNothing);
+    expect(purchaseButton, findsNothing);
 
     // Clearing the entitlement (what a refund convergence does) locks the
     // screen again and brings the purchase button back.
@@ -80,24 +87,24 @@ void main() {
     // The purchase button is the ListView's last child — on short screens
     // (the CI emulator) it is not built until scrolled into view.
     await tester.scrollUntilVisible(
-      find.byType(FilledButton),
+      purchaseButton,
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.byType(FilledButton), findsOneWidget);
+    expect(purchaseButton, findsOneWidget);
 
-    // The on-device OCR card warns about the cost and offers the speed test.
+    // The on-device OCR card offers the speed test once the model pack is
+    // installed; without it (CI) the card offers the download instead.
     await tester.scrollUntilVisible(
-      find.text(l10n.localOcrSpeedTest),
+      find.byType(LocalOcrDownloadTile),
       -200,
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.text(l10n.proFeatureLocalOcrTitle), findsOneWidget);
-    if (!(await LocalMangaOcr.modelState()).installed) {
-      // Without the models (CI) the test reports the download requirement
-      // through the same snack bar as every other native refusal.
-      await tester.tap(find.text(l10n.localOcrSpeedTest));
-      await pumpUntilVisible(tester, find.text(l10n.localOcrDownloadRequired));
+    if ((await LocalMangaOcr.modelState()).installed) {
+      await pumpUntilVisible(tester, find.text(l10n.localOcrSpeedTest));
+    } else {
+      expect(find.text(l10n.localOcrSpeedTest), findsNothing);
     }
   });
 }
