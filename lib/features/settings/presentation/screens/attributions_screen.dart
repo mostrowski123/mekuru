@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -563,104 +564,107 @@ class AttributionsScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.g_translate_outlined,
-                        color: theme.colorScheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        l10n.attributionFirefoxTranslationsTitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+          // Android only: iOS translates with Apple's Translation framework.
+          if (defaultTargetPlatform != TargetPlatform.iOS) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.g_translate_outlined,
+                          color: theme.colorScheme.primary,
+                          size: 20,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.attributionFirefoxTranslationsDescription,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  DownloadAttributionText(
-                    prefix: l10n.aboutLicensedUnderPrefix,
-                    linkText: 'Mozilla Public License 2.0',
-                    url: 'https://mozilla.org/MPL/2.0/',
-                    suffix: '.',
-                  ),
-                  const SizedBox(height: 8),
-                  DownloadAttributionText(
-                    prefix: l10n.aboutSourceLabel,
-                    linkText: 'github.com/mozilla/translations',
-                    url: 'https://github.com/mozilla/translations',
-                  ),
-                ],
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.attributionFirefoxTranslationsTitle,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.attributionFirefoxTranslationsDescription,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    DownloadAttributionText(
+                      prefix: l10n.aboutLicensedUnderPrefix,
+                      linkText: 'Mozilla Public License 2.0',
+                      url: 'https://mozilla.org/MPL/2.0/',
+                      suffix: '.',
+                    ),
+                    const SizedBox(height: 8),
+                    DownloadAttributionText(
+                      prefix: l10n.aboutSourceLabel,
+                      linkText: 'github.com/mozilla/translations',
+                      url: 'https://github.com/mozilla/translations',
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.auto_awesome_outlined,
-                        color: theme.colorScheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        l10n.attributionGemmaTitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome_outlined,
+                          color: theme.colorScheme.primary,
+                          size: 20,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.attributionGemmaDescription,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  DownloadAttributionText(
-                    prefix: l10n.aboutLicensedUnderPrefix,
-                    linkText: 'Apache License 2.0',
-                    url: 'https://www.apache.org/licenses/LICENSE-2.0',
-                    suffix: '.',
-                  ),
-                  const SizedBox(height: 8),
-                  DownloadAttributionText(
-                    prefix: l10n.aboutSourceLabel,
-                    linkText:
-                        'huggingface.co/litert-community/gemma-4-E2B-it-litert-lm',
-                    url:
-                        'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm',
-                  ),
-                  const SizedBox(height: 8),
-                  DownloadAttributionText(
-                    prefix: l10n.aboutSourceLabel,
-                    linkText: 'github.com/google-ai-edge/LiteRT-LM',
-                    url: 'https://github.com/google-ai-edge/LiteRT-LM',
-                  ),
-                ],
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.attributionGemmaTitle,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.attributionGemmaDescription,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    DownloadAttributionText(
+                      prefix: l10n.aboutLicensedUnderPrefix,
+                      linkText: 'Apache License 2.0',
+                      url: 'https://www.apache.org/licenses/LICENSE-2.0',
+                      suffix: '.',
+                    ),
+                    const SizedBox(height: 8),
+                    DownloadAttributionText(
+                      prefix: l10n.aboutSourceLabel,
+                      linkText:
+                          'huggingface.co/litert-community/gemma-4-E2B-it-litert-lm',
+                      url:
+                          'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm',
+                    ),
+                    const SizedBox(height: 8),
+                    DownloadAttributionText(
+                      prefix: l10n.aboutSourceLabel,
+                      linkText: 'github.com/google-ai-edge/LiteRT-LM',
+                      url: 'https://github.com/google-ai-edge/LiteRT-LM',
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: 16),
           FutureBuilder<PackageInfo>(
             future: _packageInfoFuture,
