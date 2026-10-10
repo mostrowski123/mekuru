@@ -1,5 +1,6 @@
 {
   "name": "Mekuru: Japanese Manga Reader",
   "subtitle": "Offline dictionary, OCR & Anki",
-  "privacyPolicyUrl": "https://mekuru.matthew.moe/privacy"
+  "privacyPolicyUrl": "https://mekuru.matthew.moe/privacy",
+  "privacyChoicesUrl": "https://mekuru.matthew.moe/delete-data/"
 }

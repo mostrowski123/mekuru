@@ -39,3 +39,4 @@ Every image that shows Black Jack must carry the credit "Give My Regards to Blac
 - Keep the core search phrases natural: learn Japanese, Japanese dictionary, manga, EPUB, light novels, kanji, furigana, Anki, immersion, vertical text/tategaki, mokuro, Yomitan, JLPT.
 - The first ~250 characters of a description show before "Read more" and must work on their own.
 - No competitor app names, no features that are only planned.
+- App Store keywords name no other product or service (Yomitan, mokuro, Komga, Kavita, Anki, Aozora Bunko): Apple flags them under guideline 2.3.7. The description may still say what Mekuru works with.
