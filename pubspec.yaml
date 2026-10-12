@@ -9,6 +9,8 @@ environment:
 dependencies:
   local_manga_ocr:
     path: packages/local_manga_ocr
+  rar_reader:
+    path: packages/rar_reader
   flutter:
     sdk: flutter
   flutter_localizations:

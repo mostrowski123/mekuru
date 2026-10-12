@@ -1258,6 +1258,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.0"
+  rar_reader:
+    dependency: "direct main"
+    description:
+      path: "packages/rar_reader"
+      relative: true
+    source: path
+    version: "1.0.0"
   recase:
     dependency: transitive
     description:

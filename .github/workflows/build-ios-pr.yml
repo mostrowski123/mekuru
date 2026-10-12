@@ -77,9 +77,10 @@ jobs:
       - name: Build iOS app
         run: flutter build ios --no-codesign --no-pub
 
-      # iOS counterpart of scripts/verify_native_libs.py: the MeCab and sqlite
-      # build hooks must have produced frameworks inside the app bundle, and
-      # MeCab must memory-map its dictionaries (it imports munmap).
+      # iOS counterpart of scripts/verify_native_libs.py: the MeCab, sqlite
+      # and RAR reader build hooks must have produced frameworks inside the
+      # app bundle, MeCab must memory-map its dictionaries (it imports
+      # munmap), and the RAR reader must export libarchive's API.
       - name: Verify native frameworks
         run: |
           app=build/ios/iphoneos/Runner.app
@@ -87,5 +88,7 @@ jobs:
           test -d "$app/Frameworks/mecab_dart.framework"
           nm -u "$app/Frameworks/mecab_dart.framework/mecab_dart" | grep -qx _munmap
           test -d "$app/Frameworks/sqlite3.framework"
+          test -d "$app/Frameworks/rar_reader.framework"
+          nm -gU "$app/Frameworks/rar_reader.framework/rar_reader" | grep -q ' _archive_read_support_format_rar5$'
           test ! -e "$app/Frameworks/GoogleAppMeasurementIdentitySupport.framework"
           test ! -e "$app/Frameworks/GoogleAdsOnDeviceConversion.framework"

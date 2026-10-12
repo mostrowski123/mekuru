@@ -1,0 +1,15 @@
+name: rar_reader
+description: >-
+  Reads RAR 4 and RAR 5 archives (CBR comics) through libarchive's own RAR
+  readers, compiled from source by a build hook. No RARLAB UnRAR code.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  code_assets: ^1.0.0
+  ffi: ^2.2.0
+  hooks: ^1.0.1
+  native_toolchain_c: ^0.17.5

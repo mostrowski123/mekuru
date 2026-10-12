@@ -13,7 +13,8 @@ import zipfile
 ABIS = ["armeabi-v7a", "arm64-v8a", "x86_64"]
 LIBS = ["libc++_shared.so", "libmecab_dart.so", "libsqlite3.so",
         "libmekuru_ocr_detector.so", "libopencv_java4.so",
-        "libonnxruntime.so", "libonnxruntime4j_jni.so", "libpdfium.so"]
+        "libonnxruntime.so", "libonnxruntime4j_jni.so", "libpdfium.so",
+        "librar_reader.so"]
 MACHINES = {"armeabi-v7a": 40, "arm64-v8a": 183, "x86_64": 62}
 TARGETS = {"android_arm": "armeabi-v7a", "android_arm64": "arm64-v8a", "android_x64": "x86_64"}
 

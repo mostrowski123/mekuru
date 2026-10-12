@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 
 /// Code built into Mekuru's native libraries and the translation engine's
 /// WebAssembly, which Flutter's package license list doesn't know about:
-/// libavif (AVIF pages on Android 7-11) and what Mozilla's Bergamot engine
-/// compiles in. Shown on the Open Source Licenses page, by package name.
+/// libarchive (CBR and RAR import), libavif (AVIF pages on Android 7-11) and
+/// what Mozilla's Bergamot engine compiles in. Shown on the Open Source
+/// Licenses page, by package name.
 const thirdPartyLicenses = {
+  'libarchive': 'assets/licenses/libarchive.txt',
   'libavif': 'assets/licenses/libavif.txt',
   'dav1d': 'assets/licenses/dav1d.txt',
   'libyuv': 'assets/licenses/libyuv.txt',
