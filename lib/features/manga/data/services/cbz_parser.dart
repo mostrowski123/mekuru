@@ -232,9 +232,9 @@ class CbzParser {
     final imageDir = Directory(p.join(outputDir, 'images'));
     await imageDir.create(recursive: true);
 
-    final imageFileNames = <String>[];
     final imageDimensions = <String, ImageDimensions>{};
-    final usedOutputNames = <String>{};
+    // Saved page name → its path in the archive, which decides page order.
+    final entryPaths = <String, String>{};
     String? mokuroJsonPath;
 
     Future<void> writeImage(String entryPath, Uint8List data) async {
@@ -242,7 +242,7 @@ class CbzParser {
 
       // Handle duplicate filenames from nested dirs by prefixing
       var outputName = fileName;
-      if (usedOutputNames.contains(outputName)) {
+      if (entryPaths.containsKey(outputName)) {
         final parentDir = p.basename(p.dirname(entryPath));
         final stem = p.basenameWithoutExtension(fileName);
         final ext = p.extension(fileName);
@@ -253,15 +253,14 @@ class CbzParser {
         outputName = '$baseName$ext';
 
         var suffix = 2;
-        while (usedOutputNames.contains(outputName)) {
+        while (entryPaths.containsKey(outputName)) {
           outputName = '${baseName}_$suffix$ext';
           suffix++;
         }
       }
 
       await File(p.join(imageDir.path, outputName)).writeAsBytes(data);
-      imageFileNames.add(outputName);
-      usedOutputNames.add(outputName);
+      entryPaths[outputName] = entryPath;
 
       // The decompressed bytes are already in hand, so take the page size
       // now rather than reading every page back off disk after extraction.
@@ -297,8 +296,16 @@ class CbzParser {
       await _extractZip(cbzPath, onFile, onProgress);
     }
 
-    // Natural sort (same algorithm as MokuroParser)
-    imageFileNames.sort(_naturalCompare);
+    // Pages in natural order of their full path in the archive, ignoring
+    // case (as Komga and Mihon read CBZs): ch1/10.jpg comes before ch2/1.jpg
+    // whatever the flattened names or the archive's entry order.
+    final imageFileNames = entryPaths.keys.toList()
+      ..sort(
+        (a, b) => _naturalCompare(
+          entryPaths[a]!.toLowerCase(),
+          entryPaths[b]!.toLowerCase(),
+        ),
+      );
 
     // Cover is the first image
     final coverImagePath = imageFileNames.isNotEmpty

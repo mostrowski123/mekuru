@@ -240,6 +240,46 @@ void main() {
         );
 
         test(
+          'orders pages by their folder, whatever the archive order',
+          () async {
+            final cbzPath = await createCbz('chapters', {
+              'ch2/001.jpg': fakeJpegBytes,
+              'ch1/010.jpg': fakeJpegBytes,
+              'ch1/002.jpg': fakeJpegBytes,
+              'ch2/002.jpg': fakeJpegBytes,
+            });
+
+            final metadata = await CbzParser.extract(
+              cbzPath,
+              '${tmpDir.path}/output',
+            );
+
+            // ch1/002, ch1/010, ch2/001, ch2/002; the second 002.jpg is renamed.
+            expect(metadata.imageFileNames, [
+              '002.jpg',
+              '010.jpg',
+              '001.jpg',
+              'ch2_002.jpg',
+            ]);
+            expect(metadata.coverImagePath, endsWith('002.jpg'));
+          },
+        );
+
+        test('ignores case when ordering pages', () async {
+          final cbzPath = await createCbz('mixed_case', {
+            'Page10.jpg': fakeJpegBytes,
+            'page2.jpg': fakeJpegBytes,
+          });
+
+          final metadata = await CbzParser.extract(
+            cbzPath,
+            '${tmpDir.path}/output',
+          );
+
+          expect(metadata.imageFileNames, ['page2.jpg', 'Page10.jpg']);
+        });
+
+        test(
           'avoids prefixed duplicate collisions with existing flattened names',
           () async {
             final cbzPath = await createCbz('dupe_prefix_collision', {
