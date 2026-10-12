@@ -68,6 +68,7 @@ void registerScrollViewScenario({required bool vertical}) {
       Future<void> scrollScreens(num screens) =>
           _scrollScreens(controller, screens);
 
+      await _waitForFirstScreenReport(tester, controller);
       await _recordPageChars(controller);
       final start = await _scrollState(controller);
       expect(start['flow'], 'scrolled');
@@ -610,6 +611,24 @@ Future<void> _recordPageChars(CustomEpubController controller) =>
       '  };'
       '})()',
     );
+
+/// Waits for the bridge's report of the text on the first screen. A slow
+/// runner sends it after [openReader] returns, where [_recordPageChars] would
+/// count it as a scroll the test never made.
+Future<void> _waitForFirstScreenReport(
+  WidgetTester tester,
+  CustomEpubController controller,
+) async {
+  for (var tick = 0; tick < 80; tick++) {
+    final state = await evalJson(
+      controller,
+      'JSON.stringify({reported: _scrollCountedEnd !== null})',
+    );
+    if (state['reported'] == true) return;
+    await tester.pump(const Duration(milliseconds: 250));
+  }
+  throw TestFailure('The reader never reported its first screen.');
+}
 
 /// Counts recorded since [_recordPageChars].
 Future<List<int>> _recordedPageChars(CustomEpubController controller) async {
