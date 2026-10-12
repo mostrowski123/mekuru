@@ -47,6 +47,12 @@ class PageSpread {
   int get hashCode => Object.hash(leftPageIndex, rightPageIndex);
 }
 
+/// Whether [page] stands alone in Spread view: it is declared a double
+/// page, or it is wider than tall and [detectWide] is on.
+bool standsAlone(MokuroPage page, {bool detectWide = true}) =>
+    page.spread == MangaPageSpread.center ||
+    (detectWide && page.imgHeight > 0 && page.imgWidth > page.imgHeight);
+
 /// Compute spread layout for a manga book.
 ///
 /// Rules:
@@ -69,9 +75,7 @@ List<PageSpread> computeSpreads(
   bool detectWidePages = true,
   bool shift = false,
 }) {
-  bool alone(MokuroPage page) =>
-      page.spread == MangaPageSpread.center ||
-      (detectWidePages && page.imgHeight > 0 && page.imgWidth > page.imgHeight);
+  bool alone(MokuroPage page) => standsAlone(page, detectWide: detectWidePages);
   final opener = isRtl != shift ? MangaPageSpread.right : MangaPageSpread.left;
   final closer = isRtl != shift ? MangaPageSpread.left : MangaPageSpread.right;
 

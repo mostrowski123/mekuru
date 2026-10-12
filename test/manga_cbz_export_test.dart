@@ -84,7 +84,12 @@ void main() {
       ]);
 
       final outPath = '${tmpDir.path}/exported.cbz';
-      final written = await writeCbz(cacheDirPath, outPath);
+      final written = await writeCbz(
+        cacheDirPath,
+        outPath,
+        title: 't',
+        rtl: true,
+      );
       expect(written, 2);
 
       final archive = readZip(outPath);
@@ -144,9 +149,9 @@ void main() {
     ], ocrCompleted: false);
 
     final outPath = '${tmpDir.path}/plain.cbz';
-    await writeCbz(cacheDirPath, outPath);
+    await writeCbz(cacheDirPath, outPath, title: 't', rtl: true);
 
     final names = readZip(outPath).files.map((f) => f.name).toList();
-    expect(names, ['0001.jpg']);
+    expect(names, ['0001.jpg', 'ComicInfo.xml']);
   });
 }

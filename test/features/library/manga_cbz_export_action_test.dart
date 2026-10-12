@@ -18,6 +18,7 @@ class _CbzRepository extends BookRepository {
   Future<(String, int)> exportMangaCbz(
     Book book, {
     required String fileName,
+    required bool rtl,
   }) async => ('/missing/$fileName', 3);
 }
 

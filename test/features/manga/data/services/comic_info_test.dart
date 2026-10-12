@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/services/comic_info.dart';
+import 'package:xml/xml.dart';
 
 String _xml(String fields) =>
     '<?xml version="1.0" encoding="utf-8"?>'
@@ -96,5 +97,55 @@ void main() {
     expect(ComicInfo.tryParse('<ComicInfo><Title>broken'), isNull);
     expect(ComicInfo.tryParse(''), isNull);
     expect(ComicInfo.tryParse('<Other/>'), isNull);
+  });
+
+  group('write', () {
+    test('writes the fields in schema order, escaped', () {
+      final root = XmlDocument.parse(
+        ComicInfo.write(
+          title: 'Tom & Jerry <1>',
+          rtl: true,
+          pageCount: 3,
+          doublePages: {1, 2},
+        ),
+      ).rootElement;
+
+      expect(root.localName, 'ComicInfo');
+      expect(
+        [for (final e in root.childElements) e.localName],
+        ['Title', 'PageCount', 'Manga', 'Pages'],
+      );
+      expect(root.getElement('Title')!.innerText, 'Tom & Jerry <1>');
+      expect(root.getElement('PageCount')!.innerText, '3');
+      expect(root.getElement('Manga')!.innerText, 'YesAndRightToLeft');
+      expect(
+        [
+          for (final page in root.getElement('Pages')!.childElements)
+            '${page.getAttribute('Image')} ${page.getAttribute('DoublePage')}',
+        ],
+        ['1 True', '2 True'],
+      );
+    });
+
+    test('reads back what it writes', () {
+      final info = ComicInfo.tryParse(
+        ComicInfo.write(
+          title: '題名',
+          rtl: false,
+          pageCount: 2,
+          doublePages: {0},
+        ),
+      )!;
+      expect(info.title, '題名');
+      expect(info.direction, 'ltr');
+      expect(info.doublePages, {0});
+    });
+
+    test('leaves Pages out when no page is double', () {
+      final root = XmlDocument.parse(
+        ComicInfo.write(title: 'T', rtl: true, pageCount: 1, doublePages: {}),
+      ).rootElement;
+      expect(root.getElement('Pages'), isNull);
+    });
   });
 }

@@ -8,6 +8,8 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/manga/data/services/manga_cbz_export.dart';
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/blocking_progress_dialog.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -38,6 +40,13 @@ Future<void> runMangaCbzExport(
           .exportMangaCbz(
             book,
             fileName: '${sanitizedExportBaseName(book.title)}.cbz',
+            rtl:
+                (mangaBookDirection(
+                      book.overrideReadingDirection,
+                      book.pageProgressionDirection,
+                    ) ??
+                    ref.read(readerSettingsProvider).mangaReadingDirection) ==
+                ReaderDirection.rtl,
           ),
     );
   } catch (e, st) {

@@ -51,6 +51,40 @@ class ComicInfo {
     }
   }
 
+  /// A ComicInfo.xml for an exported comic: its [title], [rtl] as the Manga
+  /// field, its [pageCount], and the 0-based [doublePages], in schema order.
+  static String write({
+    required String title,
+    required bool rtl,
+    required int pageCount,
+    required Set<int> doublePages,
+  }) {
+    final builder = XmlBuilder()
+      ..processing('xml', 'version="1.0" encoding="utf-8"');
+    builder.element(
+      'ComicInfo',
+      nest: () {
+        builder
+          ..element('Title', nest: title)
+          ..element('PageCount', nest: pageCount)
+          ..element('Manga', nest: rtl ? 'YesAndRightToLeft' : 'No');
+        if (doublePages.isEmpty) return;
+        builder.element(
+          'Pages',
+          nest: () {
+            for (final image in doublePages.toList()..sort()) {
+              builder.element(
+                'Page',
+                attributes: {'Image': '$image', 'DoublePage': 'True'},
+              );
+            }
+          },
+        );
+      },
+    );
+    return builder.buildDocument().toXmlString(pretty: true);
+  }
+
   static String? _title(String? series, String? number, String? title) {
     final n = number?.replaceFirst(RegExp(r'^0+(?=\d)'), '');
     final repeatsNumber =

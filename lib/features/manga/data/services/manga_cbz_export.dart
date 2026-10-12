@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
+import 'package:mekuru/features/manga/data/services/comic_info.dart';
+import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
 import 'package:path/path.dart' as p;
 
 /// Thrown when a manga book has no pages that can be exported.
@@ -26,7 +28,18 @@ class SafMangaExportUnsupportedException implements Exception {
 /// any natural-sorting reader — mokuro included — sees them in book order.
 /// Entries stream file-to-file (stored, no deflate), so peak memory stays at
 /// about one I/O buffer regardless of volume size.
-Future<int> writeCbz(String cacheDirPath, String outPath) async {
+///
+/// A ComicInfo.xml after the pages carries [title], the reading direction
+/// ([rtl]) and the double pages: those declared as such and every wide page,
+/// whatever the reader's detection setting.
+// shortcut: ComicInfo has no left/right halves, so a converted EPUB's
+// declared spread halves export as ordinary pages.
+Future<int> writeCbz(
+  String cacheDirPath,
+  String outPath, {
+  required String title,
+  required bool rtl,
+}) async {
   final cacheFile = File(p.join(cacheDirPath, mangaPagesCacheFileName));
   final book = MokuroBook.fromJson(
     jsonDecode(await cacheFile.readAsString()) as Map<String, dynamic>,
@@ -36,6 +49,7 @@ Future<int> writeCbz(String cacheDirPath, String outPath) async {
   }
 
   var written = 0;
+  final doublePages = <int>{};
   final mokuroPages = <Map<String, dynamic>>[];
   final encoder = ZipFileEncoder()..create(outPath);
   try {
@@ -43,6 +57,7 @@ Future<int> writeCbz(String cacheDirPath, String outPath) async {
       final imagePath = p.join(book.imageDirPath, page.imageFileName);
       if (!await File(imagePath).exists()) continue;
       written++;
+      if (standsAlone(page)) doublePages.add(written - 1);
       final name = CbzParser.pageFileName(written, page.imageFileName);
       mokuroPages.add({
         'img_path': name,
@@ -84,6 +99,17 @@ Future<int> writeCbz(String cacheDirPath, String outPath) async {
         ),
       );
     }
+    encoder.addArchiveFile(
+      ArchiveFile.string(
+        'ComicInfo.xml',
+        ComicInfo.write(
+          title: title,
+          rtl: rtl,
+          pageCount: written,
+          doublePages: doublePages,
+        ),
+      ),
+    );
     await encoder.close();
     if (written == 0) throw const EmptyMangaExportException();
   } catch (_) {

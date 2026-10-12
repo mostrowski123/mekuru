@@ -1,12 +1,15 @@
 import 'package:mekuru/features/manga/data/services/ocr_page_selection.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
+import 'package:mekuru/features/manga/data/services/comic_info.dart';
 import 'package:mekuru/features/manga/data/services/manga_cbz_export.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
@@ -41,9 +44,12 @@ void main() {
   /// Builds a manga cache dir whose pages are in [images] insertion order.
   /// A page maps to null when it should be listed in the cache but have no
   /// file on disk.
+  /// Pages take their size from their image's header, and their spread from
+  /// [spreads].
   Future<String> buildCacheDir(
     Map<String, List<int>?> images, {
     String? safTreeUri,
+    Map<String, MangaPageSpread> spreads = const {},
   }) async {
     final cacheDir = Directory(p.join(tempDir.path, 'cache'))
       ..createSync(recursive: true);
@@ -55,13 +61,17 @@ void main() {
       if (entry.value != null) {
         File(p.join(imagesDir.path, entry.key)).writeAsBytesSync(entry.value!);
       }
+      final size = entry.value == null
+          ? null
+          : readImageDimensionsFromBytes(Uint8List.fromList(entry.value!));
       pages.add(
         MokuroPage(
           pageIndex: index++,
           imageFileName: entry.key,
-          imgWidth: 0,
-          imgHeight: 0,
+          imgWidth: size?.width ?? 0,
+          imgHeight: size?.height ?? 0,
           blocks: const [],
+          spread: spreads[entry.key],
         ),
       );
     }
@@ -92,13 +102,22 @@ void main() {
         });
         final outPath = p.join(tempDir.path, 'out.cbz');
 
-        final written = await writeCbz(cacheDir, outPath);
+        final written = await writeCbz(
+          cacheDir,
+          outPath,
+          title: 't',
+          rtl: true,
+        );
 
         expect(written, 2);
         final archive = ZipDecoder().decodeBytes(
           await File(outPath).readAsBytes(),
         );
-        expect(archive.files.map((f) => f.name), ['0001.png', '0002.png']);
+        expect(archive.files.map((f) => f.name), [
+          '0001.png',
+          '0002.png',
+          'ComicInfo.xml',
+        ]);
         expect(
           archive.files.first.content,
           zBytes,
@@ -106,7 +125,7 @@ void main() {
         );
         expect(archive.files.first.content, isNot(equals(aBytes)));
         expect(
-          archive.files.map((f) => f.compression),
+          archive.files.take(2).map((f) => f.compression),
           everyElement(CompressionType.none),
           reason: 'pages must be stored, not deflated',
         );
@@ -121,13 +140,43 @@ void main() {
       });
       final outPath = p.join(tempDir.path, 'out.cbz');
 
-      final written = await writeCbz(cacheDir, outPath);
+      final written = await writeCbz(cacheDir, outPath, title: 't', rtl: true);
 
       expect(written, 2);
       final archive = ZipDecoder().decodeBytes(
         await File(outPath).readAsBytes(),
       );
-      expect(archive.files, hasLength(2));
+      expect(archive.files.map((f) => f.name), [
+        '0001.png',
+        '0002.png',
+        'ComicInfo.xml',
+      ]);
+    });
+
+    test('adds ComicInfo.xml, numbering double pages as written', () async {
+      final cacheDir = await buildCacheDir(
+        {
+          'a.png': png(8, 12),
+          'gone.png': null,
+          'c.png': png(8, 12),
+          'wide.png': png(20, 10),
+        },
+        spreads: {'c.png': MangaPageSpread.center},
+      );
+      final outPath = p.join(tempDir.path, 'out.cbz');
+
+      await writeCbz(cacheDir, outPath, title: 'Tom & Jerry', rtl: true);
+
+      final archive = ZipDecoder().decodeBytes(
+        await File(outPath).readAsBytes(),
+      );
+      final info = ComicInfo.tryParse(
+        utf8.decode(archive.findFile('ComicInfo.xml')!.content),
+      )!;
+      expect(info.title, 'Tom & Jerry');
+      expect(info.direction, 'rtl');
+      // The missing page is not written: c.png is image 1, wide.png 2.
+      expect(info.doublePages, {1, 2});
     });
 
     test('throws when the book has no exportable pages', () async {
@@ -135,7 +184,7 @@ void main() {
       final outPath = p.join(tempDir.path, 'out.cbz');
 
       await expectLater(
-        writeCbz(cacheDir, outPath),
+        writeCbz(cacheDir, outPath, title: 't', rtl: true),
         throwsA(isA<EmptyMangaExportException>()),
       );
       expect(File(outPath).existsSync(), isFalse);
@@ -147,7 +196,12 @@ void main() {
       }, safTreeUri: 'content://com.android.externalstorage.documents/tree/x');
 
       await expectLater(
-        writeCbz(cacheDir, p.join(tempDir.path, 'out.cbz')),
+        writeCbz(
+          cacheDir,
+          p.join(tempDir.path, 'out.cbz'),
+          title: 't',
+          rtl: true,
+        ),
         throwsA(isA<SafMangaExportUnsupportedException>()),
       );
     });
@@ -188,7 +242,7 @@ void main() {
           );
           await file.writeAsString(jsonEncode(withState.toJson()));
           final output = p.join(tempDir.path, 'ocr-state.cbz');
-          await writeCbz(directory, output);
+          await writeCbz(directory, output, title: 't', rtl: true);
           final imported = (await repo.importCbz(output)).book;
           final restored = MokuroBook.fromJson(
             jsonDecode(
@@ -216,7 +270,11 @@ void main() {
         addTearDown(db.close);
         final repo = BookRepository(db);
 
-        final epubPath = await createFixedLayoutMangaEpub(pageCount: 3);
+        final epubPath = await createFixedLayoutMangaEpub(
+          pageCount: 3,
+          itemrefProperties: {1: 'rendition:page-spread-center'},
+          landscapePages: {2},
+        );
         addTearDown(() {
           final dir = Directory(p.dirname(epubPath));
           if (dir.existsSync()) dir.deleteSync(recursive: true);
@@ -226,8 +284,15 @@ void main() {
         );
 
         final outPath = p.join(tempDir.path, 'roundtrip.cbz');
-        await writeCbz(converted.filePath, outPath);
+        await writeCbz(
+          converted.filePath,
+          outPath,
+          title: converted.title,
+          rtl: true,
+        );
         final reimported = (await repo.importCbz(outPath)).book;
+        expect(reimported.title, converted.title);
+        expect(reimported.pageProgressionDirection, 'rtl');
 
         expect(reimported.totalPages, converted.totalPages);
         final cacheFile = File(p.join(reimported.filePath, 'pages_cache.json'));
@@ -239,6 +304,12 @@ void main() {
           [10, 100],
           reason: 'first page must survive the round trip with its dimensions',
         );
+        // Declared and wide double pages come back as double pages.
+        expect(cache.pages.map((page) => page.spread), [
+          null,
+          MangaPageSpread.center,
+          MangaPageSpread.center,
+        ]);
       },
     );
   });

@@ -29,9 +29,10 @@ import 'package:uuid/uuid.dart';
 Future<EpubMetadata> _parseEpubForImport((String, String) args) =>
     EpubParser.parseEpub(args.$1, args.$2);
 
-/// compute() entry point: (cacheDir, outPath) → written page count.
-Future<int> _writeCbzForExport((String, String) args) =>
-    writeCbz(args.$1, args.$2);
+/// compute() entry point: (cacheDir, outPath, title, rtl) → written page
+/// count.
+Future<int> _writeCbzForExport((String, String, String, bool) args) =>
+    writeCbz(args.$1, args.$2, title: args.$3, rtl: args.$4);
 
 /// A manga import found no page images. The message names no title: it
 /// reaches Sentry.
@@ -676,7 +677,8 @@ class BookRepository {
     return (await getBookById(book.id))!;
   }
 
-  /// Build a CBZ of [book]'s pages in a temp file named [fileName].
+  /// Build a CBZ of [book]'s pages in a temp file named [fileName], its
+  /// ComicInfo.xml reading right to left when [rtl].
   ///
   /// Returns the temp file path and the number of pages written. The caller
   /// owns sharing and deleting the file. Throws [EmptyMangaExportException]
@@ -684,6 +686,7 @@ class BookRepository {
   Future<(String, int)> exportMangaCbz(
     Book book, {
     required String fileName,
+    required bool rtl,
   }) async {
     if (book.bookType != 'manga') {
       throw ArgumentError('Only manga books can be exported, got $book');
@@ -693,6 +696,8 @@ class BookRepository {
     final pageCount = await compute(_writeCbzForExport, (
       book.filePath,
       outPath,
+      book.title,
+      rtl,
     ));
     return (outPath, pageCount);
   }
