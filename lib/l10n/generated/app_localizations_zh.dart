@@ -132,7 +132,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get libraryImportReasonPasswordProtected => '此 PDF 受密码保护。';
+  String get libraryImportReasonPasswordProtected => '此文件受密码保护。';
+
+  @override
+  String get libraryImportReasonSolidRar =>
+      '此 RAR 文件使用旧版 RAR 的固实压缩，Mekuru 无法打开。请将页面重新打包为 CBZ（ZIP）文件后再导入。';
 
   @override
   String get libraryImportReasonDamaged => '文件已损坏或格式不正确。';
@@ -232,7 +236,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryLargeImportWarnAction => '仍然导入';
 
   @override
-  String get libraryImportMangaSubtitle => '选择CBZ压缩包或Mokuro文件夹';
+  String get libraryImportMangaSubtitle => '选择漫画压缩包或 Mokuro 文件夹';
 
   @override
   String get libraryImportPdf => '导入 PDF';
@@ -257,7 +261,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryImportMangaTitle => '导入漫画';
 
   @override
-  String get libraryImportMangaDescription => '请选择要导入CBZ压缩包还是Mokuro导出的文件夹。';
+  String get libraryImportMangaDescription =>
+      '请选择要导入漫画压缩包（CBZ、CBR、ZIP 或 RAR）还是 Mokuro 导出的文件夹。';
 
   @override
   String get libraryImportMokuroFolder => 'Mokuro 文件夹';
@@ -270,10 +275,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryWhatIsMokuro => '什么是 Mokuro？';
 
   @override
-  String get libraryImportCbzArchive => 'CBZ 压缩包';
+  String get libraryImportCbzArchive => '漫画压缩包';
 
   @override
-  String get libraryImportCbzArchiveSubtitle => '导入 .cbz 漫画压缩包';
+  String get libraryImportCbzArchiveSubtitle =>
+      '导入包含漫画页面的 .cbz、.cbr、.zip 或 .rar 文件';
 
   @override
   String get libraryImportedWithoutOcrMessage =>
@@ -4411,7 +4417,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get libraryImportReasonPasswordProtected => '此 PDF 受密码保护。';
+  String get libraryImportReasonPasswordProtected => '此文件受密码保护。';
+
+  @override
+  String get libraryImportReasonSolidRar =>
+      '此 RAR 文件使用旧版 RAR 的固实压缩，Mekuru 无法打开。请将页面重新打包为 CBZ（ZIP）文件后再导入。';
 
   @override
   String get libraryImportReasonDamaged => '文件已损坏或格式不正确。';
@@ -4511,7 +4521,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get libraryLargeImportWarnAction => '仍然导入';
 
   @override
-  String get libraryImportMangaSubtitle => '选择CBZ压缩包或Mokuro文件夹';
+  String get libraryImportMangaSubtitle => '选择漫画压缩包或 Mokuro 文件夹';
 
   @override
   String get libraryImportPdf => '导入 PDF';
@@ -4536,7 +4546,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get libraryImportMangaTitle => '导入漫画';
 
   @override
-  String get libraryImportMangaDescription => '请选择要导入CBZ压缩包还是Mokuro导出的文件夹。';
+  String get libraryImportMangaDescription =>
+      '请选择要导入漫画压缩包（CBZ、CBR、ZIP 或 RAR）还是 Mokuro 导出的文件夹。';
 
   @override
   String get libraryImportMokuroFolder => 'Mokuro 文件夹';
@@ -4549,10 +4560,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get libraryWhatIsMokuro => '什么是 Mokuro？';
 
   @override
-  String get libraryImportCbzArchive => 'CBZ 压缩包';
+  String get libraryImportCbzArchive => '漫画压缩包';
 
   @override
-  String get libraryImportCbzArchiveSubtitle => '导入 .cbz 漫画压缩包';
+  String get libraryImportCbzArchiveSubtitle =>
+      '导入包含漫画页面的 .cbz、.cbr、.zip 或 .rar 文件';
 
   @override
   String get libraryImportedWithoutOcrMessage =>

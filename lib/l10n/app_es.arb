@@ -137,7 +137,8 @@
   "libraryImportedBooks": "{count, plural, one {Se importó {count} libro} other {Se importaron {count} libros}}",
   "libraryImportPartial": "Se importaron {succeeded} de {total}.",
   "libraryImportFailedFile": "No se pudo importar {file}: {reason}",
-  "libraryImportReasonPasswordProtected": "Este PDF está protegido con contraseña.",
+  "libraryImportReasonPasswordProtected": "Este archivo está protegido con contraseña.",
+  "libraryImportReasonSolidRar": "Este archivo RAR usa la compresión sólida de una versión antigua de RAR, que Mekuru no puede abrir. Vuelve a empaquetar las páginas en un archivo CBZ (ZIP) e impórtalo.",
   "libraryImportReasonDamaged": "El archivo está dañado o no tiene el formato esperado.",
   "libraryImportReasonNoPages": "No se encontraron páginas ni imágenes.",
   "libraryImportReasonUnsupported": "Este tipo de archivo no es compatible.",
@@ -239,7 +240,7 @@
   "libraryLargeImportWarnTitle": "Libro grande",
   "libraryLargeImportWarnBody": "El libro seleccionado más grande ocupa {sizeMb} MB. Este dispositivo tiene memoria limitada, por lo que los libros muy grandes podrían no abrirse en el lector. ¿Importar de todos modos?",
   "libraryLargeImportWarnAction": "Importar de todos modos",
-  "libraryImportMangaSubtitle": "Elegir un archivo CBZ o una carpeta Mokuro",
+  "libraryImportMangaSubtitle": "Elegir un archivo de manga o una carpeta Mokuro",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."
   },
@@ -248,7 +249,7 @@
   "@libraryImportMangaTitle": {
     "description": "Title for the manga import type picker."
   },
-  "libraryImportMangaDescription": "Elige si quieres importar un archivo CBZ o una carpeta exportada por Mokuro.",
+  "libraryImportMangaDescription": "Elige si quieres importar un archivo de manga (CBZ, CBR, ZIP o RAR) o una carpeta exportada por Mokuro.",
   "@libraryImportMangaDescription": {
     "description": "Description for the manga import type picker."
   },
@@ -264,11 +265,11 @@
   "@libraryWhatIsMokuro": {
     "description": "Button label to learn what Mokuro is."
   },
-  "libraryImportCbzArchive": "Archivo CBZ",
+  "libraryImportCbzArchive": "Archivo de manga",
   "@libraryImportCbzArchive": {
     "description": "Title for the CBZ import option."
   },
-  "libraryImportCbzArchiveSubtitle": "Importar un archivo de cómic .cbz",
+  "libraryImportCbzArchiveSubtitle": "Importar un archivo .cbz, .cbr, .zip o .rar con páginas de manga",
   "@libraryImportCbzArchiveSubtitle": {
     "description": "Subtitle for the CBZ import option."
   },

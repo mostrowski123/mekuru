@@ -924,7 +924,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   /// A CBZ without OCR data says so after import (importOne).
   Future<void> _importCbz(WidgetRef ref) async {
-    final filePaths = await _pickFilePaths(const ['cbz']);
+    // The import reads the file's bytes to tell ZIP from RAR, so a .cbr that
+    // is really a zip (or the reverse) still imports.
+    final filePaths = await _pickFilePaths(const ['cbz', 'cbr', 'zip', 'rar']);
     if (filePaths.isEmpty) return;
     await ref
         .read(bookImportProvider.notifier)

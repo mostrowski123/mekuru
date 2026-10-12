@@ -137,7 +137,8 @@
   "libraryImportedBooks": "{count, plural, one {{count} buku diimpor} other {{count} buku diimpor}}",
   "libraryImportPartial": "{succeeded} dari {total} diimpor.",
   "libraryImportFailedFile": "Tidak dapat mengimpor {file}: {reason}",
-  "libraryImportReasonPasswordProtected": "PDF ini dilindungi kata sandi.",
+  "libraryImportReasonPasswordProtected": "File ini dilindungi kata sandi.",
+  "libraryImportReasonSolidRar": "File RAR ini memakai kompresi solid dari versi RAR lama, yang tidak dapat dibuka Mekuru. Kemas ulang halamannya sebagai file CBZ (ZIP), lalu impor file tersebut.",
   "libraryImportReasonDamaged": "File rusak atau formatnya tidak sesuai.",
   "libraryImportReasonNoPages": "Tidak ada halaman atau gambar yang ditemukan.",
   "libraryImportReasonUnsupported": "Jenis file ini tidak didukung.",
@@ -239,7 +240,7 @@
   "libraryLargeImportWarnTitle": "Buku Besar",
   "libraryLargeImportWarnBody": "Buku terbesar yang dipilih berukuran {sizeMb} MB. Perangkat ini memiliki memori terbatas, jadi buku yang sangat besar mungkin gagal dibuka di pembaca. Tetap impor?",
   "libraryLargeImportWarnAction": "Tetap Impor",
-  "libraryImportMangaSubtitle": "Pilih arsip CBZ atau folder Mokuro",
+  "libraryImportMangaSubtitle": "Pilih arsip manga atau folder Mokuro",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."
   },
@@ -248,7 +249,7 @@
   "@libraryImportMangaTitle": {
     "description": "Title for the manga import type picker."
   },
-  "libraryImportMangaDescription": "Pilih apakah Anda ingin mengimpor arsip CBZ atau folder hasil ekspor Mokuro.",
+  "libraryImportMangaDescription": "Pilih apakah Anda ingin mengimpor arsip manga (CBZ, CBR, ZIP, atau RAR) atau folder hasil ekspor Mokuro.",
   "@libraryImportMangaDescription": {
     "description": "Description for the manga import type picker."
   },
@@ -264,11 +265,11 @@
   "@libraryWhatIsMokuro": {
     "description": "Button label to learn what Mokuro is."
   },
-  "libraryImportCbzArchive": "Arsip CBZ",
+  "libraryImportCbzArchive": "Arsip manga",
   "@libraryImportCbzArchive": {
     "description": "Title for the CBZ import option."
   },
-  "libraryImportCbzArchiveSubtitle": "Impor arsip komik .cbz",
+  "libraryImportCbzArchiveSubtitle": "Impor file .cbz, .cbr, .zip, atau .rar berisi halaman manga",
   "@libraryImportCbzArchiveSubtitle": {
     "description": "Subtitle for the CBZ import option."
   },

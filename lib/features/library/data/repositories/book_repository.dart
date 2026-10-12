@@ -329,7 +329,8 @@ class BookRepository {
     }
   }
 
-  /// Import a CBZ (Comic Book ZIP) archive into the library.
+  /// Import a manga archive (CBZ/ZIP or CBR/RAR, told apart by
+  /// [CbzParser.extract]) into the library.
   ///
   /// Extracts images from the archive, reads dimensions for each page,
   /// and creates a manga book. When the archive embeds a `.mokuro` OCR

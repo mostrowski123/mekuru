@@ -133,7 +133,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryImportReasonPasswordProtected =>
-      'This PDF is password-protected.';
+      'This file is password-protected.';
+
+  @override
+  String get libraryImportReasonSolidRar =>
+      'This RAR file uses solid compression from an older version of RAR, which Mekuru can\'t open. Re-pack the pages as a CBZ (ZIP) file and import that.';
 
   @override
   String get libraryImportReasonDamaged =>
@@ -238,7 +242,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryImportMangaSubtitle =>
-      'Choose a CBZ archive or Mokuro folder';
+      'Choose a manga archive or Mokuro folder';
 
   @override
   String get libraryImportPdf => 'Import PDF';
@@ -264,7 +268,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryImportMangaDescription =>
-      'Choose whether you want to import a CBZ archive or a Mokuro-exported folder.';
+      'Choose whether you want to import a manga archive (CBZ, CBR, ZIP or RAR) or a Mokuro-exported folder.';
 
   @override
   String get libraryImportMokuroFolder => 'Mokuro folder';
@@ -277,11 +281,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryWhatIsMokuro => 'What is Mokuro?';
 
   @override
-  String get libraryImportCbzArchive => 'CBZ archive';
+  String get libraryImportCbzArchive => 'Manga archive';
 
   @override
   String get libraryImportCbzArchiveSubtitle =>
-      'Import a .cbz comic book archive';
+      'Import a .cbz, .cbr, .zip or .rar file of manga pages';
 
   @override
   String get libraryImportedWithoutOcrMessage =>

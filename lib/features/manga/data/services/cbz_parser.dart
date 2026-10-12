@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:path/path.dart' as p;
+import 'package:rar_reader/rar_reader.dart';
 
 /// Metadata extracted from a CBZ archive.
 class CbzMetadata {
@@ -179,11 +180,16 @@ ImageDimensions? _fallbackDimensions(Uint8List bytes) {
   return ImageDimensions(info.width, info.height);
 }
 
-/// Parses CBZ (Comic Book ZIP) archives into sorted image collections.
+/// Handles one file entry of an archive; [read] returns its data.
+typedef _OnFile =
+    Future<void> Function(String entryPath, Uint8List Function() read);
+
+/// Parses manga archives into sorted image collections: CBZ/ZIP, and
+/// CBR/RAR through package:rar_reader.
 ///
-/// CBZ files are standard ZIP archives containing image files (.jpg, .png, etc).
-/// This parser extracts the images, sorts them naturally by filename, and
-/// provides metadata compatible with the manga reader.
+/// The archives hold image files (.jpg, .png, etc). This parser extracts the
+/// images, sorts them naturally by filename, and provides metadata
+/// compatible with the manga reader.
 class CbzParser {
   static const Set<String> imageExtensions = {
     '.jpg',
@@ -209,11 +215,14 @@ class CbzParser {
   /// dir, beside `images/`).
   static const String embeddedMokuroFileName = 'embedded.mokuro';
 
-  /// Extract a CBZ archive to [outputDir] and return metadata.
+  /// Extract a ZIP or RAR archive to [outputDir] and return metadata.
   ///
   /// Images are extracted to `[outputDir]/images/`. Files nested in
   /// subdirectories within the archive are flattened into the images folder.
-  /// Non-image files (e.g., metadata XML, thumbs.db) are skipped.
+  /// Non-image files (e.g., metadata XML, thumbs.db) are skipped. A RAR
+  /// archive throws [RarException] (a [FormatException]) when it can't be
+  /// read, including the [RarEncryptedException] and
+  /// [RarSolidUnsupportedException] cases.
   static Future<CbzMetadata> extract(
     String cbzPath,
     String outputDir, {
@@ -225,89 +234,67 @@ class CbzParser {
 
     final imageFileNames = <String>[];
     final imageDimensions = <String, ImageDimensions>{};
+    final usedOutputNames = <String>{};
     String? mokuroJsonPath;
 
-    // Stream-decode from disk: entries stay file-backed windows instead of
-    // one whole-archive Uint8List.
-    final input = InputFileStream(cbzPath);
-    try {
-      final archive = ZipDecoder().decodeStream(input);
+    Future<void> writeImage(String entryPath, Uint8List data) async {
+      final fileName = p.basename(entryPath);
 
-      // An embedded mokuro OCR manifest (images + .mokuro zipped together)
-      // travels with the archive; extract it beside images/ if present so
-      // the importer can restore tap-to-lookup without re-running OCR.
-      for (final file in archive) {
-        if (!file.isFile) continue;
-        final baseName = p.basename(file.name);
-        if (baseName.startsWith('.')) continue;
-        if (p.extension(baseName).toLowerCase() != '.mokuro') continue;
+      // Handle duplicate filenames from nested dirs by prefixing
+      var outputName = fileName;
+      if (usedOutputNames.contains(outputName)) {
+        final parentDir = p.basename(p.dirname(entryPath));
+        final stem = p.basenameWithoutExtension(fileName);
+        final ext = p.extension(fileName);
+        final prefix = (parentDir.isNotEmpty && parentDir != '.')
+            ? '${parentDir}_'
+            : '';
+        final baseName = '$prefix$stem';
+        outputName = '$baseName$ext';
+
+        var suffix = 2;
+        while (usedOutputNames.contains(outputName)) {
+          outputName = '${baseName}_$suffix$ext';
+          suffix++;
+        }
+      }
+
+      await File(p.join(imageDir.path, outputName)).writeAsBytes(data);
+      imageFileNames.add(outputName);
+      usedOutputNames.add(outputName);
+
+      // The decompressed bytes are already in hand, so take the page size
+      // now rather than reading every page back off disk after extraction.
+      final dimensions = readImageDimensionsFromBytes(data);
+      if (dimensions != null) {
+        imageDimensions[outputName] = dimensions;
+      }
+    }
+
+    // Every file entry of either archive type, in archive order. [read]
+    // decompresses it; only pages and the manifest are read.
+    Future<void> onFile(String entryPath, Uint8List Function() read) async {
+      final baseName = p.basename(entryPath);
+      if (baseName.startsWith('.')) return;
+      if (isImageFile(baseName)) {
+        await writeImage(entryPath, read());
+      } else if (mokuroJsonPath == null &&
+          p.extension(baseName).toLowerCase() == '.mokuro') {
+        // An embedded mokuro OCR manifest (images + .mokuro archived
+        // together) travels with the archive; extract it beside images/ so
+        // the importer can restore tap-to-lookup without re-running OCR.
         final outPath = p.join(outputDir, embeddedMokuroFileName);
-        await File(outPath).writeAsBytes(file.content);
-        file.clear();
+        await File(outPath).writeAsBytes(read());
         mokuroJsonPath = outPath;
-        break;
       }
+    }
 
-      // Pre-filter to image files so we can report accurate progress.
-      final imageFiles = archive
-          .where(
-            (f) =>
-                f.isFile &&
-                !p.basename(f.name).startsWith('.') &&
-                isImageFile(p.basename(f.name)),
-          )
-          .toList();
-      final total = imageFiles.length;
-      final usedOutputNames = <String>{};
-      var written = 0;
-
-      for (final file in imageFiles) {
-        final fileName = p.basename(file.name);
-
-        // Handle duplicate filenames from nested dirs by prefixing
-        var outputName = fileName;
-        if (usedOutputNames.contains(outputName)) {
-          final parentDir = p.basename(p.dirname(file.name));
-          final stem = p.basenameWithoutExtension(fileName);
-          final ext = p.extension(fileName);
-          final prefix = (parentDir.isNotEmpty && parentDir != '.')
-              ? '${parentDir}_'
-              : '';
-          final baseName = '$prefix$stem';
-          outputName = '$baseName$ext';
-
-          var suffix = 2;
-          while (usedOutputNames.contains(outputName)) {
-            outputName = '${baseName}_$suffix$ext';
-            suffix++;
-          }
-        }
-
-        final outputPath = p.join(imageDir.path, outputName);
-        final data = file.content;
-        await File(outputPath).writeAsBytes(data);
-        imageFileNames.add(outputName);
-        usedOutputNames.add(outputName);
-
-        // The decompressed bytes are already in hand, so take the page size
-        // now rather than reading every page back off disk after extraction.
-        // Must happen before clear() drops them.
-        final dimensions = readImageDimensionsFromBytes(data);
-        if (dimensions != null) {
-          imageDimensions[outputName] = dimensions;
-        }
-
-        // clear(), never close(): every entry shares the one file handle
-        // owned by `input` — closing an entry would truncate all later ones.
-        file.clear();
-
-        written++;
-        onProgress?.call(total > 0 ? written / total : 1.0);
-      }
-    } finally {
-      // Awaited: an unawaited close races file deletion on Windows
-      // (sharing violation) — same reason as kanjivg_download_service.
-      await input.close();
+    // The bytes decide, not the extension: a .cbr is often a zip, and
+    // servers hand out RAR comics under a .cbz name.
+    if (await _isRar(cbzPath)) {
+      await _extractRar(cbzPath, onFile, onProgress);
+    } else {
+      await _extractZip(cbzPath, onFile, onProgress);
     }
 
     // Natural sort (same algorithm as MokuroParser)
@@ -330,6 +317,61 @@ class CbzParser {
       imageDimensions: imageDimensions,
       mokuroJsonPath: mokuroJsonPath,
     );
+  }
+
+  static Future<bool> _isRar(String path) async {
+    final file = await File(path).open();
+    try {
+      return RarReader.isRar(await file.read(6));
+    } finally {
+      await file.close();
+    }
+  }
+
+  static Future<void> _extractZip(
+    String path,
+    _OnFile onFile,
+    void Function(double progress)? onProgress,
+  ) async {
+    // Stream-decode from disk: entries stay file-backed windows instead of
+    // one whole-archive Uint8List.
+    final input = InputFileStream(path);
+    try {
+      final files = ZipDecoder().decodeStream(input).where((f) => f.isFile);
+      final total = files.length;
+      var done = 0;
+      for (final file in files) {
+        await onFile(file.name, () => file.content);
+        // clear(), never close(): every entry shares the one file handle
+        // owned by `input` — closing an entry would truncate all later ones.
+        file.clear();
+        onProgress?.call(++done / total);
+      }
+    } finally {
+      // Awaited: an unawaited close races file deletion on Windows
+      // (sharing violation) — same reason as kanjivg_download_service.
+      await input.close();
+    }
+  }
+
+  /// One pass in archive order: a solid RAR decompresses as one stream, so
+  /// entries can't be revisited or counted up front.
+  static Future<void> _extractRar(
+    String path,
+    _OnFile onFile,
+    void Function(double progress)? onProgress,
+  ) async {
+    final length = await File(path).length();
+    final reader = RarReader.open(path);
+    try {
+      for (var e = reader.nextEntry(); e != null; e = reader.nextEntry()) {
+        if (e.isFile) await onFile(e.name, reader.readEntry);
+        onProgress?.call(reader.bytesConsumed / length);
+      }
+      onProgress?.call(1.0);
+    } finally {
+      reader.close();
+    }
   }
 
   // ── Private helpers ──

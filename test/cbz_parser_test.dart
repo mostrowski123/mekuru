@@ -10,235 +10,306 @@ import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:path/path.dart' as p;
 
 import 'shared/avif_header.dart';
+import 'shared/rar_fixtures.dart';
 
 /// Minimal bytes that won't decode as a real image but pass filename filtering.
 List<int> get fakeJpegBytes => [0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0];
 
 void main() {
-  group('CbzParser.extract', () {
+  // Every extraction case runs on a ZIP and on a RAR of the same entries.
+  for (final rar in [false, true]) {
+    group(
+      'CbzParser.extract (${rar ? 'RAR' : 'ZIP'})',
+      skip: rar ? rarSkip : null,
+      () {
+        late Directory tmpDir;
+
+        setUp(() {
+          tmpDir = Directory.systemTemp.createTempSync('cbz_parser_test_');
+        });
+
+        tearDown(() {
+          tmpDir.deleteSync(recursive: true);
+        });
+
+        /// Create a CBZ (ZIP), or a CBR (RAR), in [tmpDir] with the given
+        /// [entries]. Each entry is a map of filename → content bytes.
+        Future<String> createCbz(
+          String name,
+          Map<String, List<int>> entries,
+        ) async {
+          final archive = Archive();
+          for (final entry in entries.entries) {
+            archive.addFile(
+              ArchiveFile(entry.key, entry.value.length, entry.value),
+            );
+          }
+          final encoded = rar
+              ? storedRar5(entries)
+              : ZipEncoder().encode(archive);
+          final cbzPath = '${tmpDir.path}/$name.${rar ? 'cbr' : 'cbz'}';
+          await File(cbzPath).writeAsBytes(encoded);
+          return cbzPath;
+        }
+
+        test('releases the archive file handle after extracting', () async {
+          final cbzPath = await createCbz('handle', {
+            'page.jpg': fakeJpegBytes,
+          });
+
+          await CbzParser.extract(cbzPath, '${tmpDir.path}/output');
+
+          // Windows-only canary: deleting throws a sharing violation there if
+          // the InputFileStream leaked. POSIX allows unlinking an open file, so
+          // this cannot fail on Linux CI — it protects local Windows runs.
+          File(cbzPath).deleteSync();
+        });
+
+        test('extracts an embedded .mokuro manifest beside images', () async {
+          const mokuroJson = '{"title":"vol1","pages":[]}';
+          final cbzPath = await createCbz('with_ocr', {
+            'page_001.jpg': fakeJpegBytes,
+            'vol1.mokuro': mokuroJson.codeUnits,
+          });
+
+          final outputDir = '${tmpDir.path}/output';
+          final meta = await CbzParser.extract(cbzPath, outputDir);
+
+          // p.join, not '/': the parser joins with the platform separator.
+          expect(
+            meta.mokuroJsonPath,
+            p.join(outputDir, CbzParser.embeddedMokuroFileName),
+          );
+          expect(await File(meta.mokuroJsonPath!).readAsString(), mokuroJson);
+          // The manifest is not an image page.
+          expect(meta.imageFileNames, ['page_001.jpg']);
+        });
+
+        test(
+          'mokuroJsonPath is null without a manifest, ignoring dot junk',
+          () async {
+            final cbzPath = await createCbz('plain', {
+              'page_001.jpg': fakeJpegBytes,
+              // macOS zip junk must not count as a manifest.
+              '__MACOSX/._vol1.mokuro': [0x00],
+            });
+
+            final meta = await CbzParser.extract(
+              cbzPath,
+              '${tmpDir.path}/output',
+            );
+
+            expect(meta.mokuroJsonPath, isNull);
+          },
+        );
+
+        test('extracts images and returns sorted filenames', () async {
+          final cbzPath = await createCbz('test_manga', {
+            'page_003.jpg': fakeJpegBytes,
+            'page_001.jpg': fakeJpegBytes,
+            'page_002.jpg': fakeJpegBytes,
+          });
+
+          final outputDir = '${tmpDir.path}/output';
+          final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+          expect(metadata.title, 'test_manga');
+          expect(metadata.imageFileNames, [
+            'page_001.jpg',
+            'page_002.jpg',
+            'page_003.jpg',
+          ]);
+          expect(metadata.coverImagePath, contains('page_001.jpg'));
+        });
+
+        test('skips non-image files', () async {
+          final cbzPath = await createCbz('mixed_content', {
+            'page_01.jpg': fakeJpegBytes,
+            'ComicInfo.xml': [0x3C], // <
+            'thumbs.db': [0x00],
+            'page_02.png': fakeJpegBytes,
+          });
+
+          final outputDir = '${tmpDir.path}/output';
+          final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+          expect(metadata.imageFileNames, ['page_01.jpg', 'page_02.png']);
+        });
+
+        test('skips files whose basename starts with dot', () async {
+          final cbzPath = await createCbz('with_hidden', {
+            '.DS_Store': [0x00],
+            '.hidden_image.jpg': fakeJpegBytes,
+            'page_01.jpg': fakeJpegBytes,
+          });
+
+          final outputDir = '${tmpDir.path}/output';
+          final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+          expect(metadata.imageFileNames, ['page_01.jpg']);
+        });
+
+        test('handles nested directory structure', () async {
+          final cbzPath = await createCbz('nested', {
+            'chapter1/page_01.jpg': fakeJpegBytes,
+            'chapter1/page_02.jpg': fakeJpegBytes,
+          });
+
+          final outputDir = '${tmpDir.path}/output';
+          final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+          // Images from nested dirs are flattened using basename.
+          expect(metadata.imageFileNames.length, 2);
+        });
+
+        test('uses natural sort for filenames with numbers', () async {
+          final cbzPath = await createCbz('natural_sort', {
+            'page_10.jpg': fakeJpegBytes,
+            'page_2.jpg': fakeJpegBytes,
+            'page_1.jpg': fakeJpegBytes,
+            'page_20.jpg': fakeJpegBytes,
+          });
+
+          final outputDir = '${tmpDir.path}/output';
+          final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+          expect(metadata.imageFileNames, [
+            'page_1.jpg',
+            'page_2.jpg',
+            'page_10.jpg',
+            'page_20.jpg',
+          ]);
+        });
+
+        test('handles empty archive', () async {
+          final cbzPath = await createCbz('empty', {});
+
+          final outputDir = '${tmpDir.path}/output';
+          final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+          expect(metadata.imageFileNames, isEmpty);
+          expect(metadata.coverImagePath, isNull);
+        });
+
+        test('accepts various image extensions', () async {
+          final cbzPath = await createCbz('extensions', {
+            'page.jpg': fakeJpegBytes,
+            'page.jpeg': fakeJpegBytes,
+            'page.png': fakeJpegBytes,
+            'page.gif': fakeJpegBytes,
+            'page.webp': fakeJpegBytes,
+            'page.bmp': fakeJpegBytes,
+            'page.tiff': fakeJpegBytes,
+            'page.tif': fakeJpegBytes,
+            'page.avif': avifHeader(),
+          });
+
+          final outputDir = '${tmpDir.path}/output';
+          final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+          expect(metadata.imageFileNames.length, 9);
+          expect(metadata.dimensionsOf('page.avif')?.width, 1200);
+        });
+
+        test('title is derived from CBZ filename', () async {
+          final cbzPath = await createCbz('My Awesome Manga Vol.3', {
+            'page.jpg': fakeJpegBytes,
+          });
+
+          final outputDir = '${tmpDir.path}/output';
+          final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+          expect(metadata.title, 'My Awesome Manga Vol.3');
+        });
+
+        test(
+          'handles duplicate filenames from different subdirectories',
+          () async {
+            final cbzPath = await createCbz('dupes', {
+              'chapter1/page_01.jpg': fakeJpegBytes,
+              'chapter2/page_01.jpg': fakeJpegBytes,
+            });
+
+            final outputDir = '${tmpDir.path}/output';
+            final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+            // The second file should get prefixed to avoid collision.
+            expect(metadata.imageFileNames.length, 2);
+            expect(metadata.imageFileNames.toSet().length, 2); // all unique
+          },
+        );
+
+        test(
+          'avoids prefixed duplicate collisions with existing flattened names',
+          () async {
+            final cbzPath = await createCbz('dupe_prefix_collision', {
+              'b_page_01.jpg': fakeJpegBytes,
+              'a/page_01.jpg': fakeJpegBytes,
+              'b/page_01.jpg': fakeJpegBytes,
+            });
+
+            final outputDir = '${tmpDir.path}/output';
+            final metadata = await CbzParser.extract(cbzPath, outputDir);
+
+            expect(metadata.imageFileNames.length, 3);
+            expect(metadata.imageFileNames.toSet().length, 3);
+          },
+        );
+      },
+    );
+  }
+
+  group('CbzParser.extract reads the bytes, not the extension', () {
     late Directory tmpDir;
 
     setUp(() {
-      tmpDir = Directory.systemTemp.createTempSync('cbz_parser_test_');
+      tmpDir = Directory.systemTemp.createTempSync('cbz_sniff_test_');
     });
 
     tearDown(() {
       tmpDir.deleteSync(recursive: true);
     });
 
-    /// Create a CBZ (ZIP) file in [dir] with the given [entries].
-    /// Each entry is a map of filename → content bytes.
-    Future<String> createCbz(
-      String name,
-      Map<String, List<int>> entries,
-    ) async {
-      final archive = Archive();
-      for (final entry in entries.entries) {
-        archive.addFile(
-          ArchiveFile(entry.key, entry.value.length, entry.value),
-        );
-      }
-      final encoded = ZipEncoder().encode(archive);
-      final cbzPath = '${tmpDir.path}/$name.cbz';
-      await File(cbzPath).writeAsBytes(encoded);
-      return cbzPath;
+    Future<List<String>> pagesOf(String fileName, List<int> bytes) async {
+      final path = p.join(tmpDir.path, fileName);
+      await File(path).writeAsBytes(bytes);
+      final meta = await CbzParser.extract(path, p.join(tmpDir.path, 'out'));
+      return meta.imageFileNames;
     }
 
-    test('releases the archive file handle after extracting', () async {
-      final cbzPath = await createCbz('handle', {'page.jpg': fakeJpegBytes});
+    test('a zip named .cbr', () async {
+      final archive = Archive()
+        ..addFile(ArchiveFile('page.jpg', fakeJpegBytes.length, fakeJpegBytes));
 
-      await CbzParser.extract(cbzPath, '${tmpDir.path}/output');
-
-      // Windows-only canary: deleting throws a sharing violation there if
-      // the InputFileStream leaked. POSIX allows unlinking an open file, so
-      // this cannot fail on Linux CI — it protects local Windows runs.
-      File(cbzPath).deleteSync();
+      expect(await pagesOf('book.cbr', ZipEncoder().encode(archive)), [
+        'page.jpg',
+      ]);
     });
 
-    test('extracts an embedded .mokuro manifest beside images', () async {
-      const mokuroJson = '{"title":"vol1","pages":[]}';
-      final cbzPath = await createCbz('with_ocr', {
-        'page_001.jpg': fakeJpegBytes,
-        'vol1.mokuro': mokuroJson.codeUnits,
-      });
-
-      final outputDir = '${tmpDir.path}/output';
-      final meta = await CbzParser.extract(cbzPath, outputDir);
-
-      // p.join, not '/': the parser joins with the platform separator.
+    test('a RAR named .cbz, as servers send CBRs', skip: rarSkip, () async {
       expect(
-        meta.mokuroJsonPath,
-        p.join(outputDir, CbzParser.embeddedMokuroFileName),
+        await pagesOf('book.cbz', storedRar5({'page.jpg': fakeJpegBytes})),
+        ['page.jpg'],
       );
-      expect(await File(meta.mokuroJsonPath!).readAsString(), mokuroJson);
-      // The manifest is not an image page.
-      expect(meta.imageFileNames, ['page_001.jpg']);
     });
 
-    test(
-      'mokuroJsonPath is null without a manifest, ignoring dot junk',
-      () async {
-        final cbzPath = await createCbz('plain', {
-          'page_001.jpg': fakeJpegBytes,
-          // macOS zip junk must not count as a manifest.
-          '__MACOSX/._vol1.mokuro': [0x00],
-        });
+    test('progress ends at 1 for a RAR', skip: rarSkip, () async {
+      final path = p.join(tmpDir.path, 'book.cbr');
+      await File(path).writeAsBytes(
+        storedRar5({'1.jpg': fakeJpegBytes, '2.jpg': fakeJpegBytes}),
+      );
+      final progress = <double>[];
 
-        final meta = await CbzParser.extract(cbzPath, '${tmpDir.path}/output');
+      await CbzParser.extract(
+        path,
+        p.join(tmpDir.path, 'out'),
+        onProgress: progress.add,
+      );
 
-        expect(meta.mokuroJsonPath, isNull);
-      },
-    );
-
-    test('extracts images and returns sorted filenames', () async {
-      final cbzPath = await createCbz('test_manga', {
-        'page_003.jpg': fakeJpegBytes,
-        'page_001.jpg': fakeJpegBytes,
-        'page_002.jpg': fakeJpegBytes,
-      });
-
-      final outputDir = '${tmpDir.path}/output';
-      final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-      expect(metadata.title, 'test_manga');
-      expect(metadata.imageFileNames, [
-        'page_001.jpg',
-        'page_002.jpg',
-        'page_003.jpg',
-      ]);
-      expect(metadata.coverImagePath, contains('page_001.jpg'));
+      expect(progress, isNotEmpty);
+      expect(progress.last, 1.0);
+      expect(progress, orderedEquals([...progress]..sort()));
     });
-
-    test('skips non-image files', () async {
-      final cbzPath = await createCbz('mixed_content', {
-        'page_01.jpg': fakeJpegBytes,
-        'ComicInfo.xml': [0x3C], // <
-        'thumbs.db': [0x00],
-        'page_02.png': fakeJpegBytes,
-      });
-
-      final outputDir = '${tmpDir.path}/output';
-      final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-      expect(metadata.imageFileNames, ['page_01.jpg', 'page_02.png']);
-    });
-
-    test('skips files whose basename starts with dot', () async {
-      final cbzPath = await createCbz('with_hidden', {
-        '.DS_Store': [0x00],
-        '.hidden_image.jpg': fakeJpegBytes,
-        'page_01.jpg': fakeJpegBytes,
-      });
-
-      final outputDir = '${tmpDir.path}/output';
-      final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-      expect(metadata.imageFileNames, ['page_01.jpg']);
-    });
-
-    test('handles nested directory structure', () async {
-      final cbzPath = await createCbz('nested', {
-        'chapter1/page_01.jpg': fakeJpegBytes,
-        'chapter1/page_02.jpg': fakeJpegBytes,
-      });
-
-      final outputDir = '${tmpDir.path}/output';
-      final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-      // Images from nested dirs are flattened using basename.
-      expect(metadata.imageFileNames.length, 2);
-    });
-
-    test('uses natural sort for filenames with numbers', () async {
-      final cbzPath = await createCbz('natural_sort', {
-        'page_10.jpg': fakeJpegBytes,
-        'page_2.jpg': fakeJpegBytes,
-        'page_1.jpg': fakeJpegBytes,
-        'page_20.jpg': fakeJpegBytes,
-      });
-
-      final outputDir = '${tmpDir.path}/output';
-      final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-      expect(metadata.imageFileNames, [
-        'page_1.jpg',
-        'page_2.jpg',
-        'page_10.jpg',
-        'page_20.jpg',
-      ]);
-    });
-
-    test('handles empty archive', () async {
-      final cbzPath = await createCbz('empty', {});
-
-      final outputDir = '${tmpDir.path}/output';
-      final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-      expect(metadata.imageFileNames, isEmpty);
-      expect(metadata.coverImagePath, isNull);
-    });
-
-    test('accepts various image extensions', () async {
-      final cbzPath = await createCbz('extensions', {
-        'page.jpg': fakeJpegBytes,
-        'page.jpeg': fakeJpegBytes,
-        'page.png': fakeJpegBytes,
-        'page.gif': fakeJpegBytes,
-        'page.webp': fakeJpegBytes,
-        'page.bmp': fakeJpegBytes,
-        'page.tiff': fakeJpegBytes,
-        'page.tif': fakeJpegBytes,
-        'page.avif': avifHeader(),
-      });
-
-      final outputDir = '${tmpDir.path}/output';
-      final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-      expect(metadata.imageFileNames.length, 9);
-      expect(metadata.dimensionsOf('page.avif')?.width, 1200);
-    });
-
-    test('title is derived from CBZ filename', () async {
-      final cbzPath = await createCbz('My Awesome Manga Vol.3', {
-        'page.jpg': fakeJpegBytes,
-      });
-
-      final outputDir = '${tmpDir.path}/output';
-      final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-      expect(metadata.title, 'My Awesome Manga Vol.3');
-    });
-
-    test('handles duplicate filenames from different subdirectories', () async {
-      final cbzPath = await createCbz('dupes', {
-        'chapter1/page_01.jpg': fakeJpegBytes,
-        'chapter2/page_01.jpg': fakeJpegBytes,
-      });
-
-      final outputDir = '${tmpDir.path}/output';
-      final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-      // The second file should get prefixed to avoid collision.
-      expect(metadata.imageFileNames.length, 2);
-      expect(metadata.imageFileNames.toSet().length, 2); // all unique
-    });
-
-    test(
-      'avoids prefixed duplicate collisions with existing flattened names',
-      () async {
-        final cbzPath = await createCbz('dupe_prefix_collision', {
-          'b_page_01.jpg': fakeJpegBytes,
-          'a/page_01.jpg': fakeJpegBytes,
-          'b/page_01.jpg': fakeJpegBytes,
-        });
-
-        final outputDir = '${tmpDir.path}/output';
-        final metadata = await CbzParser.extract(cbzPath, outputDir);
-
-        expect(metadata.imageFileNames.length, 3);
-        expect(metadata.imageFileNames.toSet().length, 3);
-      },
-    );
   });
 
   group('CbzParser image extension filtering', () {

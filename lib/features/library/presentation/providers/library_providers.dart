@@ -16,6 +16,8 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart' show PdfException, PdfPasswordException;
+import 'package:rar_reader/rar_reader.dart'
+    show RarEncryptedException, RarSolidUnsupportedException;
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 // ──────────────── Sort ────────────────
@@ -151,7 +153,9 @@ String _describeImportFailure(
 /// Why an import failed, as a short sentence in the user's language.
 String importFailureReason(AppLocalizations l10n, Object error) =>
     switch (error) {
-      PdfPasswordException() => l10n.libraryImportReasonPasswordProtected,
+      PdfPasswordException() ||
+      RarEncryptedException() => l10n.libraryImportReasonPasswordProtected,
+      RarSolidUnsupportedException() => l10n.libraryImportReasonSolidRar,
       // FPDF_ERR_FILE: PDFium could not open the file.
       PdfException(errorCode: 2) => l10n.libraryImportReasonUnreadable,
       PdfException() || FormatException() => l10n.libraryImportReasonDamaged,

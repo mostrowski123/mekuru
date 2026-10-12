@@ -304,13 +304,19 @@ abstract class AppLocalizations {
     required String reason,
   });
 
-  /// Why an import failed: the PDF needs a password.
+  /// Why an import failed: the PDF or archive needs a password.
   ///
   /// In en, this message translates to:
-  /// **'This PDF is password-protected.'**
+  /// **'This file is password-protected.'**
   String get libraryImportReasonPasswordProtected;
 
-  /// Why an import failed: the file is broken, or is not really an EPUB, CBZ, PDF or Mokuro file.
+  /// Why an import failed: a solid RAR archive from RAR 4 or older, which the app cannot read.
+  ///
+  /// In en, this message translates to:
+  /// **'This RAR file uses solid compression from an older version of RAR, which Mekuru can\'t open. Re-pack the pages as a CBZ (ZIP) file and import that.'**
+  String get libraryImportReasonSolidRar;
+
+  /// Why an import failed: the file is broken, or is not really an EPUB, manga archive (CBZ, CBR, ZIP, RAR), PDF or Mokuro file.
   ///
   /// In en, this message translates to:
   /// **'The file is damaged or not in the expected format.'**
@@ -493,7 +499,7 @@ abstract class AppLocalizations {
   /// Subtitle describing manga import.
   ///
   /// In en, this message translates to:
-  /// **'Choose a CBZ archive or Mokuro folder'**
+  /// **'Choose a manga archive or Mokuro folder'**
   String get libraryImportMangaSubtitle;
 
   /// Import menu row that imports PDF files.
@@ -535,7 +541,7 @@ abstract class AppLocalizations {
   /// Description for the manga import type picker.
   ///
   /// In en, this message translates to:
-  /// **'Choose whether you want to import a CBZ archive or a Mokuro-exported folder.'**
+  /// **'Choose whether you want to import a manga archive (CBZ, CBR, ZIP or RAR) or a Mokuro-exported folder.'**
   String get libraryImportMangaDescription;
 
   /// Title for the Mokuro folder import option.
@@ -556,16 +562,16 @@ abstract class AppLocalizations {
   /// **'What is Mokuro?'**
   String get libraryWhatIsMokuro;
 
-  /// Title for the CBZ import option.
+  /// Title for the manga archive (CBZ, CBR, ZIP, RAR) import option.
   ///
   /// In en, this message translates to:
-  /// **'CBZ archive'**
+  /// **'Manga archive'**
   String get libraryImportCbzArchive;
 
-  /// Subtitle for the CBZ import option.
+  /// Subtitle for the manga archive import option.
   ///
   /// In en, this message translates to:
-  /// **'Import a .cbz comic book archive'**
+  /// **'Import a .cbz, .cbr, .zip or .rar file of manga pages'**
   String get libraryImportCbzArchiveSubtitle;
 
   /// Snackbar shown after importing manga without OCR data.

@@ -96,7 +96,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Mokuro folder'), findsOneWidget);
-    expect(find.text('CBZ archive'), findsOneWidget);
+    expect(find.text('Manga archive'), findsOneWidget);
     expect(
       find.text(
         'Select the folder that contains a .mokuro or .html file alongside the images folder.',

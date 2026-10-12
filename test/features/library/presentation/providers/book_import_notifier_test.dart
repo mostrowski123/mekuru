@@ -16,12 +16,14 @@ import 'package:mekuru/l10n/generated/app_localizations_en.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart' show PdfException, PdfPasswordException;
+import 'package:rar_reader/rar_reader.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../../../../shared/epub_fixtures.dart';
 import '../../../../shared/fake_path_provider.dart';
+import '../../../../shared/rar_fixtures.dart';
 import '../../../../test_app.dart';
 
 void main() {
@@ -168,6 +170,26 @@ void main() {
       expect((await db.select(db.books).getSingle()).sourceId, 'aozora:1567');
     });
 
+    test('a RAR says why it could not be imported', skip: rarSkip, () async {
+      final encrypted = File(p.join(tempDir.path, 'locked.cbr'))
+        ..writeAsBytesSync(rar4EncryptedHeaders);
+      final solid = File(p.join(tempDir.path, 'old.cbr'))
+        ..writeAsBytesSync(markRar4Solid(rar4Basic));
+
+      await container.read(bookImportProvider.notifier).importFiles([
+        encrypted.path,
+        solid.path,
+      ], format: 'cbz');
+
+      expect(
+        container.read(bookImportProvider).error!(en),
+        'Imported 0 of 2.\n'
+        "Couldn't import locked.cbr: ${en.libraryImportReasonPasswordProtected}\n"
+        "Couldn't import old.cbr: ${en.libraryImportReasonSolidRar}",
+      );
+      expect(await db.select(db.books).get(), isEmpty);
+    });
+
     test('returns 0 for an empty path list without touching state', () async {
       final imported = await container
           .read(bookImportProvider.notifier)
@@ -184,6 +206,18 @@ void main() {
     expect(
       reason(const PdfPasswordException('No password supplied')),
       en.libraryImportReasonPasswordProtected,
+    );
+    expect(
+      reason(const RarEncryptedException('b.jpg is encrypted')),
+      en.libraryImportReasonPasswordProtected,
+    );
+    expect(
+      reason(const RarSolidUnsupportedException('Solid RAR 4 archive')),
+      en.libraryImportReasonSolidRar,
+    );
+    expect(
+      reason(const RarException('Truncated RAR file data')),
+      en.libraryImportReasonDamaged,
     );
     expect(
       reason(const PdfException('Failed to load PDF document', 3)),

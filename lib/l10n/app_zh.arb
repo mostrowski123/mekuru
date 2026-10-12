@@ -137,7 +137,8 @@
   "libraryImportedBooks": "{count, plural, one {已导入 {count} 本书} other {已导入 {count} 本书}}",
   "libraryImportPartial": "已导入 {succeeded} 个，共 {total} 个。",
   "libraryImportFailedFile": "无法导入 {file}：{reason}",
-  "libraryImportReasonPasswordProtected": "此 PDF 受密码保护。",
+  "libraryImportReasonPasswordProtected": "此文件受密码保护。",
+  "libraryImportReasonSolidRar": "此 RAR 文件使用旧版 RAR 的固实压缩，Mekuru 无法打开。请将页面重新打包为 CBZ（ZIP）文件后再导入。",
   "libraryImportReasonDamaged": "文件已损坏或格式不正确。",
   "libraryImportReasonNoPages": "未找到任何页面或图片。",
   "libraryImportReasonUnsupported": "不支持此文件类型。",
@@ -239,7 +240,7 @@
   "libraryLargeImportWarnTitle": "书籍较大",
   "libraryLargeImportWarnBody": "所选的最大书籍为 {sizeMb} MB。此设备内存有限，过大的书籍可能无法在阅读器中打开。仍要导入吗？",
   "libraryLargeImportWarnAction": "仍然导入",
-  "libraryImportMangaSubtitle": "选择CBZ压缩包或Mokuro文件夹",
+  "libraryImportMangaSubtitle": "选择漫画压缩包或 Mokuro 文件夹",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."
   },
@@ -248,7 +249,7 @@
   "@libraryImportMangaTitle": {
     "description": "Title for the manga import type picker."
   },
-  "libraryImportMangaDescription": "请选择要导入CBZ压缩包还是Mokuro导出的文件夹。",
+  "libraryImportMangaDescription": "请选择要导入漫画压缩包（CBZ、CBR、ZIP 或 RAR）还是 Mokuro 导出的文件夹。",
   "@libraryImportMangaDescription": {
     "description": "Description for the manga import type picker."
   },
@@ -264,11 +265,11 @@
   "@libraryWhatIsMokuro": {
     "description": "Button label to learn what Mokuro is."
   },
-  "libraryImportCbzArchive": "CBZ 压缩包",
+  "libraryImportCbzArchive": "漫画压缩包",
   "@libraryImportCbzArchive": {
     "description": "Title for the CBZ import option."
   },
-  "libraryImportCbzArchiveSubtitle": "导入 .cbz 漫画压缩包",
+  "libraryImportCbzArchiveSubtitle": "导入包含漫画页面的 .cbz、.cbr、.zip 或 .rar 文件",
   "@libraryImportCbzArchiveSubtitle": {
     "description": "Subtitle for the CBZ import option."
   },

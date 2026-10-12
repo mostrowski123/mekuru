@@ -8,11 +8,13 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:path/path.dart' as p;
+import 'package:rar_reader/rar_reader.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../../shared/epub_fixtures.dart';
 import '../../shared/fake_path_provider.dart';
+import '../../shared/rar_fixtures.dart';
 import '../../shared/test_database.dart';
 
 void main() {
@@ -302,5 +304,39 @@ void main() {
 
       await expectNothingStranded();
     });
+
+    test(
+      'importCbz leaves nothing behind for a damaged RAR',
+      skip: rarSkip,
+      () async {
+        // Pages are written as the archive is read, so this one fails after
+        // its first page is already on disk.
+        final whole = storedRar5({'1.png': png(8, 8), '2.png': png(8, 8)});
+        final path = p.join(tempDir.path, 'cut.cbr');
+        await File(path).writeAsBytes(whole.sublist(0, whole.length - 40));
+
+        await expectLater(repo.importCbz(path), throwsA(isA<RarException>()));
+        await expectNothingStranded();
+      },
+    );
+  });
+
+  test('importCbz imports a CBR as a manga book', skip: rarSkip, () async {
+    final path = p.join(tempDir.path, 'Vol 2.cbr');
+    await File(path).writeAsBytes(
+      storedRar5({'Vol 2/002.png': png(10, 20), 'Vol 2/001.png': png(30, 40)}),
+    );
+
+    final imported = await repo.importCbz(path);
+    final cache = await readPagesCache(imported.book.filePath);
+
+    expect(imported.book.title, 'Vol 2');
+    expect(imported.book.bookType, 'manga');
+    expect(imported.book.totalPages, 2);
+    expect(cache.pages.map((page) => page.imageFileName), [
+      '001.png',
+      '002.png',
+    ]);
+    expect(cache.pages.first.imgWidth, 30);
   });
 }
