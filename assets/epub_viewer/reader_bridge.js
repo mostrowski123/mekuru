@@ -381,6 +381,7 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     // Furigana: inject visibility style and (lazily) generate ruby for kanji.
     applyFuriganaStyleToDoc(doc);
     processSectionForFurigana(doc);
+    fitImagePage(contents);
 
     if (_scrollView) addScrollEndSpace(contents);
 
@@ -1222,6 +1223,91 @@ function _applyFuriganaAnnotation(doc, node, ann) {
     }
   }
   node.parentNode.replaceChild(fragment, node);
+}
+
+// ── Image pages ──────────────────────────────────────────────────────
+
+// A section holding nothing but one image (a cover, an illustration, a
+// two-page spread stored as one wide picture) fills the page inside the
+// margins: centred, aspect ratio kept. An image under a third of the page
+// both ways (an ornament) keeps its size and is only centred. Fixed-layout
+// books are fitted by epub.js (Contents.fit()).
+function fitImagePage(contents) {
+  if (rendition._layout.name === 'pre-paginated') return;
+  var doc = contents.document;
+  var body = doc.body;
+  if (!body) return;
+  // Images first: a text chapter rarely has exactly one, so its text is
+  // never copied out.
+  var images = body.querySelectorAll('img, svg image');
+  if (images.length !== 1 || /\S/.test(body.textContent)) return;
+  var image = images[0];
+  var target = image.localName === 'img' ? image : image.closest('svg');
+
+  var natural;
+  if (target === image) {
+    if (!image.complete) {
+      image.addEventListener('load', function () { fitImagePage(contents); }, { once: true });
+      return;
+    }
+    if (!image.naturalWidth) return; // broken
+    natural = { w: image.naturalWidth, h: image.naturalHeight };
+  } else {
+    target.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    if (!target.getAttribute('viewBox')) {
+      var imageW = _svgLength(image.getAttribute('width'));
+      var imageH = _svgLength(image.getAttribute('height'));
+      if (imageW && imageH) target.setAttribute('viewBox', '0 0 ' + imageW + ' ' + imageH);
+    }
+    var box = target.viewBox && target.viewBox.baseVal;
+    if (box && box.width) natural = { w: box.width, h: box.height };
+  }
+
+  var W = rendition._layout.width;
+  var H = rendition._layout.height;
+  var small = natural && natural.w < W / 3 && natural.h < H / 3;
+  var w = small ? natural.w : W;
+  var h = small ? natural.h : H;
+  var mode = contents.writingMode();
+  var style = {
+    position: 'absolute',
+    top: (H - h) / 2 + 'px',
+    width: w + 'px',
+    height: h + 'px',
+    'max-width': 'none',
+    'max-height': 'none',
+    margin: '0',
+    padding: '0',
+    border: '0',
+    'object-fit': 'contain',
+    'object-position': '50% 50%'
+  };
+  style[mode === 'vertical-rl' ? 'right' : 'left'] = (W - w) / 2 + 'px';
+  for (var prop in style) target.style.setProperty(prop, style[prop], 'important');
+  // Positioned against the page itself, whatever wraps the image.
+  var outer = target;
+  for (var el = target.parentElement; el; el = el.parentElement) {
+    el.style.setProperty('position', 'static', 'important');
+    el.style.setProperty('transform', 'none', 'important');
+    if (el.parentElement === body) outer = el;
+  }
+  // epub.js sizes a scroll-view strip from the body's top-level boxes, which
+  // the positioned image leaves empty: the strip would be a few pixels long.
+  // The box holding the image gets one screen along its block axis, and
+  // keeps its children's margins inside (flow-root).
+  if (_scrollView && outer !== target) {
+    var across = mode.indexOf('vertical') === 0;
+    outer.style.setProperty('display', 'flow-root', 'important');
+    outer.style.setProperty('min-block-size', (across ? W : H) + 'px', 'important');
+    outer.style.setProperty('margin', '0', 'important');
+  }
+  contents.expand();
+}
+
+// An svg length attribute in user units, or 0 when it is missing or relative.
+function _svgLength(value) {
+  if (!value || /%/.test(value)) return 0;
+  return parseFloat(value) || 0;
 }
 
 // ── Margins ──────────────────────────────────────────────────────────

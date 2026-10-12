@@ -144,8 +144,13 @@ $bodyTag<p>これはテストです。</p></body>
 ///
 /// Page `i` (0-based, spine order) is a PNG sized `(10 + i) x (100 + i)`, so
 /// tests can tell which source image landed on which converted page purely by
-/// its dimensions. Every XHTML doc contains `&nbsp;` to require the HTML5
-/// entity mapping when parsed.
+/// its dimensions; pages in [landscapePages] are `(100 + i) x (10 + i)`
+/// instead. Every XHTML doc contains `&nbsp;` to require the HTML5 entity
+/// mapping when parsed.
+///
+/// [prePaginated] declares a fixed layout, with
+/// a viewport the size of each page's image; its pages are for a browser,
+/// whose XML parser rejects `&nbsp;`, so they spell it `&#160;`.
 ///
 /// Returns the path to the written file; the caller owns cleanup of the
 /// containing temp directory (the file's parent).
@@ -157,6 +162,8 @@ Future<String> createFixedLayoutMangaEpub({
   bool nestedImageDir = false,
   bool urlEncodedHrefs = false,
   bool coverPageReusesFirstImage = false,
+  Set<int> landscapePages = const {},
+  bool prePaginated = false,
 }) async {
   final names = imageNames ?? [for (var i = 0; i < pageCount; i++) 'p$i.png'];
   final archive = Archive();
@@ -181,15 +188,23 @@ Future<String> createFixedLayoutMangaEpub({
     return nestedImageDir ? '../images/$encoded' : 'images/$encoded';
   }
 
-  String pageDoc(String name) {
+  (int, int) pageSize(int i) =>
+      landscapePages.contains(i) ? (100 + i, 10 + i) : (10 + i, 100 + i);
+
+  String pageDoc(String name, int i) {
     final body = svgWrapped
         ? '<svg xmlns="http://www.w3.org/2000/svg" '
               'xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10">'
               '<image xlink:href="${imageRef(name)}" width="10" height="10"/></svg>'
         : '<img src="${imageRef(name)}" alt=""/>';
+    final (width, height) = pageSize(i);
+    final viewport = prePaginated
+        ? '<meta name="viewport" content="width=$width, height=$height"/>'
+        : '';
+    final nbsp = prePaginated ? '&#160;' : '&nbsp;';
     return '''<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml">
-<head><title>&nbsp;</title></head>
+<head><title>$nbsp</title>$viewport</head>
 <body>$body</body>
 </html>''';
   }
@@ -198,7 +213,7 @@ Future<String> createFixedLayoutMangaEpub({
   final spineRefs = <String>[];
 
   if (coverPageReusesFirstImage) {
-    addText('OEBPS/${docDir}cover.xhtml', pageDoc(names.first));
+    addText('OEBPS/${docDir}cover.xhtml', pageDoc(names.first, 0));
     manifestItems.add(
       '<item id="coverpage" href="${docDir}cover.xhtml" media-type="application/xhtml+xml"/>',
     );
@@ -206,11 +221,12 @@ Future<String> createFixedLayoutMangaEpub({
   }
 
   for (var i = 0; i < names.length; i++) {
+    final (width, height) = pageSize(i);
     addEntry(
       'OEBPS/images/${names[i]}',
-      img.encodePng(img.Image(width: 10 + i, height: 100 + i)),
+      img.encodePng(img.Image(width: width, height: height)),
     );
-    addText('OEBPS/${docDir}page_$i.xhtml', pageDoc(names[i]));
+    addText('OEBPS/${docDir}page_$i.xhtml', pageDoc(names[i], i));
     manifestItems
       ..add(
         '<item id="img$i" href="images/${names[i]}" media-type="image/png"/>',
@@ -238,6 +254,7 @@ Future<String> createFixedLayoutMangaEpub({
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title>漫画テスト</dc:title>
     <dc:language>ja</dc:language>
+    ${prePaginated ? '<meta property="rendition:layout">pre-paginated</meta>' : ''}
   </metadata>
   <manifest>
     ${manifestItems.join('\n    ')}

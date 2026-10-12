@@ -6483,14 +6483,6 @@ class Contents {
     var widthScale = width / viewportWidth;
     var heightScale = height / viewportHeight;
     var scale = widthScale < heightScale ? widthScale : heightScale;
-
-    // the translate does not work as intended, elements can end up unaligned
-    // var offsetY = (height - (viewportHeight * scale)) / 2;
-    // var offsetX = 0;
-    // if (this.sectionIndex % 2 === 1) {
-    // 	offsetX = width - (viewportWidth * scale);
-    // }
-
     this.layoutStyle("paginated");
 
     // scale needs width and height to be set
@@ -6498,18 +6490,19 @@ class Contents {
     this.height(viewportHeight);
     this.overflow("hidden");
 
-    // Scale to the correct size
-    this.scaler(scale, 0, 0);
-    // this.scaler(scale, offsetX > 0 ? offsetX : 0, offsetY);
+    // [MEKURU PATCH] Scale to the correct size, centred in the frame
+    // (upstream anchors the page top left, and leaves the body's default
+    // margin around it). The translate is applied before the scale, hence
+    // the division. Upstream also pushed a page-spread-left page to the
+    // right edge for two-up pages, which the reader never shows.
+    this.css("margin", "0");
+    var offsetX = (width - viewportWidth * scale) / 2;
+    var offsetY = (height - viewportHeight * scale) / 2;
+    this.scaler(scale, offsetX / scale, offsetY / scale);
 
     // background images are not scaled by transform
     this.css("background-size", viewportWidth * scale + "px " + viewportHeight * scale + "px");
     this.css("background-color", "transparent");
-    if (section && section.properties.includes("page-spread-left")) {
-      // set margin since scale is weird
-      var marginLeft = width - viewportWidth * scale;
-      this.css("margin-left", marginLeft + "px");
-    }
   }
 
   /**
@@ -8158,13 +8151,18 @@ class rendition_Rendition {
     if (!this.settings.layout && (this.book.package.metadata.layout === "pre-paginated" || this.book.displayOptions.fixedLayout === "true")) {
       this.settings.layout = "pre-paginated";
     }
-    switch (this.book.package.metadata.spread) {
-      case 'none':
-        this.settings.spread = 'none';
-        break;
-      case 'both':
-        this.settings.spread = true;
-        break;
+    // [MEKURU PATCH] The book's spread only applies when the reader set
+    // none (as with layout above). The reader sets 'none': two-up pages put
+    // two sections on screen, and the bridge pages one section at a time.
+    if (!this.settings.spread) {
+      switch (this.book.package.metadata.spread) {
+        case 'none':
+          this.settings.spread = 'none';
+          break;
+        case 'both':
+          this.settings.spread = true;
+          break;
+      }
     }
     if (!this.manager) {
       this.ViewManager = this.requireManager(this.settings.manager);
