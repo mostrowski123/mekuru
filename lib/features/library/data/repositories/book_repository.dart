@@ -539,13 +539,28 @@ class BookRepository {
       if (pagesJson is! List || pagesJson.isEmpty) return null;
 
       final extracted = cbzMeta.imageFileNames.toSet();
+      // img_path is relative to the volume folder, which the archive may
+      // wrap in a folder of its own: match the end of each page's archive
+      // path, so ch1/001.jpg and ch2/001.jpg find their own images. Older
+      // manifests that don't match the archive's layout pair by file name.
+      String? extractedNameFor(String imgPath) {
+        final wanted = p.posix.normalize(imgPath.replaceAll('\\', '/'));
+        for (final MapEntry(key: name, value: path)
+            in cbzMeta.archivePaths.entries) {
+          final archived = path.replaceAll('\\', '/');
+          if (archived == wanted || archived.endsWith('/$wanted')) return name;
+        }
+        final fileName = p.posix.basename(wanted);
+        return extracted.contains(fileName) ? fileName : null;
+      }
+
       final pages = <MokuroPage>[];
       for (final pageJson in pagesJson) {
         if (pageJson is! Map<String, dynamic>) continue;
         final imgPath = pageJson['img_path'];
         if (imgPath is! String) continue;
-        final imageFileName = p.basename(imgPath);
-        if (!extracted.contains(imageFileName)) return null;
+        final imageFileName = extractedNameFor(imgPath);
+        if (imageFileName == null) return null;
         final imgWidth = pageJson['img_width'];
         final imgHeight = pageJson['img_height'];
         final dimensions = cbzMeta.dimensionsOf(imageFileName);

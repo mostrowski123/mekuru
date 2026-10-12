@@ -253,6 +253,42 @@ void main() {
       expect(pages[1].blocks, isEmpty);
     });
 
+    test('pairs chapter pages that share a file name by their path', () async {
+      final path = p.join(tempDir.path, 'embedded.mokuro');
+      await File(path).writeAsString(
+        jsonEncode({
+          'pages': [
+            for (final chapter in ['ch1', 'ch2'])
+              {
+                'img_path': '$chapter/001.jpg',
+                'img_width': 800,
+                'img_height': 1200,
+                'blocks': [],
+              },
+          ],
+        }),
+      );
+      // The archive wraps the volume in a folder; the extractor renamed the
+      // second 001.jpg.
+      final meta = CbzMetadata(
+        title: 'vol',
+        imageDirPath: p.join(tempDir.path, 'images'),
+        imageFileNames: ['001.jpg', 'ch2_001.jpg'],
+        mokuroJsonPath: path,
+        archivePaths: {
+          'ch2_001.jpg': 'Vol 1/ch2/001.jpg',
+          '001.jpg': 'Vol 1/ch1/001.jpg',
+        },
+      );
+
+      final pages = await BookRepository.pagesFromEmbeddedMokuro(meta);
+
+      expect(pages!.map((page) => page.imageFileName), [
+        '001.jpg',
+        'ch2_001.jpg',
+      ]);
+    });
+
     test('returns null when a referenced image is missing', () async {
       final meta = await metaWithManifest(
         jsonEncode({

@@ -29,6 +29,10 @@ class CbzMetadata {
   /// or null when the archive carries none.
   final String? mokuroJsonPath;
 
+  /// Each extracted filename's path inside the archive (`ch2/001.jpg` for a
+  /// page saved as `ch2_001.jpg`), with '/' between folders.
+  final Map<String, String> archivePaths;
+
   const CbzMetadata({
     required this.title,
     required this.imageDirPath,
@@ -36,6 +40,7 @@ class CbzMetadata {
     this.coverImagePath,
     this.imageDimensions = const {},
     this.mokuroJsonPath,
+    this.archivePaths = const {},
   });
 
   /// Dimensions for [imageFileName], or null if its header was unreadable.
@@ -323,6 +328,7 @@ class CbzParser {
       coverImagePath: coverImagePath,
       imageDimensions: imageDimensions,
       mokuroJsonPath: mokuroJsonPath,
+      archivePaths: entryPaths,
     );
   }
 
