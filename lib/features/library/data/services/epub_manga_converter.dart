@@ -93,32 +93,42 @@ Future<List<({String path, MangaPageSpread? spread})>?> _planConversion(
   ];
 }
 
-/// Returns the root-relative path of the single page image referenced by the
-/// spine document at [docPath], or null when the doc is not an
-/// exactly-one-image page.
-Future<String?> singleImageOf(String contentDir, String docPath) async {
+/// Every image of the spine document at [docPath], in document order: each
+/// `img` and each `image` inside an `svg` (what the reader bridge counts as
+/// `img, svg image`), as a root-relative path, or null when its reference is
+/// unusable. Empty when the document can't be read or parsed.
+Future<List<String?>> epubDocImages(String contentDir, String docPath) async {
   final XmlDocument? doc;
   try {
     doc = parseXhtml(await File(p.join(contentDir, docPath)).readAsString());
   } on Exception {
-    return null;
+    return const [];
   }
-  if (doc == null) return null;
+  if (doc == null) return const [];
 
   final docDir = p.posix.dirname(docPath);
-  final refs = <String>[
-    for (final el in doc.findAllElements('img'))
-      if (el.getAttribute('src') != null) el.getAttribute('src')!,
-    // SVG-wrapped pages: match the href attribute by local name so both
-    // xlink:href and plain href are caught.
-    for (final el in doc.findAllElements('image'))
-      for (final attr in el.attributes)
-        if (attr.name.local == 'href') attr.value,
+  String? resolve(String? ref) =>
+      ref == null ? null : resolveEpubHref(docDir, ref);
+  return [
+    for (final el in doc.descendants.whereType<XmlElement>())
+      if (el.localName == 'img')
+        resolve(el.getAttribute('src'))
+      // SVG-wrapped pages: match the href attribute by local name so both
+      // xlink:href and plain href are caught.
+      else if (el.localName == 'image' &&
+          el.ancestors.any((a) => a is XmlElement && a.localName == 'svg'))
+        resolve(
+          el.attributes.where((a) => a.name.local == 'href').firstOrNull?.value,
+        ),
   ];
+}
 
+/// Returns the root-relative path of the single page image referenced by the
+/// spine document at [docPath], or null when the doc is not an
+/// exactly-one-image page.
+Future<String?> singleImageOf(String contentDir, String docPath) async {
   final resolved = <String>{};
-  for (final ref in refs) {
-    final rel = resolveEpubHref(docDir, ref);
+  for (final rel in await epubDocImages(contentDir, docPath)) {
     if (rel == null) continue;
     if (!CbzParser.imageExtensions.contains(p.extension(rel).toLowerCase())) {
       continue;

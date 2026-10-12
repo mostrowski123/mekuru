@@ -12,11 +12,15 @@ import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
 /// (`screen_view`), so `MaterialPageRoute` is not used directly anywhere
 /// else — test/shared/app_routes_test.dart enforces that. Names are stable
 /// telemetry ids in snake_case, never titles or user content.
-Route<T> namedRoute<T>(String name, WidgetBuilder builder) =>
-    MaterialPageRoute<T>(
-      settings: RouteSettings(name: name),
-      builder: builder,
-    );
+Route<T> namedRoute<T>(
+  String name,
+  WidgetBuilder builder, {
+  bool fullscreenDialog = false,
+}) => MaterialPageRoute<T>(
+  settings: RouteSettings(name: name),
+  builder: builder,
+  fullscreenDialog: fullscreenDialog,
+);
 
 /// Opens whichever reader matches the book's type, at [initialCfi] if given.
 /// The route is restorable: when the system kills Mekuru in the background,

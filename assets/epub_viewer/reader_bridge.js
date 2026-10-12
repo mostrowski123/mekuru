@@ -488,7 +488,63 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
       }
     }, { passive: true });
 
+    // ── Long press on an image: the zoom viewer ─────────────────────
+    // Only a finger held still on an image opens it, so text selection is
+    // untouched. The lift after it is no tap.
+    var press = null;
+    var pressOpened = false;
+
+    function cancelPress() {
+      if (press) clearTimeout(press.timer);
+      press = null;
+    }
+
+    doc.addEventListener('touchstart', function (e) {
+      cancelPress();
+      pressOpened = false;
+      if (!e.touches || e.touches.length !== 1) return;
+      var touch = e.touches[0];
+      press = {
+        x: touch.clientX,
+        y: touch.clientY,
+        timer: setTimeout(function () {
+          var image = zoomableImageAt(doc, press.x, press.y);
+          press = null;
+          var sel = contents.window.getSelection();
+          if (!image || (sel && sel.toString().length > 0) ||
+              touchScrolledStrip()) {
+            return;
+          }
+          pressOpened = true;
+          sendImageLongPress(contents, image);
+        }, IMAGE_LONG_PRESS_MS)
+      };
+    }, { passive: true });
+
+    doc.addEventListener('touchmove', function (e) {
+      if (!press) return;
+      var touch = e.touches && e.touches.length === 1 ? e.touches[0] : null;
+      if (!touch || Math.abs(touch.clientX - press.x) > 10 ||
+          Math.abs(touch.clientY - press.y) > 10) {
+        cancelPress();
+      }
+    }, { passive: true });
+
+    doc.addEventListener('touchcancel', cancelPress, { passive: true });
+
+    // Android's own long-press menu (save image) would cover the viewer.
+    doc.addEventListener('contextmenu', function (e) {
+      if (e.target && e.target.closest && e.target.closest('img, svg')) {
+        e.preventDefault();
+      }
+    });
+
     doc.addEventListener('touchend', function (e) {
+      cancelPress();
+      if (pressOpened) {
+        pressOpened = false;
+        return;
+      }
       if (e.changedTouches && e.changedTouches.length > 0) {
         lastTouchTs = Date.now();
         var touch = e.changedTouches[0];
@@ -1308,6 +1364,36 @@ function fitImagePage(contents) {
 function _svgLength(value) {
   if (!value || /%/.test(value)) return 0;
   return parseFloat(value) || 0;
+}
+
+// ── Image zoom ───────────────────────────────────────────────────────
+
+var IMAGE_LONG_PRESS_MS = 500;
+
+// The image under (x, y) in [doc] when it is big enough to be worth zooming
+// into (64 px both ways): an img, or the image inside an svg.
+function zoomableImageAt(doc, x, y) {
+  var el = doc.elementFromPoint(x, y);
+  if (!el || !el.closest) return null;
+  var image = el.closest('img');
+  if (!image) {
+    var svg = el.closest('svg');
+    image = svg && svg.querySelector('image');
+  }
+  if (!image) return null;
+  var r = image.getBoundingClientRect();
+  return r.width >= 64 && r.height >= 64 ? image : null;
+}
+
+// Asks Dart to open the zoom viewer on [image], named by its section's
+// spine href and its place among the section's `img, svg image` elements.
+function sendImageLongPress(contents, image) {
+  var images = contents.document.querySelectorAll('img, svg image');
+  var index = Array.prototype.indexOf.call(images, image);
+  var section = book.spine.get(contents.sectionIndex);
+  if (index < 0 || !section) return;
+  console.log('[EPUB_BRIDGE] imageLongPressed ' + section.href + ' #' + index);
+  callDart('imageLongPressed', { href: section.href, index: index });
 }
 
 // ── Margins ──────────────────────────────────────────────────────────

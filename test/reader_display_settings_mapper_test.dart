@@ -5,6 +5,15 @@ import 'package:mekuru/features/reader/presentation/reader_display_settings_mapp
 
 void main() {
   group('buildReaderTheme', () {
+    test('images can be long-pressed without a callout or a drag', () {
+      final theme = buildReaderTheme(settings: const ReaderSettings());
+      final imageCss = theme.customCss!['img, svg'] as Map<String, dynamic>;
+
+      expect(imageCss['-webkit-touch-callout'], 'none');
+      expect(imageCss['user-select'], 'none');
+      expect(imageCss['-webkit-user-drag'], 'none');
+    });
+
     test('forces high contrast light theme', () {
       final theme = buildReaderTheme(settings: const ReaderSettings());
 

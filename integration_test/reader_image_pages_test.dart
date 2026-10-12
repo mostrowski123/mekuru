@@ -6,6 +6,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
+import 'package:mekuru/features/reader/presentation/widgets/epub_image_zoom_view.dart';
 
 import 'shared/image_pages_fixture.dart';
 import 'shared/scroll_view_fixture.dart';
@@ -61,5 +63,47 @@ void main() {
     final inline = await imageState(controller, 'img.gaiji');
     expect(inline['inlineStyle'], isEmpty, reason: '$inline');
     expect((inline['w'] as num).toDouble(), lessThanOrEqualTo(128.5));
+
+    // A real finger: synthetic touches reach the WebView as real touches
+    // on Android only (see integration_test_webview_tap_limitations).
+    if (Platform.isAndroid) {
+      Future<void> hold() async {
+        await controller.debugEvaluateJavascript(
+          'window._touches = 0;'
+          'rendition.getContents()[0].document.addEventListener('
+          '"touchstart", function () { window._touches++; }); true',
+        );
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byType(CustomEpubViewer)),
+        );
+        await tester.pump(const Duration(milliseconds: 800));
+        await gesture.up();
+        await tester.pump(const Duration(seconds: 1));
+        expect(
+          await controller.debugEvaluateJavascript('window._touches'),
+          1,
+          reason: 'the press should reach the page',
+        );
+      }
+
+      // On text (this section is still on screen) nothing opens.
+      await hold();
+      expect(find.byType(EpubImageZoomView), findsNothing);
+
+      await showSection(tester, controller, 'spread.xhtml');
+      await hold();
+      await pumpUntilVisible(tester, find.byType(EpubImageZoomView));
+      await tester.tap(find.byType(EpubImageZoomView));
+      await pumpUntilGone(tester, find.byType(EpubImageZoomView));
+    }
+
+    // The bridge's long press, as on iOS where synthetic touches never reach
+    // the WebView: the image opens full screen, and a tap closes it.
+    await showSection(tester, controller, 'spread.xhtml');
+    await longPressImage(controller, 'svg image');
+    await pumpUntilVisible(tester, find.byType(EpubImageZoomView));
+    expect(zoomedFiles(tester), ['wide.png']);
+    await tester.tap(find.byType(EpubImageZoomView));
+    await pumpUntilGone(tester, find.byType(EpubImageZoomView));
   });
 }

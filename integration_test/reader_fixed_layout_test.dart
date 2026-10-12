@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
+import 'package:mekuru/features/reader/presentation/widgets/epub_image_zoom_view.dart';
 
 import '../test/shared/epub_fixtures.dart';
 import 'shared/image_pages_fixture.dart';
@@ -40,13 +41,17 @@ void main() {
     await cleanupAppBooksDir();
   });
 
-  testWidgets('portrait and landscape fixed-layout pages are centred', (
+  testWidgets('fixed-layout pages are centred, and halves zoom together', (
     tester,
   ) async {
     final epubPath = await createFixedLayoutMangaEpub(
-      pageCount: 2,
+      pageCount: 4,
       landscapePages: {1},
       prePaginated: true,
+      itemrefProperties: {
+        2: 'rendition:page-spread-right',
+        3: 'rendition:page-spread-left',
+      },
     );
     dir = File(epubPath).parent;
     final controller = await openReader(
@@ -61,5 +66,12 @@ void main() {
 
     await showSection(tester, controller, 'page_1.xhtml');
     expectCentred(await _pageBox(controller));
+
+    // Each half stays its own page; zooming into one shows both, left
+    // first (this book reads right to left: page 3 is the left half).
+    await showSection(tester, controller, 'page_2.xhtml');
+    await longPressImage(controller, 'img');
+    await pumpUntilVisible(tester, find.byType(EpubImageZoomView));
+    expect(zoomedFiles(tester), ['p3.png', 'p2.png']);
   });
 }

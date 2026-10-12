@@ -89,6 +89,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.onTouchUp,
     this.onWordTapped,
     this.onSentenceSelected,
+    this.onImageLongPressed,
     this.onLoadError,
     this.onRendererGone,
     this.onPageCharacters,
@@ -174,6 +175,10 @@ class CustomEpubViewer extends StatefulWidget {
   )?
   onWordTapped;
   final ValueChanged<EpubSelectionData>? onSentenceSelected;
+
+  /// A long press on an image: the section's spine [href] and the image's
+  /// place among the section's images (`img, svg image`).
+  final void Function(String href, int index)? onImageLongPressed;
   final void Function(String description)? onLoadError;
 
   /// The web view's renderer died: Android killed it for memory (or it
@@ -507,6 +512,19 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
             'scrolled=$scrolledStrip',
           );
           widget.onTouchUp?.call(x, y, inTopOrBottomMargin, scrolledStrip);
+        }
+      },
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'imageLongPressed',
+      callback: (data) {
+        if (data.isEmpty || data[0] is! Map) return;
+        final message = data[0] as Map;
+        final href = message['href'];
+        final index = message['index'];
+        if (href is String && href.isNotEmpty && index is num && index >= 0) {
+          widget.onImageLongPressed?.call(href, index.toInt());
         }
       },
     );

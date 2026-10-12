@@ -7,9 +7,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
+import 'package:mekuru/features/reader/presentation/widgets/epub_image_zoom_view.dart';
 import 'package:path/path.dart' as p;
 
 import '../test_helpers.dart';
@@ -153,6 +155,30 @@ Future<void> showSection(
   // Images decode and pages re-expand after the section is shown.
   await tester.pump(const Duration(seconds: 1));
 }
+
+/// Long-presses the first [selector] match of the section on screen
+/// through the bridge, as its touch handler does.
+Future<void> longPressImage(
+  CustomEpubController controller,
+  String selector,
+) => controller.debugEvaluateJavascript(
+  '(function () {'
+  '  var c = rendition.getContents()[0];'
+  '  sendImageLongPress(c, c.document.querySelector(${jsonEncode(selector)}));'
+  '  return true;'
+  '})()',
+);
+
+/// The files the zoom viewer shows, left first.
+List<String> zoomedFiles(WidgetTester tester) => [
+  for (final image in tester.widgetList<Image>(
+    find.descendant(
+      of: find.byType(EpubImageZoomView),
+      matching: find.byType(Image),
+    ),
+  ))
+    p.basename(((image.image as FileImage).file).path),
+];
 
 /// Geometry of the first [selector] match in the section on screen, in the
 /// section's own coordinates. `painted` is where the picture itself lands:

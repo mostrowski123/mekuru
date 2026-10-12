@@ -128,6 +128,13 @@ ReaderTheme buildReaderTheme({
         'color': '$linkHex !important',
         'text-decoration': 'underline !important',
       },
+      // A long press on an image opens the zoom viewer: no system callout
+      // (iOS) or image drag (Android) in its way.
+      'img, svg': {
+        '-webkit-touch-callout': 'none',
+        'user-select': 'none',
+        '-webkit-user-drag': 'none',
+      },
     },
   );
 }

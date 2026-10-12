@@ -13,6 +13,7 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/reader_session_tracker.dart';
 import 'package:mekuru/features/reader/data/services/book_search_session.dart';
 import 'package:mekuru/features/reader/data/services/epub_file_resolver.dart';
+import 'package:mekuru/features/reader/data/services/epub_image_zoom.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/data/services/reader_progress_persistence.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
@@ -25,6 +26,7 @@ import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart
 import 'package:mekuru/features/reader/presentation/widgets/bridge_transfer.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
+import 'package:mekuru/features/reader/presentation/widgets/epub_image_zoom_view.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/epub_reader_settings_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
@@ -650,6 +652,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                     settings.swipeSensitivity,
                                   );
                                 },
+                            onImageLongPressed: _openImageZoom,
                             onSentenceSelected: (selection) {
                               if (!mounted) return;
                               _hasActiveSelection = true;
@@ -1038,6 +1041,31 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (!_rendererGone || !(ModalRoute.isCurrentOf(context) ?? true)) return;
     _rendererGone = false;
     unawaited(_rebuildViewerForDirectionChange());
+  }
+
+  /// A long press on an image ([href], [index]: see
+  /// [CustomEpubViewer.onImageLongPressed]) opens it full screen.
+  Future<void> _openImageZoom(String href, int index) async {
+    // The bridge swallows this press's lift: drop its touchDown too.
+    _touchDown = null;
+    AppHaptics.medium();
+    // shortcut: books imported before EPUBs were extracted keep the .epub
+    // itself as their filePath; they have no folder to zoom from.
+    // Off the UI isolate: a novel's chapter can be one large document.
+    final images = await compute(epubZoomImagesJob, (
+      widget.book.filePath,
+      href,
+      index,
+      ref.read(readerSettingsProvider).readingDirection == ReaderDirection.rtl,
+    ));
+    if (images == null || !mounted) return;
+    await Navigator.of(context).push(
+      namedRoute(
+        'epub_image_zoom',
+        (_) => EpubImageZoomView(images: images),
+        fullscreenDialog: true,
+      ),
+    );
   }
 
   void _handleTouchUp(
