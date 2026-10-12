@@ -359,6 +359,7 @@ class _ReportingImport extends BookImportNotifier {
     required String format,
     String? title,
     String? sourceId,
+    String? safTreeUri,
     void Function(double progress)? onProgress,
   }) async {
     onProgress?.call(0.5);

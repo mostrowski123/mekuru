@@ -182,7 +182,9 @@ class BookImportNotifier extends Notifier<BookImportState> {
     _autoDismissTimer = Timer(const Duration(seconds: 5), clearState);
   }
 
-  /// Import one or more EPUB ('epub'), CBZ ('cbz') or PDF ('pdf') files.
+  /// Import one or more EPUB ('epub'), manga archive ('cbz': ZIP or RAR),
+  /// PDF ('pdf') or mokuro manifest ('manga') files. Manifests in an
+  /// Android SAF folder are 'manga_saf', with the folder's [safTreeUri].
   ///
   /// Individual failures don't abort the batch: remaining files still
   /// import, and a summary error names the files that failed and why.
@@ -190,6 +192,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
   Future<int> importFiles(
     List<String> filePaths, {
     required String format,
+    String? safTreeUri,
   }) async {
     if (filePaths.isEmpty) return 0;
 
@@ -201,19 +204,22 @@ class BookImportNotifier extends Notifier<BookImportState> {
       void updateProgress(double? fileProgress) {
         state = BookImportState(
           isImporting: true,
+          // A single file is indeterminate until it reports progress (EPUB
+          // and mokuro manifests never do).
           progress: fileProgress == null && total == 1
-              ? null // single EPUB: indeterminate, as before
+              ? null
               : (i + (fileProgress ?? 0)) / total,
           batchCurrent: total > 1 ? i + 1 : null,
           batchTotal: total > 1 ? total : null,
         );
       }
 
-      updateProgress(format == 'epub' ? null : 0.0);
+      updateProgress(null);
       try {
         lastImported = await importOne(
           filePaths[i],
           format: format,
+          safTreeUri: safTreeUri,
           onProgress: updateProgress,
         );
       } catch (e, st) {
@@ -248,13 +254,15 @@ class BookImportNotifier extends Notifier<BookImportState> {
   /// that turns out scanned explains itself), pending backup data and
   /// telemetry. [title] names a PDF (free-book downloads); other files
   /// carry their own. [sourceId] marks a downloaded free book (EPUB or PDF),
-  /// before the scanned-PDF notice can offer OCR, which reads it. Throws on
+  /// before the scanned-PDF notice can offer OCR, which reads it.
+  /// [safTreeUri] is the SAF folder of a 'manga_saf' manifest. Throws on
   /// failure; does not touch [state].
   Future<Book> importOne(
     String filePath, {
     required String format,
     String? title,
     String? sourceId,
+    String? safTreeUri,
     void Function(double progress)? onProgress,
   }) async {
     final repo = ref.read(bookRepositoryProvider);
@@ -277,6 +285,14 @@ class BookImportNotifier extends Notifier<BookImportState> {
                 onProgress: onProgress,
               )
               .then(explainIfScanned),
+        'manga' || 'manga_saf' => repo.importMangaFromFile(
+          filePath,
+          safTreeUri: safTreeUri,
+          // A SAF manifest's path is synthetic: '/saf/<name in the tree>'.
+          safSelectedFileRelativePath: safTreeUri == null
+              ? null
+              : p.posix.basename(filePath),
+        ),
         _ => repo.importEpub(filePath, sourceId: sourceId),
       },
       attributes: {'format': format},
@@ -291,73 +307,6 @@ class BookImportNotifier extends Notifier<BookImportState> {
   void _logBookImported(String format) {
     logUsage('book.imported', attrs: {'format': format});
     countUsage('book.imported', attrs: {'format': format});
-  }
-
-  Future<Book?> importManga(String filePath, {String? cachedFilePath}) async {
-    state = const BookImportState(isImporting: true);
-
-    try {
-      final repo = ref.read(bookRepositoryProvider);
-      final book = await tracedOperation(
-        'book.import_duration_ms',
-        action: () => repo.importMangaFromFile(
-          filePath,
-          cachedFilePath: cachedFilePath,
-          safTreeUri: null,
-          safSelectedFileRelativePath: null,
-        ),
-        attributes: {'format': 'manga'},
-      );
-      await applyPendingBackupData(book);
-      _logBookImported('manga');
-      _showSuccess(
-        (l10n) => l10n.serverBrowseAddedToLibrary(title: book.title),
-        book,
-      );
-      return book;
-    } catch (e, st) {
-      Sentry.captureException(e, stackTrace: st);
-      state = BookImportState(
-        error: (l10n) => _describeImportFailure(l10n, filePath, e),
-      );
-      return null;
-    }
-  }
-
-  Future<Book?> importMangaWithSaf(
-    String filePath, {
-    String? cachedFilePath,
-    required String safTreeUri,
-    required String? safSelectedFileRelativePath,
-  }) async {
-    state = const BookImportState(isImporting: true);
-
-    try {
-      final repo = ref.read(bookRepositoryProvider);
-      final book = await tracedOperation(
-        'book.import_duration_ms',
-        action: () => repo.importMangaFromFile(
-          filePath,
-          cachedFilePath: cachedFilePath,
-          safTreeUri: safTreeUri,
-          safSelectedFileRelativePath: safSelectedFileRelativePath,
-        ),
-        attributes: {'format': 'manga_saf'},
-      );
-      await applyPendingBackupData(book);
-      _logBookImported('manga_saf');
-      _showSuccess(
-        (l10n) => l10n.serverBrowseAddedToLibrary(title: book.title),
-        book,
-      );
-      return book;
-    } catch (e, st) {
-      Sentry.captureException(e, stackTrace: st);
-      state = BookImportState(
-        error: (l10n) => _describeImportFailure(l10n, filePath, e),
-      );
-      return null;
-    }
   }
 
   /// Check for pending backup data matching this book and apply it.

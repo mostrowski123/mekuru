@@ -26,6 +26,7 @@ import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/library/presentation/widgets/manga_cbz_export_action.dart';
+import 'package:mekuru/features/library/presentation/widgets/manga_manifest_picker_sheet.dart';
 import 'package:mekuru/features/library/presentation/widgets/continue_reading_card.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
@@ -977,7 +978,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     }
 
     if (!context.mounted) return;
-    final selectedName = await _showMangaManifestPickerSheet(
+    final selectedNames = await showMangaManifestPickerSheet(
       context,
       files: candidates,
       folderLabel: _folderLabelFromTreeDocumentId(
@@ -986,19 +987,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       ),
     );
     if (!context.mounted) return;
-    if (selectedName == null) return;
+    if (selectedNames == null) return;
 
-    final syntheticImportPath = p.posix.join('/saf', selectedName);
-    debugPrint(
-      '[MangaImport] Folder import (SAF): ${folder.treeUri} -> $selectedName',
-    );
-
-    ref
+    await ref
         .read(bookImportProvider.notifier)
-        .importMangaWithSaf(
-          syntheticImportPath,
+        .importFiles(
+          [for (final name in selectedNames) p.posix.join('/saf', name)],
+          format: 'manga_saf',
           safTreeUri: folder.treeUri,
-          safSelectedFileRelativePath: selectedName,
         );
   }
 
@@ -1043,17 +1039,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     }
 
     if (!context.mounted) return;
-    final selectedName = await _showMangaManifestPickerSheet(
+    final selectedNames = await showMangaManifestPickerSheet(
       context,
       files: candidates,
       folderLabel: p.basename(dirPath),
     );
     if (!context.mounted) return;
-    if (selectedName == null) return;
+    if (selectedNames == null) return;
 
-    final importPath = p.join(dirPath, selectedName);
-    debugPrint('[MangaImport] Folder import: $importPath');
-    ref.read(bookImportProvider.notifier).importManga(importPath);
+    await ref.read(bookImportProvider.notifier).importFiles([
+      for (final name in selectedNames) p.join(dirPath, name),
+    ], format: 'manga');
   }
 
   bool _isSupportedMangaManifestName(String name) {
@@ -1074,47 +1070,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final normalized = afterColon.replaceAll('\\', '/');
     final base = normalized.isEmpty ? documentId : p.posix.basename(normalized);
     return base.isEmpty ? context.l10n.librarySelectedFolder : base;
-  }
-
-  Future<String?> _showMangaManifestPickerSheet(
-    BuildContext context, {
-    required List<String> files,
-    required String folderLabel,
-  }) {
-    final l10n = context.l10n;
-
-    return showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.folder_open),
-              title: Text(folderLabel),
-              subtitle: Text(l10n.libraryMangaFilesFound(count: files.length)),
-            ),
-            const Divider(height: 1),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: files.length,
-                itemBuilder: (context, index) {
-                  final file = files[index];
-                  final isMokuro = file.toLowerCase().endsWith('.mokuro');
-                  return ListTile(
-                    leading: Icon(isMokuro ? Icons.data_object : Icons.html),
-                    title: Text(file),
-                    onTap: () => Navigator.of(sheetContext).pop(file),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

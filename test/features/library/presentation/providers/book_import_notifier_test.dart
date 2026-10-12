@@ -170,6 +170,65 @@ void main() {
       expect((await db.select(db.books).getSingle()).sourceId, 'aozora:1567');
     });
 
+    test('imports several mokuro volumes from one folder', () async {
+      final folder = p.join(tempDir.path, 'mokuro_out');
+      Directory(folder).createSync();
+      String volume(String stem) {
+        // mokuro writes <stem>.mokuro beside a <stem>/ folder of pages.
+        File(p.join(folder, stem, '0001.png'))
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(img.encodePng(img.Image(width: 8, height: 8)));
+        return (File(p.join(folder, '$stem.mokuro'))..writeAsStringSync(
+              jsonEncode({
+                'version': '0.2.1',
+                'title': stem,
+                'volume': stem,
+                'pages': [
+                  {
+                    'img_path': '0001.png',
+                    'img_width': 8,
+                    'img_height': 8,
+                    'blocks': [],
+                  },
+                ],
+              }),
+            ))
+            .path;
+      }
+
+      final broken = File(p.join(folder, 'broken.mokuro'))
+        ..writeAsStringSync('{');
+      final notifier = container.read(bookImportProvider.notifier);
+
+      expect(
+        await notifier.importFiles([
+          volume('vol1'),
+          volume('vol2'),
+        ], format: 'manga'),
+        2,
+      );
+      expect(
+        container.read(bookImportProvider).successMessage!(en),
+        'Imported 2 books',
+      );
+      expect(
+        (await db.select(db.books).get()).map((b) => b.title),
+        unorderedEquals(['vol1', 'vol2']),
+      );
+
+      expect(
+        await notifier.importFiles([
+          volume('vol3'),
+          broken.path,
+        ], format: 'manga'),
+        1,
+      );
+      expect(
+        container.read(bookImportProvider).error!(en),
+        startsWith("Imported 1 of 2.\nCouldn't import broken.mokuro:"),
+      );
+    });
+
     test('a RAR says why it could not be imported', skip: rarSkip, () async {
       final encrypted = File(p.join(tempDir.path, 'locked.cbr'))
         ..writeAsBytesSync(rar4EncryptedHeaders);

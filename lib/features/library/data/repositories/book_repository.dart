@@ -235,22 +235,17 @@ class BookRepository {
 
   /// Import a manga book from a `.mokuro` or `.html` file.
   ///
-  /// [filePath] is the original file location (used to derive the image
-  /// directory path). [cachedFilePath] is an optional alternative path
-  /// where the file content can be read from (e.g. a cache copy on Android
-  /// where pickFiles() copies the selected file to cache).
+  /// [filePath] is the file's location, which the image directory is found
+  /// from. A manifest in an Android folder grant is read through
+  /// [safTreeUri] and [safSelectedFileRelativePath] instead.
   ///
   /// Returns the created [Book].
   Future<Book> importMangaFromFile(
     String filePath, {
-    String? cachedFilePath,
     String? safTreeUri,
     String? safSelectedFileRelativePath,
   }) async {
     debugPrint('[MangaImport] importMangaFromFile called with: $filePath');
-    if (cachedFilePath != null && cachedFilePath != filePath) {
-      debugPrint('[MangaImport] Reading content from cached: $cachedFilePath');
-    }
     if (safTreeUri != null) {
       debugPrint(
         '[MangaImport] SAF enabled tree=$safTreeUri '
@@ -259,16 +254,13 @@ class BookRepository {
     }
 
     final ext = p.extension(filePath).toLowerCase();
-    // Read file content from the cached path if available (Android file
-    // picker), otherwise from the original path (desktop/iOS). For folder-
-    // first SAF imports, copy only the selected .mokuro/.html file to a temp
-    // file so the parser can read it locally while images/OCR stay in place.
-    var readPath = cachedFilePath ?? filePath;
+    // For folder-first SAF imports, copy only the selected .mokuro/.html file
+    // to a temp file so the parser can read it locally while images/OCR stay
+    // in place.
+    var readPath = filePath;
     String? tempReadPath;
 
-    if (safTreeUri != null &&
-        safSelectedFileRelativePath != null &&
-        cachedFilePath == null) {
+    if (safTreeUri != null && safSelectedFileRelativePath != null) {
       AndroidSafFailure? readFailure;
       final bytes = await AndroidSafService.readBytesFromTreePath(
         safTreeUri,
@@ -296,14 +288,12 @@ class BookRepository {
       if (ext == '.mokuro') {
         parsed = await MokuroParser.parseMokuroFile(
           readPath,
-          originalDirPath: cachedFilePath != null ? p.dirname(filePath) : null,
           safTreeUri: safTreeUri,
           safSelectedFileRelativePath: safSelectedFileRelativePath,
         );
       } else if (ext == '.html') {
         parsed = await MokuroParser.parseSingleHtmlFile(
           readPath,
-          originalDirPath: cachedFilePath != null ? p.dirname(filePath) : null,
           safTreeUri: safTreeUri,
           safSelectedFileRelativePath: safSelectedFileRelativePath,
         );
