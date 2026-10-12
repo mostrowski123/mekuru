@@ -183,11 +183,12 @@ void main() {
   );
 
   // The user's flow on iOS: Import Manga > Mokuro folder > pick a folder
-  // (native picker, mocked here) > tap the .html in the list. iOS copies the
-  // pages into the app, and a folder missing one page made that copy throw
-  // PathNotFoundException and fail the whole import.
+  // (native picker, mocked here) > Import (the folder's only manifest, an
+  // .html, is ticked already). iOS copies the pages into the app, and a
+  // folder missing one page made that copy throw PathNotFoundException and
+  // fail the whole import.
   testWidgets(
-    'iOS mokuro folder import imports the tapped .html when a page is missing',
+    'iOS mokuro folder import imports the ticked .html when a page is missing',
     (tester) async {
       final db = createTestDatabase();
       addTearDown(db.close);
@@ -241,7 +242,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tapSheetItem(tester, l10n.libraryImportMokuroFolder);
       await pumpUntilVisible(tester, find.text('$stem.mobile.html'));
-      await tapSheetItem(tester, '$stem.mobile.html');
+      await tester.tap(find.widgetWithText(FilledButton, l10n.commonImport));
+      await tester.pump();
 
       final container = ProviderScope.containerOf(
         tester.element(find.byType(LibraryScreen)),
