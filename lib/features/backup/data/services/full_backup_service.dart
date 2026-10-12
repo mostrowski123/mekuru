@@ -264,36 +264,50 @@ class FullBackupService implements FullBackupApi {
   Future<({List<FullBackupPlanEntry> entries, int mangaCount})> _linkedPages(
     List<LinkedMangaSource> sources,
   ) async {
+    // The image folder, and each chapter folder below it that holds pages:
+    // a listing returns a folder's own files only.
+    final folders = [
+      for (final source in sources)
+        for (final subfolder in ['', ...source.pageSubfolders])
+          (source: source, subfolder: subfolder),
+    ];
     // Each listing is a resolve plus a children query on its own thread;
     // a few at a time overlaps them without swamping a slow provider.
     final listings = <List<SafTreeFile>>[];
-    for (var i = 0; i < sources.length; i += _listingConcurrency) {
+    for (var i = 0; i < folders.length; i += _listingConcurrency) {
       listings.addAll(
         await Future.wait(
-          sources
+          folders
               .skip(i)
               .take(_listingConcurrency)
-              .map((s) => listTreeFiles(s.treeUri, s.imageDirRelativePath)),
+              .map(
+                (f) => listTreeFiles(
+                  f.source.treeUri,
+                  p.posix.join(f.source.imageDirRelativePath, f.subfolder),
+                ),
+              ),
         ),
       );
     }
 
     final entries = <FullBackupPlanEntry>[];
-    var mangaCount = 0;
-    for (var i = 0; i < sources.length; i++) {
-      final source = sources[i];
+    final withPages = <LinkedMangaSource>{};
+    for (var i = 0; i < folders.length; i++) {
+      final (:source, :subfolder) = folders[i];
       final pages =
           listings[i].where((f) => CbzParser.isImageFile(f.name)).toList()
             ..sort((a, b) => a.name.compareTo(b.name));
       if (pages.isEmpty) continue;
-      mangaCount++;
+      withPages.add(source);
       for (final page in pages) {
         entries.add(
           FullBackupPlanEntry(
             path: page.uri,
-            name:
-                '${source.prefix}${FullBackupManifest.linkedPagesDirName}/'
-                '${page.name}',
+            name: p.posix.join(
+              '${source.prefix}${FullBackupManifest.linkedPagesDirName}',
+              subfolder,
+              page.name,
+            ),
             size: math.max(page.size, 0),
             level: 0,
             mtime: page.lastModified,
@@ -301,7 +315,7 @@ class FullBackupService implements FullBackupApi {
         );
       }
     }
-    return (entries: entries, mangaCount: mangaCount);
+    return (entries: entries, mangaCount: withPages.length);
   }
 
   static const _listingConcurrency = 4;

@@ -35,6 +35,35 @@ class MokuroParser {
     return p.posix.joinAll(filtered);
   }
 
+  /// A page's image path relative to its image folder, with '/' between
+  /// folders: chapter subfolders are kept (`ch1/001.jpg`). A path that is
+  /// absolute or climbs out of the folder keeps only its file name.
+  static String _pageRelativePath(String path) {
+    final relative = p.posix.normalize(path.replaceAll('\\', '/'));
+    return p.posix.isAbsolute(relative) ||
+            relative == '..' ||
+            relative.startsWith('../')
+        ? p.posix.basename(relative)
+        : relative;
+  }
+
+  /// The first of [candidates] that holds [firstImage]; otherwise the first
+  /// that exists (a volume missing its first page), else the last.
+  static Future<String> _localImageDir(
+    String? firstImage,
+    List<String> candidates,
+  ) async {
+    if (firstImage != null) {
+      for (final dir in candidates) {
+        if (await File(p.join(dir, firstImage)).exists()) return dir;
+      }
+    }
+    for (final dir in candidates) {
+      if (await Directory(dir).exists()) return dir;
+    }
+    return candidates.last;
+  }
+
   /// Discover all mokuro books in a directory.
   ///
   /// Uses a three-pass discovery strategy:
@@ -450,66 +479,12 @@ class MokuroParser {
       debugPrint('[MokuroParser] Cannot list parent dir: $e');
     }
 
-    // Resolve the image directory. Try:
-    // 1. Sibling directory matching the volume name
-    // 2. Sibling directory matching the mokuro file stem
-    // 3. The parent directory itself (images alongside .mokuro file)
-    //
-    // When originalDirPath is provided (Android file picker), skip
-    // Directory.exists() checks — on Android 13+ without
-    // MANAGE_EXTERNAL_STORAGE, directory metadata isn't accessible even
-    // though the image files inside ARE readable via READ_MEDIA_IMAGES.
-    // In that case, trust the volume/stem name and construct the path.
-    late String imageDirPath;
-    String? safImageDirRel;
+    // The image folder is a sibling folder named after the volume or the
+    // mokuro file's stem, or the parent folder itself (images beside the
+    // .mokuro). Chosen after the pages, by where the first page is: img_path
+    // is relative to the image folder and may hold chapter subfolders.
     final volumeDirPath = p.join(parentDir, volume);
     final stemDirPath = p.join(parentDir, fileStem);
-
-    if (safTreeUri != null) {
-      // SAF-backed import — start with the volume-named folder and refine
-      // below after we know which image filenames actually exist.
-      imageDirPath = volumeDirPath;
-      safImageDirRel = _joinSafRelative([safParentDirRel ?? '', volume]);
-      debugPrint('[MokuroParser] Image dir (trusted): $imageDirPath');
-    } else if (originalDirPath != null) {
-      // Android legacy file picker path — skip exists() checks, use volume dir
-      imageDirPath = volumeDirPath;
-      debugPrint('[MokuroParser] Image dir (trusted): $imageDirPath');
-    } else {
-      final volumeDir = Directory(volumeDirPath);
-      final stemDir = Directory(stemDirPath);
-
-      debugPrint('[MokuroParser] Checking volume dir: ${volumeDir.path}');
-      debugPrint('[MokuroParser]   exists: ${await volumeDir.exists()}');
-
-      if (await volumeDir.exists()) {
-        imageDirPath = volumeDir.path;
-      } else if (volume != p.basenameWithoutExtension(mokuroFilePath) &&
-          await stemDir.exists()) {
-        debugPrint('[MokuroParser] Checking stem dir: ${stemDir.path}');
-        debugPrint('[MokuroParser]   exists: ${await stemDir.exists()}');
-        imageDirPath = stemDir.path;
-      } else {
-        debugPrint('[MokuroParser] Falling back to parent dir for images');
-        imageDirPath = parentDir;
-      }
-    }
-
-    debugPrint('[MokuroParser] Image dir resolved to: $imageDirPath');
-
-    // Check we can actually list files in the image directory (diagnostic)
-    try {
-      final imgEntities = await Directory(imageDirPath).list().toList();
-      debugPrint('[MokuroParser] Image dir contents (${imgEntities.length}):');
-      for (final entity in imgEntities.take(5)) {
-        debugPrint('[MokuroParser]   ${p.basename(entity.path)}');
-      }
-      if (imgEntities.length > 5) {
-        debugPrint('[MokuroParser]   ... and ${imgEntities.length - 5} more');
-      }
-    } catch (e) {
-      debugPrint('[MokuroParser] Cannot list image dir: $e');
-    }
 
     final pagesJson = json['pages'] as List;
     final pages = <MokuroPage>[];
@@ -526,8 +501,7 @@ class MokuroParser {
       if (imgPath is! String || imgWidth is! num || imgHeight is! num) {
         continue;
       }
-      // img_path may contain a relative path like "VolumeName/0001.jpg"
-      final imageFileName = p.basename(imgPath);
+      final imageFileName = _pageRelativePath(imgPath);
 
       // Skip non-image entries (e.g. .nomedia, .json metadata)
       if (!CbzParser.isImageFile(imageFileName)) continue;
@@ -556,10 +530,10 @@ class MokuroParser {
 
     debugPrint('[MokuroParser] Parsed ${pages.length} pages from .mokuro file');
 
+    final firstImage = imageFileNames.firstOrNull;
+    var imageDirPath = volumeDirPath;
+    String? safImageDirRel;
     if (safTreeUri != null) {
-      final firstImage = imageFileNames.isNotEmpty
-          ? imageFileNames.first
-          : null;
       final volumeRel = _joinSafRelative([safParentDirRel ?? '', volume]);
       final stemRel = _joinSafRelative([safParentDirRel ?? '', fileStem]);
       final parentRel = safParentDirRel ?? '';
@@ -569,6 +543,7 @@ class MokuroParser {
         (parentRel, parentDir),
       ];
 
+      safImageDirRel = volumeRel;
       if (firstImage != null) {
         for (final candidate in candidates) {
           final exists = await AndroidSafService.existsInTreePath(
@@ -581,11 +556,17 @@ class MokuroParser {
             break;
           }
         }
-      } else {
-        safImageDirRel = volumeRel;
-        imageDirPath = volumeDirPath;
       }
+    } else if (originalDirPath == null) {
+      imageDirPath = await _localImageDir(firstImage, [
+        volumeDirPath,
+        if (volume != fileStem) stemDirPath,
+        parentDir,
+      ]);
     }
+    // With originalDirPath (a cached copy of the file), folder metadata may
+    // not be readable, so the volume folder is trusted.
+    debugPrint('[MokuroParser] Image dir resolved to: $imageDirPath');
 
     final manifest = MokuroBookManifest(
       title: title,
@@ -632,10 +613,9 @@ class MokuroParser {
       final imageFiles = <String>[];
       for (final match in regex.allMatches(content)) {
         final fullPath = match.group(1)!;
-        // URL-decode the path and take just the filename. A malformed
-        // escape (stray '%' or non-UTF-8 bytes) means the HTML carries the
-        // literal on-disk name, so fall back to the raw text rather than
-        // dropping the page.
+        // URL-decode the path. A malformed escape (stray '%' or non-UTF-8
+        // bytes) means the HTML carries the literal on-disk name, so fall
+        // back to the raw text rather than dropping the page.
         String decoded;
         try {
           decoded = Uri.decodeFull(fullPath);
@@ -644,8 +624,11 @@ class MokuroParser {
         } on FormatException {
           decoded = fullPath;
         }
-        final fileName = p.basename(decoded);
-        imageFiles.add(fileName);
+        // The URL is STEM/<page>, and the image folder is STEM: keep the
+        // page's path below it, chapter subfolders included.
+        final relative = _pageRelativePath(decoded);
+        final slash = relative.indexOf('/');
+        imageFiles.add(slash < 0 ? relative : relative.substring(slash + 1));
       }
 
       // Deduplicate while preserving order, skip non-image files
@@ -865,7 +848,8 @@ class MokuroParser {
 
     for (int i = 0; i < imageFileNames.length; i++) {
       final imageFileName = imageFileNames[i];
-      final imageStem = p.basenameWithoutExtension(imageFileName);
+      // Mirrors the page's subfolders, if any: _ocr/<volume>/ch1/001.json.
+      final imageStem = p.posix.withoutExtension(imageFileName);
       final ocrJsonPath = p.join(ocrDirPath, '$imageStem.json');
 
       if (await File(ocrJsonPath).exists()) {
@@ -897,7 +881,8 @@ class MokuroParser {
 
     for (int i = 0; i < imageFileNames.length; i++) {
       final imageFileName = imageFileNames[i];
-      final imageStem = p.basenameWithoutExtension(imageFileName);
+      // Mirrors the page's subfolders, if any: _ocr/<volume>/ch1/001.json.
+      final imageStem = p.posix.withoutExtension(imageFileName);
       final ocrJsonRelPath = p.posix.join(
         ocrDirRelativePath,
         '$imageStem.json',

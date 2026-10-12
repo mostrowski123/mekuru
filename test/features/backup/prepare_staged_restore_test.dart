@@ -282,6 +282,42 @@ void main() {
     expect(result.rewrittenCaches, 3);
   });
 
+  test(
+    'adopts a linked manga whose pages are all in chapter folders',
+    () async {
+      await seedDatabase();
+      seedSettings();
+      seedCaches();
+      for (final name in ['ch2/001.jpg', 'ch1/002.jpg', 'ch1/001.jpg']) {
+        write(
+          p.joinAll([
+            staging.path,
+            'books',
+            'manga_2',
+            'pages',
+            ...name.split('/'),
+          ]),
+          name,
+        );
+      }
+
+      await run();
+
+      final cache = readJson(
+        p.join(staging.path, 'books', 'manga_2', mangaPagesCacheFileName),
+      );
+      expect(cache['imageDirPath'], '$newRoot/books/manga_2/pages');
+      expect(cache.containsKey('safTreeUri'), isFalse);
+      final manga = rows(
+        "SELECT cover_image_path FROM books WHERE title = 'SAF manga'",
+      ).single;
+      expect(
+        manga['cover_image_path'],
+        '$newRoot/books/manga_2/pages/ch1/001.jpg',
+      );
+    },
+  );
+
   test('is idempotent and tolerates a trailing slash on the root', () async {
     await seedDatabase();
     seedSettings();

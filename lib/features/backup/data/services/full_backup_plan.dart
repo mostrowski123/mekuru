@@ -42,10 +42,15 @@ class LinkedMangaSource {
   final String treeUri;
   final String imageDirRelativePath;
 
+  /// Folders below the image folder that hold pages (`ch1`), taken from the
+  /// pages' names: a folder listing doesn't descend into them.
+  final Set<String> pageSubfolders;
+
   const LinkedMangaSource({
     required this.prefix,
     required this.treeUri,
     required this.imageDirRelativePath,
+    this.pageSubfolders = const {},
   });
 }
 
@@ -216,6 +221,7 @@ FullBackupPlan buildExportPlan(BuildExportPlanArgs args) {
               prefix: prefix,
               treeUri: folder.treeUri,
               imageDirRelativePath: folder.imageDir,
+              pageSubfolders: folder.subfolders,
             ),
           );
         }
@@ -252,7 +258,9 @@ int _byPath(FileSystemEntity a, FileSystemEntity b) => a.path.compareTo(b.path);
 /// ponytail: decodes every manga cache (megabytes each) once per export; if
 /// "Preparing…" grows long on big libraries, record the link on the books
 /// row at import time and read it from the snapshot instead.
-({String treeUri, String imageDir})? _linkedFolder(File cache) {
+({String treeUri, String imageDir, Set<String> subfolders})? _linkedFolder(
+  File cache,
+) {
   if (!cache.existsSync()) return null;
   final Object? decoded;
   try {
@@ -264,7 +272,20 @@ int _byPath(FileSystemEntity a, FileSystemEntity b) => a.path.compareTo(b.path);
   final treeUri = decoded['safTreeUri'];
   final imageDir = decoded['safImageDirRelativePath'];
   if (treeUri is! String || imageDir is! String) return null;
-  return (treeUri: treeUri, imageDir: imageDir);
+  final pages = decoded['pages'];
+  return (
+    treeUri: treeUri,
+    imageDir: imageDir,
+    // Pages of a mokuro volume can sit in chapter folders: `ch1/001.jpg`.
+    subfolders: {
+      if (pages is List)
+        for (final page in pages)
+          if (page case {
+            'imageFileName': final String name,
+          } when name.contains('/'))
+            p.posix.dirname(name),
+    },
+  );
 }
 
 /// The `README.txt` at the root of every archive. English only: it lives

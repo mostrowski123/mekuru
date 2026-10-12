@@ -296,6 +296,42 @@ void main() {
       },
     );
 
+    test('a linked manga with chapter folders ships their pages', () async {
+      write(
+        p.join(booksDir().path, 'manga_2_bbbbbbbb', 'pages_cache.json'),
+        jsonEncode({
+          'title': 'External manga',
+          'imageDirPath': '/tmp/scratch/External manga',
+          'safTreeUri': 'content://tree/manga',
+          'safImageDirRelativePath': 'Manga/Vol 1',
+          'pages': [
+            {'imageFileName': 'ch1/001.jpg'},
+            {'imageFileName': 'ch2/001.jpg'},
+          ],
+        }),
+      );
+      // The fake folder listing hands out the same pages for every folder.
+      treePages = [treePages[1]];
+
+      await service.prepareExport(
+        FullBackupTarget.file(p.join(root.path, 'o.zip')),
+      );
+
+      expect(listed, [
+        ('content://tree/manga', 'Manga/Vol 1'),
+        ('content://tree/manga', 'Manga/Vol 1/ch1'),
+        ('content://tree/manga', 'Manga/Vol 1/ch2'),
+      ]);
+      expect(
+        planNames(),
+        containsAll([
+          'Manga/External manga/pages/ch1/001.jpg',
+          'Manga/External manga/pages/ch2/001.jpg',
+        ]),
+      );
+      expect(writtenManifest().externalMangaCount, 1);
+    });
+
     test('UniDic-lite ships only when its install had finished', () async {
       unidicMarker().deleteSync();
       await service.prepareExport(

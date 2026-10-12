@@ -286,8 +286,9 @@ String? _reanchored(Object? dir, String root) {
   return next == dir ? null : next;
 }
 
-/// The cover-order first image inside `<mangaDir>/pages/`, or null when the
-/// archive brought no pages for this manga.
+/// The cover-order first image inside `<mangaDir>/pages/` as a '/' path
+/// below it (pages can sit in chapter folders), or null when the archive
+/// brought no pages for this manga.
 String? _firstPageIn(String mangaDir) {
   final pages = Directory(
     p.join(mangaDir, FullBackupManifest.linkedPagesDirName),
@@ -295,9 +296,9 @@ String? _firstPageIn(String mangaDir) {
   if (!pages.existsSync()) return null;
   final candidates = CbzParser.coverCandidates(
     pages
-        .listSync(followLinks: false)
+        .listSync(recursive: true, followLinks: false)
         .whereType<File>()
-        .map((f) => p.basename(f.path)),
+        .map((f) => p.split(p.relative(f.path, from: pages.path)).join('/')),
   );
   return candidates.isEmpty ? null : candidates.first;
 }
