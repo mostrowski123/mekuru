@@ -86,11 +86,12 @@ void main() {
       ]);
       expect(cache.pages.map((pg) => pg.pageIndex), [0, 1, 2, 3]);
       expect(cache.pages.every((pg) => pg.blocks.isEmpty), isTrue);
-      expect(
-        cache.pages.map((pg) => '${pg.imgWidth}x${pg.imgHeight}'),
-        ['10x100', '11x101', '12x102', '13x103'],
-        reason: 'each page carries its own header-read dimensions',
-      );
+      expect(cache.pages.map((pg) => '${pg.imgWidth}x${pg.imgHeight}'), [
+        '10x100',
+        '11x101',
+        '12x102',
+        '13x103',
+      ], reason: 'each page carries its own header-read dimensions');
 
       final imageFiles = Directory(
         p.join(bookDir, 'images'),
@@ -122,11 +123,11 @@ void main() {
 
       // Spine page 0 is c.png (10x100); an alphabetical sort would put
       // a.png (11x101) first.
-      expect(
-        cache.pages.map((pg) => '${pg.imgWidth}x${pg.imgHeight}'),
-        ['10x100', '11x101', '12x102'],
-        reason: 'spine order must win over filename order',
-      );
+      expect(cache.pages.map((pg) => '${pg.imgWidth}x${pg.imgHeight}'), [
+        '10x100',
+        '11x101',
+        '12x102',
+      ], reason: 'spine order must win over filename order');
     });
 
     test('resolves SVG-wrapped images via xlink:href', () async {
@@ -182,6 +183,46 @@ void main() {
         expect((await readPagesCache(converted.filePath)).pages, hasLength(4));
       },
     );
+
+    test('keeps the spread halves the spine declares', () async {
+      final book = await importFixture(
+        await createFixedLayoutMangaEpub(
+          pageCount: 5,
+          itemrefProperties: {
+            1: 'rendition:page-spread-right',
+            2: 'page-spread-left',
+            3: 'rendition:layout-pre-paginated  rendition:page-spread-center',
+          },
+        ),
+      );
+
+      final converted = await repo.convertEpubToManga(book);
+      final cache = await readPagesCache(converted.filePath);
+
+      expect(cache.pages.map((pg) => pg.spread), [
+        null,
+        MangaPageSpread.right,
+        MangaPageSpread.left,
+        MangaPageSpread.center,
+        null,
+      ]);
+    });
+
+    test('a page reused by an undeclared cover keeps its spread', () async {
+      final book = await importFixture(
+        await createFixedLayoutMangaEpub(
+          pageCount: 4,
+          coverPageReusesFirstImage: true,
+          itemrefProperties: {0: 'page-spread-right'},
+        ),
+      );
+
+      final converted = await repo.convertEpubToManga(book);
+      final cache = await readPagesCache(converted.filePath);
+
+      expect(cache.pages, hasLength(4));
+      expect(cache.pages.first.spread, MangaPageSpread.right);
+    });
 
     test('rejects a text EPUB and leaves it untouched', () async {
       final book = await importFixture(await createTestEpub());

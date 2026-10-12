@@ -17,13 +17,14 @@ class EpubNotMangaException implements Exception {
   String toString() => 'EpubNotMangaException: $message';
 }
 
-/// Scans an extracted EPUB (`content/` directory) and, when (nearly) every
-/// spine document resolves to exactly one image, returns those images'
-/// absolute paths in spine order, de-duplicated. Returns null when the book
-/// does not look like a manga.
-///
-/// Read-only: safe to call without any cleanup obligation.
-Future<List<String>?> _planConversion(String contentDir) async {
+/// The spine of the extracted EPUB at [contentDir], in order: each
+/// document's root-relative path, with the spread side its itemref declares
+/// (`page-spread-*`, with or without the `rendition:` prefix). Itemrefs that
+/// name no manifest item are left out. Null when there is no readable OPF or
+/// spine.
+Future<List<({String path, MangaPageSpread? spread})>?> readEpubSpine(
+  String contentDir,
+) async {
   final String? opfPath;
   final XmlDocument opfXml;
   try {
@@ -41,40 +42,61 @@ Future<List<String>?> _planConversion(String contentDir) async {
       if (item.getAttribute('id') != null && item.getAttribute('href') != null)
         item.getAttribute('id')!: item.getAttribute('href')!,
   };
-
   final spines = opfXml.findAllElements('spine');
   if (spines.isEmpty) return null;
-  final itemrefs = spines.first.findElements('itemref').toList();
-  if (itemrefs.isEmpty) return null;
 
   final opfDir = p.posix.dirname(opfPath);
-  final seen = <String>{};
-  final sourceImagePaths = <String>[];
+  return [
+    for (final itemref in spines.first.findElements('itemref'))
+      if (manifestHrefById[itemref.getAttribute('idref')] case final href?)
+        if (resolveEpubHref(opfDir, href) case final path?)
+          (path: path, spread: _spreadOf(itemref.getAttribute('properties'))),
+  ];
+}
+
+MangaPageSpread? _spreadOf(String? properties) => MangaPageSpread.values
+    .asNameMap()[_spreadProperty.firstMatch(properties ?? '')?.group(1)];
+
+final _spreadProperty = RegExp(r'(?:^|\s)(?:rendition:)?page-spread-(\w+)');
+
+/// Scans an extracted EPUB (`content/` directory) and, when (nearly) every
+/// spine document resolves to exactly one image, returns those images'
+/// absolute paths in spine order, de-duplicated, each with its declared
+/// spread (the first one declared, when several docs show the same image).
+/// Returns null when the book does not look like a manga.
+///
+/// Read-only: safe to call without any cleanup obligation.
+Future<List<({String path, MangaPageSpread? spread})>?> _planConversion(
+  String contentDir,
+) async {
+  final spine = await readEpubSpine(contentDir);
+  if (spine == null || spine.isEmpty) return null;
+
+  // Insertion-ordered: an image keeps its first place in the spine.
+  final spreadByImage = <String, MangaPageSpread?>{};
   var imageDocCount = 0;
-
-  for (final itemref in itemrefs) {
-    final href = manifestHrefById[itemref.getAttribute('idref')];
-    if (href == null) continue;
-    final docPath = resolveEpubHref(opfDir, href);
-    if (docPath == null) continue;
-
-    final image = await _singleImageOf(contentDir, docPath);
+  for (final doc in spine) {
+    final image = await singleImageOf(contentDir, doc.path);
     if (image == null) continue;
     // A duplicate (the cover XHTML and a page pointing at the same file)
     // still counts as an image doc for eligibility, but yields one page.
     imageDocCount++;
-    if (seen.add(image)) sourceImagePaths.add(p.join(contentDir, image));
+    spreadByImage[image] ??= doc.spread;
   }
 
   final eligible =
-      sourceImagePaths.length >= 3 && imageDocCount / itemrefs.length >= 0.9;
-  return eligible ? sourceImagePaths : null;
+      spreadByImage.length >= 3 && imageDocCount / spine.length >= 0.9;
+  if (!eligible) return null;
+  return [
+    for (final MapEntry(key: image, value: spread) in spreadByImage.entries)
+      (path: p.join(contentDir, image), spread: spread),
+  ];
 }
 
 /// Returns the root-relative path of the single page image referenced by the
 /// spine document at [docPath], or null when the doc is not an
 /// exactly-one-image page.
-Future<String?> _singleImageOf(String contentDir, String docPath) async {
+Future<String?> singleImageOf(String contentDir, String docPath) async {
   final XmlDocument? doc;
   try {
     doc = parseXhtml(await File(p.join(contentDir, docPath)).readAsString());
@@ -118,8 +140,8 @@ Future<String?> _singleImageOf(String contentDir, String docPath) async {
 /// failure. Throws [EpubNotMangaException] when the EPUB is not eligible.
 Future<List<MokuroPage>> applyEpubMangaConversion((String, String) args) async {
   final (contentDir, bookDir) = args;
-  final sourceImagePaths = await _planConversion(contentDir);
-  if (sourceImagePaths == null) {
+  final plan = await _planConversion(contentDir);
+  if (plan == null) {
     throw const EpubNotMangaException(
       'EPUB spine is not composed of single-image pages',
     );
@@ -132,8 +154,8 @@ Future<List<MokuroPage>> applyEpubMangaConversion((String, String) args) async {
   // millisecond-scale (same-filesystem renames), so no resume journal.
   final moved = <(String, String)>[];
   try {
-    for (var i = 0; i < sourceImagePaths.length; i++) {
-      final source = sourceImagePaths[i];
+    for (var i = 0; i < plan.length; i++) {
+      final source = plan[i].path;
       final target = p.join(
         imagesDir.path,
         CbzParser.pageFileName(i + 1, source),
@@ -168,6 +190,7 @@ Future<List<MokuroPage>> applyEpubMangaConversion((String, String) args) async {
         imgWidth: dims?.width ?? 0,
         imgHeight: dims?.height ?? 0,
         blocks: const [],
+        spread: plan[i].spread,
       ),
     );
   }

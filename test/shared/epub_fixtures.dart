@@ -148,7 +148,8 @@ $bodyTag<p>これはテストです。</p></body>
 /// instead. Every XHTML doc contains `&nbsp;` to require the HTML5 entity
 /// mapping when parsed.
 ///
-/// [prePaginated] declares a fixed layout, with
+/// [itemrefProperties] sets a page's spine `properties` (e.g.
+/// `rendition:page-spread-left`). [prePaginated] declares a fixed layout, with
 /// a viewport the size of each page's image; its pages are for a browser,
 /// whose XML parser rejects `&nbsp;`, so they spell it `&#160;`.
 ///
@@ -162,6 +163,7 @@ Future<String> createFixedLayoutMangaEpub({
   bool nestedImageDir = false,
   bool urlEncodedHrefs = false,
   bool coverPageReusesFirstImage = false,
+  Map<int, String> itemrefProperties = const {},
   Set<int> landscapePages = const {},
   bool prePaginated = false,
 }) async {
@@ -234,7 +236,12 @@ Future<String> createFixedLayoutMangaEpub({
       ..add(
         '<item id="page$i" href="${docDir}page_$i.xhtml" media-type="application/xhtml+xml"/>',
       );
-    spineRefs.add('<itemref idref="page$i"/>');
+    final properties = itemrefProperties[i];
+    spineRefs.add(
+      properties == null
+          ? '<itemref idref="page$i"/>'
+          : '<itemref idref="page$i" properties="$properties"/>',
+    );
   }
 
   for (var i = 0; i < textOnlyPages; i++) {
