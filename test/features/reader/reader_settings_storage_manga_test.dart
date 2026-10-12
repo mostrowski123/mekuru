@@ -27,6 +27,23 @@ void main() {
     });
   });
 
+  group('mangaBookDirection', () {
+    test('the picked direction wins over the declared one', () {
+      expect(mangaBookDirection('ltr', 'rtl'), ReaderDirection.ltr);
+      expect(mangaBookDirection('rtl', null), ReaderDirection.rtl);
+    });
+
+    test('falls back to the direction the book declares', () {
+      expect(mangaBookDirection(null, 'ltr'), ReaderDirection.ltr);
+      expect(mangaBookDirection(null, 'rtl'), ReaderDirection.rtl);
+    });
+
+    test('null (follow the global setting) when neither is known', () {
+      expect(mangaBookDirection(null, null), isNull);
+      expect(mangaBookDirection(null, 'default'), isNull);
+    });
+  });
+
   group('SharedPreferencesReaderSettingsStorage — manga settings', () {
     setUp(() {
       SharedPreferences.setMockInitialValues({});

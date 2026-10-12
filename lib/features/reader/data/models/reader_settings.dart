@@ -12,6 +12,12 @@ extension ReaderDirectionStorage on ReaderDirection {
   String get storageValue => name;
 }
 
+/// A manga book's own page direction: the one picked in the reader
+/// ([override]), else the one its file declares (EPUB, PDF text, ComicInfo).
+/// Null follows the global manga setting.
+ReaderDirection? mangaBookDirection(String? override, String? declared) =>
+    ReaderDirection.values.asNameMap()[override ?? declared];
+
 enum ColorMode { normal, sepia, dark }
 
 ColorMode colorModeFromString(String? value) {

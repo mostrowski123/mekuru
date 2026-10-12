@@ -40,7 +40,7 @@ Future<ProviderContainer> _pumpSheet(
             onAutoCropRerun: () {},
             onUnlockPro: () {},
             onSettingChanged: onSettingChanged ?? (_, _) {},
-            bookDirection: bookDirection,
+            bookDirection: bookDirection ?? ValueNotifier(null),
           ),
         ),
       ),
@@ -55,23 +55,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('reading direction is a segmented control', (tester) async {
-    final container = await _pumpSheet(tester);
-    await scrollSettingsTo(
-      tester,
-      find.byType(SegmentedButton<ReaderDirection>),
-    );
-
-    await tester.tap(find.text('Left to Right'));
-    await tester.pumpAndSettle();
-
-    expect(
-      container.read(readerSettingsProvider).mangaReadingDirection,
-      ReaderDirection.ltr,
-    );
-  });
-
-  testWidgets('a PDF book picks its own direction, not the global one', (
+  testWidgets('a manga picks its own direction under This book', (
     tester,
   ) async {
     // Null: the book follows the global setting (right to left) for now.
@@ -83,6 +67,7 @@ void main() {
       bookDirection: bookDirection,
       onSettingChanged: (setting, value) => changes.add(setting),
     );
+    expect(find.text('This book'), findsOneWidget);
     await scrollSettingsTo(
       tester,
       find.byType(SegmentedButton<ReaderDirection>),

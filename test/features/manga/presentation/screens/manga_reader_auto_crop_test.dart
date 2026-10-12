@@ -207,6 +207,9 @@ void main() {
           )
           .first,
     );
+    // Built is not on screen: rows below the fold are built ahead.
+    await tester.ensureVisible(autoCropSwitch);
+    await tester.pumpAndSettle();
     await tester.tap(autoCropSwitch);
     await tester.pumpAndSettle();
 

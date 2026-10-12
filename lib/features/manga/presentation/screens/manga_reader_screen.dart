@@ -114,13 +114,14 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   _WordHighlight? _highlight;
   int _lookupRequestId = 0;
 
-  /// A PDF book's own page direction: detected from its text at import, or
-  /// picked in the settings sheet; null follows the global setting. Other
-  /// manga always follow the global setting (an EPUB converted to manga
-  /// keeps its EPUB direction fields, which never applied here).
-  late final _pdfDirection = ValueNotifier<ReaderDirection?>(
-    ReaderDirection.values.asNameMap()[widget.book.overrideReadingDirection ??
-        widget.book.pageProgressionDirection],
+  /// This book's own page direction (picked in the settings sheet, or
+  /// declared by its file: see [mangaBookDirection]); null follows the
+  /// global setting.
+  late final _bookDirection = ValueNotifier<ReaderDirection?>(
+    mangaBookDirection(
+      widget.book.overrideReadingDirection,
+      widget.book.pageProgressionDirection,
+    ),
   );
 
   @override
@@ -145,7 +146,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _statsRepository = ref.read(statsRepositoryProvider);
     // Captured here because dispose() calls it after `ref` is unusable.
     _brightnessNotifier = ref.read(readerBrightnessProvider.notifier);
-    _pdfDirection.addListener(_onPdfDirectionPicked);
+    _bookDirection.addListener(_onBookDirectionPicked);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
@@ -172,7 +173,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _emitSessionSummary(endReason: 'closed');
     _seekPrecacheHoldTimer?.cancel();
     _pageController.dispose();
-    _pdfDirection.dispose();
+    _bookDirection.dispose();
     unawaited(_brightnessNotifier.resetBrightness());
     WakelockPlus.disable();
     unawaited(setReaderSystemBarsVisible(true));
@@ -733,14 +734,14 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     );
   }
 
-  void _onPdfDirectionPicked() {
+  void _onBookDirectionPicked() {
     setState(() {});
     unawaited(
       ref
           .read(bookRepositoryProvider)
           .updateReadingDirectionOverride(
             widget.book.id,
-            _pdfDirection.value?.storageValue,
+            _bookDirection.value?.storageValue,
           ),
     );
   }
@@ -810,7 +811,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           Navigator.of(sheetContext).pop();
           unawaited(_openAllSettingsFromReader());
         },
-        bookDirection: mokuroBook.fromPdf ? _pdfDirection : null,
+        bookDirection: _bookDirection,
       ),
     );
   }
@@ -1240,10 +1241,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               });
             }
 
-            // PDF books turn their own way; see _pdfDirection.
-            final direction =
-                (mokuroBook.fromPdf ? _pdfDirection.value : null) ??
-                globalDirection;
+            final direction = _bookDirection.value ?? globalDirection;
             final isRtl = direction == ReaderDirection.rtl;
             final spreads = viewMode == MangaViewMode.twoPageSpread
                 ? computeSpreads(totalPages, isRtl: isRtl)

@@ -12,9 +12,9 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 
-/// Quick-settings sheet for the manga reader, grouped into "Display",
-/// "Reading", "Image", and "Lookup" sections — mirroring the EPUB sheet's
-/// structure and using the same shared row widgets.
+/// Quick-settings sheet for the manga reader, grouped into "This book",
+/// "Display", "Reading", "Image", and "Lookup" sections — mirroring the EPUB
+/// sheet's structure and using the same shared row widgets.
 class MangaReaderSettingsSheet extends ConsumerWidget {
   const MangaReaderSettingsSheet({
     super.key,
@@ -24,7 +24,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
     required this.onUnlockPro,
     required this.onSettingChanged,
     this.onOpenAllSettings,
-    this.bookDirection,
+    required this.bookDirection,
   });
 
   /// Whether this book already has computed crop bounds (enables re-run).
@@ -44,8 +44,8 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
 
   final VoidCallback? onOpenAllSettings;
 
-  /// A PDF book's own page direction; see [MangaReadingDirectionRow].
-  final ValueNotifier<ReaderDirection?>? bookDirection;
+  /// This book's own page direction; see [MangaReadingDirectionRow].
+  final ValueNotifier<ReaderDirection?> bookDirection;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -60,6 +60,13 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
       onOpenAllSettings: onOpenAllSettings,
       allSettingsTooltip: l10n.readerAllSettingsTooltip,
       children: [
+        // ── This book ──
+        SettingsSectionHeader.sheet(title: l10n.readerThisBook),
+        MangaReadingDirectionRow(
+          onSettingChanged: onSettingChanged,
+          bookDirection: bookDirection,
+        ),
+
         // ── Display ──
         SettingsSectionHeader.sheet(title: l10n.readerSettingsSectionDisplay),
         ReaderBrightnessRow(onSettingChanged: onSettingChanged),
@@ -68,11 +75,6 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
 
         // ── Reading ──
         SettingsSectionHeader.sheet(title: l10n.mangaSettingsSectionReading),
-        MangaReadingDirectionRow(
-          onSettingChanged: onSettingChanged,
-          bookDirection: bookDirection,
-        ),
-        const SizedBox(height: 16),
         MangaEdgeZoneRow(onSettingChanged: onSettingChanged),
 
         // ── Image ──

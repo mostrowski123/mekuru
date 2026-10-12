@@ -43,7 +43,7 @@ class MangaReadingDirectionRow extends ConsumerWidget {
 
   final void Function(String setting, Object value)? onSettingChanged;
 
-  /// Set for a book with its own direction (PDF books): the row shows and
+  /// Set in the reader, for the open book's own direction: the row shows and
   /// changes it instead of the global manga setting. Null inside means the
   /// book follows the global setting until one is picked.
   final ValueNotifier<ReaderDirection?>? bookDirection;
@@ -61,10 +61,7 @@ class MangaReadingDirectionRow extends ConsumerWidget {
           selected: selected,
           onSelected: (direction) {
             pick(direction);
-            onSettingChanged?.call(
-              bookDirection == null ? 'direction' : 'book_direction',
-              direction.name,
-            );
+            onSettingChanged?.call('book_direction', direction.name);
           },
         );
     final own = bookDirection;

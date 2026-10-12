@@ -26,7 +26,7 @@ import 'test_helpers.dart';
 /// PDF import on device: PDFium renders the pages and reads the text layer
 /// of the generated fixtures (tools/make_pdf_fixtures.py), the glyphs become
 /// tappable blocks, scanned PDFs explain themselves, and PDF books turn
-/// their own way while other manga keep the global direction.
+/// their own way, as other manga do when their file declares a direction.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -315,7 +315,7 @@ void main() {
     expect(row.overrideReadingDirection, 'ltr');
   });
 
-  testWidgets('other manga keep the global direction', (tester) async {
+  testWidgets('other manga turn the way their file declares', (tester) async {
     final db = createTestDatabase();
     addTearDown(db.close);
     final page = img.encodePng(img.Image(width: 300, height: 500));
@@ -332,6 +332,25 @@ void main() {
       const BooksCompanion(pageProgressionDirection: Value('rtl')),
     );
     final book = (await repository.getBookById(imported.id))!;
+
+    await openReader(tester, db, book);
+
+    expect(readsRightToLeft(tester), isTrue);
+  });
+
+  testWidgets('manga that declare no direction keep the global one', (
+    tester,
+  ) async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final page = img.encodePng(img.Image(width: 300, height: 500));
+    final archive = Archive();
+    for (final name in ['0001.png', '0002.png']) {
+      archive.addFile(ArchiveFile(name, page.length, page));
+    }
+    final cbz = p.join(tempDir.path, 'plain.cbz');
+    await File(cbz).writeAsBytes(ZipEncoder().encode(archive));
+    final book = (await BookRepository(db).importCbz(cbz)).book;
 
     await openReader(tester, db, book);
 
