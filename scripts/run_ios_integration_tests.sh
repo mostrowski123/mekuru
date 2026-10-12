@@ -1,42 +1,55 @@
 #!/usr/bin/env bash
-# Runs iOS integration tests on a simulator, one file at a time.
+# Runs iOS integration tests on a simulator.
 #
-#   scripts/run_ios_integration_tests.sh <simulator udid> integration_test/a_test.dart ...
-#   IOS_IT_SHARD=2/3 scripts/run_ios_integration_tests.sh <udid> <the same full list>
+#   scripts/run_ios_integration_tests.sh <simulator udid> integration_test/a_test.dart ... [-- integration_test/b_test.dart ...]
+#   IOS_IT_SHARD=2/3 scripts/run_ios_integration_tests.sh <udid> <the same full lists>
 #
-# One file at a time with a watchdog each: a failing integration test can leave
-# `flutter test -d <simulator>` hanging forever instead of exiting non-zero.
-# The watchdog's clock starts once the file's app is built: each file rebuilds
-# the app, and on a slow runner that alone can take most of 15 minutes. A build
-# that never finishes is left to the CI job's own time limit.
+# Every `flutter test` run rebuilds the app (three to fifteen minutes on a CI
+# runner). The files before "--" run together from one generated entry point
+# that imports them all, each in a group named after its file: one build for
+# all of them. The files after it run one at a time, each with its own build
+# and a fresh app process: one that boots the real app (`app.main()`: Firebase,
+# Sentry and the database, set up once per process), or opens the EPUB reader
+# (after another reader test in the same process its WebView misbehaved), or
+# hasn't been checked to run beside the others. Without "--", every file runs
+# on its own.
+#
+# A watchdog stops a run that prints nothing for 15 minutes after its build: a
+# failing integration test can leave `flutter test -d <simulator>` hanging
+# forever instead of exiting non-zero. A build that never finishes is left to
+# the CI job's own time limit.
 set -u
 device="$1"
 shift
-limit="${IOS_IT_TIMEOUT_SECONDS:-900}"
-# IOS_IT_SHARD="2/3" runs every third file starting with the second, so CI
-# can spread one list over parallel jobs (each file costs minutes there).
+quiet_limit="${IOS_IT_TIMEOUT_SECONDS:-900}"
+# IOS_IT_SHARD="2/3" runs every third file of each list starting with the
+# second, so CI can spread the lists over parallel jobs.
 shard="${IOS_IT_SHARD:-1/1}"
-index=0
-failed=()
 log="$(mktemp)"
-for test in "$@"; do
-  index=$((index + 1))
-  if [ $(((index - 1) % ${shard#*/})) -ne $((${shard%/*} - 1)) ]; then continue; fi
-  echo "::group::$test"
+combined=integration_test/_ios_shard_test.dart
+trap 'rm -f "$combined"' EXIT
+failed=()
+
+# Runs one entry point; a run whose app never connects is tried once more.
+run() {
+  local target="$1" label="$2" pid watchdog status attempt
+  echo "::group::$label"
   for attempt in 1 2; do
-    : > "$log" # no "Xcode build done" left over from the previous file
-    flutter test "$test" -d "$device" --no-pub \
+    : > "$log" # no "Xcode build done" left over from the previous run
+    flutter test "$target" -d "$device" --no-pub \
       --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded > >(tee "$log") 2>&1 &
     pid=$!
     (
-      # Stood down while the app builds: TERM's default action ends this.
+      # Stood down (TERM's default action) when the run ends first.
       until grep -q "Xcode build done" "$log"; do sleep 5; done
-      sleep "$limit" &
-      sleeper=$!
-      # Stood down: leave without touching the test's (by now reusable) pid.
-      trap 'kill "$sleeper" 2>/dev/null; exit 0' TERM
-      wait "$sleeper"
-      echo "watchdog: $test ran longer than ${limit}s after its build, stopping it"
+      local last quiet=0 size
+      last=$(wc -c < "$log" | tr -d ' ')
+      while [ "$quiet" -lt "$quiet_limit" ]; do
+        sleep 10
+        size=$(wc -c < "$log" | tr -d ' ')
+        if [ "$size" -eq "$last" ]; then quiet=$((quiet + 10)); else quiet=0; last=$size; fi
+      done
+      echo "watchdog: $label printed nothing for ${quiet_limit}s, stopping it"
       pkill -P "$pid"
       kill "$pid"
     ) &
@@ -47,15 +60,42 @@ for test in "$@"; do
     wait "$watchdog" 2>/dev/null
     # Sometimes the simulator never gives Flutter a debug connection: the app is
     # built, no test starts, and the run sits until the watchdog. That says
-    # nothing about the test, so try the file once more.
+    # nothing about the test, so try once more.
     if [ "$status" -eq 0 ] || [ "$attempt" -eq 2 ]; then break; fi
     sleep 1 # let tee finish writing the log
     grep -q "Error waiting for a debug connection" "$log" || break
-    echo "retry: the app never connected for $test"
+    echo "retry: the app never connected for $label"
   done
   echo "::endgroup::"
-  if [ "$status" -eq 0 ]; then echo "PASS $test"; else echo "FAIL $test ($status)"; failed+=("$test"); fi
+  if [ "$status" -eq 0 ]; then echo "PASS $label"; else echo "FAIL $label ($status)"; failed+=("$label"); fi
+}
+
+# Without "--", every file is in the second list.
+case " $* " in *" -- "*) list=shared ;; *) list=own ;; esac
+shared=()
+own=()
+index=0
+for test in "$@"; do
+  if [ "$test" = "--" ]; then list=own; index=0; continue; fi
+  index=$((index + 1))
+  if [ $(((index - 1) % ${shard#*/})) -ne $((${shard%/*} - 1)) ]; then continue; fi
+  if [ "$list" = shared ]; then shared+=("$test"); else own+=("$test"); fi
 done
+
+if [ "${#shared[@]}" -gt 0 ]; then
+  {
+    echo "// Generated by scripts/run_ios_integration_tests.sh; not checked in."
+    echo "import 'package:flutter_test/flutter_test.dart';"
+    for i in "${!shared[@]}"; do echo "import '$(basename "${shared[$i]}")' as t$i;"; done
+    echo "void main() {"
+    for i in "${!shared[@]}"; do echo "  group('$(basename "${shared[$i]}")', t$i.main);"; done
+    echo "}"
+  } > "$combined"
+  run "$combined" "$(printf '%s ' "${shared[@]}")"
+fi
+# ${a[@]+...}: an empty array is "unbound" to set -u in macOS's bash 3.2.
+for test in ${own[@]+"${own[@]}"}; do run "$test" "$test"; done
+
 if [ "${#failed[@]}" -gt 0 ]; then
   printf 'failed: %s\n' "${failed[@]}"
   exit 1

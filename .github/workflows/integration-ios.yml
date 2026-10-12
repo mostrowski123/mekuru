@@ -37,11 +37,11 @@ jobs:
   ios-integration:
     runs-on: macos-latest
     timeout-minutes: 120
-    # On a runner every file costs five to six minutes (each one rebuilds the
-    # app), so the list is spread over parallel jobs; all of it in one job
-    # ran past two hours. Four: macOS runners are free for this public repo,
-    # but GitHub Free runs at most five macOS jobs at once, and a PR also
-    # starts build-ios-pr.yml.
+    # Each shard pays for one cold app build (about ten minutes on a runner)
+    # for its shared files, plus three to five minutes per file that builds
+    # on its own; the tests themselves take a minute or two per file. Four shards: macOS runners are free for
+    # this public repo, but GitHub Free runs at most five macOS jobs at once,
+    # and a PR also starts build-ios-pr.yml.
     strategy:
       fail-fast: false
       matrix:
@@ -97,16 +97,20 @@ jobs:
           xcrun simctl bootstatus "$udid" -b
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
 
-      # One file at a time with a watchdog each (see the script): a failing
-      # iOS integration test can hang instead of failing. Every file listed
-      # has passed on an iPhone simulator. Not listed: Android-only suites
-      # (full_backup_*, local_ocr_*, pro_entitlement_flow) and word_tap_lookup_*
-      # (no tap reaches the WKWebView under the integration-test binding).
-      # vision_ocr_test downloads the manga-ocr pack (about 200 MB).
+      # Each line is a test file that has passed on an iPhone simulator. The
+      # files before "--" run together from one generated entry point, so
+      # they share one app build; the files after it build the app each:
+      # they boot the real app, open the EPUB reader (whose WebView broke
+      # when a second reader test ran in the same process), or haven't been
+      # checked beside the others. A watchdog stops a run that goes quiet:
+      # a failing iOS integration test can hang instead of failing (see the
+      # script). Not listed: Android-only suites (full_backup_*, local_ocr_*,
+      # pro_entitlement_flow) and word_tap_lookup_* (no tap reaches the
+      # WKWebView under the integration-test binding). vision_ocr_test
+      # downloads the manga-ocr pack (about 200 MB).
       - name: Run iOS integration tests
         run: >
           scripts/run_ios_integration_tests.sh ${{ steps.simulator.outputs.udid }}
-          integration_test/app_smoke_test.dart
           integration_test/dictionary_search_flow_test.dart
           integration_test/vocabulary_lifecycle_test.dart
           integration_test/settings_persistence_test.dart
@@ -118,20 +122,22 @@ jobs:
           integration_test/dictionary_import_flow_test.dart
           integration_test/vocabulary_csv_export_test.dart
           integration_test/library_import_flow_test.dart
-          integration_test/orphan_sweep_flow_test.dart
           integration_test/collections_flow_test.dart
           integration_test/mecab_enhanced_dict_upgrade_test.dart
           integration_test/epub_furigana_export_flow_test.dart
           integration_test/furigana_generator_flow_test.dart
           integration_test/manga_word_segmentation_test.dart
+          integration_test/server_sync_flow_test.dart
+          integration_test/epub_manga_convert_flow_test.dart
+          --
+          integration_test/app_smoke_test.dart
+          integration_test/orphan_sweep_flow_test.dart
           integration_test/reader_indesign_vertical_epub_test.dart
           integration_test/reader_scroll_view_vertical_test.dart
           integration_test/reader_scroll_view_horizontal_test.dart
           integration_test/reader_scroll_view_resume_test.dart
           integration_test/ios_full_backup_test.dart
           integration_test/reader_resume_reopen_test.dart
-          integration_test/server_sync_flow_test.dart
-          integration_test/epub_manga_convert_flow_test.dart
           integration_test/vision_ocr_test.dart
           integration_test/free_books_flow_test.dart
           integration_test/pdf_import_flow_test.dart
