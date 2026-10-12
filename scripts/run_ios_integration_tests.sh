@@ -6,6 +6,9 @@
 #
 # One file at a time with a watchdog each: a failing integration test can leave
 # `flutter test -d <simulator>` hanging forever instead of exiting non-zero.
+# The watchdog's clock starts once the file's app is built: each file rebuilds
+# the app, and on a slow runner that alone can take most of 15 minutes. A build
+# that never finishes is left to the CI job's own time limit.
 set -u
 device="$1"
 shift
@@ -21,16 +24,19 @@ for test in "$@"; do
   if [ $(((index - 1) % ${shard#*/})) -ne $((${shard%/*} - 1)) ]; then continue; fi
   echo "::group::$test"
   for attempt in 1 2; do
+    : > "$log" # no "Xcode build done" left over from the previous file
     flutter test "$test" -d "$device" --no-pub \
       --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded > >(tee "$log") 2>&1 &
     pid=$!
     (
+      # Stood down while the app builds: TERM's default action ends this.
+      until grep -q "Xcode build done" "$log"; do sleep 5; done
       sleep "$limit" &
       sleeper=$!
       # Stood down: leave without touching the test's (by now reusable) pid.
       trap 'kill "$sleeper" 2>/dev/null; exit 0' TERM
       wait "$sleeper"
-      echo "watchdog: $test ran longer than ${limit}s, stopping it"
+      echo "watchdog: $test ran longer than ${limit}s after its build, stopping it"
       pkill -P "$pid"
       kill "$pid"
     ) &

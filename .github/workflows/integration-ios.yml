@@ -39,15 +39,17 @@ jobs:
     timeout-minutes: 120
     # On a runner every file costs five to six minutes (each one rebuilds the
     # app), so the list is spread over parallel jobs; all of it in one job
-    # ran past two hours.
+    # ran past two hours. Four: macOS runners are free for this public repo,
+    # but GitHub Free runs at most five macOS jobs at once, and a PR also
+    # starts build-ios-pr.yml.
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4]
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      IOS_IT_SHARD: ${{ matrix.shard }}/3
+      IOS_IT_SHARD: ${{ matrix.shard }}/4
 
     steps:
       - uses: actions/checkout@v4
@@ -94,13 +96,6 @@ jobs:
           xcrun simctl boot "$udid"
           xcrun simctl bootstatus "$udid" -b
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
-
-      # The first test file would otherwise pay for the cold Xcode build
-      # (pods, Swift packages, native hooks: over ten minutes on a runner) and
-      # run into its watchdog. Build once here; each file then rebuilds only
-      # its own entry point.
-      - name: Warm up the simulator build
-        run: flutter build ios --simulator --debug --no-pub
 
       # One file at a time with a watchdog each (see the script): a failing
       # iOS integration test can hang instead of failing. Every file listed
