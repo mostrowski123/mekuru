@@ -232,6 +232,7 @@ class BackupSerializer {
       'overrideVerticalText': entry.overrideVerticalText,
       'overrideReadingDirection': entry.overrideReadingDirection,
       'furiganaMode': entry.furiganaMode,
+      'mangaSpreadShift': entry.mangaSpreadShift,
       'collections': entry.collections
           .map((c) => {'name': c.name, 'position': c.position})
           .toList(),
@@ -379,6 +380,7 @@ class BackupSerializer {
       overrideVerticalText: item['overrideVerticalText'] as bool?,
       overrideReadingDirection: item['overrideReadingDirection'] as String?,
       furiganaMode: item['furiganaMode'] as String?,
+      mangaSpreadShift: item['mangaSpreadShift'] as bool?,
       collections: [
         for (final c in item['collections'] as List? ?? const [])
           _decodeCollectionRef(c),

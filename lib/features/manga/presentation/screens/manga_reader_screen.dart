@@ -124,6 +124,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     ),
   );
 
+  /// This book's "Shift pairs by one page" (Spread view).
+  late final _spreadShift = ValueNotifier(
+    widget.book.mangaSpreadShift ?? false,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -147,6 +152,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     // Captured here because dispose() calls it after `ref` is unusable.
     _brightnessNotifier = ref.read(readerBrightnessProvider.notifier);
     _bookDirection.addListener(_onBookDirectionPicked);
+    _spreadShift.addListener(_onSpreadShiftPicked);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
@@ -174,6 +180,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _seekPrecacheHoldTimer?.cancel();
     _pageController.dispose();
     _bookDirection.dispose();
+    _spreadShift.dispose();
     unawaited(_brightnessNotifier.resetBrightness());
     WakelockPlus.disable();
     unawaited(setReaderSystemBarsVisible(true));
@@ -746,6 +753,15 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     );
   }
 
+  void _onSpreadShiftPicked() {
+    setState(() {});
+    unawaited(
+      ref
+          .read(bookRepositoryProvider)
+          .updateMangaSpreadShift(widget.book.id, _spreadShift.value),
+    );
+  }
+
   void _handleTap(
     TapUpDetails details,
     int totalPages,
@@ -812,6 +828,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           unawaited(_openAllSettingsFromReader());
         },
         bookDirection: _bookDirection,
+        spreadShift: _spreadShift,
       ),
     );
   }
@@ -1250,6 +1267,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                     mokuroBook.pages,
                     isRtl: isRtl,
                     detectWidePages: detectSpreads,
+                    shift: _spreadShift.value,
                   )
                 : <PageSpread>[];
 

@@ -25,6 +25,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
     required this.onSettingChanged,
     this.onOpenAllSettings,
     required this.bookDirection,
+    required this.spreadShift,
   });
 
   /// Whether this book already has computed crop bounds (enables re-run).
@@ -47,6 +48,9 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
   /// This book's own page direction; see [MangaReadingDirectionRow].
   final ValueNotifier<ReaderDirection?> bookDirection;
 
+  /// This book's "Shift pairs by one page", shown in Spread view only.
+  final ValueNotifier<bool> spreadShift;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
@@ -66,6 +70,20 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
           onSettingChanged: onSettingChanged,
           bookDirection: bookDirection,
         ),
+        if (settings.mangaViewMode == MangaViewMode.twoPageSpread)
+          ValueListenableBuilder(
+            valueListenable: spreadShift,
+            builder: (_, shift, _) => SettingsSwitchRow(
+              icon: Icons.swap_horiz,
+              title: l10n.mangaShiftSpreadsTitle,
+              subtitle: l10n.mangaShiftSpreadsSubtitle,
+              value: shift,
+              onChanged: (value) {
+                spreadShift.value = value;
+                onSettingChanged('shift_spreads', value);
+              },
+            ),
+          ),
 
         // ── Display ──
         SettingsSectionHeader.sheet(title: l10n.readerSettingsSectionDisplay),

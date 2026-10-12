@@ -63,4 +63,8 @@ class Books extends Table {
   /// `tadoku:<book id>`; null for every other book. Free books find their
   /// library copy by it, never by title: hundreds of Aozora works share one.
   TextColumn get sourceId => text().nullable()();
+
+  /// Manga: Spread view pairs pages one page later ("Shift pairs by one
+  /// page"), for books whose pages pair up wrongly. Null is off.
+  BoolColumn get mangaSpreadShift => boolean().nullable()();
 }

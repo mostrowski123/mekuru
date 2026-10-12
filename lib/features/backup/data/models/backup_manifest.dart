@@ -163,6 +163,10 @@ class BackupBookEntry {
   /// Per-book furigana mode override (FuriganaMode storage value), null =
   /// follow the global setting.
   final String? furiganaMode;
+
+  /// Manga Spread view shift (Books.mangaSpreadShift); null in backups made
+  /// before it existed.
+  final bool? mangaSpreadShift;
   final List<BackupBookmarkEntry> bookmarks;
   final List<BackupHighlightEntry> highlights;
 
@@ -186,6 +190,7 @@ class BackupBookEntry {
     this.overrideVerticalText,
     this.overrideReadingDirection,
     this.furiganaMode,
+    this.mangaSpreadShift,
     required this.bookmarks,
     required this.highlights,
     this.collections = const [],
@@ -208,6 +213,7 @@ class BackupBookEntry {
         overrideVerticalText: overrideVerticalText,
         overrideReadingDirection: overrideReadingDirection,
         furiganaMode: furiganaMode,
+        mangaSpreadShift: mangaSpreadShift,
         bookmarks: bookmarks,
         highlights: highlights,
         collections: collections,

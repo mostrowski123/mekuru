@@ -368,6 +368,7 @@ class RestoreService {
         overrideVerticalText: Value(entry.overrideVerticalText),
         overrideReadingDirection: Value(entry.overrideReadingDirection),
         furiganaMode: Value(entry.furiganaMode),
+        mangaSpreadShift: Value(entry.mangaSpreadShift),
         serverConnectionId: entry.serverLink != null
             ? Value(entry.serverLink!.connectionId)
             : const Value.absent(),

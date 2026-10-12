@@ -839,6 +839,12 @@ class BookRepository {
         BooksCompanion(overrideReadingDirection: Value(direction)),
       );
 
+  /// Saves a manga's "Shift pairs by one page" choice (Spread view).
+  Future<void> updateMangaSpreadShift(int bookId, bool shift) =>
+      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+        BooksCompanion(mangaSpreadShift: Value(shift)),
+      );
+
   /// Save per-book display overrides (verticalText, readingDirection,
   /// and furiganaMode).
   ///

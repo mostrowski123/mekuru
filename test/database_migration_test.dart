@@ -597,6 +597,36 @@ void main() {
     expect((await repo.getBookById(bookId))!.sourceId, 'aozora:1567');
   });
 
+  test('adds books.manga_spread_shift at schema 26', () async {
+    final tempDir = await Directory.systemTemp.createTemp('mekuru_shift_');
+    addTearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final dbFile = File('${tempDir.path}/mekuru.sqlite');
+    final seedDb = AppDatabase(NativeDatabase(dbFile));
+    final bookId = await seedDb
+        .into(seedDb.books)
+        .insert(BooksCompanion.insert(title: '漫画', filePath: '/books/1'));
+    await seedDb.close();
+
+    // Rewind to v25: no manga_spread_shift column.
+    final legacyDb = sqlite.sqlite3.open(dbFile.path);
+    legacyDb.execute('PRAGMA user_version = 25;');
+    legacyDb.execute('ALTER TABLE books DROP COLUMN manga_spread_shift;');
+    legacyDb.close();
+
+    final migratedDb = AppDatabase(NativeDatabase(dbFile));
+    addTearDown(migratedDb.close);
+    final repo = BookRepository(migratedDb);
+    expect((await repo.getBookById(bookId))!.mangaSpreadShift, null);
+
+    await repo.updateMangaSpreadShift(bookId, true);
+    expect((await repo.getBookById(bookId))!.mangaSpreadShift, isTrue);
+  });
+
   test(
     'heals a schema 23 database that never ran the server sync DDL',
     () async {

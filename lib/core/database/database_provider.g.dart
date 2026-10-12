@@ -269,6 +269,20 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _mangaSpreadShiftMeta = const VerificationMeta(
+    'mangaSpreadShift',
+  );
+  @override
+  late final GeneratedColumn<bool> mangaSpreadShift = GeneratedColumn<bool>(
+    'manga_spread_shift',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("manga_spread_shift" IN (0, 1))',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -294,6 +308,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     lastReadHref,
     lastReadProgression,
     sourceId,
+    mangaSpreadShift,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -488,6 +503,15 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
       );
     }
+    if (data.containsKey('manga_spread_shift')) {
+      context.handle(
+        _mangaSpreadShiftMeta,
+        mangaSpreadShift.isAcceptableOrUnknown(
+          data['manga_spread_shift']!,
+          _mangaSpreadShiftMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -589,6 +613,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.string,
         data['${effectivePrefix}source_id'],
       ),
+      mangaSpreadShift: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}manga_spread_shift'],
+      ),
     );
   }
 
@@ -659,6 +687,10 @@ class Book extends DataClass implements Insertable<Book> {
   /// `tadoku:<book id>`; null for every other book. Free books find their
   /// library copy by it, never by title: hundreds of Aozora works share one.
   final String? sourceId;
+
+  /// Manga: Spread view pairs pages one page later ("Shift pairs by one
+  /// page"), for books whose pages pair up wrongly. Null is off.
+  final bool? mangaSpreadShift;
   const Book({
     required this.id,
     required this.title,
@@ -683,6 +715,7 @@ class Book extends DataClass implements Insertable<Book> {
     this.lastReadHref,
     this.lastReadProgression,
     this.sourceId,
+    this.mangaSpreadShift,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -746,6 +779,9 @@ class Book extends DataClass implements Insertable<Book> {
     if (!nullToAbsent || sourceId != null) {
       map['source_id'] = Variable<String>(sourceId);
     }
+    if (!nullToAbsent || mangaSpreadShift != null) {
+      map['manga_spread_shift'] = Variable<bool>(mangaSpreadShift);
+    }
     return map;
   }
 
@@ -806,6 +842,9 @@ class Book extends DataClass implements Insertable<Book> {
       sourceId: sourceId == null && nullToAbsent
           ? const Value.absent()
           : Value(sourceId),
+      mangaSpreadShift: mangaSpreadShift == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mangaSpreadShift),
     );
   }
 
@@ -848,6 +887,7 @@ class Book extends DataClass implements Insertable<Book> {
         json['lastReadProgression'],
       ),
       sourceId: serializer.fromJson<String?>(json['sourceId']),
+      mangaSpreadShift: serializer.fromJson<bool?>(json['mangaSpreadShift']),
     );
   }
   @override
@@ -881,6 +921,7 @@ class Book extends DataClass implements Insertable<Book> {
       'lastReadHref': serializer.toJson<String?>(lastReadHref),
       'lastReadProgression': serializer.toJson<double?>(lastReadProgression),
       'sourceId': serializer.toJson<String?>(sourceId),
+      'mangaSpreadShift': serializer.toJson<bool?>(mangaSpreadShift),
     };
   }
 
@@ -908,6 +949,7 @@ class Book extends DataClass implements Insertable<Book> {
     Value<String?> lastReadHref = const Value.absent(),
     Value<double?> lastReadProgression = const Value.absent(),
     Value<String?> sourceId = const Value.absent(),
+    Value<bool?> mangaSpreadShift = const Value.absent(),
   }) => Book(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -948,6 +990,9 @@ class Book extends DataClass implements Insertable<Book> {
         ? lastReadProgression.value
         : this.lastReadProgression,
     sourceId: sourceId.present ? sourceId.value : this.sourceId,
+    mangaSpreadShift: mangaSpreadShift.present
+        ? mangaSpreadShift.value
+        : this.mangaSpreadShift,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -1004,6 +1049,9 @@ class Book extends DataClass implements Insertable<Book> {
           ? data.lastReadProgression.value
           : this.lastReadProgression,
       sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      mangaSpreadShift: data.mangaSpreadShift.present
+          ? data.mangaSpreadShift.value
+          : this.mangaSpreadShift,
     );
   }
 
@@ -1032,7 +1080,8 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('lastReadHref: $lastReadHref, ')
           ..write('lastReadProgression: $lastReadProgression, ')
-          ..write('sourceId: $sourceId')
+          ..write('sourceId: $sourceId, ')
+          ..write('mangaSpreadShift: $mangaSpreadShift')
           ..write(')'))
         .toString();
   }
@@ -1062,6 +1111,7 @@ class Book extends DataClass implements Insertable<Book> {
     lastReadHref,
     lastReadProgression,
     sourceId,
+    mangaSpreadShift,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1089,7 +1139,8 @@ class Book extends DataClass implements Insertable<Book> {
           other.lastSyncedAt == this.lastSyncedAt &&
           other.lastReadHref == this.lastReadHref &&
           other.lastReadProgression == this.lastReadProgression &&
-          other.sourceId == this.sourceId);
+          other.sourceId == this.sourceId &&
+          other.mangaSpreadShift == this.mangaSpreadShift);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -1116,6 +1167,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<String?> lastReadHref;
   final Value<double?> lastReadProgression;
   final Value<String?> sourceId;
+  final Value<bool?> mangaSpreadShift;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -1140,6 +1192,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.lastReadHref = const Value.absent(),
     this.lastReadProgression = const Value.absent(),
     this.sourceId = const Value.absent(),
+    this.mangaSpreadShift = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -1165,6 +1218,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.lastReadHref = const Value.absent(),
     this.lastReadProgression = const Value.absent(),
     this.sourceId = const Value.absent(),
+    this.mangaSpreadShift = const Value.absent(),
   }) : title = Value(title),
        filePath = Value(filePath);
   static Insertable<Book> custom({
@@ -1191,6 +1245,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<String>? lastReadHref,
     Expression<double>? lastReadProgression,
     Expression<String>? sourceId,
+    Expression<bool>? mangaSpreadShift,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1222,6 +1277,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (lastReadProgression != null)
         'last_read_progression': lastReadProgression,
       if (sourceId != null) 'source_id': sourceId,
+      if (mangaSpreadShift != null) 'manga_spread_shift': mangaSpreadShift,
     });
   }
 
@@ -1249,6 +1305,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<String?>? lastReadHref,
     Value<double?>? lastReadProgression,
     Value<String?>? sourceId,
+    Value<bool?>? mangaSpreadShift,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -1276,6 +1333,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       lastReadHref: lastReadHref ?? this.lastReadHref,
       lastReadProgression: lastReadProgression ?? this.lastReadProgression,
       sourceId: sourceId ?? this.sourceId,
+      mangaSpreadShift: mangaSpreadShift ?? this.mangaSpreadShift,
     );
   }
 
@@ -1359,6 +1417,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (sourceId.present) {
       map['source_id'] = Variable<String>(sourceId.value);
     }
+    if (mangaSpreadShift.present) {
+      map['manga_spread_shift'] = Variable<bool>(mangaSpreadShift.value);
+    }
     return map;
   }
 
@@ -1387,7 +1448,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('lastReadHref: $lastReadHref, ')
           ..write('lastReadProgression: $lastReadProgression, ')
-          ..write('sourceId: $sourceId')
+          ..write('sourceId: $sourceId, ')
+          ..write('mangaSpreadShift: $mangaSpreadShift')
           ..write(')'))
         .toString();
   }
@@ -7134,6 +7196,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<String?> lastReadHref,
       Value<double?> lastReadProgression,
       Value<String?> sourceId,
+      Value<bool?> mangaSpreadShift,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -7160,6 +7223,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<String?> lastReadHref,
       Value<double?> lastReadProgression,
       Value<String?> sourceId,
+      Value<bool?> mangaSpreadShift,
     });
 
 final class $$BooksTableReferences
@@ -7343,6 +7407,11 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<String> get sourceId => $composableBuilder(
     column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get mangaSpreadShift => $composableBuilder(
+    column: $table.mangaSpreadShift,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7545,6 +7614,11 @@ class $$BooksTableOrderingComposer
     column: $table.sourceId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get mangaSpreadShift => $composableBuilder(
+    column: $table.mangaSpreadShift,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableAnnotationComposer
@@ -7654,6 +7728,11 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<String> get sourceId =>
       $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<bool> get mangaSpreadShift => $composableBuilder(
+    column: $table.mangaSpreadShift,
+    builder: (column) => column,
+  );
 
   Expression<T> bookmarksRefs<T extends Object>(
     Expression<T> Function($$BookmarksTableAnnotationComposer a) f,
@@ -7786,6 +7865,7 @@ class $$BooksTableTableManager
                 Value<String?> lastReadHref = const Value.absent(),
                 Value<double?> lastReadProgression = const Value.absent(),
                 Value<String?> sourceId = const Value.absent(),
+                Value<bool?> mangaSpreadShift = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 title: title,
@@ -7810,6 +7890,7 @@ class $$BooksTableTableManager
                 lastReadHref: lastReadHref,
                 lastReadProgression: lastReadProgression,
                 sourceId: sourceId,
+                mangaSpreadShift: mangaSpreadShift,
               ),
           createCompanionCallback:
               ({
@@ -7836,6 +7917,7 @@ class $$BooksTableTableManager
                 Value<String?> lastReadHref = const Value.absent(),
                 Value<double?> lastReadProgression = const Value.absent(),
                 Value<String?> sourceId = const Value.absent(),
+                Value<bool?> mangaSpreadShift = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 title: title,
@@ -7860,6 +7942,7 @@ class $$BooksTableTableManager
                 lastReadHref: lastReadHref,
                 lastReadProgression: lastReadProgression,
                 sourceId: sourceId,
+                mangaSpreadShift: mangaSpreadShift,
               ),
           withReferenceMapper: (p0) => p0
               .map(

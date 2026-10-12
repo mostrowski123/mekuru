@@ -112,6 +112,7 @@ class BackupService {
           overrideVerticalText: book.overrideVerticalText,
           overrideReadingDirection: book.overrideReadingDirection,
           furiganaMode: book.furiganaMode,
+          mangaSpreadShift: book.mangaSpreadShift,
           collections: collectionRefsByBook[book.id] ?? const [],
           serverLink: book.serverConnectionId != null && book.remoteIds != null
               ? BackupServerLink(

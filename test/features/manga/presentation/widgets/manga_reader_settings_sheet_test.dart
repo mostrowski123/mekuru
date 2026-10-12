@@ -18,6 +18,7 @@ Future<ProviderContainer> _pumpSheet(
   void Function(String, Object)? onSettingChanged,
   ValueChanged<bool>? onAutoCropToggled,
   ValueNotifier<ReaderDirection?>? bookDirection,
+  ValueNotifier<bool>? spreadShift,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -41,6 +42,7 @@ Future<ProviderContainer> _pumpSheet(
             onUnlockPro: () {},
             onSettingChanged: onSettingChanged ?? (_, _) {},
             bookDirection: bookDirection ?? ValueNotifier(null),
+            spreadShift: spreadShift ?? ValueNotifier(false),
           ),
         ),
       ),
@@ -143,5 +145,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(container.read(readerSettingsProvider).mangaDetectSpreads, isFalse);
     expect(changes, contains('detect_spreads'));
+  });
+
+  testWidgets('shifting pairs shows only in Spread view, for this book', (
+    tester,
+  ) async {
+    final shift = ValueNotifier(false);
+    addTearDown(shift.dispose);
+    final container = await _pumpSheet(tester, spreadShift: shift);
+    final row = find.widgetWithText(
+      SettingsSwitchRow,
+      'Shift pairs by one page',
+    );
+    expect(row, findsNothing);
+
+    container
+        .read(readerSettingsProvider.notifier)
+        .setMangaViewMode(MangaViewMode.twoPageSpread);
+    await tester.pumpAndSettle();
+    await scrollSettingsTo(tester, row);
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+
+    expect(shift.value, isTrue);
   });
 }

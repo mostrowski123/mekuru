@@ -83,6 +83,10 @@ class AppDatabase extends _$AppDatabase {
         'ALTER TABLE books ADD COLUMN last_read_progression REAL NULL',
     // Free-book source (schema 25), repair-only like v23/v24.
     'source_id': 'ALTER TABLE books ADD COLUMN source_id TEXT NULL',
+    // Manga Spread view shift (schema 26), repair-only like v25.
+    'manga_spread_shift':
+        'ALTER TABLE books ADD COLUMN manga_spread_shift INTEGER NULL '
+        'CHECK (manga_spread_shift IN (0, 1))',
   };
 
   /// Columns added to server_connections after schema 23 shipped. The table
@@ -101,7 +105,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// The schema this build writes. Static so code that must not open a
   /// database (the boot-time full restore) can still compare versions.
-  static const int latestSchemaVersion = 25;
+  static const int latestSchemaVersion = 26;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -216,10 +220,11 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(bookCollections, bookCollections.position);
       }
       // v18 (search_text), v20 (has_vertical_css), v23 (server sync), v24
-      // (dictionary revision, dictionary_media) and v25 (books.source_id)
-      // have no migration blocks: the repair pass in beforeOpen adds the
-      // columns via the repair-column maps and creates the tables, which also
-      // covers databases that missed migrations entirely.
+      // (dictionary revision, dictionary_media), v25 (books.source_id) and
+      // v26 (books.manga_spread_shift) have no migration blocks: the repair
+      // pass in beforeOpen adds the columns via the repair-column maps and
+      // creates the tables, which also covers databases that missed
+      // migrations entirely.
     },
     beforeOpen: (details) async {
       await _repairMissingColumns(
