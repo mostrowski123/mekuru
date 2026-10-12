@@ -1,21 +1,24 @@
 # Importing Manga
 
-Add manga to your library from a mokuro folder or a CBZ file, so you can read it and tap its words.
+Add manga to your library from a mokuro folder or a manga archive (a CBZ, CBR, ZIP or RAR file), so you can read it and tap its words.
 
 ## Before you start
 
 Mekuru imports manga in two forms:
 
 - **Mokuro folder.** Mokuro is a free tool you run on a computer. It reads the text on manga pages with OCR (reading the text in an image) and saves that text next to the page images. Mekuru uses this text, so you can tap words as soon as the manga is imported.
-- **CBZ archive.** A CBZ file is a `.zip` file of comic page images, renamed to `.cbz`. It usually has pictures only, so you can't tap words until OCR reads the text. OCR in Mekuru needs Pro. A CBZ that also holds mokuro data, such as one exported from Mekuru, keeps its text.
+- **Manga archive.** A CBZ file is a `.zip` file of manga page images, renamed to `.cbz`. A CBR file is the same thing as a `.rar` file. Mekuru imports all four (`.cbz`, `.cbr`, `.zip` and `.rar`). An archive usually has pictures only, so you can't tap words until OCR reads the text. OCR in Mekuru needs Pro. An archive that also holds mokuro data, such as a CBZ exported from Mekuru, keeps its text.
 
-| | Mokuro folder | CBZ archive |
+| | Mokuro folder | Manga archive |
 |-|-|-|
-| You choose | A folder | One or more `.cbz` files |
+| You choose | A folder, then one or more volumes in it | One or more `.cbz`, `.cbr`, `.zip` or `.rar` files |
 | Tap words right away | Yes | Only if it holds mokuro data |
 | Needs Pro | No | Only to run OCR |
 
 Pages can be JPEG, PNG, WebP, GIF, BMP or AVIF images.
+
+!!! tip "A folder of page images"
+    To import a folder that holds only page images, zip the folder on your computer or phone, then import the `.zip` file.
 
 ## Import a mokuro folder
 
@@ -47,24 +50,32 @@ To import:
 3. Tap **Import Manga**.
 4. Tap **Mokuro folder**.
 5. Choose the folder that holds the `.mokuro` or `.html` file. Don't choose the images folder.
-6. Mekuru lists the manga files it found. Tap the one you want.
+6. Mekuru lists the manga files it found, with one file for each volume already ticked. Tick the volumes you want, then tap **Import**.
 
-The manga appears in your library, and its words are ready to tap. To learn how to make mokuro files, tap **What is Mokuro?** under **Mokuro folder**.
+Each volume appears in your library, and its words are ready to tap. To learn how to make mokuro files, tap **What is Mokuro?** under **Mokuro folder**.
 
 !!! note "On iPhone and iPad"
     Mekuru copies the pages into the app, so the manga uses storage space on your device. You can move or delete the original folder afterwards.
 
 On Android, Mekuru reads the pages from the folder you chose. Keep that folder where it is. If you move, rename or delete it, the pages go missing in Mekuru.
 
-## Import a CBZ file
+## Import a manga archive
 
 1. Open the **Library** tab.
 2. Tap **+**.
 3. Tap **Import Manga**.
-4. Tap **CBZ archive**.
-5. Choose one or more `.cbz` files.
+4. Tap **Manga archive**.
+5. Choose one or more `.cbz`, `.cbr`, `.zip` or `.rar` files.
 
-The manga appears in your library. Mekuru names it after the file.
+Each manga appears in your library. Mekuru names it after its file.
+
+Mekuru can't import:
+
+- Password-protected archives.
+- RAR archives split into parts (`.part1.rar`, `.part2.rar` and so on).
+- Solid RAR archives made with RAR 4 or older. Solid RAR files from RAR 5 import as usual.
+
+To import one of these, extract the pages on a computer and put them in a `.zip` or `.cbz` file.
 
 ## Make the words tappable
 
@@ -103,6 +114,8 @@ On Android, you can't export manga imported from a mokuro folder. Mekuru says **
 
 - **No .mokuro or .html files found in the selected folder:** you chose the wrong folder. Choose the folder that holds the `.mokuro` or `.html` file, not the images folder inside it.
 - **Pages are missing (Android):** the mokuro folder was moved, renamed or deleted. Import the manga again from its new place.
+- **This file is password-protected:** Mekuru can't open the archive. Extract the pages with the password, then import them as a `.zip` file.
+- **This RAR file uses solid compression from an older version of RAR, which Mekuru can't open:** extract the pages on a computer, put them in a `.zip` or `.cbz` file, and import that.
 
 ## Related pages
 

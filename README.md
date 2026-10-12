@@ -6,7 +6,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-Mekuru is a Japanese-first EPUB and manga reader for Android and iOS, built with Flutter for language learners and native readers. It combines vertical EPUB reading, Mokuro and CBZ manga support, offline dictionaries, and vocabulary tools in one app.
+Mekuru is a Japanese-first EPUB and manga reader for Android and iOS, built with Flutter for language learners and native readers. It combines vertical EPUB reading, Mokuro, CBZ and CBR manga support, offline dictionaries, and vocabulary tools in one app.
 
 <p align="center">
   <img src="docs/documentation/screenshots/library-screen-imported-books-and-manga.jpg" alt="Library" width="200">
@@ -50,7 +50,7 @@ Every GitHub release also includes a second installable APK, `app-parallel-relea
 ## Features
 
 - **EPUB Reader**: Vertical or horizontal text, paged or scroll view, RTL or LTR page flow, Mincho or Gothic fonts, automatic progress restore, bookmarks, and per-book reader settings
-- **Manga Reader**: Mokuro and CBZ support with single-page, spread, and scroll modes; CBZ archives that carry `.mokuro` data get tap-to-lookup on import
+- **Manga Reader**: Mokuro, CBZ/ZIP and CBR/RAR support with single-page, spread, and scroll modes; archives that carry `.mokuro` data get tap-to-lookup on import
 - **Manga OCR**: On-device recognition that runs offline (Android: manga-ocr and Comic Text Detector, models downloaded separately; iOS: Apple's text recognition, plus an optional manga-ocr model pack) or a self-hosted OCR server — scan the visible page from the reader or a whole manga from the library (Pro)
 - **Manga Tools**: Convert image-only EPUBs into manga, and export any manga as a CBZ with its OCR data embedded
 - **PDF Import**: Text PDFs keep tappable text; scanned PDFs open as page images that on-device OCR can read, with the NDL text-line model for the long lines of scanned graded readers

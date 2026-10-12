@@ -47,10 +47,10 @@ A progress circle shows while the book downloads. You can leave the screen. When
 Mekuru reads these formats from a server:
 
 - EPUB books.
-- CBZ files (a zip of comic page images).
+- CBZ and CBR files (a zip or RAR file of manga page images).
 - PDF files. After the download, Mekuru turns each page into an image. For a long PDF this can take a few minutes.
 
-Comics in other archive formats, such as CBR, cannot be imported.
+Comics in other archive formats, such as CB7, cannot be imported. Neither can password-protected archives or solid RAR files made with RAR 4 or older.
 
 ### A book you already have
 
