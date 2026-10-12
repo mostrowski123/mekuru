@@ -1128,6 +1128,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       mangaAutoCropEnabled,
       _, // readerAnimations, read through _animatePageTurns
       volumeKeys,
+      detectSpreads,
     ) = ref.watch(
       readerSettingsProvider.select(
         (s) => (
@@ -1136,6 +1137,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           s.mangaAutoCrop,
           s.readerAnimations,
           s.volumeKeyPageTurn,
+          s.mangaDetectSpreads,
         ),
       ),
     );
@@ -1244,7 +1246,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
             final direction = _bookDirection.value ?? globalDirection;
             final isRtl = direction == ReaderDirection.rtl;
             final spreads = viewMode == MangaViewMode.twoPageSpread
-                ? computeSpreads(totalPages, isRtl: isRtl)
+                ? computeSpreads(
+                    mokuroBook.pages,
+                    isRtl: isRtl,
+                    detectWidePages: detectSpreads,
+                  )
                 : <PageSpread>[];
 
             _visiblePages = _visiblePageIndexes(viewMode, spreads);

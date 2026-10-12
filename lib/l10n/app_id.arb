@@ -3233,5 +3233,9 @@
   "readerSearchHint": "Cari di buku ini",
   "readerSearchNoResults": "Tidak ada hasil di buku ini",
   "readerSearchResultCount": "{count, plural, =1{1 hasil} other{{count} hasil}}",
-  "readerSearchResultsCapped": "Menampilkan {count} hasil pertama"
+  "readerSearchResultsCapped": "Menampilkan {count} hasil pertama",
+  "mangaDetectSpreadsTitle": "Deteksi halaman ganda",
+  "mangaDetectSpreadsSubtitle": "Tampilkan halaman lebar sendiri di tampilan Dua Halaman",
+  "mangaShiftSpreadsTitle": "Geser pasangan satu halaman",
+  "mangaShiftSpreadsSubtitle": "Untuk buku yang pasangan halamannya salah"
 }

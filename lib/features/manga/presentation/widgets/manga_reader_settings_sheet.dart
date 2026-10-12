@@ -72,6 +72,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
         ReaderBrightnessRow(onSettingChanged: onSettingChanged),
         const SizedBox(height: 8),
         MangaViewModeRow(onSettingChanged: onSettingChanged),
+        MangaDetectSpreadsRow(onSettingChanged: onSettingChanged),
 
         // ── Reading ──
         SettingsSectionHeader.sheet(title: l10n.mangaSettingsSectionReading),

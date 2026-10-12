@@ -3233,5 +3233,9 @@
   "readerSearchHint": "搜索本书",
   "readerSearchNoResults": "本书中没有匹配项",
   "readerSearchResultCount": "{count, plural, =1{1 个匹配项} other{{count} 个匹配项}}",
-  "readerSearchResultsCapped": "仅显示前 {count} 个匹配项"
+  "readerSearchResultsCapped": "仅显示前 {count} 个匹配项",
+  "mangaDetectSpreadsTitle": "检测跨页",
+  "mangaDetectSpreadsSubtitle": "在双页模式中单独显示宽页面",
+  "mangaShiftSpreadsTitle": "配对后移一页",
+  "mangaShiftSpreadsSubtitle": "适用于页面配对错误的书"
 }

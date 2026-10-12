@@ -212,11 +212,14 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
           SettingsSectionHeader(title: l10n.settingsReadingSectionManga),
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: MangaViewModeRow(),
+          ),
+          const MangaDetectSpreadsRow(),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MangaViewModeRow(),
-                SizedBox(height: 16),
                 MangaReadingDirectionRow(),
                 SizedBox(height: 16),
                 MangaEdgeZoneRow(),

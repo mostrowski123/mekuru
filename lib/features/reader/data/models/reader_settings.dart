@@ -228,6 +228,10 @@ class ReaderSettings {
   /// Manga: whether the lookup sheet uses a transparent background.
   final bool mangaTransparentLookup;
 
+  /// Manga: whether Spread view shows wide pages on their own. Off, only
+  /// pages declared as double pages stand alone.
+  final bool mangaDetectSpreads;
+
   /// Whether reader transitions animate: manga page turns and the lookup
   /// sheet in both readers. Disable for e-reader (e-ink) displays, where
   /// transitions ghost.
@@ -261,6 +265,7 @@ class ReaderSettings {
     this.mangaReadingDirection = ReaderDirection.rtl,
     this.mangaAutoCrop = false,
     this.mangaTransparentLookup = true,
+    this.mangaDetectSpreads = true,
     this.readerAnimations = true,
     this.volumeKeyPageTurn = VolumeKeyPageTurn.downNext,
   });
@@ -291,6 +296,7 @@ class ReaderSettings {
     ReaderDirection? mangaReadingDirection,
     bool? mangaAutoCrop,
     bool? mangaTransparentLookup,
+    bool? mangaDetectSpreads,
     bool? readerAnimations,
     VolumeKeyPageTurn? volumeKeyPageTurn,
   }) {
@@ -325,6 +331,7 @@ class ReaderSettings {
       mangaAutoCrop: mangaAutoCrop ?? this.mangaAutoCrop,
       mangaTransparentLookup:
           mangaTransparentLookup ?? this.mangaTransparentLookup,
+      mangaDetectSpreads: mangaDetectSpreads ?? this.mangaDetectSpreads,
       readerAnimations: readerAnimations ?? this.readerAnimations,
       volumeKeyPageTurn: volumeKeyPageTurn ?? this.volumeKeyPageTurn,
     );

@@ -233,6 +233,14 @@ void main() {
       ]);
       expect(merged['pages'][0]['contentBounds'], [0, 0, 80, 80]);
     });
+    test('a crop update keeps the declared spread', () {
+      before['pages'][0]['spread'] = 'center';
+      final after = copy(before);
+      after['pages'][0]['contentBounds'] = [0, 0, 80, 80];
+      final merged = MangaCacheStore.mergeJson(copy(before), before, after);
+      expect(merged['pages'][0]['spread'], 'center');
+      expect(merged['pages'][0]['contentBounds'], [0, 0, 80, 80]);
+    });
     test('replacement generation rejects stale async writes', () {
       final current = copy(before)..['ocrGeneration'] = 'v2';
       expect(

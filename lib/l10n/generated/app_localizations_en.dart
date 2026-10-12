@@ -4496,4 +4496,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String readerSearchResultsCapped({required int count}) {
     return 'Showing the first $count matches';
   }
+
+  @override
+  String get mangaDetectSpreadsTitle => 'Detect two-page spreads';
+
+  @override
+  String get mangaDetectSpreadsSubtitle =>
+      'Show wide pages on their own in Spread view';
+
+  @override
+  String get mangaShiftSpreadsTitle => 'Shift pairs by one page';
+
+  @override
+  String get mangaShiftSpreadsSubtitle =>
+      'For books whose pages pair up wrongly';
 }

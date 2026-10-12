@@ -34,6 +34,30 @@ class MangaViewModeRow extends ConsumerWidget {
   }
 }
 
+class MangaDetectSpreadsRow extends ConsumerWidget {
+  const MangaDetectSpreadsRow({super.key, this.onSettingChanged});
+
+  final void Function(String setting, Object value)? onSettingChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final detect = ref.watch(
+      readerSettingsProvider.select((s) => s.mangaDetectSpreads),
+    );
+    return SettingsSwitchRow(
+      icon: Icons.import_contacts,
+      title: l10n.mangaDetectSpreadsTitle,
+      subtitle: l10n.mangaDetectSpreadsSubtitle,
+      value: detect,
+      onChanged: (value) {
+        ref.read(readerSettingsProvider.notifier).setMangaDetectSpreads(value);
+        onSettingChanged?.call('detect_spreads', value);
+      },
+    );
+  }
+}
+
 class MangaReadingDirectionRow extends ConsumerWidget {
   const MangaReadingDirectionRow({
     super.key,

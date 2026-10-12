@@ -1,10 +1,11 @@
 // Two-page spread layout calculator for manga reading.
 //
-// Computes how pages should be grouped into spreads (single or two-page)
-// based on total page count and reading direction. Page 0 (cover) is always
-// shown alone; remaining pages are paired sequentially.
+// Computes how pages are grouped into spreads (single or two-page) from
+// their sizes, their declared spread sides, and the reading direction.
 //
-// Pure functions — no Flutter dependencies, fully unit-testable.
+// Pure functions — no Flutter widget dependencies, fully unit-testable.
+
+import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 
 /// A single spread in the manga reader — either one page (cover/trailing)
 /// or two pages side by side.
@@ -47,46 +48,60 @@ class PageSpread {
 /// Compute spread layout for a manga book.
 ///
 /// Rules:
-/// - Page 0 (cover) is always displayed alone.
-/// - Remaining pages are paired sequentially: (1,2), (3,4), etc.
-/// - If a trailing page has no partner, it's shown alone.
+/// - A page declared [MangaPageSpread.center] stands alone, and so does a
+///   wide page (wider than tall) when [detectWidePages] is on.
+/// - A page declared on the opening side (right for right-to-left books,
+///   left otherwise) opens a pair; the next page joins it unless it stands
+///   alone or opens a pair itself. A closing-side page with no opener before
+///   it stands alone.
+/// - Undeclared pages pair up in order: the cover stands alone, then (1,2),
+///   (3,4)…, restarting after a page that stands alone.
+/// - [shift] moves every pair by one page: the cover pairs with page 1, a
+///   run after a lone page starts with a single page, and the declared
+///   sides swap roles.
 /// - For RTL: right page = lower index, left page = higher index.
 /// - For LTR: left page = lower index, right page = higher index.
-List<PageSpread> computeSpreads(int totalPages, {required bool isRtl}) {
-  if (totalPages <= 0) return [];
+List<PageSpread> computeSpreads(
+  List<MokuroPage> pages, {
+  required bool isRtl,
+  bool detectWidePages = true,
+  bool shift = false,
+}) {
+  bool alone(MokuroPage page) =>
+      page.spread == MangaPageSpread.center ||
+      (detectWidePages && page.imgHeight > 0 && page.imgWidth > page.imgHeight);
+  final opener = isRtl != shift ? MangaPageSpread.right : MangaPageSpread.left;
+  final closer = isRtl != shift ? MangaPageSpread.left : MangaPageSpread.right;
 
   final spreads = <PageSpread>[];
-
-  // Cover page always solo — placed on the side matching reading direction.
-  if (isRtl) {
-    spreads.add(const PageSpread(rightPageIndex: 0));
-  } else {
-    spreads.add(const PageSpread(leftPageIndex: 0));
-  }
-
-  // Pair remaining pages
-  int i = 1;
-  while (i < totalPages) {
-    if (i + 1 < totalPages) {
-      final lower = i;
-      final higher = i + 1;
-      if (isRtl) {
-        spreads.add(PageSpread(leftPageIndex: higher, rightPageIndex: lower));
-      } else {
-        spreads.add(PageSpread(leftPageIndex: lower, rightPageIndex: higher));
-      }
-      i += 2;
+  var leadSingle = !shift;
+  var i = 0;
+  while (i < pages.length) {
+    final page = pages[i];
+    final next = i + 1 < pages.length ? pages[i + 1] : null;
+    final single =
+        alone(page) ||
+        page.spread == closer ||
+        (page.spread == null && leadSingle) ||
+        next == null ||
+        alone(next) ||
+        next.spread == opener;
+    if (single) {
+      spreads.add(
+        isRtl ? PageSpread(rightPageIndex: i) : PageSpread(leftPageIndex: i),
+      );
+      leadSingle = alone(page) && shift;
+      i += 1;
     } else {
-      // Trailing odd page — solo
-      if (isRtl) {
-        spreads.add(PageSpread(rightPageIndex: i));
-      } else {
-        spreads.add(PageSpread(leftPageIndex: i));
-      }
-      i++;
+      spreads.add(
+        isRtl
+            ? PageSpread(leftPageIndex: i + 1, rightPageIndex: i)
+            : PageSpread(leftPageIndex: i, rightPageIndex: i + 1),
+      );
+      leadSingle = false;
+      i += 2;
     }
   }
-
   return spreads;
 }
 

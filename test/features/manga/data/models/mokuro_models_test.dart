@@ -109,6 +109,45 @@ void main() {
     });
   });
 
+  group('MokuroPage spread', () {
+    MokuroPage page({MangaPageSpread? spread}) => MokuroPage(
+      pageIndex: 0,
+      imageFileName: 'p1.jpg',
+      imgWidth: 800,
+      imgHeight: 1200,
+      blocks: const [],
+      spread: spread,
+    );
+
+    test('round-trips each value through JSON', () {
+      for (final spread in MangaPageSpread.values) {
+        final json = page(spread: spread).toJson();
+        expect(json['spread'], spread.name);
+        expect(MokuroPage.fromJson(json).spread, spread);
+      }
+    });
+
+    test('is absent from JSON when undeclared, and null when read back', () {
+      final json = page().toJson();
+      expect(json.containsKey('spread'), isFalse);
+      expect(MokuroPage.fromJson(json).spread, isNull);
+    });
+
+    test('an unknown value reads as undeclared', () {
+      final json = page().toJson()..['spread'] = 'both';
+      expect(MokuroPage.fromJson(json).spread, isNull);
+    });
+
+    test('copyWith keeps it', () {
+      final declared = page(spread: MangaPageSpread.left);
+      expect(declared.copyWith(blocks: const []).spread, MangaPageSpread.left);
+      expect(
+        page().copyWith(spread: MangaPageSpread.center).spread,
+        MangaPageSpread.center,
+      );
+    });
+  });
+
   group('MokuroTextBlock.fromOcrJson', () {
     Map<String, dynamic> validBlockJson() => {
       'box': [10, 20, 110, 220],

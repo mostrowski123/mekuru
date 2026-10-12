@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -19,6 +20,9 @@ import 'package:mekuru/shared/widgets/android_saf_image.dart';
 class MangaSpreadView extends StatefulWidget {
   final MokuroBook mokuroBook;
   final List<PageSpread> spreads;
+
+  /// The spread holding the reader's page: shown first, and again whenever
+  /// [spreads] change.
   final int initialSpreadIndex;
   final bool isRtl;
 
@@ -62,6 +66,19 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: widget.initialSpreadIndex);
+  }
+
+  /// New pairs (detection, shift or direction changed) keep the page that
+  /// was on screen: [MangaSpreadView.initialSpreadIndex] is its spread.
+  @override
+  void didUpdateWidget(MangaSpreadView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (listEquals(oldWidget.spreads, widget.spreads)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageController.hasClients) {
+        goToSpread(widget.initialSpreadIndex, animate: false);
+      }
+    });
   }
 
   @override

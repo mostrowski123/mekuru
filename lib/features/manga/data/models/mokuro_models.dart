@@ -131,6 +131,11 @@ class MokuroBook {
   }
 }
 
+/// Where a page sits in a two-page spread, as its source declares it (an
+/// EPUB's `page-spread-*` spine properties, or ComicInfo's DoublePage, which
+/// is [center]). Pages detected as wide on screen are not stored.
+enum MangaPageSpread { left, right, center }
+
 /// A single manga page with its OCR data and computed word positions.
 class MokuroPage {
   final int pageIndex;
@@ -163,6 +168,9 @@ class MokuroPage {
   /// before provenance was recorded; those are treated as IPADIC.
   final String? segmentationDictionary;
 
+  /// The page's declared place in a two-page spread; null when undeclared.
+  final MangaPageSpread? spread;
+
   const MokuroPage({
     required this.pageIndex,
     required this.imageFileName,
@@ -172,6 +180,7 @@ class MokuroPage {
     this.contentBounds,
     this.ocr,
     this.segmentationDictionary,
+    this.spread,
   });
 
   MokuroPage copyWith({
@@ -179,6 +188,7 @@ class MokuroPage {
     Rect? contentBounds,
     String? segmentationDictionary,
     Map<String, dynamic>? ocr,
+    MangaPageSpread? spread,
   }) => MokuroPage(
     pageIndex: pageIndex,
     imageFileName: imageFileName,
@@ -189,6 +199,7 @@ class MokuroPage {
     ocr: ocr ?? this.ocr,
     segmentationDictionary:
         segmentationDictionary ?? this.segmentationDictionary,
+    spread: spread ?? this.spread,
   );
 
   Map<String, dynamic> toJson() => {
@@ -200,6 +211,9 @@ class MokuroPage {
     if (ocr != null) 'ocr': ocr,
     if (segmentationDictionary != null)
       'segmentationDictionary': segmentationDictionary,
+    // Every writer goes through toJson, so a declared spread is never lost:
+    // cache merges drop keys a writer leaves out.
+    if (spread != null) 'spread': spread!.name,
     if (contentBounds != null)
       'contentBounds': [
         contentBounds!.left,
@@ -221,6 +235,7 @@ class MokuroPage {
           .toList(),
       segmentationDictionary: json['segmentationDictionary'] as String?,
       ocr: (json['ocr'] as Map?)?.cast<String, dynamic>(),
+      spread: MangaPageSpread.values.asNameMap()[json['spread']],
       contentBounds: cb != null
           ? Rect.fromLTRB(
               (cb[0] as num).toDouble(),

@@ -127,4 +127,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(changes, contains('view_mode'));
   });
+
+  testWidgets('spread detection switch turns it off', (tester) async {
+    final changes = <String>[];
+    final container = await _pumpSheet(
+      tester,
+      onSettingChanged: (setting, value) => changes.add(setting),
+    );
+    final row = find.widgetWithText(
+      SettingsSwitchRow,
+      'Detect two-page spreads',
+    );
+    await scrollSettingsTo(tester, row);
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    expect(container.read(readerSettingsProvider).mangaDetectSpreads, isFalse);
+    expect(changes, contains('detect_spreads'));
+  });
 }

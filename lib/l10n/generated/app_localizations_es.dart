@@ -4550,4 +4550,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String readerSearchResultsCapped({required int count}) {
     return 'Se muestran las primeras $count coincidencias';
   }
+
+  @override
+  String get mangaDetectSpreadsTitle => 'Detectar páginas dobles';
+
+  @override
+  String get mangaDetectSpreadsSubtitle =>
+      'Muestra solas las páginas anchas en la vista de dos páginas';
+
+  @override
+  String get mangaShiftSpreadsTitle => 'Desplazar las parejas una página';
+
+  @override
+  String get mangaShiftSpreadsSubtitle =>
+      'Para libros cuyas páginas se emparejan mal';
 }

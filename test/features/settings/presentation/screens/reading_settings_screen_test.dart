@@ -81,6 +81,19 @@ void main() {
     expect(tester.widget<SettingsSwitchRow>(splitFinder).onChanged, isNull);
   });
 
+  testWidgets('spread detection writes through', (tester) async {
+    final container = await _pumpScreen(tester);
+    final row = find.widgetWithText(
+      SettingsSwitchRow,
+      'Detect two-page spreads',
+    );
+    await scrollSettingsTo(tester, row);
+    await tester.tap(find.descendant(of: row, matching: find.byType(Switch)));
+    await tester.pumpAndSettle();
+
+    expect(container.read(readerSettingsProvider).mangaDetectSpreads, isFalse);
+  });
+
   testWidgets('volume buttons choice writes through on Android', (
     tester,
   ) async {

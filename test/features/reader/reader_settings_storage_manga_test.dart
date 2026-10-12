@@ -57,6 +57,7 @@ void main() {
           mangaReadingDirection: ReaderDirection.ltr,
           mangaAutoCrop: true,
           mangaTransparentLookup: false,
+          mangaDetectSpreads: false,
         ),
       );
 
@@ -66,6 +67,18 @@ void main() {
       expect(loaded.mangaReadingDirection, ReaderDirection.ltr);
       expect(loaded.mangaAutoCrop, isTrue);
       expect(loaded.mangaTransparentLookup, isFalse);
+      expect(loaded.mangaDetectSpreads, isFalse);
+    });
+
+    test('spread detection is on unless turned off, and backed up', () async {
+      SharedPreferences.setMockInitialValues({'reader.font_size': 24.0});
+      final loaded = await SharedPreferencesReaderSettingsStorage().load();
+      expect(loaded!.mangaDetectSpreads, isTrue);
+      expect(const ReaderSettings().mangaDetectSpreads, isTrue);
+      expect(
+        SharedPreferencesReaderSettingsStorage.allKeys,
+        contains('reader.manga_detect_spreads'),
+      );
     });
 
     test(

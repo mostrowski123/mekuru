@@ -7277,6 +7277,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Showing the first {count} matches'**
   String readerSearchResultsCapped({required int count});
+
+  /// Title of the manga setting that shows wide pages (two-page spreads) on their own in Spread view.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect two-page spreads'**
+  String get mangaDetectSpreadsTitle;
+
+  /// Subtitle of the manga setting that shows wide pages on their own in Spread view.
+  ///
+  /// In en, this message translates to:
+  /// **'Show wide pages on their own in Spread view'**
+  String get mangaDetectSpreadsSubtitle;
+
+  /// Title of the per-book manga setting that moves every page pair in Spread view by one page.
+  ///
+  /// In en, this message translates to:
+  /// **'Shift pairs by one page'**
+  String get mangaShiftSpreadsTitle;
+
+  /// Subtitle of the per-book setting that moves every page pair in Spread view by one page.
+  ///
+  /// In en, this message translates to:
+  /// **'For books whose pages pair up wrongly'**
+  String get mangaShiftSpreadsSubtitle;
 }
 
 class _AppLocalizationsDelegate

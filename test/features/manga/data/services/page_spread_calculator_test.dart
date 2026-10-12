@@ -1,98 +1,212 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
+
+/// Pages from a compact spec, one letter per page: `p` portrait, `w` wide,
+/// `0` size unknown, and `L`, `R`, `C` portrait pages declared
+/// page-spread-left, -right and -center.
+List<MokuroPage> _pages(String spec) => [
+  for (var i = 0; i < spec.length; i++)
+    MokuroPage(
+      pageIndex: i,
+      imageFileName: 'p$i.jpg',
+      imgWidth: spec[i] == 'w' ? 200 : 100,
+      imgHeight: switch (spec[i]) {
+        'w' => 100,
+        '0' => 0,
+        _ => 150,
+      },
+      blocks: const [],
+      spread: switch (spec[i]) {
+        'L' => MangaPageSpread.left,
+        'R' => MangaPageSpread.right,
+        'C' => MangaPageSpread.center,
+        _ => null,
+      },
+    ),
+];
+
+/// Each spread's pages in reading order.
+List<List<int>> _order(List<PageSpread> spreads, {required bool isRtl}) => [
+  for (final s in spreads)
+    [
+      if (isRtl) ...[?s.rightPageIndex, ?s.leftPageIndex],
+      if (!isRtl) ...[?s.leftPageIndex, ?s.rightPageIndex],
+    ],
+];
+
+List<List<int>> _spreads(
+  String spec, {
+  bool isRtl = true,
+  bool detectWidePages = true,
+  bool shift = false,
+}) => _order(
+  computeSpreads(
+    _pages(spec),
+    isRtl: isRtl,
+    detectWidePages: detectWidePages,
+    shift: shift,
+  ),
+  isRtl: isRtl,
+);
 
 void main() {
   group('computeSpreads', () {
-    test('returns empty list for 0 pages', () {
-      expect(computeSpreads(0, isRtl: true), isEmpty);
-      expect(computeSpreads(0, isRtl: false), isEmpty);
+    test('returns an empty list for a book without pages', () {
+      expect(computeSpreads(const [], isRtl: true), isEmpty);
     });
 
-    test('1 page (cover only) returns single spread', () {
-      final rtl = computeSpreads(1, isRtl: true);
-      expect(rtl, hasLength(1));
-      expect(rtl[0].isSinglePage, isTrue);
-      expect(rtl[0].rightPageIndex, 0);
-      expect(rtl[0].leftPageIndex, isNull);
-
-      final ltr = computeSpreads(1, isRtl: false);
-      expect(ltr, hasLength(1));
-      expect(ltr[0].isSinglePage, isTrue);
-      expect(ltr[0].leftPageIndex, 0);
-      expect(ltr[0].rightPageIndex, isNull);
+    test('the cover stands alone, then pages pair up', () {
+      expect(_spreads('p'), [
+        [0],
+      ]);
+      expect(_spreads('pp'), [
+        [0],
+        [1],
+      ]);
+      expect(_spreads('ppppp'), [
+        [0],
+        [1, 2],
+        [3, 4],
+      ]);
+      expect(_spreads('pppp'), [
+        [0],
+        [1, 2],
+        [3],
+      ]);
     });
 
-    test('2 pages: cover solo + page 1 solo', () {
-      final rtl = computeSpreads(2, isRtl: true);
-      expect(rtl, hasLength(2));
-      // Cover
-      expect(rtl[0], const PageSpread(rightPageIndex: 0));
-      // Page 1 solo
-      expect(rtl[1], const PageSpread(rightPageIndex: 1));
+    test('right to left puts the earlier page on the right', () {
+      final spreads = computeSpreads(_pages('ppp'), isRtl: true);
+      expect(spreads, const [
+        PageSpread(rightPageIndex: 0),
+        PageSpread(leftPageIndex: 2, rightPageIndex: 1),
+      ]);
     });
 
-    test('3 pages: cover solo + two-page spread (1,2)', () {
-      final rtl = computeSpreads(3, isRtl: true);
-      expect(rtl, hasLength(2));
-      expect(rtl[0], const PageSpread(rightPageIndex: 0));
-      // RTL: left=higher, right=lower
-      expect(rtl[1], const PageSpread(leftPageIndex: 2, rightPageIndex: 1));
-
-      final ltr = computeSpreads(3, isRtl: false);
-      expect(ltr, hasLength(2));
-      expect(ltr[0], const PageSpread(leftPageIndex: 0));
-      // LTR: left=lower, right=higher
-      expect(ltr[1], const PageSpread(leftPageIndex: 1, rightPageIndex: 2));
+    test('left to right puts the earlier page on the left', () {
+      final spreads = computeSpreads(_pages('ppp'), isRtl: false);
+      expect(spreads, const [
+        PageSpread(leftPageIndex: 0),
+        PageSpread(leftPageIndex: 1, rightPageIndex: 2),
+      ]);
     });
 
-    test('4 pages: cover + spread(1,2) + trailing page 3 solo', () {
-      final rtl = computeSpreads(4, isRtl: true);
-      expect(rtl, hasLength(3));
-      expect(rtl[0], const PageSpread(rightPageIndex: 0));
-      expect(rtl[1], const PageSpread(leftPageIndex: 2, rightPageIndex: 1));
-      expect(rtl[2], const PageSpread(rightPageIndex: 3));
+    test('a wide page stands alone and pairing restarts after it', () {
+      expect(_spreads('ppppwpp'), [
+        [0],
+        [1, 2],
+        [3],
+        [4],
+        [5, 6],
+      ]);
+      expect(_spreads('wppp', isRtl: false), [
+        [0],
+        [1, 2],
+        [3],
+      ]);
     });
 
-    test('5 pages: cover + spread(1,2) + spread(3,4)', () {
-      final rtl = computeSpreads(5, isRtl: true);
-      expect(rtl, hasLength(3));
-      expect(rtl[0], const PageSpread(rightPageIndex: 0));
-      expect(rtl[1], const PageSpread(leftPageIndex: 2, rightPageIndex: 1));
-      expect(rtl[2], const PageSpread(leftPageIndex: 4, rightPageIndex: 3));
+    test('wide pages pair like any other with detection off', () {
+      expect(_spreads('ppwp', detectWidePages: false), [
+        [0],
+        [1, 2],
+        [3],
+      ]);
     });
 
-    test('RTL vs LTR page ordering within spreads', () {
-      final rtl = computeSpreads(5, isRtl: true);
-      // RTL spread: left=higher index, right=lower index
-      expect(rtl[1].leftPageIndex, 2);
-      expect(rtl[1].rightPageIndex, 1);
-
-      final ltr = computeSpreads(5, isRtl: false);
-      // LTR spread: left=lower index, right=higher index
-      expect(ltr[1].leftPageIndex, 1);
-      expect(ltr[1].rightPageIndex, 2);
+    test('a page of unknown size is not wide', () {
+      expect(_spreads('p00'), [
+        [0],
+        [1, 2],
+      ]);
     });
 
-    test('all pages are accounted for', () {
-      for (final count in [1, 2, 3, 5, 10, 21, 100]) {
-        final spreads = computeSpreads(count, isRtl: true);
-        final allPages = <int>{};
-        for (final s in spreads) {
-          if (s.leftPageIndex != null) allPages.add(s.leftPageIndex!);
-          if (s.rightPageIndex != null) allPages.add(s.rightPageIndex!);
+    test('a declared center page stands alone even with detection off', () {
+      expect(_spreads('ppCpp', detectWidePages: false), [
+        [0],
+        [1],
+        [2],
+        [3, 4],
+      ]);
+    });
+
+    test('declared halves pair up: right opens a pair in rtl books', () {
+      expect(_spreads('pRLRL'), [
+        [0],
+        [1, 2],
+        [3, 4],
+      ]);
+      // An undeclared page never takes an opener as its partner.
+      expect(_spreads('ppRL'), [
+        [0],
+        [1],
+        [2, 3],
+      ]);
+      // An opener takes the undeclared page after it.
+      expect(_spreads('pLRpp'), [
+        [0],
+        [1],
+        [2, 3],
+        [4],
+      ]);
+    });
+
+    test('left opens a pair in ltr books', () {
+      expect(_spreads('pLRLR', isRtl: false), [
+        [0],
+        [1, 2],
+        [3, 4],
+      ]);
+    });
+
+    test('an orphan closer stands alone', () {
+      expect(_spreads('pLp'), [
+        [0],
+        [1],
+        [2],
+      ]);
+    });
+
+    test('shift pairs the cover and moves every pair by one page', () {
+      expect(_spreads('ppppp', shift: true), [
+        [0, 1],
+        [2, 3],
+        [4],
+      ]);
+      expect(_spreads('ppwppp', shift: true), [
+        [0, 1],
+        [2],
+        [3],
+        [4, 5],
+      ]);
+    });
+
+    test('shift swaps which declared half opens a pair', () {
+      expect(_spreads('pRLRL', shift: true), [
+        [0, 1],
+        [2, 3],
+        [4],
+      ]);
+    });
+
+    test('every page is in exactly one spread', () {
+      for (final spec in ['p', 'ppp', 'pwpRLpCpp', 'RLRLR', 'LLwRR']) {
+        for (final shift in [false, true]) {
+          final pages = _spreads(spec, shift: shift).expand((s) => s);
+          expect(
+            pages.toList()..sort(),
+            List.generate(spec.length, (i) => i),
+            reason: '$spec shift=$shift',
+          );
         }
-        expect(
-          allPages,
-          equals(Set.from(List.generate(count, (i) => i))),
-          reason: 'All pages should be present for count=$count',
-        );
       }
     });
   });
 
   group('spreadIndexForPage', () {
     test('finds correct spread for each page', () {
-      final spreads = computeSpreads(5, isRtl: true);
+      final spreads = computeSpreads(_pages('ppppp'), isRtl: true);
       expect(spreadIndexForPage(spreads, 0), 0);
       expect(spreadIndexForPage(spreads, 1), 1);
       expect(spreadIndexForPage(spreads, 2), 1);
@@ -101,7 +215,7 @@ void main() {
     });
 
     test('returns 0 for invalid page index', () {
-      final spreads = computeSpreads(3, isRtl: true);
+      final spreads = computeSpreads(_pages('ppp'), isRtl: true);
       expect(spreadIndexForPage(spreads, 99), 0);
     });
   });

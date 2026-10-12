@@ -5794,5 +5794,21 @@
         "type": "int"
       }
     }
+  },
+  "mangaDetectSpreadsTitle": "Detect two-page spreads",
+  "@mangaDetectSpreadsTitle": {
+    "description": "Title of the manga setting that shows wide pages (two-page spreads) on their own in Spread view."
+  },
+  "mangaDetectSpreadsSubtitle": "Show wide pages on their own in Spread view",
+  "@mangaDetectSpreadsSubtitle": {
+    "description": "Subtitle of the manga setting that shows wide pages on their own in Spread view."
+  },
+  "mangaShiftSpreadsTitle": "Shift pairs by one page",
+  "@mangaShiftSpreadsTitle": {
+    "description": "Title of the per-book manga setting that moves every page pair in Spread view by one page."
+  },
+  "mangaShiftSpreadsSubtitle": "For books whose pages pair up wrongly",
+  "@mangaShiftSpreadsSubtitle": {
+    "description": "Subtitle of the per-book setting that moves every page pair in Spread view by one page."
   }
 }

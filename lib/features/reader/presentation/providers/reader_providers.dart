@@ -143,6 +143,10 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(mangaTransparentLookup: transparent));
   }
 
+  void setMangaDetectSpreads(bool enabled) {
+    _update(state.copyWith(mangaDetectSpreads: enabled));
+  }
+
   void setReaderAnimations(bool enabled) {
     _update(state.copyWith(readerAnimations: enabled));
   }

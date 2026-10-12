@@ -3233,5 +3233,9 @@
   "readerSearchHint": "Buscar en este libro",
   "readerSearchNoResults": "No hay coincidencias en este libro",
   "readerSearchResultCount": "{count, plural, =1{1 coincidencia} other{{count} coincidencias}}",
-  "readerSearchResultsCapped": "Se muestran las primeras {count} coincidencias"
+  "readerSearchResultsCapped": "Se muestran las primeras {count} coincidencias",
+  "mangaDetectSpreadsTitle": "Detectar páginas dobles",
+  "mangaDetectSpreadsSubtitle": "Muestra solas las páginas anchas en la vista de dos páginas",
+  "mangaShiftSpreadsTitle": "Desplazar las parejas una página",
+  "mangaShiftSpreadsSubtitle": "Para libros cuyas páginas se emparejan mal"
 }

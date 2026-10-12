@@ -4287,6 +4287,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String readerSearchResultsCapped({required int count}) {
     return '仅显示前 $count 个匹配项';
   }
+
+  @override
+  String get mangaDetectSpreadsTitle => '检测跨页';
+
+  @override
+  String get mangaDetectSpreadsSubtitle => '在双页模式中单独显示宽页面';
+
+  @override
+  String get mangaShiftSpreadsTitle => '配对后移一页';
+
+  @override
+  String get mangaShiftSpreadsSubtitle => '适用于页面配对错误的书';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -8572,4 +8584,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String readerSearchResultsCapped({required int count}) {
     return '仅显示前 $count 个匹配项';
   }
+
+  @override
+  String get mangaDetectSpreadsTitle => '检测跨页';
+
+  @override
+  String get mangaDetectSpreadsSubtitle => '在双页模式中单独显示宽页面';
+
+  @override
+  String get mangaShiftSpreadsTitle => '配对后移一页';
+
+  @override
+  String get mangaShiftSpreadsSubtitle => '适用于页面配对错误的书';
 }

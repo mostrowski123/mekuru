@@ -4520,4 +4520,18 @@ class AppLocalizationsId extends AppLocalizations {
   String readerSearchResultsCapped({required int count}) {
     return 'Menampilkan $count hasil pertama';
   }
+
+  @override
+  String get mangaDetectSpreadsTitle => 'Deteksi halaman ganda';
+
+  @override
+  String get mangaDetectSpreadsSubtitle =>
+      'Tampilkan halaman lebar sendiri di tampilan Dua Halaman';
+
+  @override
+  String get mangaShiftSpreadsTitle => 'Geser pasangan satu halaman';
+
+  @override
+  String get mangaShiftSpreadsSubtitle =>
+      'Untuk buku yang pasangan halamannya salah';
 }
