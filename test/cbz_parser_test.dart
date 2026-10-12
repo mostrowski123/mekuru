@@ -103,6 +103,38 @@ void main() {
           },
         );
 
+        test('reads ComicInfo.xml, which is not a page', () async {
+          final cbzPath = await createCbz('info', {
+            'page.jpg': fakeJpegBytes,
+            'ComicInfo.xml': utf8.encode(
+              '<ComicInfo><Title>題名</Title></ComicInfo>',
+            ),
+          });
+
+          final meta = await CbzParser.extract(
+            cbzPath,
+            '${tmpDir.path}/output',
+          );
+
+          expect(meta.imageFileNames, ['page.jpg']);
+          expect(meta.comicInfo?.title, '題名');
+        });
+
+        test('ignores a malformed comicinfo.xml', () async {
+          final cbzPath = await createCbz('bad_info', {
+            'page.jpg': fakeJpegBytes,
+            'comicinfo.xml': utf8.encode('<ComicInfo><Title>broken'),
+          });
+
+          final meta = await CbzParser.extract(
+            cbzPath,
+            '${tmpDir.path}/output',
+          );
+
+          expect(meta.imageFileNames, ['page.jpg']);
+          expect(meta.comicInfo, isNull);
+        });
+
         test('extracts images and returns sorted filenames', () async {
           final cbzPath = await createCbz('test_manga', {
             'page_003.jpg': fakeJpegBytes,

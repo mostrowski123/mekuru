@@ -249,7 +249,8 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         ),
       );
       await Directory(dir.path).create(recursive: true);
-      // The CBZ importer titles the book from the file name.
+      // The server's title rides in the job's meta (the importers keep it);
+      // the file name only needs to be safe.
       final fileName = sanitizedExportBaseName(book.title) + book.fileExtension;
       final input = serverDownloadWorkInput(
         dir: dir.path,
@@ -268,6 +269,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
             'serverType': connection.serverType,
             'ids': book.ids,
             'format': book.format.name,
+            'title': book.title,
           },
         );
         await dir.writeStatus(
@@ -542,6 +544,8 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
     void Function(double progress)? onProgress,
   }) async {
     final serverType = meta['serverType'] as String;
+    // Jobs queued before the title was kept in the meta are named after it.
+    final title = meta['title'] as String? ?? p.basenameWithoutExtension(path);
     try {
       final repo = ref.read(bookRepositoryProvider);
       final imported = await switch (RemoteBookFormat.values.byName(
@@ -549,9 +553,13 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
       )) {
         RemoteBookFormat.epub => repo.importEpub(path),
         RemoteBookFormat.imageArchive =>
-          repo.importCbz(path, onProgress: onProgress).then((cbz) => cbz.book),
+          repo
+              .importCbz(path, title: title, onProgress: onProgress)
+              .then((cbz) => cbz.book),
         RemoteBookFormat.pdf =>
-          repo.importPdf(path, onProgress: onProgress).then(explainIfScanned),
+          repo
+              .importPdf(path, title: title, onProgress: onProgress)
+              .then(explainIfScanned),
       };
       // Re-applies any pending backup data (restores progress/bookmarks for
       // books re-downloaded after a restore).

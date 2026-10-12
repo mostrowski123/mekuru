@@ -328,10 +328,15 @@ class BookRepository {
   /// mokuro output), its text blocks are imported so tap-to-lookup works
   /// immediately; otherwise pages get empty blocks and OCR can be run later.
   ///
+  /// A ComicInfo.xml in the archive gives the book its title, its reading
+  /// direction and its double pages. [title], when given, wins: server
+  /// downloads keep the server's title, which re-linking matches.
+  ///
   /// Returns the created [Book]. [hasOcr] is true when the manifest's OCR
   /// data was imported with it.
   Future<({Book book, bool hasOcr})> importCbz(
     String sourcePath, {
+    String? title,
     void Function(double progress)? onProgress,
   }) async {
     return _inNewImportDir('manga', (cacheDir) async {
@@ -365,18 +370,32 @@ class BookRepository {
           ];
       _requirePages(pages.length);
 
+      // ComicInfo numbers pages in file order; a .mokuro may order them
+      // otherwise, so the double pages are found by name.
+      final comicInfo = cbzMeta.comicInfo;
+      final doublePages = {
+        for (final image in comicInfo?.doublePages ?? const <int>{})
+          if (image < fileNames.length) fileNames[image],
+      };
+
       final book = await _saveMangaBook(
         cacheDir,
         MokuroBook(
-          title: cbzMeta.title,
+          title: title ?? comicInfo?.title ?? cbzMeta.title,
           imageDirPath: cbzMeta.imageDirPath,
           ocrSource: ocrPages != null ? 'mokuro' : null,
           ocrCompleted:
               ocrPages != null &&
               ocrPages.every((page) => page.ocr?['completed'] != false),
-          pages: pages,
+          pages: [
+            for (final page in pages)
+              doublePages.contains(page.imageFileName)
+                  ? page.copyWith(spread: MangaPageSpread.center)
+                  : page,
+          ],
         ),
         coverImagePath: cbzMeta.coverImagePath,
+        pageProgressionDirection: comicInfo?.direction,
       );
       return (book: book, hasOcr: ocrPages != null);
     });

@@ -218,6 +218,85 @@ void main() {
       expect(cache.pages.single.blocks, isEmpty);
     });
 
+    List<int> comicInfo(String fields) =>
+        utf8.encode('<?xml version="1.0"?><ComicInfo>$fields</ComicInfo>');
+
+    test('ComicInfo names the book and sets its direction', () async {
+      final cbzPath = await createCbz('file_name', {
+        '1.png': png(8, 12),
+        'ComicInfo.xml': comicInfo(
+          '<Series>葬送のフリーレン</Series><Number>2</Number>'
+          '<Manga>YesAndRightToLeft</Manga>',
+        ),
+      });
+
+      final book = (await repo.importCbz(cbzPath)).book;
+
+      expect(book.title, '葬送のフリーレン 2');
+      expect(book.pageProgressionDirection, 'rtl');
+    });
+
+    test('a server download keeps the title the server gave it', () async {
+      final cbzPath = await createCbz('file_name', {
+        '1.png': png(8, 12),
+        'ComicInfo.xml': comicInfo('<Title>ComicInfo title</Title>'),
+      });
+
+      final book = (await repo.importCbz(cbzPath, title: 'Server title')).book;
+
+      expect(book.title, 'Server title');
+    });
+
+    test('ComicInfo double pages stand alone, counted in page order', () async {
+      // Archive order 10, 2, 1; page order 1, 2, 10: Image 1 is 2.png.
+      final cbzPath = await createCbz('doubles', {
+        '10.png': png(8, 12),
+        '2.png': png(8, 12),
+        '1.png': png(8, 12),
+        'ComicInfo.xml': comicInfo(
+          '<Pages><Page Image="1" DoublePage="True"/></Pages>',
+        ),
+      });
+
+      final book = (await repo.importCbz(cbzPath)).book;
+      final pages = (await readPagesCache(book.filePath)).pages;
+
+      expect(pages.map((pg) => (pg.imageFileName, pg.spread)), [
+        ('1.png', null),
+        ('2.png', MangaPageSpread.center),
+        ('10.png', null),
+      ]);
+    });
+
+    test('double pages find their page when a .mokuro orders them', () async {
+      Map<String, Object> page(String name) => {
+        'img_path': name,
+        'img_width': 8,
+        'img_height': 8,
+        'blocks': const [],
+      };
+      final cbzPath = await createCbz('mokuro_order', {
+        'a.png': png(8, 8),
+        'b.png': png(8, 8),
+        'vol.mokuro': utf8.encode(
+          jsonEncode({
+            'pages': [page('b.png'), page('a.png')],
+          }),
+        ),
+        'ComicInfo.xml': comicInfo(
+          '<Pages><Page Image="0" DoublePage="true"/></Pages>',
+        ),
+      });
+
+      final book = (await repo.importCbz(cbzPath)).book;
+      final pages = (await readPagesCache(book.filePath)).pages;
+
+      expect(pages.map((pg) => (pg.imageFileName, pg.spread)), [
+        ('b.png', null),
+        ('a.png', MangaPageSpread.center),
+      ]);
+    });
+
     test('reports the OCR data of an embedded .mokuro', () async {
       // What Mekuru's own CBZ export writes for a book with OCR.
       final cbzPath = await createCbz('with_ocr', {

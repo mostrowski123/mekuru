@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:mekuru/core/platform/image_convert.dart';
+import 'package:mekuru/features/manga/data/services/comic_info.dart';
 import 'package:path/path.dart' as p;
 import 'package:rar_reader/rar_reader.dart';
 
@@ -33,6 +35,9 @@ class CbzMetadata {
   /// page saved as `ch2_001.jpg`), with '/' between folders.
   final Map<String, String> archivePaths;
 
+  /// The archive's ComicInfo.xml; null when it has none or it is unreadable.
+  final ComicInfo? comicInfo;
+
   const CbzMetadata({
     required this.title,
     required this.imageDirPath,
@@ -41,6 +46,7 @@ class CbzMetadata {
     this.imageDimensions = const {},
     this.mokuroJsonPath,
     this.archivePaths = const {},
+    this.comicInfo,
   });
 
   /// Dimensions for [imageFileName], or null if its header was unreadable.
@@ -241,6 +247,7 @@ class CbzParser {
     // Saved page name → its path in the archive, which decides page order.
     final entryPaths = <String, String>{};
     String? mokuroJsonPath;
+    ComicInfo? comicInfo;
 
     Future<void> writeImage(String entryPath, Uint8List data) async {
       final fileName = p.basename(entryPath);
@@ -290,6 +297,11 @@ class CbzParser {
         final outPath = p.join(outputDir, embeddedMokuroFileName);
         await File(outPath).writeAsBytes(read());
         mokuroJsonPath = outPath;
+      } else if (comicInfo == null &&
+          baseName.toLowerCase() == 'comicinfo.xml') {
+        comicInfo = ComicInfo.tryParse(
+          utf8.decode(read(), allowMalformed: true),
+        );
       }
     }
 
@@ -329,6 +341,7 @@ class CbzParser {
       imageDimensions: imageDimensions,
       mokuroJsonPath: mokuroJsonPath,
       archivePaths: entryPaths,
+      comicInfo: comicInfo,
     );
   }
 
