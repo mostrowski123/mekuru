@@ -4547,8 +4547,11 @@ class default_DefaultViewManager {
   scrolledLocation() {
     let visible = this.visible();
     let container = this.container.getBoundingClientRect();
-    let pageHeight = container.height < window.innerHeight ? container.height : window.innerHeight;
-    let pageWidth = container.width < window.innerWidth ? container.width : window.innerWidth;
+    // [MEKURU PATCH] Whole pixels, like the views: with margins the
+    // container can be 857.9 px tall beside an 858 px view, and a one-page
+    // section counted ceil(858 / 857.9) = 2 pages.
+    let pageHeight = Math.round(container.height < window.innerHeight ? container.height : window.innerHeight);
+    let pageWidth = Math.round(container.width < window.innerWidth ? container.width : window.innerWidth);
     let vertical = this.settings.axis === "vertical";
     let rtl = this.settings.direction === "rtl";
     let offset = 0;

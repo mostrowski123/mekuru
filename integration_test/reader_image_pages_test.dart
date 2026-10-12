@@ -48,9 +48,10 @@ void main() {
     expect(portrait['spread'], isFalse, reason: '$portrait');
 
     await showSection(tester, controller, 'spread.xhtml');
-    // displayed.total overcounts vertical sections whenever the page height
-    // is fractional; expectFillsPage measures the section instead.
-    expectFillsPage(await imageState(controller, 'svg'));
+    final spread = await imageState(controller, 'svg');
+    expectFillsPage(spread);
+    // One page, also when the page height is fractional (here with margins).
+    expect(spread['total'], 1, reason: '$spread');
 
     await showSection(tester, controller, 'ornament.xhtml');
     final ornament = await imageState(controller, 'img');
