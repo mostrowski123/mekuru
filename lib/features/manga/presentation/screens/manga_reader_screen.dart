@@ -304,11 +304,15 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     }
     setState(() => _currentPage = page);
 
-    // Save progress
-    final progress = totalPages > 1 ? page / (totalPages - 1) : 0.0;
+    // Save progress: the position is the lower page on screen, the progress
+    // the furthest one, so ending on the last two pages finishes the book.
     ref
         .read(bookRepositoryProvider)
-        .updateProgress(widget.book.id, page.toString(), progress: progress);
+        .updateProgress(
+          widget.book.id,
+          page.toString(),
+          progress: readProgressFor(displayedPages ?? [page], totalPages),
+        );
 
     _precacheAdjacentPages();
   }

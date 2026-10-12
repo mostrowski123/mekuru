@@ -5,6 +5,8 @@
 //
 // Pure functions — no Flutter widget dependencies, fully unit-testable.
 
+import 'dart:math';
+
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 
 /// A single spread in the manga reader — either one page (cover/trailing)
@@ -104,6 +106,11 @@ List<PageSpread> computeSpreads(
   }
   return spreads;
 }
+
+/// A book's read progress with [pagesOnScreen] showing: the furthest page
+/// counts, so a last spread that shows the last page finishes the book.
+double readProgressFor(List<int> pagesOnScreen, int totalPages) =>
+    totalPages > 1 ? pagesOnScreen.reduce(max) / (totalPages - 1) : 0.0;
 
 /// Find which spread index contains [pageIndex].
 ///

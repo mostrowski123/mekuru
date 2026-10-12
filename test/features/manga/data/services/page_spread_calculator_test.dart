@@ -220,6 +220,19 @@ void main() {
     });
   });
 
+  group('readProgressFor', () {
+    test('counts the furthest page on screen', () {
+      // A 200-page book whose last spread shows pages 198 and 199.
+      expect(readProgressFor([199, 198], 200), 1.0);
+      expect(readProgressFor([0], 200), 0.0);
+      expect(readProgressFor([99], 199), 0.5);
+    });
+
+    test('a one-page book has no progress to make', () {
+      expect(readProgressFor([0], 1), 0.0);
+    });
+  });
+
   group('PageSpread', () {
     test(
       'primaryPageIndex returns lower-numbered page for two-page spread',
