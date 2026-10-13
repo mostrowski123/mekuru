@@ -65,6 +65,11 @@ void main() {
     expect(inline['inlineStyle'], isEmpty, reason: '$inline');
     expect((inline['w'] as num).toDouble(), lessThanOrEqualTo(128.5));
 
+    // A linked illustration keeps its size: taps beside it turn the page.
+    await showSection(tester, controller, 'linked.xhtml');
+    final linked = await imageState(controller, 'img');
+    expect(linked['inlineStyle'], isEmpty, reason: '$linked');
+
     // A real finger: synthetic touches reach the WebView as real touches
     // on Android only (see integration_test_webview_tap_limitations).
     if (Platform.isAndroid) {
@@ -87,7 +92,8 @@ void main() {
         );
       }
 
-      // On text (this section is still on screen) nothing opens.
+      // On text nothing opens.
+      await showSection(tester, controller, 'text.xhtml');
       await hold();
       expect(find.byType(EpubImageZoomView), findsNothing);
 

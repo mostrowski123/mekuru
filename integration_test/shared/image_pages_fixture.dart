@@ -21,7 +21,8 @@ const imagePagesTitle = '挿絵テスト';
 /// Sections: `portrait.xhtml` (a horizontal-tb illustration page in an `img`),
 /// `spread.xhtml` (vertical-rl, the wide image in an `svg` with no viewBox,
 /// as calibre writes them), `ornament.xhtml` (a 40x20 image alone) and
-/// `text.xhtml` (text with a 128 px inline image). The OPF asks for
+/// `text.xhtml` (text with a 128 px inline image) and `linked.xhtml` (an
+/// illustration inside a link). The OPF asks for
 /// `rendition:spread both`, which put pages two-up on wide screens.
 Future<String> writeImagePagesEpub(Directory dir) async {
   final archive = Archive();
@@ -62,6 +63,7 @@ Future<String> writeImagePagesEpub(Directory dir) async {
         '<item id="spread" href="spread.xhtml" media-type="application/xhtml+xml"/>'
         '<item id="ornament" href="ornament.xhtml" media-type="application/xhtml+xml"/>'
         '<item id="text" href="text.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="linked" href="linked.xhtml" media-type="application/xhtml+xml"/>'
         '<item id="p1" href="portrait.png" media-type="image/png"/>'
         '<item id="p2" href="wide.png" media-type="image/png"/>'
         '<item id="p3" href="ornament.png" media-type="image/png"/>'
@@ -73,6 +75,7 @@ Future<String> writeImagePagesEpub(Directory dir) async {
         '<itemref idref="spread"/>'
         '<itemref idref="ornament"/>'
         '<itemref idref="text"/>'
+        '<itemref idref="linked"/>'
         '</spine>'
         '</package>',
   );
@@ -129,6 +132,16 @@ Future<String> writeImagePagesEpub(Directory dir) async {
       'text',
       '<p>$words<img class="gaiji" src="gaiji.png" alt=""/>$words</p>',
       vertical: true,
+    ),
+  );
+
+  // An illustration that links somewhere: filling the page with it would
+  // turn every tap on the page into the link.
+  addFile(
+    'OEBPS/linked.xhtml',
+    page(
+      'linked',
+      '<p><a href="text.xhtml"><img src="portrait.png" alt=""/></a></p>',
     ),
   );
 

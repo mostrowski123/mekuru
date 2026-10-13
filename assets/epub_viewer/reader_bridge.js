@@ -1299,6 +1299,9 @@ function fitImagePage(contents) {
   if (images.length !== 1 || /\S/.test(body.textContent)) return;
   var image = images[0];
   var target = image.localName === 'img' ? image : image.closest('svg');
+  // A linked image keeps its size: filled, every tap on the page would
+  // follow the link instead of turning the page.
+  if (target.closest('a[href], a[*|href]')) return;
 
   var natural;
   if (target === image) {
@@ -1368,7 +1371,9 @@ function _svgLength(value) {
 
 // ── Image zoom ───────────────────────────────────────────────────────
 
-var IMAGE_LONG_PRESS_MS = 500;
+// Under the 0.5 s at which WebKit's own long-press handling (and the
+// WebView plugin's recognizer on iOS) can cancel the touch.
+var IMAGE_LONG_PRESS_MS = 400;
 
 // The image under (x, y) in [doc] when it is big enough to be worth zooming
 // into (64 px both ways): an img, or the image inside an svg.
