@@ -11,6 +11,7 @@ void main() {
 
       expect(imageCss['-webkit-touch-callout'], 'none');
       expect(imageCss['user-select'], 'none');
+      expect(imageCss['-webkit-user-select'], 'none');
       expect(imageCss['-webkit-user-drag'], 'none');
     });
 

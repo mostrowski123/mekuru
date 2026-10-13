@@ -240,6 +240,7 @@ Future<Map<String, dynamic>> imageState(
   '    x: r.left, y: r.top, w: r.width, h: r.height,'
   '    px: painted.left, py: painted.top, pw: painted.width, ph: painted.height,'
   '    fit: cs.objectFit, position: cs.objectPosition,'
+  '    bodySelect: c.window.getComputedStyle(c.document.body).userSelect,'
   '    inlineStyle: el.getAttribute("style") || "",'
   '    total: loc.start ? loc.start.displayed.total : null,'
   '    frameW: view.width(), frameH: view.height()'

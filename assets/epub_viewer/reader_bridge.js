@@ -1366,6 +1366,10 @@ function fitImagePage(contents) {
     outer.style.setProperty('min-block-size', (across ? W : H) + 'px', 'important');
     outer.style.setProperty('margin', '0', 'important');
   }
+  // Nothing on an image page is text: no selection loupe (iOS) while a
+  // finger is held on it.
+  body.style.setProperty('-webkit-user-select', 'none', 'important');
+  body.style.setProperty('user-select', 'none', 'important');
   contents.expand();
 }
 

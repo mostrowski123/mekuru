@@ -133,6 +133,7 @@ ReaderTheme buildReaderTheme({
       'img, svg': {
         '-webkit-touch-callout': 'none',
         'user-select': 'none',
+        '-webkit-user-select': 'none',
         '-webkit-user-drag': 'none',
       },
     },

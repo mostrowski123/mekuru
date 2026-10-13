@@ -50,6 +50,9 @@ void main() {
     await showSection(tester, controller, 'spread.xhtml');
     final spread = await imageState(controller, 'svg');
     expectFillsPage(spread);
+    // Nothing on an image page is text: no selection loupe while a finger
+    // is held on it (iOS).
+    expect(spread['bodySelect'], 'none', reason: '$spread');
     // One page, also when the page height is fractional (here with margins).
     expect(spread['total'], 1, reason: '$spread');
 
@@ -67,6 +70,7 @@ void main() {
     await showSection(tester, controller, 'text.xhtml');
     final inline = await imageState(controller, 'img.gaiji');
     expect(inline['inlineStyle'], isEmpty, reason: '$inline');
+    expect(inline['bodySelect'], isNot('none'), reason: '$inline');
     expect((inline['w'] as num).toDouble(), lessThanOrEqualTo(128.5));
 
     // A linked illustration keeps its size: taps beside it turn the page.
