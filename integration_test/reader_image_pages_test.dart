@@ -8,6 +8,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:mekuru/features/reader/presentation/widgets/epub_image_zoom_view.dart';
+import 'package:mekuru/shared/widgets/reader_seek_bar.dart';
 
 import 'shared/image_pages_fixture.dart';
 import 'shared/scroll_view_fixture.dart';
@@ -78,6 +79,14 @@ void main() {
     final linked = await imageState(controller, 'img');
     expect(linked['inlineStyle'], isEmpty, reason: '$linked');
 
+    // Closes the zoom viewer: the controls stay hidden behind it.
+    Future<void> closeZoom() async {
+      await tester.tap(find.byType(EpubImageZoomView));
+      await pumpUntilGone(tester, find.byType(EpubImageZoomView));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(ReaderBarScrim), findsNothing);
+    }
+
     // A real finger: synthetic touches reach the WebView as real touches
     // on Android only (see integration_test_webview_tap_limitations).
     if (Platform.isAndroid) {
@@ -104,12 +113,28 @@ void main() {
       await showSection(tester, controller, 'text.xhtml');
       await hold();
       expect(find.byType(EpubImageZoomView), findsNothing);
+      // The hold selected a word: let it go, as a tap beside it would.
+      await controller.debugEvaluateJavascript('clearSelection(); true');
 
       await showSection(tester, controller, 'spread.xhtml');
       await hold();
       await pumpUntilVisible(tester, find.byType(EpubImageZoomView));
-      await tester.tap(find.byType(EpubImageZoomView));
-      await pumpUntilGone(tester, find.byType(EpubImageZoomView));
+      await closeZoom();
+
+      // A double tap opens it too, and leaves the controls hidden.
+      final centre = tester.getCenter(find.byType(CustomEpubViewer));
+      await tester.tapAt(centre);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tapAt(centre);
+      await pumpUntilVisible(tester, find.byType(EpubImageZoomView));
+      await closeZoom();
+
+      // A single tap in the middle shows the controls instead.
+      await tester.tapAt(centre);
+      await pumpUntilVisible(tester, find.byType(ReaderBarScrim));
+      expect(find.byType(EpubImageZoomView), findsNothing);
+      await tester.tapAt(centre);
+      await pumpUntilGone(tester, find.byType(ReaderBarScrim));
     }
 
     // The bridge's long press, as on iOS where synthetic touches never reach
@@ -118,7 +143,17 @@ void main() {
     await longPressImage(controller, 'svg image');
     await pumpUntilVisible(tester, find.byType(EpubImageZoomView));
     expect(zoomedFiles(tester), ['wide.png']);
-    await tester.tap(find.byType(EpubImageZoomView));
-    await pumpUntilGone(tester, find.byType(EpubImageZoomView));
+    await closeZoom();
+
+    // The bridge's taps: a double tap opens the image...
+    await tapImage(controller, 'svg image', taps: 2);
+    await pumpUntilVisible(tester, find.byType(EpubImageZoomView));
+    expect(zoomedFiles(tester), ['wide.png']);
+    await closeZoom();
+
+    // ...and a single tap shows the controls once no second tap follows.
+    await tapImage(controller, 'svg image');
+    await pumpUntilVisible(tester, find.byType(ReaderBarScrim));
+    expect(find.byType(EpubImageZoomView), findsNothing);
   });
 }

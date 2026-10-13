@@ -53,6 +53,10 @@ class EpubSelectionData {
   const EpubSelectionData({required this.cfi, required this.text, this.rect});
 }
 
+/// An image in the book: its section's spine href and its place among the
+/// section's images (`img, svg image`).
+typedef EpubImageRef = ({String href, int index});
+
 /// Custom EPUB viewer backed by InAppWebView + epub.js.
 ///
 /// All page navigation is driven exclusively by Dart (via
@@ -158,11 +162,13 @@ class CustomEpubViewer extends StatefulWidget {
   /// below the text.
   /// [scrolledStrip]: the touch scrolled the scroll-view strip, so it is a
   /// drag even when too short to count as a swipe.
+  /// [image]: the finger lifted on this image (see [onImageLongPressed]).
   final void Function(
     double x,
     double y,
     bool inTopOrBottomMargin,
     bool scrolledStrip,
+    EpubImageRef? image,
   )?
   onTouchUp;
   final void Function(
@@ -176,9 +182,8 @@ class CustomEpubViewer extends StatefulWidget {
   onWordTapped;
   final ValueChanged<EpubSelectionData>? onSentenceSelected;
 
-  /// A long press on an image: the section's spine [href] and the image's
-  /// place among the section's images (`img, svg image`).
-  final void Function(String href, int index)? onImageLongPressed;
+  /// A long press on an image.
+  final ValueChanged<EpubImageRef>? onImageLongPressed;
   final void Function(String description)? onLoadError;
 
   /// The web view's renderer died: Android killed it for memory (or it
@@ -311,6 +316,17 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     _webViewController = null;
     widget.controller.detach(controller);
     super.dispose();
+  }
+
+  /// An image as the bridge names it (`{href, index}`), or null when
+  /// [message] names none.
+  static EpubImageRef? _imageRef(Object? message) {
+    if (message is! Map) return null;
+    final href = message['href'];
+    final index = message['index'];
+    return href is String && href.isNotEmpty && index is num && index >= 0
+        ? (href: href, index: index.toInt())
+        : null;
   }
 
   void _registerHandlers(InAppWebViewController controller) {
@@ -506,12 +522,19 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           final y = (data[1] as num).toDouble();
           final inTopOrBottomMargin = data.length >= 3 && data[2] == true;
           final scrolledStrip = data.length >= 4 && data[3] == true;
+          final image = _imageRef(data.length >= 5 ? data[4] : null);
           debugPrint(
             '[EPUB_DART] touchUp x=${x.toStringAsFixed(3)} '
             'y=${y.toStringAsFixed(3)} margin=$inTopOrBottomMargin '
-            'scrolled=$scrolledStrip',
+            'scrolled=$scrolledStrip image=${image?.index}',
           );
-          widget.onTouchUp?.call(x, y, inTopOrBottomMargin, scrolledStrip);
+          widget.onTouchUp?.call(
+            x,
+            y,
+            inTopOrBottomMargin,
+            scrolledStrip,
+            image,
+          );
         }
       },
     );
@@ -519,13 +542,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     controller.addJavaScriptHandler(
       handlerName: 'imageLongPressed',
       callback: (data) {
-        if (data.isEmpty || data[0] is! Map) return;
-        final message = data[0] as Map;
-        final href = message['href'];
-        final index = message['index'];
-        if (href is String && href.isNotEmpty && index is num && index >= 0) {
-          widget.onImageLongPressed?.call(href, index.toInt());
-        }
+        final image = _imageRef(data.isEmpty ? null : data[0]);
+        if (image != null) widget.onImageLongPressed?.call(image);
       },
     );
 

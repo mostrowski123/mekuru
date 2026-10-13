@@ -471,12 +471,14 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
           tappedChar: textInfo.tappedChar
         });
       } else {
-        // No text at tap point — send regular touchUp for page navigation
+        // No text at tap point — send regular touchUp for page navigation,
+        // naming the image under it: a double tap on one opens it.
         console.log(
           '[EPUB_BRIDGE] touchUp(' + source + ') x=' +
             coords.x.toFixed(3) + ' y=' + coords.y.toFixed(3)
         );
-        callDart('touchUp', coords.x, coords.y);
+        callDart('touchUp', coords.x, coords.y, false, false,
+          imageRef(contents, zoomableImageAt(doc, clientX, clientY)));
       }
     }
 
@@ -1413,15 +1415,22 @@ function zoomableImageAt(doc, x, y) {
   return w >= 64 && h >= 64 ? image : null;
 }
 
-// Asks Dart to open the zoom viewer on [image], named by its section's
-// spine href and its place among the section's `img, svg image` elements.
-function sendImageLongPress(contents, image) {
+// [image] as Dart names it: its section's spine href and its place among
+// the section's `img, svg image` elements. Null for no image.
+function imageRef(contents, image) {
+  if (!image) return null;
   var images = contents.document.querySelectorAll('img, svg image');
   var index = Array.prototype.indexOf.call(images, image);
   var section = book.spine.get(contents.sectionIndex);
-  if (index < 0 || !section) return;
-  console.log('[EPUB_BRIDGE] imageLongPressed ' + section.href + ' #' + index);
-  callDart('imageLongPressed', { href: section.href, index: index });
+  return index < 0 || !section ? null : { href: section.href, index: index };
+}
+
+// Asks Dart to open the zoom viewer on [image].
+function sendImageLongPress(contents, image) {
+  var ref = imageRef(contents, image);
+  if (!ref) return;
+  console.log('[EPUB_BRIDGE] imageLongPressed ' + ref.href + ' #' + ref.index);
+  callDart('imageLongPressed', ref);
 }
 
 // ── Margins ──────────────────────────────────────────────────────────
