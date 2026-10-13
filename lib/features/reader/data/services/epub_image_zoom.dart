@@ -19,8 +19,10 @@ Future<List<ZoomImage>?> epubZoomImagesJob((String, String, int, bool) args) =>
 ///
 /// A page declared as one half of a spread is joined with the other half,
 /// when the neighbouring section on that side is a single-image page
-/// declared as the opposite half: in [rtl] books a right half opens a
-/// spread and looks at the next section, a left half at the previous one.
+/// declared as the opposite half: in right-to-left books a right half opens
+/// a spread and looks at the next section, a left half at the previous one.
+/// The book's own page-progression-direction decides that, whichever way it
+/// is read; [rtl] stands in when the book declares none.
 ///
 /// Null when there is nothing to show (the book folder or the image is
 /// missing or broken, the index is out of range, or a path leaves the book
@@ -42,12 +44,13 @@ Future<List<ZoomImage>?> epubZoomImages(
     if (image == null) return null;
 
     var paths = [image];
-    final spine = await readEpubSpine(contentDir) ?? const [];
+    final book = await readEpubSpine(contentDir);
+    final spine = book?.docs ?? const [];
     final at = spine.indexWhere((doc) => doc.path == docPath);
     final side = at < 0 ? null : spine[at].spread;
     if (side == MangaPageSpread.left || side == MangaPageSpread.right) {
       final isLeft = side == MangaPageSpread.left;
-      final other = at + (isLeft == rtl ? -1 : 1);
+      final other = at + (isLeft == (book?.rtl ?? rtl) ? -1 : 1);
       if (other >= 0 &&
           other < spine.length &&
           spine[other].spread ==

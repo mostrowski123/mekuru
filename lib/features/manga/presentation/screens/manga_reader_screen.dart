@@ -1270,6 +1270,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                 ? computeSpreads(
                     mokuroBook.pages,
                     isRtl: isRtl,
+                    bookRtl: switch (widget.book.pageProgressionDirection) {
+                      'rtl' => true,
+                      'ltr' => false,
+                      _ => null,
+                    },
                     detectWidePages: detectSpreads,
                     shift: _spreadShift.value,
                   )

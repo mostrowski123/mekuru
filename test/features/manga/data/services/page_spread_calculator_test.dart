@@ -38,12 +38,14 @@ List<List<int>> _order(List<PageSpread> spreads, {required bool isRtl}) => [
 List<List<int>> _spreads(
   String spec, {
   bool isRtl = true,
+  bool? bookRtl,
   bool detectWidePages = true,
   bool shift = false,
 }) => _order(
   computeSpreads(
     _pages(spec),
     isRtl: isRtl,
+    bookRtl: bookRtl,
     detectWidePages: detectWidePages,
     shift: shift,
   ),
@@ -154,6 +156,22 @@ void main() {
 
     test('left opens a pair in ltr books', () {
       expect(_spreads('pLRLR', isRtl: false), [
+        [0],
+        [1, 2],
+        [3, 4],
+      ]);
+    });
+
+    test('declared halves pair the way the book declares, read either way', () {
+      // A right-to-left book read left to right: each right half still
+      // opens its pair.
+      expect(_spreads('pRLRL', isRtl: false, bookRtl: true), [
+        [0],
+        [1, 2],
+        [3, 4],
+      ]);
+      // A left-to-right book read right to left.
+      expect(_spreads('pLRLR', bookRtl: false), [
         [0],
         [1, 2],
         [3, 4],

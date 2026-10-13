@@ -67,17 +67,22 @@ bool standsAlone(MokuroPage page, {bool detectWide = true}) =>
 /// - [shift] moves every pair by one page: the cover pairs with page 1, a
 ///   run after a lone page starts with a single page, and the declared
 ///   sides swap roles.
+/// - [bookRtl] is the direction the book itself declares: it decides which
+///   declared side opens a pair, whichever way the book is read. Null
+///   follows [isRtl].
 /// - For RTL: right page = lower index, left page = higher index.
 /// - For LTR: left page = lower index, right page = higher index.
 List<PageSpread> computeSpreads(
   List<MokuroPage> pages, {
   required bool isRtl,
+  bool? bookRtl,
   bool detectWidePages = true,
   bool shift = false,
 }) {
   bool alone(MokuroPage page) => standsAlone(page, detectWide: detectWidePages);
-  final opener = isRtl != shift ? MangaPageSpread.right : MangaPageSpread.left;
-  final closer = isRtl != shift ? MangaPageSpread.left : MangaPageSpread.right;
+  final rightOpens = (bookRtl ?? isRtl) != shift;
+  final opener = rightOpens ? MangaPageSpread.right : MangaPageSpread.left;
+  final closer = rightOpens ? MangaPageSpread.left : MangaPageSpread.right;
 
   final spreads = <PageSpread>[];
   var leadSingle = !shift;

@@ -110,6 +110,21 @@ void main() {
     expect(await zoom('text/s2.xhtml', 0), both);
   });
 
+  test('halves join the way the book declares, read either way', () async {
+    await _writeBook(
+      dir,
+      [
+        (_img('r.png'), 'page-spread-right'),
+        (_img('l.png'), 'page-spread-left'),
+      ],
+      sizes: {'r.png': (30, 40), 'l.png': (31, 40)},
+    );
+    // This right-to-left book is read left to right.
+    const both = ['l.png 31x40', 'r.png 30x40'];
+    expect(await zoom('text/s0.xhtml', 0, rtl: false), both);
+    expect(await zoom('text/s1.xhtml', 0, rtl: false), both);
+  });
+
   test('left-to-right halves join, left first', () async {
     await _writeBook(
       dir,

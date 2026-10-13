@@ -17,12 +17,16 @@ class EpubNotMangaException implements Exception {
   String toString() => 'EpubNotMangaException: $message';
 }
 
-/// The spine of the extracted EPUB at [contentDir], in order: each
-/// document's root-relative path, with the spread side its itemref declares
-/// (`page-spread-*`, with or without the `rendition:` prefix). Itemrefs that
-/// name no manifest item are left out. Null when there is no readable OPF or
-/// spine.
-Future<List<({String path, MangaPageSpread? spread})>?> readEpubSpine(
+/// One document of an EPUB's spine: its root-relative path, and the spread
+/// side its itemref declares.
+typedef EpubSpineDoc = ({String path, MangaPageSpread? spread});
+
+/// The spine of the extracted EPUB at [contentDir]: its documents in order
+/// (sides from `page-spread-*`, with or without the `rendition:` prefix;
+/// itemrefs that name no manifest item are left out), and whether its
+/// `page-progression-direction` is `rtl` (null when it declares neither
+/// direction). Null when there is no readable OPF or spine.
+Future<({List<EpubSpineDoc> docs, bool? rtl})?> readEpubSpine(
   String contentDir,
 ) async {
   final String? opfPath;
@@ -46,12 +50,20 @@ Future<List<({String path, MangaPageSpread? spread})>?> readEpubSpine(
   if (spines.isEmpty) return null;
 
   final opfDir = p.posix.dirname(opfPath);
-  return [
-    for (final itemref in spines.first.findElements('itemref'))
-      if (manifestHrefById[itemref.getAttribute('idref')] case final href?)
-        if (resolveEpubHref(opfDir, href) case final path?)
-          (path: path, spread: _spreadOf(itemref.getAttribute('properties'))),
-  ];
+  final spine = spines.first;
+  return (
+    docs: [
+      for (final itemref in spine.findElements('itemref'))
+        if (manifestHrefById[itemref.getAttribute('idref')] case final href?)
+          if (resolveEpubHref(opfDir, href) case final path?)
+            (path: path, spread: _spreadOf(itemref.getAttribute('properties'))),
+    ],
+    rtl: switch (spine.getAttribute('page-progression-direction')) {
+      'rtl' => true,
+      'ltr' => false,
+      _ => null,
+    },
+  );
 }
 
 MangaPageSpread? _spreadOf(String? properties) => MangaPageSpread.values
@@ -69,7 +81,7 @@ final _spreadProperty = RegExp(r'(?:^|\s)(?:rendition:)?page-spread-(\w+)');
 Future<List<({String path, MangaPageSpread? spread})>?> _planConversion(
   String contentDir,
 ) async {
-  final spine = await readEpubSpine(contentDir);
+  final spine = (await readEpubSpine(contentDir))?.docs;
   if (spine == null || spine.isEmpty) return null;
 
   // Insertion-ordered: an image keeps its first place in the spine.
