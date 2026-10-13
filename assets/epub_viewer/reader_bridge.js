@@ -363,6 +363,20 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     }
   });
 
+  // A section that unloads takes its selection with it and fires no
+  // selectionchange (below); Dart would keep ignoring taps and page turns.
+  rendition.on('relocated', function () {
+    if (!hasSelection) return;
+    var kept = rendition.getContents().some(function (c) {
+      var sel = c.window.getSelection();
+      return sel && sel.toString().length > 0;
+    });
+    if (!kept) {
+      hasSelection = false;
+      callDart('selectionCleared');
+    }
+  });
+
   // Monitor for selection clearing
   rendition.hooks.content.register(function (contents) {
     var doc = contents.window.document;

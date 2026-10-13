@@ -113,8 +113,8 @@ void main() {
       await showSection(tester, controller, 'text.xhtml');
       await hold();
       expect(find.byType(EpubImageZoomView), findsNothing);
-      // The hold selected a word: let it go, as a tap beside it would.
-      await controller.debugEvaluateJavascript('clearSelection(); true');
+      // The hold selected a word. Leaving the section lets go of it: the
+      // taps below would be ignored otherwise.
 
       await showSection(tester, controller, 'spread.xhtml');
       await hold();
