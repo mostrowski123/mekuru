@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/reader/presentation/widgets/epub_image_zoom_view.dart';
 
@@ -52,5 +53,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(EpubImageZoomView), findsNothing);
     semantics.dispose();
+  });
+
+  testWidgets('buzzes as it opens, so a press that opens nothing is quiet', (
+    tester,
+  ) async {
+    final haptics = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'HapticFeedback.vibrate') haptics.add(call);
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    await tester.pumpWidget(
+      buildLocalizedTestApp(
+        home: const EpubImageZoomView(
+          images: [(path: '/book/a.png', width: 30, height: 40)],
+        ),
+      ),
+    );
+
+    expect(haptics, hasLength(1));
   });
 }

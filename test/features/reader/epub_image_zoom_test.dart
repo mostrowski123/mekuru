@@ -152,6 +152,14 @@ void main() {
     expect(await zoom('text/s0.xhtml', 0), isNull);
   });
 
+  test('a broken book is nothing to zoom, never an error', () async {
+    await _writeBook(dir, [(_img('a.png'), null)], sizes: {'a.png': (30, 40)});
+    await File(
+      p.join(dir.path, 'META-INF', 'container.xml'),
+    ).writeAsString('<container><rootfiles');
+    expect(await zoom('text/s0.xhtml', 0), isNull);
+  });
+
   test('never reads outside the book folder', () async {
     await File(
       p.join(dir.parent.path, 'outside_${p.basename(dir.path)}.png'),

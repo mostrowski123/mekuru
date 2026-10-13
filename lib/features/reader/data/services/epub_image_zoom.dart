@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:mekuru/features/library/data/services/epub_manga_converter.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -25,7 +23,8 @@ Future<List<ZoomImage>?> epubZoomImagesJob((String, String, int, bool) args) =>
 /// spread and looks at the next section, a left half at the previous one.
 ///
 /// Null when there is nothing to show (the book folder or the image is
-/// missing, the index is out of range, or a path leaves the book folder).
+/// missing or broken, the index is out of range, or a path leaves the book
+/// folder). Never throws.
 Future<List<ZoomImage>?> epubZoomImages(
   String contentDir,
   String sectionHref,
@@ -69,7 +68,7 @@ Future<List<ZoomImage>?> epubZoomImages(
       result.add((path: file, width: size.width, height: size.height));
     }
     return result;
-  } on FileSystemException {
+  } catch (_) {
     return null;
   }
 }

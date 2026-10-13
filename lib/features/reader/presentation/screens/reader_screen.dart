@@ -1048,7 +1048,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   Future<void> _openImageZoom(String href, int index) async {
     // The bridge swallows this press's lift: drop its touchDown too.
     _touchDown = null;
-    AppHaptics.medium();
     // shortcut: books imported before EPUBs were extracted keep the .epub
     // itself as their filePath; they have no folder to zoom from.
     // Off the UI isolate: a novel's chapter can be one large document.
