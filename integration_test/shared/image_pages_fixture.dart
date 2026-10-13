@@ -21,8 +21,9 @@ const imagePagesTitle = '挿絵テスト';
 /// Sections: `portrait.xhtml` (a horizontal-tb illustration page in an `img`),
 /// `spread.xhtml` (vertical-rl, the wide image in an `svg` with no viewBox,
 /// as calibre writes them), `ornament.xhtml` (a 40x20 image alone) and
-/// `text.xhtml` (text with a 128 px inline image) and `linked.xhtml` (an
-/// illustration inside a link). The OPF asks for
+/// `text.xhtml` (text with a 128 px inline image), `linked.xhtml` (an
+/// illustration inside a link) and `bare.xhtml` (vertical-rl, the ornament
+/// straight in the body, with no wrapper). The OPF asks for
 /// `rendition:spread both`, which put pages two-up on wide screens.
 Future<String> writeImagePagesEpub(Directory dir) async {
   final archive = Archive();
@@ -64,6 +65,7 @@ Future<String> writeImagePagesEpub(Directory dir) async {
         '<item id="ornament" href="ornament.xhtml" media-type="application/xhtml+xml"/>'
         '<item id="text" href="text.xhtml" media-type="application/xhtml+xml"/>'
         '<item id="linked" href="linked.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="bare" href="bare.xhtml" media-type="application/xhtml+xml"/>'
         '<item id="p1" href="portrait.png" media-type="image/png"/>'
         '<item id="p2" href="wide.png" media-type="image/png"/>'
         '<item id="p3" href="ornament.png" media-type="image/png"/>'
@@ -76,6 +78,7 @@ Future<String> writeImagePagesEpub(Directory dir) async {
         '<itemref idref="ornament"/>'
         '<itemref idref="text"/>'
         '<itemref idref="linked"/>'
+        '<itemref idref="bare"/>'
         '</spine>'
         '</package>',
   );
@@ -145,6 +148,11 @@ Future<String> writeImagePagesEpub(Directory dir) async {
     ),
   );
 
+  addFile(
+    'OEBPS/bare.xhtml',
+    page('bare', '<img src="ornament.png" alt=""/>', vertical: true),
+  );
+
   final epubPath = p.join(dir.path, 'image_pages.epub');
   await File(epubPath).writeAsBytes(ZipEncoder().encode(archive));
   return epubPath;
@@ -182,6 +190,17 @@ Future<void> longPressImage(
   '})()',
 );
 
+/// Whether a long press at the middle of the page would open the zoom
+/// viewer.
+Future<bool> zoomableAtCentre(CustomEpubController controller) async =>
+    await controller.debugEvaluateJavascript(
+      '(function () {'
+      '  var c = rendition.getContents()[0], L = rendition._layout;'
+      '  return !!zoomableImageAt(c.document, L.width / 2, L.height / 2);'
+      '})()',
+    ) ==
+    true;
+
 /// The files the zoom viewer shows, left first.
 List<String> zoomedFiles(WidgetTester tester) => [
   for (final image in tester.widgetList<Image>(
@@ -205,15 +224,16 @@ Future<Map<String, dynamic>> imageState(
   '  var c = rendition.getContents()[0], L = rendition._layout;'
   '  var el = c.document.querySelector(${jsonEncode(selector)});'
   '  var r = el.getBoundingClientRect(), painted;'
+  '  var cs = c.window.getComputedStyle(el), loc = rendition.currentLocation();'
   '  if (el.tagName.toLowerCase() === "svg") {'
   '    painted = el.querySelector("image").getBoundingClientRect();'
   '  } else {'
-  '    var s = Math.min(r.width / el.naturalWidth, r.height / el.naturalHeight);'
+  '    var s = cs.objectFit === "none" ? 1 :'
+  '      Math.min(r.width / el.naturalWidth, r.height / el.naturalHeight);'
   '    var pw = el.naturalWidth * s, ph = el.naturalHeight * s;'
   '    painted = {left: r.left + (r.width - pw) / 2,'
   '      top: r.top + (r.height - ph) / 2, width: pw, height: ph};'
   '  }'
-  '  var cs = c.window.getComputedStyle(el), loc = rendition.currentLocation();'
   '  var view = rendition.manager.views.first();'
   '  return JSON.stringify({'
   '    W: L.width, H: L.height, spread: L._spread,'
@@ -238,6 +258,13 @@ void expectFillsPage(Map<String, dynamic> s) {
   expect(v('w'), closeTo(v('W'), 1), reason: '$s');
   expect(v('h'), closeTo(v('H'), 1), reason: '$s');
   expectCentred(s, prefix: 'p');
+}
+
+/// The 40x20 ornament keeps its size and sits in the middle of the page.
+void expectSmallAndCentred(Map<String, dynamic> s) {
+  expect(s['pw'], closeTo(40, 1), reason: '$s');
+  expect(s['ph'], closeTo(20, 1), reason: '$s');
+  expectCentred(s, prefix: 'p', touching: false);
 }
 
 /// The box at `<prefix>x`, `<prefix>y`, `<prefix>w`, `<prefix>h` in [s] is

@@ -55,10 +55,14 @@ void main() {
 
     await showSection(tester, controller, 'ornament.xhtml');
     final ornament = await imageState(controller, 'img');
-    expect(ornament['w'], closeTo(40, 1), reason: '$ornament');
-    expect(ornament['h'], closeTo(20, 1), reason: '$ornament');
-    expectCentred(ornament, touching: false);
+    expectSmallAndCentred(ornament);
     expect(ornament['total'], 1, reason: '$ornament');
+    // Under 64 px: no zoom.
+    expect(await zoomableAtCentre(controller), isFalse);
+
+    // The same ornament straight in a vertical page's body.
+    await showSection(tester, controller, 'bare.xhtml');
+    expectSmallAndCentred(await imageState(controller, 'img'));
 
     await showSection(tester, controller, 'text.xhtml');
     final inline = await imageState(controller, 'img.gaiji');

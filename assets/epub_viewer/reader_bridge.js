@@ -1324,24 +1324,30 @@ function fitImagePage(contents) {
 
   var W = rendition._layout.width;
   var H = rendition._layout.height;
+  // The box is always the whole page (that box is what sizes the section);
+  // a small picture keeps its size in the middle of it: object-fit none, or
+  // for an svg a viewBox the page's size around the picture.
   var small = natural && natural.w < W / 3 && natural.h < H / 3;
-  var w = small ? natural.w : W;
-  var h = small ? natural.h : H;
+  if (small && target !== image) {
+    var vb = target.viewBox.baseVal;
+    target.setAttribute('viewBox', [vb.x - (W - vb.width) / 2,
+      vb.y - (H - vb.height) / 2, W, H].join(' '));
+  }
   var mode = contents.writingMode();
   var style = {
     position: 'absolute',
-    top: (H - h) / 2 + 'px',
-    width: w + 'px',
-    height: h + 'px',
+    top: '0',
+    width: W + 'px',
+    height: H + 'px',
     'max-width': 'none',
     'max-height': 'none',
     margin: '0',
     padding: '0',
     border: '0',
-    'object-fit': 'contain',
+    'object-fit': small ? 'none' : 'contain',
     'object-position': '50% 50%'
   };
-  style[mode === 'vertical-rl' ? 'right' : 'left'] = (W - w) / 2 + 'px';
+  style[mode === 'vertical-rl' ? 'right' : 'left'] = '0';
   for (var prop in style) target.style.setProperty(prop, style[prop], 'important');
   // Positioned against the page itself, whatever wraps the image.
   var outer = target;
@@ -1387,7 +1393,20 @@ function zoomableImageAt(doc, x, y) {
   }
   if (!image) return null;
   var r = image.getBoundingClientRect();
-  return r.width >= 64 && r.height >= 64 ? image : null;
+  var w = r.width, h = r.height;
+  // What is painted, not the box: a filled page's img box is the whole page.
+  if (image.localName === 'img' && image.naturalWidth) {
+    var nw = image.naturalWidth, nh = image.naturalHeight;
+    if (doc.defaultView.getComputedStyle(image).objectFit === 'none') {
+      w = Math.min(w, nw);
+      h = Math.min(h, nh);
+    } else {
+      var s = Math.min(w / nw, h / nh);
+      w = nw * s;
+      h = nh * s;
+    }
+  }
+  return w >= 64 && h >= 64 ? image : null;
 }
 
 // Asks Dart to open the zoom viewer on [image], named by its section's

@@ -39,5 +39,13 @@ void main() {
       await showSection(tester, controller, href);
       expectFillsPage(await imageState(controller, selector));
     }
+
+    // An ornament straight in a vertical page's body: one screen too, with
+    // the ornament in its middle.
+    await showSection(tester, controller, 'bare.xhtml');
+    final bare = await imageState(controller, 'img');
+    expect(bare['frameW'], closeTo(bare['W'] as num, 1), reason: '$bare');
+    expect(bare['frameH'], closeTo(bare['H'] as num, 1), reason: '$bare');
+    expectSmallAndCentred(bare);
   });
 }
