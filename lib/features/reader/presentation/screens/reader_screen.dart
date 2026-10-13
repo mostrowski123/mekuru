@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, compute, defaultTargetPlatform, setEquals;
-import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
+import 'package:flutter/gestures.dart'
+    show GestureBinding, kDoubleTapSlop, kDoubleTapTimeout, kTouchSlop;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -180,9 +181,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   static const _kReaderLoadTimeout = Duration(seconds: 15);
   Timer? _loadWatchdog;
 
-  // A tap on an image that would show or hide the controls, held back for a
-  // second tap: a double tap opens the image instead.
+  // A tap on [_tappedImage] that would show or hide the controls, held back
+  // for a second tap: a double tap opens the image instead. The second tap
+  // is found among Flutter's pointer events ([_onPointer]).
   Timer? _imageTap;
+  EpubImageRef? _tappedImage;
+  Offset? _lastPointerUp;
+  Offset? _secondTapDown;
+  // From a long press or double tap until the zoom viewer closes.
+  bool _openingImage = false;
 
   // Book language (from DB or re-parsed for legacy books).
   String? _bookLanguage;
@@ -197,6 +204,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_onPointer);
 
     logUsage('reader.book_opened', attrs: {'format': 'epub'});
     _sessionTracker = ReaderSessionTracker(bookFormat: 'epub');
@@ -286,6 +294,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _loadWatchdog?.cancel();
     _seekSettleFallback?.cancel();
     _imageTap?.cancel();
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_onPointer);
     _epubController.detach();
     unawaited(_progressPersistence.dispose());
     unawaited(_brightnessNotifier.resetBrightness());
@@ -1063,23 +1072,57 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   /// A long press or a double tap on [image] opens it full screen.
   Future<void> _openImageZoom(EpubImageRef image) async {
-    // shortcut: books imported before EPUBs were extracted keep the .epub
-    // itself as their filePath; they have no folder to zoom from.
-    // Off the UI isolate: a novel's chapter can be one large document.
-    final images = await compute(epubZoomImagesJob, (
-      widget.book.filePath,
-      image.href,
-      image.index,
-      ref.read(readerSettingsProvider).readingDirection == ReaderDirection.rtl,
-    ));
-    if (images == null || !mounted) return;
-    await Navigator.of(context).push(
-      namedRoute(
-        'epub_image_zoom',
-        (_) => EpubImageZoomView(images: images),
-        fullscreenDialog: true,
-      ),
-    );
+    _openingImage = true;
+    try {
+      // shortcut: books imported before EPUBs were extracted keep the .epub
+      // itself as their filePath; they have no folder to zoom from.
+      // Off the UI isolate: a novel's chapter can be one large document.
+      final images = await compute(epubZoomImagesJob, (
+        widget.book.filePath,
+        image.href,
+        image.index,
+        ref.read(readerSettingsProvider).readingDirection ==
+            ReaderDirection.rtl,
+      ));
+      if (images == null || !mounted) return;
+      await Navigator.of(context).push(
+        namedRoute(
+          'epub_image_zoom',
+          (_) => EpubImageZoomView(images: images),
+          fullscreenDialog: true,
+        ),
+      );
+    } finally {
+      _openingImage = false;
+    }
+  }
+
+  /// Opens [_tappedImage] on the second tap of a double tap. That tap is
+  /// taken from Flutter's pointer events: on iOS it never reaches the page
+  /// (a touch that closely follows a tap is dropped before WebKit), so the
+  /// bridge cannot report it.
+  void _onPointer(PointerEvent event) {
+    if (event is PointerDownEvent) {
+      final last = _lastPointerUp;
+      final second =
+          (_imageTap?.isActive ?? false) &&
+          last != null &&
+          (event.position - last).distance <= kDoubleTapSlop;
+      _secondTapDown = second ? event.position : null;
+      if (second) _imageTap!.cancel();
+    } else if (event is PointerUpEvent) {
+      _lastPointerUp = event.position;
+      final down = _secondTapDown;
+      final image = _tappedImage;
+      _secondTapDown = null;
+      if (down != null &&
+          image != null &&
+          (event.position - down).distance < kTouchSlop) {
+        unawaited(_openImageZoom(image));
+      }
+    } else if (event is PointerCancelEvent) {
+      _secondTapDown = null;
+    }
   }
 
   void _handleTouchUp(
@@ -1092,9 +1135,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     ReaderDirection readingDirection,
     double swipeSensitivity,
   ) {
-    // Any lift settles a held image tap: only a second tap opens the image.
-    final secondTap = _imageTap?.isActive ?? false;
+    // Any lift settles a held image tap.
     _imageTap?.cancel();
+    // On Android the page also sees the second tap of the double tap that
+    // opened the image.
+    if (_openingImage) {
+      _touchDown = null;
+      return;
+    }
     if (_hasActiveSelection) {
       debugPrint('[READER] touchUp ignored — active selection');
       _touchDown = null;
@@ -1126,14 +1174,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
     // Edge taps on an image still turn the page at once.
     if (image != null && intent == ReaderNavigationIntent.toggleControls) {
-      if (secondTap) {
-        unawaited(_openImageZoom(image));
-      } else {
-        _imageTap = Timer(
-          kDoubleTapTimeout,
-          () => _executeNavigationIntent(intent),
-        );
-      }
+      _tappedImage = image;
+      _imageTap = Timer(
+        kDoubleTapTimeout,
+        () => _executeNavigationIntent(intent),
+      );
       return;
     }
     _executeNavigationIntent(intent);

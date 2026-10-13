@@ -190,21 +190,15 @@ Future<void> longPressImage(
   '})()',
 );
 
-/// Taps the middle of the page [taps] times in a row through the bridge,
-/// as its touch handler does, on the first [selector] match.
-Future<void> tapImage(
-  CustomEpubController controller,
-  String selector, {
-  int taps = 1,
-}) async {
+/// Taps the middle of the page through the bridge, as its touch handler
+/// does, on the first [selector] match.
+Future<void> tapImage(CustomEpubController controller, String selector) async {
   final found = await controller.debugEvaluateJavascript(
     '(function () {'
     '  var c = rendition.getContents()[0];'
     '  var ref = imageRef(c, c.document.querySelector(${jsonEncode(selector)}));'
-    '  for (var i = 0; i < $taps; i++) {'
-    '    sendTouchDown(0.5, 0.5);'
-    '    callDart("touchUp", 0.5, 0.5, false, false, ref);'
-    '  }'
+    '  sendTouchDown(0.5, 0.5);'
+    '  callDart("touchUp", 0.5, 0.5, false, false, ref);'
     '  return !!ref;'
     '})()',
   );
