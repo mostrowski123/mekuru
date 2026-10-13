@@ -186,7 +186,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // is found among Flutter's pointer events ([_onPointer]).
   Timer? _imageTap;
   EpubImageRef? _tappedImage;
-  Offset? _lastPointerUp;
+  ({Offset position, Duration time})? _lastPointerUp;
   Offset? _secondTapDown;
   // From a long press or double tap until the zoom viewer closes.
   bool _openingImage = false;
@@ -1100,18 +1100,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// Opens [_tappedImage] on the second tap of a double tap. That tap is
   /// taken from Flutter's pointer events: on iOS it never reaches the page
   /// (a touch that closely follows a tap is dropped before WebKit), so the
-  /// bridge cannot report it.
+  /// bridge cannot report it. On iOS the bridge also reports a tap before
+  /// Flutter routes its pointer down, so the held tap's own down is only
+  /// told apart from a second tap by the time since the previous lift.
   void _onPointer(PointerEvent event) {
     if (event is PointerDownEvent) {
       final last = _lastPointerUp;
       final second =
           (_imageTap?.isActive ?? false) &&
           last != null &&
-          (event.position - last).distance <= kDoubleTapSlop;
+          event.timeStamp - last.time <= kDoubleTapTimeout &&
+          (event.position - last.position).distance <= kDoubleTapSlop;
       _secondTapDown = second ? event.position : null;
       if (second) _imageTap!.cancel();
     } else if (event is PointerUpEvent) {
-      _lastPointerUp = event.position;
+      _lastPointerUp = (position: event.position, time: event.timeStamp);
       final down = _secondTapDown;
       final image = _tappedImage;
       _secondTapDown = null;

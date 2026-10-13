@@ -145,14 +145,20 @@ void main() {
     expect(zoomedFiles(tester), ['wide.png']);
     await closeZoom();
 
-    // Taps as iOS delivers them: Flutter sees each finger, the page only a
-    // tap that doesn't closely follow another. Under the test binding the
-    // page sees none, so the bridge stands in for it.
+    // Taps as iOS delivers them: the page reports a tap before Flutter routes
+    // its finger, and never sees a tap that closely follows another. Under
+    // the test binding the page sees nothing, so the bridge stands in for it.
     if (Platform.isIOS) {
       final centre = tester.getCenter(find.byType(CustomEpubViewer));
+      final clock = Stopwatch()..start();
       Future<void> tap({required bool reachesPage}) async {
-        await tester.tapAt(centre);
-        if (reachesPage) await tapImage(controller, 'svg image');
+        if (reachesPage) {
+          await tapImage(controller, 'svg image');
+          await tester.pump(const Duration(milliseconds: 20));
+        }
+        final finger = await tester.createGesture();
+        await finger.down(centre, timeStamp: clock.elapsed);
+        await finger.up(timeStamp: clock.elapsed);
         await tester.pump(const Duration(milliseconds: 50));
       }
 
@@ -163,9 +169,13 @@ void main() {
       expect(zoomedFiles(tester), ['wide.png']);
       await closeZoom();
 
-      // ...and a single tap shows the controls once no second tap follows.
+      // ...a single tap shows the controls once no second tap follows, and
+      // the next one on the same spot hides them again.
       await tap(reachesPage: true);
       await pumpUntilVisible(tester, find.byType(ReaderBarScrim));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tap(reachesPage: true);
+      await pumpUntilGone(tester, find.byType(ReaderBarScrim));
       expect(find.byType(EpubImageZoomView), findsNothing);
     }
   });
