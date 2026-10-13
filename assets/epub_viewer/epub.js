@@ -9329,6 +9329,13 @@ class IframeView {
       if (this.settings.flow === "paginated" && height % this.layout.height > 0) {
         height = Math.ceil(height / this.layout.height) * this.layout.height;
       }
+      // [MEKURU PATCH] A section is at least one page. WebKit (iOS 26.2)
+      // leaves zero-width boxes out of the text's range rect, so a vertical
+      // image page (its image positioned, its wrapper 0 wide) measured 0
+      // tall, and a 0-tall view is never visible: the reader never got there.
+      if (this.settings.flow === "paginated") {
+        height = Math.max(height, this.layout.height);
+      }
     }
 
     // Only Resize if dimensions have changed or
