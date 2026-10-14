@@ -287,9 +287,10 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
     final mediaQuery = MediaQuery.of(context);
     final maxHeight = mediaQuery.size.height * 0.5;
 
+    final theme = Theme.of(context);
     final bgColor = widget.transparent
-        ? Theme.of(context).colorScheme.surface.withAlpha(210)
-        : Theme.of(context).colorScheme.surface;
+        ? theme.colorScheme.surface.withAlpha(210)
+        : theme.bottomSheetTheme.backgroundColor ?? theme.colorScheme.surface;
 
     return SafeArea(
       child: Container(
@@ -520,8 +521,10 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
         // is painted opaque in the colour of the sheet behind it.
         final theme = Theme.of(context);
         final sheetTheme = theme.bottomSheetTheme;
-        final headerColor = widget.showAtTop || widget.transparent
+        final headerColor = widget.transparent
             ? theme.colorScheme.surface
+            : widget.showAtTop
+            ? sheetTheme.backgroundColor ?? theme.colorScheme.surface
             : sheetTheme.modalBackgroundColor ??
                   sheetTheme.backgroundColor ??
                   theme.colorScheme.surfaceContainerLow;

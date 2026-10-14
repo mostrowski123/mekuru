@@ -11,12 +11,15 @@ void main() {
     expect(theme.scaffoldBackgroundColor, Colors.black);
     expect(theme.colorScheme.surface, Colors.black);
     expect(theme.appBarTheme.backgroundColor, Colors.black);
+    // Sheets stay near-black so their edge shows.
+    expect(theme.bottomSheetTheme.backgroundColor, const Color(0xFF0C0C0C));
   });
 
   test('the dark theme stays gray without pure black', () {
     final theme = AppTheme.darkTheme(seed);
 
     expect(theme.scaffoldBackgroundColor, const Color(0xFF121212));
+    expect(theme.bottomSheetTheme.backgroundColor, theme.colorScheme.surface);
     expect(
       theme.colorScheme.surface,
       ColorScheme.fromSeed(

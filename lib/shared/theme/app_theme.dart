@@ -59,7 +59,10 @@ class AppTheme {
         color: colorScheme.surfaceContainerHighest,
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: colorScheme.surface,
+        // Near-black in pure black, so a sheet's edge shows on a black screen.
+        backgroundColor: pureBlack
+            ? colorScheme.surfaceContainerLow
+            : colorScheme.surface,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
