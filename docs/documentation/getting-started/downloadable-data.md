@@ -68,7 +68,7 @@ These two rows power the **Sentence** tab of the lookup sheet, which translates 
 
 | Item | Size | What it is for |
 |-|-|-|
-| **Japanese translation** | 55 MB if the app is in English; 91 MB in Spanish; 76 MB in Indonesian; 107 MB in Simplified Chinese | Standard sentence translation, offline |
+| **Japanese translation** | 55 MB if the app is in English or Japanese; 91 MB in Spanish; 76 MB in Indonesian; 107 MB in Simplified Chinese | Standard sentence translation, offline |
 | **High-quality translation (Gemma 4)** | 2.6 GB | Better sentence translations, for phones with plenty of memory |
 
 - **High-quality translation (Gemma 4)** needs a 64-bit Android phone. On other phones, the row doesn't appear.

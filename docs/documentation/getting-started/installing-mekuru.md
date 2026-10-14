@@ -50,7 +50,7 @@ Mekuru opens on the **Library** tab. Your library is empty and shows these butto
 
 You don't need an account.
 
-Mekuru uses your phone's language when it is English, Spanish, Indonesian or Simplified Chinese, and English otherwise. To change it, open **You › Settings › App Language**.
+Mekuru uses your phone's language when it is English, Japanese, Spanish, Indonesian or Simplified Chinese, and English otherwise. To change it, open **You › Settings › App Language**.
 
 ## Related pages
 

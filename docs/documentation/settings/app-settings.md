@@ -21,7 +21,7 @@ Shown only when a page has no tab in the navigation bar. Tap a page to open it. 
 
 ## General
 
-- **App Language**: the language of Mekuru's menus. Choose **System default**, **English**, **Español**, **Bahasa Indonesia** or **简体中文**. Sentence translations in the lookup sheet use this language too. If your phone uses another language, Mekuru uses English.
+- **App Language**: the language of Mekuru's menus. Choose **System default**, **English**, **日本語**, **Español**, **Bahasa Indonesia** or **简体中文**. Sentence translations in the lookup sheet use this language too (English when Mekuru is in Japanese). If your phone uses another language, Mekuru uses English.
 - **Startup Screen**: what Mekuru shows when it starts: **Last Read Book**, or any tab in the navigation bar.
 - **Navigation bar**: the tabs at the bottom of the screen. Turn a tab on or off with its switch, and drag the handle to change the order. Up to 5 tabs fit. **Library** is always there.
     - Tabs you can add: **Recent** (every book you have opened, newest first), **Stats**, **Free books** and **Settings**.

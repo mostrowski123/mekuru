@@ -18,7 +18,7 @@ The translation runs on your device. The sentence is not sent anywhere, and afte
 ## Before you start
 
 - Translation needs a one-time download. On Android, this is Mekuru's Japanese translation model (about 55 MB). On iPhone and iPad, it is Apple's Japanese language pack.
-- Mekuru translates into the app's language: English, Spanish, Indonesian or Simplified Chinese. To change it, go to **You › Settings › App Language**.
+- Mekuru translates into the app's language: English, Spanish, Indonesian or Simplified Chinese (English when the app is in Japanese). To change it, go to **You › Settings › App Language**.
 
 ## Translate a sentence
 

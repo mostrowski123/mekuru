@@ -23,7 +23,7 @@ Each field of your Anki note type gets one of these sources. You choose them in 
 
 Notes on the sources:
 
-- **Sentence Translation** is filled only when sentence translation is already installed on your device. Otherwise the field stays empty. The translation is in the app's language: English, Spanish, Indonesian or Simplified Chinese. See [Sentence Translation](../dictionary/sentence-translation.md).
+- **Sentence Translation** is filled only when sentence translation is already installed on your device. Otherwise the field stays empty. The translation is in the app's language: English, Spanish, Indonesian or Simplified Chinese (English when the app is in Japanese). See [Sentence Translation](../dictionary/sentence-translation.md).
 - **Frequency Rank** needs a frequency dictionary, such as the JPDB word frequency in the starter pack. **Pitch Accent** needs a pitch accent dictionary.
 - The card also gets your default tags. The default tag is `mekuru`.
 
