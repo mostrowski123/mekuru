@@ -155,6 +155,35 @@ void main() {
     },
   );
 
+  testWidgets('Japanese locale resolves localized navigation labels', (
+    WidgetTester tester,
+  ) async {
+    final locale = const Locale('ja');
+    final l10n = await AppLocalizations.delegate.load(locale);
+
+    await tester.pumpWidget(
+      buildLocalizedTestApp(
+        locale: locale,
+        home: const Scaffold(body: _NavLabelProbe()),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10n.navLibrary), findsOneWidget);
+    expect(find.text('Library'), findsNothing);
+  });
+
+  test('Japanese locale with JP country resolves to Japanese support', () {
+    expect(
+      resolveSupportedAppLocale(
+        const Locale.fromSubtags(languageCode: 'ja', countryCode: 'JP'),
+        AppLocalizations.supportedLocales,
+      ),
+      const Locale('ja'),
+    );
+  });
+
   test(
     'Chinese locale with CN country resolves to Simplified Chinese support',
     () {

@@ -9,6 +9,7 @@ enum AppLanguage {
   english('en'),
   spanish('es'),
   indonesian('id'),
+  japanese('ja'),
   simplifiedChinese('zh_Hans');
 
   const AppLanguage(this.storageValue);
@@ -31,6 +32,7 @@ Locale? appLanguageLocaleOverride(AppLanguage language) {
     AppLanguage.english => const Locale('en'),
     AppLanguage.spanish => const Locale('es'),
     AppLanguage.indonesian => const Locale('id'),
+    AppLanguage.japanese => const Locale('ja'),
     AppLanguage.simplifiedChinese => const Locale.fromSubtags(
       languageCode: 'zh',
       scriptCode: 'Hans',

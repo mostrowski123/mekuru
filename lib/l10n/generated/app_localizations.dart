@@ -8,6 +8,7 @@ import 'package:intl/intl.dart' as intl;
 import 'app_localizations_en.dart';
 import 'app_localizations_es.dart';
 import 'app_localizations_id.dart';
+import 'app_localizations_ja.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -99,6 +100,7 @@ abstract class AppLocalizations {
     Locale('en'),
     Locale('es'),
     Locale('id'),
+    Locale('ja'),
     Locale('zh'),
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
@@ -1536,6 +1538,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bahasa Indonesia'**
   String get settingsAppLanguageIndonesian;
+
+  /// Language option label for Japanese.
+  ///
+  /// In en, this message translates to:
+  /// **'日本語'**
+  String get settingsAppLanguageJapanese;
 
   /// Language option label for Simplified Chinese.
   ///
@@ -7380,7 +7388,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'es', 'id', 'zh'].contains(locale.languageCode);
+      <String>['en', 'es', 'id', 'ja', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -7407,6 +7415,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEs();
     case 'id':
       return AppLocalizationsId();
+    case 'ja':
+      return AppLocalizationsJa();
     case 'zh':
       return AppLocalizationsZh();
   }

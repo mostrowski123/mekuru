@@ -575,6 +575,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return switch (locale.languageCode) {
       'es' => l10n.settingsAppLanguageSpanish,
       'id' => l10n.settingsAppLanguageIndonesian,
+      'ja' => l10n.settingsAppLanguageJapanese,
       'zh' => l10n.settingsAppLanguageSimplifiedChinese,
       _ => l10n.settingsAppLanguageEnglish,
     };
@@ -588,6 +589,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     AppLanguage.english => l10n.settingsAppLanguageEnglish,
     AppLanguage.spanish => l10n.settingsAppLanguageSpanish,
     AppLanguage.indonesian => l10n.settingsAppLanguageIndonesian,
+    AppLanguage.japanese => l10n.settingsAppLanguageJapanese,
     AppLanguage.simplifiedChinese => l10n.settingsAppLanguageSimplifiedChinese,
   };
 

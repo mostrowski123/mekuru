@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="full_backup_channel_name">完全バックアップ</string>
+    <string name="full_backup_notification_export_title">Mekuruをバックアップ中</string>
+    <string name="full_backup_notification_restore_title">Mekuruを復元中</string>
+    <string name="full_backup_notification_preparing">準備中…</string>
+    <string name="full_backup_notification_export_done">完全バックアップが完了しました</string>
+    <string name="full_backup_notification_restore_ready">復元の準備ができました。Mekuruを開いて完了してください。</string>
+    <string name="full_backup_notification_paused">一時停止中です。Mekuruを開いて続行してください。</string>
+    <string name="full_backup_notification_failed">完全バックアップが停止しました。Mekuruを開いて詳細を確認してください。</string>
+</resources>

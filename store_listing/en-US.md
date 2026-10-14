@@ -55,6 +55,6 @@ Mekuru is built for extensive reading (tadoku) and immersion. Reading real Japan
 ◆ FREE AND OPEN SOURCE
 Mekuru is free and open source (AGPL). An optional one-time Pro upgrade unlocks on-device manga OCR, your own OCR server, manga auto-crop, and book highlights.
 
-App interface in English, Spanish, Indonesian, and Simplified Chinese.
+App interface in English, Japanese, Spanish, Indonesian, and Simplified Chinese.
 
 Mekuru (めくる) means "to turn the page": less time with a dictionary, more time reading Japanese.

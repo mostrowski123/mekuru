@@ -881,6 +881,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsAppLanguageIndonesian => 'Bahasa Indonesia';
 
   @override
+  String get settingsAppLanguageJapanese => '日本語';
+
+  @override
   String get settingsAppLanguageSimplifiedChinese => '简体中文';
 
   @override

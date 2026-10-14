@@ -1133,6 +1133,10 @@
   "@settingsAppLanguageIndonesian": {
     "description": "Language option label for Indonesian."
   },
+  "settingsAppLanguageJapanese": "日本語",
+  "@settingsAppLanguageJapanese": {
+    "description": "Language option label for Japanese."
+  },
   "settingsAppLanguageSimplifiedChinese": "简体中文",
   "@settingsAppLanguageSimplifiedChinese": {
     "description": "Language option label for Simplified Chinese."
