@@ -457,6 +457,12 @@ class RestoreService {
     if (homeTabs is String) {
       PreloadedAppSettings.initialHomeTabs = homeTabs;
     }
+
+    final pureBlack =
+        appSettings[SharedPreferencesAppSettingsStorage.pureBlackKey];
+    if (pureBlack is bool) {
+      PreloadedAppSettings.initialPureBlack = pureBlack;
+    }
   }
 
   static Future<void> _writePrefsValue(

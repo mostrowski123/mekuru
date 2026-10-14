@@ -930,6 +930,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsColorThemeTitle => 'Color Theme';
 
   @override
+  String get settingsPureBlackTitle => 'Pure black dark theme';
+
+  @override
+  String get settingsPureBlackSubtitle =>
+      'For AMOLED screens: black backgrounds in dark mode and on the reader\'s dark pages';
+
+  @override
   String get settingsColorThemeMekuruRed => 'Mekuru Red';
 
   @override

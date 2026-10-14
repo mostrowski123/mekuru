@@ -1205,6 +1205,14 @@
   "@settingsColorThemeTitle": {
     "description": "Title for the color theme setting."
   },
+  "settingsPureBlackTitle": "Pure black dark theme",
+  "@settingsPureBlackTitle": {
+    "description": "Settings › Appearance: title of the switch that makes dark backgrounds pure black (#000000) for AMOLED screens."
+  },
+  "settingsPureBlackSubtitle": "For AMOLED screens: black backgrounds in dark mode and on the reader's dark pages",
+  "@settingsPureBlackSubtitle": {
+    "description": "Subtitle of the pure black switch (settingsPureBlackTitle): who it is for and what turns black. \"The reader's dark pages\" is the EPUB reader's Dark color mode."
+  },
   "settingsColorThemeMekuruRed": "Mekuru Red",
   "@settingsColorThemeMekuruRed": {
     "description": "Color theme label for Mekuru Red."

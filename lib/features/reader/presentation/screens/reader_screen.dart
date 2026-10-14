@@ -871,8 +871,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // A new name per transfer, so two added fonts never collide in a chapter.
   String _nextUserFontFamily() => 'mekuru-user-font-${++_userFontGeneration}';
 
-  ReaderTheme _readerTheme(ReaderSettings s) =>
-      buildReaderTheme(settings: s, userFontFamily: _userFont?.family);
+  ReaderTheme _readerTheme(ReaderSettings s) => buildReaderTheme(
+    settings: s,
+    userFontFamily: _userFont?.family,
+    pureBlack: ref.read(pureBlackProvider),
+  );
 
   void _pushTheme(ReaderSettings s) {
     final theme = _readerTheme(s);

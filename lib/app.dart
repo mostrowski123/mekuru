@@ -95,6 +95,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
     unawaited(ref.read(appLanguageProvider.notifier).loadPersistedSettings());
     unawaited(ref.read(appThemeModeProvider.notifier).loadPersistedSettings());
     unawaited(ref.read(appColorThemeProvider.notifier).loadPersistedSettings());
+    unawaited(ref.read(pureBlackProvider.notifier).loadPersistedSettings());
     unawaited(
       ref.read(lookupFontSizeProvider.notifier).loadPersistedSettings(),
     );
@@ -243,6 +244,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
     final appLanguage = ref.watch(appLanguageProvider);
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);
+    final pureBlack = ref.watch(pureBlackProvider);
     final lowRamMode = ref.watch(lowRamModeProvider);
     // Low RAM mode: no ink ripples, and Android pages change at once.
     ThemeData applyLowRamMode(ThemeData theme) => lowRamMode
@@ -258,7 +260,9 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
       onGenerateTitle: (context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
       theme: applyLowRamMode(AppTheme.lightTheme(colorTheme.seedColor)),
-      darkTheme: applyLowRamMode(AppTheme.darkTheme(colorTheme.seedColor)),
+      darkTheme: applyLowRamMode(
+        AppTheme.darkTheme(colorTheme.seedColor, pureBlack: pureBlack),
+      ),
       themeMode: themeMode,
       locale: appLanguageLocaleOverride(appLanguage),
       localeResolutionCallback: resolveSupportedAppLocale,

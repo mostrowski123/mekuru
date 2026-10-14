@@ -1645,6 +1645,18 @@ abstract class AppLocalizations {
   /// **'Color Theme'**
   String get settingsColorThemeTitle;
 
+  /// Settings › Appearance: title of the switch that makes dark backgrounds pure black (#000000) for AMOLED screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Pure black dark theme'**
+  String get settingsPureBlackTitle;
+
+  /// Subtitle of the pure black switch (settingsPureBlackTitle): who it is for and what turns black. "The reader's dark pages" is the EPUB reader's Dark color mode.
+  ///
+  /// In en, this message translates to:
+  /// **'For AMOLED screens: black backgrounds in dark mode and on the reader\'s dark pages'**
+  String get settingsPureBlackSubtitle;
+
   /// Color theme label for Mekuru Red.
   ///
   /// In en, this message translates to:

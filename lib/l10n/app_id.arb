@@ -3240,5 +3240,7 @@
   "navBarEditorHint": "Seret untuk mengubah urutan. Maksimal 5 tab. Pustaka selalu ditampilkan. Tab yang disembunyikan dapat dibuka dari Pengaturan.",
   "navBarLibraryNote": "Selalu ditampilkan",
   "navBarYouNote": "Jika Anda dan Pengaturan sama-sama disembunyikan, Pengaturan ada di bilah atas Pustaka.",
-  "settingsSectionHiddenTabs": "Tab tersembunyi"
+  "settingsSectionHiddenTabs": "Tab tersembunyi",
+  "settingsPureBlackTitle": "Tema gelap hitam pekat",
+  "settingsPureBlackSubtitle": "Untuk layar AMOLED: latar hitam di mode gelap dan di halaman gelap pembaca"
 }

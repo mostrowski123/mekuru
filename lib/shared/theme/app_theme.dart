@@ -22,17 +22,31 @@ enum AppColorTheme {
 class AppTheme {
   AppTheme._();
 
-  static ThemeData darkTheme(Color seedColor) {
-    final colorScheme = ColorScheme.fromSeed(
+  /// [pureBlack]: black backgrounds for AMOLED screens. Raised surfaces stay
+  /// near-black so cards, menus and dialogs keep an edge.
+  static ThemeData darkTheme(Color seedColor, {bool pureBlack = false}) {
+    var colorScheme = ColorScheme.fromSeed(
       seedColor: seedColor,
       brightness: Brightness.dark,
     );
+    if (pureBlack) {
+      colorScheme = colorScheme.copyWith(
+        surface: Colors.black,
+        surfaceContainerLowest: const Color(0xFF0C0C0C),
+        surfaceContainerLow: const Color(0xFF0C0C0C),
+        surfaceContainer: const Color(0xFF0C0C0C),
+        surfaceContainerHigh: const Color(0xFF131313),
+        surfaceContainerHighest: const Color(0xFF1B1B1B),
+      );
+    }
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFF121212),
+      scaffoldBackgroundColor: pureBlack
+          ? Colors.black
+          : const Color(0xFF121212),
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,

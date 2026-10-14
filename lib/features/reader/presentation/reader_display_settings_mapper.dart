@@ -17,9 +17,11 @@ class ReaderTheme {
 /// [userFontFamily] is the family the reader registered the added font
 /// under; null when no font was sent (file missing or unreadable), which
 /// leaves the book's own fonts.
+/// [pureBlack] (the app's pure black setting) makes the dark page black.
 ReaderTheme buildReaderTheme({
   required ReaderSettings settings,
   String? userFontFamily,
+  bool pureBlack = false,
 }) {
   // Note: margins are handled separately via setMargins() in reader_bridge.js
   // by applying padding to the .epub-container div. epub.js Stage.size()
@@ -35,7 +37,7 @@ ReaderTheme buildReaderTheme({
       bgColor = Color.lerp(Colors.white, sepiaBg, settings.sepiaIntensity)!;
       fgColor = Color.lerp(Colors.black, sepiaFg, settings.sepiaIntensity)!;
     case ColorMode.dark:
-      bgColor = const Color(0xFF1A1A1A);
+      bgColor = pureBlack ? Colors.black : const Color(0xFF1A1A1A);
       fgColor = const Color(0xFFE0E0E0);
     case ColorMode.normal:
       bgColor = Colors.white;

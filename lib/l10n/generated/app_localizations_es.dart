@@ -944,6 +944,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsColorThemeTitle => 'Color del tema';
 
   @override
+  String get settingsPureBlackTitle => 'Tema oscuro negro puro';
+
+  @override
+  String get settingsPureBlackSubtitle =>
+      'Para pantallas AMOLED: fondos negros en el modo oscuro y en las páginas oscuras del lector';
+
+  @override
   String get settingsColorThemeMekuruRed => 'Rojo Mekuru';
 
   @override

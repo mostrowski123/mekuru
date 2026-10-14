@@ -52,6 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appLanguage = ref.watch(appLanguageProvider);
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);
+    final pureBlack = ref.watch(pureBlackProvider);
     final homeTabs = ref.watch(homeTabsProvider);
     final startupScreen = ref.watch(effectiveStartupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
@@ -163,6 +164,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               AppHaptics.light();
               _showThemeModePicker(themeMode);
+            },
+          ),
+          SwitchListTile(
+            secondary: Icon(Icons.contrast, color: theme.colorScheme.primary),
+            title: Text(l10n.settingsPureBlackTitle),
+            subtitle: Text(l10n.settingsPureBlackSubtitle),
+            value: pureBlack,
+            onChanged: (value) {
+              AppHaptics.light();
+              ref.read(pureBlackProvider.notifier).setPureBlack(value);
             },
           ),
           ListTile(

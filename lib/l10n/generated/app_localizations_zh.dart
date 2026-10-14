@@ -895,6 +895,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsColorThemeTitle => '配色主题';
 
   @override
+  String get settingsPureBlackTitle => '纯黑深色主题';
+
+  @override
+  String get settingsPureBlackSubtitle => '适用于 AMOLED 屏幕：深色模式和阅读器深色页面使用纯黑背景';
+
+  @override
   String get settingsColorThemeMekuruRed => 'Mekuru红';
 
   @override
@@ -5226,6 +5232,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get settingsColorThemeTitle => '配色主题';
+
+  @override
+  String get settingsPureBlackTitle => '纯黑深色主题';
+
+  @override
+  String get settingsPureBlackSubtitle => '适用于 AMOLED 屏幕：深色模式和阅读器深色页面使用纯黑背景';
 
   @override
   String get settingsColorThemeMekuruRed => 'Mekuru红';

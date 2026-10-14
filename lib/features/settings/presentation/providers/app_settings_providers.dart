@@ -82,6 +82,41 @@ final appThemeModeProvider = NotifierProvider<AppThemeNotifier, ThemeMode>(
   AppThemeNotifier.new,
 );
 
+/// Pure black dark theme, for AMOLED screens: black backgrounds in the
+/// dark app theme and on the EPUB reader's dark pages. Off by default.
+class PureBlackNotifier extends Notifier<bool> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  bool build() => PreloadedAppSettings.initialPureBlack;
+
+  /// Load persisted setting from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadPureBlack();
+    if (persisted != null) {
+      state = persisted;
+      PreloadedAppSettings.initialPureBlack = persisted;
+    }
+  }
+
+  /// Set the value and persist to storage.
+  void setPureBlack(bool value) {
+    state = value;
+    PreloadedAppSettings.initialPureBlack = value;
+    unawaited(ref.read(appSettingsStorageProvider).savePureBlack(value));
+  }
+}
+
+/// Provider for the pure black dark theme.
+final pureBlackProvider = NotifierProvider<PureBlackNotifier, bool>(
+  PureBlackNotifier.new,
+);
+
 /// Manages the lookup bottom sheet font size.
 class LookupFontSizeNotifier extends Notifier<double> {
   static const double defaultSize = 16.0;

@@ -15,6 +15,26 @@ void main() {
       expect(imageCss['-webkit-user-drag'], 'none');
     });
 
+    test('the dark page turns black only with pure black on', () {
+      const dark = ReaderSettings(colorMode: ColorMode.dark);
+
+      expect(
+        buildReaderTheme(settings: dark).backgroundColor,
+        const Color(0xFF1A1A1A),
+      );
+      expect(
+        buildReaderTheme(settings: dark, pureBlack: true).backgroundColor,
+        Colors.black,
+      );
+      expect(
+        buildReaderTheme(
+          settings: const ReaderSettings(),
+          pureBlack: true,
+        ).backgroundColor,
+        Colors.white,
+      );
+    });
+
     test('forces high contrast light theme', () {
       final theme = buildReaderTheme(settings: const ReaderSettings());
 

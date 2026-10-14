@@ -167,6 +167,8 @@ abstract class AppSettingsStorage {
   Future<void> saveLowRamHintLastShown(DateTime value);
   Future<String?> loadColorTheme();
   Future<void> saveColorTheme(String theme);
+  Future<bool?> loadPureBlack();
+  Future<void> savePureBlack(bool value);
   Future<int?> loadAutoCropWhiteThreshold();
   Future<void> saveAutoCropWhiteThreshold(int value);
   Future<String?> loadOcrServerUrl();
@@ -186,6 +188,7 @@ class PreloadedAppSettings {
   static String? initialColorThemeName;
   static bool initialLowRamMode = false;
   static String? initialHomeTabs;
+  static bool initialPureBlack = false;
 
   static void setAppLanguageFromValue(String? language) {
     initialAppLanguage = AppLanguage.fromStorageValue(language);
@@ -210,6 +213,9 @@ class PreloadedAppSettings {
     setAppLanguageFromValue(prefs.getString('app.language'));
     setThemeModeFromName(prefs.getString('app.theme_mode'));
     setColorThemeName(prefs.getString('app.color_theme'));
+    initialPureBlack =
+        prefs.getBool(SharedPreferencesAppSettingsStorage.pureBlackKey) ??
+        false;
     initialLowRamMode =
         prefs.getBool(SharedPreferencesAppSettingsStorage.lowRamModeKey) ??
         false;
@@ -243,6 +249,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const lowRamHintLastShownKey = 'app.low_ram_hint_last_shown';
 
   static const _colorThemeKey = 'app.color_theme';
+  static const pureBlackKey = 'app.pure_black';
   static const _autoCropWhiteThresholdKey = 'app.auto_crop_white_threshold';
   static const _ocrServerUrlKey = 'app.ocr_server_url';
   static const _ocrServerAllowSelfSignedKey =
@@ -266,6 +273,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
     _translationModelKey,
     _autoFocusSearchKey,
     _colorThemeKey,
+    pureBlackKey,
     _autoCropWhiteThresholdKey,
     _ocrServerUrlKey,
     _ocrServerAllowSelfSignedKey,
@@ -478,6 +486,18 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveColorTheme(String theme) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_colorThemeKey, theme);
+  }
+
+  @override
+  Future<bool?> loadPureBlack() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(pureBlackKey);
+  }
+
+  @override
+  Future<void> savePureBlack(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(pureBlackKey, value);
   }
 
   @override

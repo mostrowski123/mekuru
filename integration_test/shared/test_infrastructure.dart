@@ -36,6 +36,7 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   String? _startupScreen;
   bool? _autoFocusSearch;
   String? _colorTheme;
+  bool? _pureBlack;
   int? _autoCropWhiteThreshold;
   String? _ocrServerUrl;
   bool? _ocrServerAllowSelfSigned;
@@ -136,6 +137,11 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   Future<String?> loadColorTheme() async => _colorTheme;
   @override
   Future<void> saveColorTheme(String theme) async => _colorTheme = theme;
+
+  @override
+  Future<bool?> loadPureBlack() async => _pureBlack;
+  @override
+  Future<void> savePureBlack(bool value) async => _pureBlack = value;
 
   @override
   Future<int?> loadAutoCropWhiteThreshold() async => _autoCropWhiteThreshold;

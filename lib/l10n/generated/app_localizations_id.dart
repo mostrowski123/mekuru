@@ -936,6 +936,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsColorThemeTitle => 'Tema Warna';
 
   @override
+  String get settingsPureBlackTitle => 'Tema gelap hitam pekat';
+
+  @override
+  String get settingsPureBlackSubtitle =>
+      'Untuk layar AMOLED: latar hitam di mode gelap dan di halaman gelap pembaca';
+
+  @override
   String get settingsColorThemeMekuruRed => 'Mekuru Merah';
 
   @override

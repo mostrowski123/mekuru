@@ -427,6 +427,7 @@ class RestoreNotifier extends Notifier<RestoreState> {
     await ref.refresh(appLanguageProvider.notifier).loadPersistedSettings();
     await ref.refresh(appThemeModeProvider.notifier).loadPersistedSettings();
     await ref.refresh(appColorThemeProvider.notifier).loadPersistedSettings();
+    await ref.refresh(pureBlackProvider.notifier).loadPersistedSettings();
     await ref.refresh(lookupFontSizeProvider.notifier).loadPersistedSettings();
     await ref.refresh(searchHistoryProvider.notifier).loadPersistedSettings();
     await ref

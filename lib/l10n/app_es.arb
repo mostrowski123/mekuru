@@ -3240,5 +3240,7 @@
   "navBarEditorHint": "Arrastra para cambiar el orden. Hasta 5 pestañas. Biblioteca siempre se muestra. Las pestañas ocultas se abren desde Configuración.",
   "navBarLibraryNote": "Siempre visible",
   "navBarYouNote": "Si ocultas Tú y Configuración, Configuración aparece en la barra superior de Biblioteca.",
-  "settingsSectionHiddenTabs": "Pestañas ocultas"
+  "settingsSectionHiddenTabs": "Pestañas ocultas",
+  "settingsPureBlackTitle": "Tema oscuro negro puro",
+  "settingsPureBlackSubtitle": "Para pantallas AMOLED: fondos negros en el modo oscuro y en las páginas oscuras del lector"
 }

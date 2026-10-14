@@ -3240,5 +3240,7 @@
   "navBarEditorHint": "拖动可调整顺序。最多 5 个标签页。书库始终显示。隐藏的标签页可在设置中打开。",
   "navBarLibraryNote": "始终显示",
   "navBarYouNote": "同时隐藏“我的”和“设置”时，设置会出现在书库的顶部栏中。",
-  "settingsSectionHiddenTabs": "隐藏的标签页"
+  "settingsSectionHiddenTabs": "隐藏的标签页",
+  "settingsPureBlackTitle": "纯黑深色主题",
+  "settingsPureBlackSubtitle": "适用于 AMOLED 屏幕：深色模式和阅读器深色页面使用纯黑背景"
 }
