@@ -8,7 +8,7 @@ on:
       - 'ios/**'
       - 'assets/**'
       - 'integration_test/**'
-      - 'scripts/run_ios_integration_tests.sh'
+      - 'scripts/run_integration_tests.sh'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/integration-ios.yml'
@@ -20,7 +20,7 @@ on:
       - 'ios/**'
       - 'assets/**'
       - 'integration_test/**'
-      - 'scripts/run_ios_integration_tests.sh'
+      - 'scripts/run_integration_tests.sh'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/integration-ios.yml'
@@ -49,7 +49,7 @@ jobs:
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      IOS_IT_SHARD: ${{ matrix.shard }}/4
+      IT_SHARD: ${{ matrix.shard }}/4
 
     steps:
       - uses: actions/checkout@v4
@@ -110,7 +110,7 @@ jobs:
       # downloads the manga-ocr pack (about 200 MB).
       - name: Run iOS integration tests
         run: >
-          scripts/run_ios_integration_tests.sh ${{ steps.simulator.outputs.udid }}
+          scripts/run_integration_tests.sh ${{ steps.simulator.outputs.udid }}
           integration_test/dictionary_search_flow_test.dart
           integration_test/vocabulary_lifecycle_test.dart
           integration_test/settings_persistence_test.dart

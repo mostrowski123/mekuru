@@ -66,5 +66,5 @@ lib/config/environment_config.dart
 # asc CLI run reports
 .asc/
 
-# Written by scripts/run_ios_integration_tests.sh for each run
-integration_test/_ios_shard_test.dart
+# Written by scripts/run_integration_tests.sh for each run
+integration_test/_shard_test.dart
