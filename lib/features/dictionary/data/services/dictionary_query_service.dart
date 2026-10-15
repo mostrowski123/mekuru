@@ -677,6 +677,26 @@ class DictionaryQueryService {
       parserTerms,
     ];
 
+    final results = await _searchLookupTiers(tierSets);
+    if (results.isNotEmpty) return results;
+
+    // Words written in katakana for style (ヤツ, カワイカッタ) are listed in
+    // hiragana. Only try that when the katakana form found nothing, so a
+    // loanword like ハム doesn't pick up unrelated words (食む).
+    final hiraganaPrimary = katakanaToHiragana(primary);
+    final hiraganaSurface = katakanaToHiragana(surfaceTerm);
+    if (hiraganaPrimary == primary && hiraganaSurface == surfaceTerm) {
+      return results;
+    }
+    return searchLookupWithSource(
+      hiraganaPrimary,
+      secondary == null ? null : hiraganaSurface,
+    );
+  }
+
+  Future<List<DictionaryEntryWithSource>> _searchLookupTiers(
+    List<Set<String>> tierSets,
+  ) async {
     if (kUseBatchedDictionaryLookup) {
       return _searchLookupTiersBatched(tierSets);
     }

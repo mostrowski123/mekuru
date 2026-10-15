@@ -515,6 +515,47 @@ void main() {
         expect(expressions, contains('わい'));
       },
     );
+
+    test(
+      'falls back to hiragana for a word written in katakana for style',
+      () async {
+        final exact = await lookupQueryService.searchLookupWithSource(
+          'ワイ',
+          'ワイ',
+        );
+        expect(exact.first.entry.expression, 'わい');
+
+        final inflected = await lookupQueryService.searchLookupWithSource(
+          'ワカッタ',
+          'ワカッタ',
+        );
+        expect(inflected.map((r) => r.entry.expression), contains('分かる'));
+      },
+    );
+
+    test('keeps a real katakana entry without hiragana noise', () async {
+      final dictId = await lookupRepo.insertDictionary('KanaDict');
+      await lookupRepo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: 'ハム',
+          glossaries: jsonEncode(['ham']),
+          dictionaryId: dictId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '食む',
+          reading: const Value('はむ'),
+          glossaries: jsonEncode(['to eat']),
+          dictionaryId: dictId,
+        ),
+      ]);
+
+      final results = await lookupQueryService.searchLookupWithSource(
+        'ハム',
+        'ハム',
+      );
+
+      expect(results.map((r) => r.entry.expression), ['ハム']);
+    });
   });
 
   // ── hasMatch ───────────────────────────────────────────────────
