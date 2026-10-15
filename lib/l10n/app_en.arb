@@ -5890,6 +5890,47 @@
   },
   "readerAddNote": "Add note",
   "@readerAddNote": {
-    "description": "Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight tapped on the page."
+    "description": "Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight held on the page."
+  },
+  "userDictionaryName": "My definitions",
+  "@userDictionaryName": {
+    "description": "Name shown for the dictionary that holds the definitions the user wrote themselves."
+  },
+  "userDictionarySubtitle": "Definitions you added",
+  "@userDictionarySubtitle": {
+    "description": "Subtitle of the user's own dictionary in the dictionary manager."
+  },
+  "userDictionaryDeleteBody": "Delete My definitions?\nEvery definition you wrote yourself will be lost. This cannot be undone.",
+  "@userDictionaryDeleteBody": {
+    "description": "Confirmation body for deleting the dictionary that holds the user's own definitions."
+  },
+  "userDefinitionAdd": "Add my definition",
+  "@userDefinitionAdd": {
+    "description": "Button in the lookup sheet, shown when no dictionary has the word, that opens a form to write a definition for it."
+  },
+  "userDefinitionEdit": "Edit my definition",
+  "@userDefinitionEdit": {
+    "description": "Title of the form, and tooltip of the button, for editing a definition the user wrote."
+  },
+  "userDefinitionTermLabel": "Word",
+  "@userDefinitionTermLabel": {
+    "description": "Label of the field for the word the user is defining."
+  },
+  "userDefinitionReadingLabel": "Reading (optional)",
+  "@userDefinitionReadingLabel": {
+    "description": "Label of the optional field for the reading (kana) of the word the user is defining."
+  },
+  "userDefinitionDefinitionLabel": "Definition",
+  "@userDefinitionDefinitionLabel": {
+    "description": "Label of the field for the definition the user writes."
+  },
+  "userDefinitionDeleteTitle": "Delete your definition of “{term}”?",
+  "@userDefinitionDeleteTitle": {
+    "description": "Confirmation title for deleting a definition the user wrote.",
+    "placeholders": {
+      "term": {
+        "type": "String"
+      }
+    }
   }
 }

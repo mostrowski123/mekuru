@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_meta.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 
 /// Repository for dictionary CRUD operations.
@@ -229,6 +230,109 @@ class DictionaryRepository {
       totalInserted += batch.length;
     }
     return totalInserted;
+  }
+
+  // ──────────────── User definitions ────────────────
+
+  /// Stored name of the user dictionary. Screens show a localized name
+  /// instead; backups match dictionary settings by this one.
+  static const userDictionaryName = 'My definitions';
+
+  /// The text the user wrote for one of their own [entry]s.
+  static String userDefinitionText(DictionaryEntry entry) =>
+      GlossaryParser.parse(entry.glossaries).join('\n');
+
+  /// Every entry of the user dictionary, oldest first.
+  Future<List<DictionaryEntry>> getUserDefinitions() =>
+      (_db.select(_db.dictionaryEntries)
+            ..where((t) => t.dictionaryId.equals(userDictionaryId))
+            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          .get();
+
+  /// Adds the user's own definition of [term], creating the user dictionary
+  /// on first use and turning it back on if the user had turned it off, so
+  /// the new definition shows. Callers then invalidate the query service's
+  /// metas cache.
+  Future<void> addUserDefinition({
+    required String term,
+    String reading = '',
+    required String definition,
+  }) async {
+    await _ensureUserDictionary();
+    await toggleDictionary(userDictionaryId, isEnabled: true);
+    await batchInsertEntries([_userEntry(term, reading, definition)]);
+  }
+
+  Future<void> updateUserDefinition(
+    int entryId, {
+    required String term,
+    String reading = '',
+    required String definition,
+  }) =>
+      (_db.update(_db.dictionaryEntries)..where(
+            (t) =>
+                t.id.equals(entryId) & t.dictionaryId.equals(userDictionaryId),
+          ))
+          .write(_userEntry(term, reading, definition));
+
+  Future<void> deleteUserDefinition(int entryId) =>
+      (_db.delete(_db.dictionaryEntries)..where(
+            (t) =>
+                t.id.equals(entryId) & t.dictionaryId.equals(userDictionaryId),
+          ))
+          .go();
+
+  /// Adds the definitions the user dictionary lacks, skipping blank ones and
+  /// exact (term, reading, definition) copies. Returns how many were added.
+  Future<int> mergeUserDefinitions(
+    Iterable<({String term, String reading, String definition})> definitions,
+  ) async {
+    final existing = {
+      for (final entry in await getUserDefinitions())
+        (entry.expression, entry.reading, userDefinitionText(entry)),
+    };
+    final added = <DictionaryEntriesCompanion>[];
+    for (final d in definitions) {
+      final key = (d.term.trim(), d.reading.trim(), d.definition.trim());
+      if (key.$1.isEmpty || key.$3.isEmpty || !existing.add(key)) continue;
+      added.add(_userEntry(d.term, d.reading, d.definition));
+    }
+    if (added.isEmpty) return 0;
+    await _ensureUserDictionary();
+    return batchInsertEntries(added);
+  }
+
+  Future<void> _ensureUserDictionary() async {
+    final existing = await (_db.select(
+      _db.dictionaryMetas,
+    )..where((t) => t.id.equals(userDictionaryId))).getSingleOrNull();
+    if (existing != null) return;
+    await _db
+        .into(_db.dictionaryMetas)
+        .insert(
+          DictionaryMetasCompanion.insert(
+            id: const Value(userDictionaryId),
+            name: userDictionaryName,
+            sortOrder: Value(await getNextSortOrder()),
+          ),
+        );
+  }
+
+  /// A user entry's columns. The definition is stored as one plain-string
+  /// gloss, with [DictionaryEntriesCompanion.searchText] filled for updates.
+  static DictionaryEntriesCompanion _userEntry(
+    String term,
+    String reading,
+    String definition,
+  ) {
+    final glossaries = jsonEncode([definition.trim()]);
+    return DictionaryEntriesCompanion(
+      expression: Value(term.trim()),
+      reading: Value(reading.trim()),
+      glossaries: Value(glossaries),
+      searchText: Value(GlossaryParser.searchText(glossaries)),
+      dictionaryId: const Value(userDictionaryId),
+    );
   }
 
   /// Get total entry count for a specific dictionary.

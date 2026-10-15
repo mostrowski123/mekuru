@@ -4460,4 +4460,34 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get readerAddNote => 'メモを追加';
+
+  @override
+  String get userDictionaryName => 'マイ辞書';
+
+  @override
+  String get userDictionarySubtitle => '自分で追加した定義';
+
+  @override
+  String get userDictionaryDeleteBody =>
+      'マイ辞書を削除しますか？\n自分で書いた定義はすべて失われます。この操作は元に戻せません。';
+
+  @override
+  String get userDefinitionAdd => '自分の定義を追加';
+
+  @override
+  String get userDefinitionEdit => '自分の定義を編集';
+
+  @override
+  String get userDefinitionTermLabel => '語句';
+
+  @override
+  String get userDefinitionReadingLabel => '読み（任意）';
+
+  @override
+  String get userDefinitionDefinitionLabel => '定義';
+
+  @override
+  String userDefinitionDeleteTitle({required String term}) {
+    return '「$term」の定義を削除しますか？';
+  }
 }

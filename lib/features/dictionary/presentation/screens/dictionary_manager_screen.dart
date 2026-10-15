@@ -12,6 +12,8 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_meta.dart'
+    show userDictionaryId;
 import 'package:mekuru/features/dictionary/data/services/lookup_benchmark.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
@@ -510,7 +512,10 @@ class _DictionaryManagerScreenState
     required int index,
   }) {
     final l10n = context.l10n;
-    final name = dictionaryDisplayName(dict.name);
+    final isUserDictionary = dict.id == userDictionaryId;
+    final name = isUserDictionary
+        ? l10n.userDictionaryName
+        : dictionaryDisplayName(dict.name);
     final date = _formatDate(dict.dateImported);
     final version = dictionaryVersion(dict);
     final isDeleting = _deleting.contains(dict.id);
@@ -525,7 +530,9 @@ class _DictionaryManagerScreenState
         ),
         title: Text(name),
         subtitle: Text(
-          version == null
+          isUserDictionary
+              ? l10n.userDictionarySubtitle
+              : version == null
               ? l10n.dictionaryManagerImportedOn(date: date)
               : l10n.dictionaryManagerImportedOnVersion(
                   date: date,
@@ -560,7 +567,12 @@ class _DictionaryManagerScreenState
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 tooltip: context.l10n.commonDelete,
-                onPressed: () => _confirmDelete(context, dict.id, name),
+                onPressed: () => _confirmDelete(
+                  context,
+                  dict.id,
+                  name,
+                  body: isUserDictionary ? l10n.userDictionaryDeleteBody : null,
+                ),
               ),
           ],
         ),
@@ -663,11 +675,16 @@ class _DictionaryManagerScreenState
     }
   }
 
-  Future<void> _confirmDelete(BuildContext context, int id, String name) async {
+  Future<void> _confirmDelete(
+    BuildContext context,
+    int id,
+    String name, {
+    String? body,
+  }) async {
     // Resolved before the dialog opens: the screen can unmount while it's up.
     final container = ProviderScope.containerOf(context, listen: false);
 
-    if (await confirmDeleteDictionary(context, name)) {
+    if (await confirmDeleteDictionary(context, name, body: body)) {
       if (mounted) setState(() => _deleting.add(id));
       try {
         await container.read(dictionaryRepositoryProvider).deleteDictionary(id);

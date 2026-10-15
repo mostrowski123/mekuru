@@ -7412,11 +7412,65 @@ abstract class AppLocalizations {
   /// **'For books whose pages pair up wrongly'**
   String get mangaShiftSpreadsSubtitle;
 
-  /// Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight tapped on the page.
+  /// Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight held on the page.
   ///
   /// In en, this message translates to:
   /// **'Add note'**
   String get readerAddNote;
+
+  /// Name shown for the dictionary that holds the definitions the user wrote themselves.
+  ///
+  /// In en, this message translates to:
+  /// **'My definitions'**
+  String get userDictionaryName;
+
+  /// Subtitle of the user's own dictionary in the dictionary manager.
+  ///
+  /// In en, this message translates to:
+  /// **'Definitions you added'**
+  String get userDictionarySubtitle;
+
+  /// Confirmation body for deleting the dictionary that holds the user's own definitions.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete My definitions?\nEvery definition you wrote yourself will be lost. This cannot be undone.'**
+  String get userDictionaryDeleteBody;
+
+  /// Button in the lookup sheet, shown when no dictionary has the word, that opens a form to write a definition for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Add my definition'**
+  String get userDefinitionAdd;
+
+  /// Title of the form, and tooltip of the button, for editing a definition the user wrote.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit my definition'**
+  String get userDefinitionEdit;
+
+  /// Label of the field for the word the user is defining.
+  ///
+  /// In en, this message translates to:
+  /// **'Word'**
+  String get userDefinitionTermLabel;
+
+  /// Label of the optional field for the reading (kana) of the word the user is defining.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading (optional)'**
+  String get userDefinitionReadingLabel;
+
+  /// Label of the field for the definition the user writes.
+  ///
+  /// In en, this message translates to:
+  /// **'Definition'**
+  String get userDefinitionDefinitionLabel;
+
+  /// Confirmation title for deleting a definition the user wrote.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your definition of “{term}”?'**
+  String userDefinitionDeleteTitle({required String term});
 }
 
 class _AppLocalizationsDelegate

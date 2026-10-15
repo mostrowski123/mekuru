@@ -9,6 +9,7 @@ import 'package:mekuru/features/ankidroid/data/services/anki_mobile_service.dart
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_meta.dart';
 import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/data/services/part_of_speech_resolver.dart';
@@ -16,6 +17,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_readings_block.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/user_definition_dialog.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -755,6 +757,7 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
     this.onWordTap,
     this.padding = const EdgeInsets.fromLTRB(16, 2, 16, 16),
     this.sliver = false,
+    this.onUserDefinitionChanged,
   });
 
   final List<DictionaryEntryWithSource> entries;
@@ -762,6 +765,10 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
   final double fontSize;
   final void Function(String word)? onWordTap;
   final EdgeInsetsGeometry padding;
+
+  /// When set, the user's own definitions get edit and delete buttons, and
+  /// this is called after either changes one.
+  final VoidCallback? onUserDefinitionChanged;
 
   /// Built as a sliver whose rows are made only near the viewport, so a
   /// long result list does not lay out every definition at once.
@@ -785,6 +792,7 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
       if (definitionSections.isNotEmpty) ...[
         const SizedBox(height: 8),
         ..._buildGroupedDefinitions(
+          context,
           fontSize,
           definitionStyle,
           definitionSections,
@@ -818,31 +826,72 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
   /// footer shown after each section. Entries from the same dictionary are
   /// grouped under a single footer label and numbered when there are multiple.
   List<Widget> _buildGroupedDefinitions(
+    BuildContext context,
     double fs,
     TextStyle definitionStyle,
     List<List<DictionaryEntryWithSource>> definitionSections,
   ) {
+    final l10n = context.l10n;
+    final onUserDefinitionChanged = this.onUserDefinitionChanged;
     final widgets = <Widget>[];
     for (final (dictIndex, rows) in definitionSections.indexed) {
       final numbered = rows.length > 1;
+      final isUserDictionary =
+          rows.first.entry.dictionaryId == userDictionaryId;
       for (final (i, DictionaryEntryWithSource(:entry)) in rows.indexed) {
+        final glossary = StructuredGlossaryView(
+          glossaries: entry.glossaries,
+          dictionaryId: entry.dictionaryId,
+          style: definitionStyle,
+          number: numbered ? i + 1 : null,
+          onWordTap: onWordTap,
+        );
         widgets.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: StructuredGlossaryView(
-              glossaries: entry.glossaries,
-              dictionaryId: entry.dictionaryId,
-              style: definitionStyle,
-              number: numbered ? i + 1 : null,
-              onWordTap: onWordTap,
-            ),
+            child: !isUserDictionary || onUserDefinitionChanged == null
+                ? glossary
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: glossary),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: l10n.userDefinitionEdit,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () async {
+                          if (await showUserDefinitionDialog(
+                            context,
+                            entry: entry,
+                          )) {
+                            onUserDefinitionChanged();
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: l10n.commonDelete,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () async {
+                          if (await confirmDeleteUserDefinition(
+                            context,
+                            entry,
+                          )) {
+                            onUserDefinitionChanged();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
           ),
         );
       }
 
       widgets.add(
         SourceSectionLabel(
-          label: rows.first.dictionaryName,
+          label: isUserDictionary
+              ? l10n.userDictionaryName
+              : rows.first.dictionaryName,
           topPadding: 2,
           bottomPadding: dictIndex < definitionSections.length - 1 ? 10 : 0,
           fontSize: fs * 0.64,

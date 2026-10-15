@@ -4607,4 +4607,34 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get readerAddNote => 'Add note';
+
+  @override
+  String get userDictionaryName => 'My definitions';
+
+  @override
+  String get userDictionarySubtitle => 'Definitions you added';
+
+  @override
+  String get userDictionaryDeleteBody =>
+      'Delete My definitions?\nEvery definition you wrote yourself will be lost. This cannot be undone.';
+
+  @override
+  String get userDefinitionAdd => 'Add my definition';
+
+  @override
+  String get userDefinitionEdit => 'Edit my definition';
+
+  @override
+  String get userDefinitionTermLabel => 'Word';
+
+  @override
+  String get userDefinitionReadingLabel => 'Reading (optional)';
+
+  @override
+  String get userDefinitionDefinitionLabel => 'Definition';
+
+  @override
+  String userDefinitionDeleteTitle({required String term}) {
+    return 'Delete your definition of “$term”?';
+  }
 }

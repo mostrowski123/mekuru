@@ -93,6 +93,15 @@ class BackupSerializer {
             },
           )
           .toList(),
+      'userDefinitions': manifest.userDefinitions
+          .map(
+            (d) => {
+              'term': d.term,
+              'reading': d.reading,
+              'definition': d.definition,
+            },
+          )
+          .toList(),
     };
     return jsonEncode(map);
   }
@@ -187,6 +196,22 @@ class BackupSerializer {
         'serverConnections',
         _decodeServerConnection,
       ),
+      userDefinitions: _decodeList(
+        parsed['userDefinitions'],
+        'userDefinitions',
+        _decodeUserDefinition,
+      ),
+    );
+  }
+
+  static BackupUserDefinition _decodeUserDefinition(dynamic item) {
+    if (item is! Map<String, dynamic>) {
+      throw BackupFormatException('invalid user definition entry');
+    }
+    return BackupUserDefinition(
+      term: item['term'] as String? ?? '',
+      reading: item['reading'] as String? ?? '',
+      definition: item['definition'] as String? ?? '',
     );
   }
 

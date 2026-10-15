@@ -14,3 +14,8 @@ class DictionaryMetas extends Table {
   /// dictionaries imported before schema 24.
   TextColumn get revision => text().nullable()();
 }
+
+/// Id of the user dictionary ("My definitions"), which holds the user's own
+/// entries and is created on first use. Imports can never get it: the
+/// table's AUTOINCREMENT ids start at 1.
+const userDictionaryId = 0;

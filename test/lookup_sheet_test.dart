@@ -411,6 +411,46 @@ void main() {
       expect(find.text('No results found.'), findsOneWidget);
       expect(find.text('Install Starter Pack'), findsNothing);
     });
+
+    testWidgets('adds the user\'s own definition and shows it', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionariesProvider.overrideWith((ref) => Stream.value([_jmdict])),
+          ],
+          child: buildLocalizedTestApp(
+            home: const Scaffold(
+              body: SizedBox.expand(child: LookupSheet(selectedText: 'ぴえん')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add my definition'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, 'ぴえん'), findsOneWidget);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Definition'),
+        'pleading face',
+      );
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No results found.'), findsNothing);
+      expect(find.text('My definitions'), findsOneWidget);
+      expect(find.byTooltip('Edit my definition'), findsOneWidget);
+      final entry = (await db.select(db.dictionaryEntries).get()).single;
+      expect(
+        (entry.expression, entry.glossaries),
+        ('ぴえん', '["pleading face"]'),
+      );
+    });
   });
 
   group('Sentence tab', () {

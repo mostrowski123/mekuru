@@ -25,6 +25,10 @@ class BackupManifest {
   /// 1: older backups simply omit the key.
   final List<BackupServerConnection> serverConnections;
 
+  /// The user's own dictionary entries. Additive within version 1: older
+  /// backups simply omit the key.
+  final List<BackupUserDefinition> userDefinitions;
+
   const BackupManifest({
     required this.version,
     required this.createdAt,
@@ -36,6 +40,20 @@ class BackupManifest {
     this.wordEvents = const [],
     this.collections = const [],
     this.serverConnections = const [],
+    this.userDefinitions = const [],
+  });
+}
+
+/// An entry of the user dictionary ("My definitions").
+class BackupUserDefinition {
+  final String term;
+  final String reading;
+  final String definition;
+
+  const BackupUserDefinition({
+    required this.term,
+    required this.reading,
+    required this.definition,
   });
 }
 

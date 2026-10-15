@@ -3,6 +3,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
+import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/manga/data/services/manga_lookup_override_storage.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
@@ -61,6 +62,9 @@ class BackupService {
               ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
             .get();
 
+    final userDefinitions = await DictionaryRepository(
+      _db,
+    ).getUserDefinitions();
     final savedWords = await _db.select(_db.savedWords).get();
     final books = await _db.select(_db.books).get();
     final serverConnections = await _db.select(_db.serverConnections).get();
@@ -159,6 +163,14 @@ class BackupService {
             ),
           )
           .toList(growable: false),
+      userDefinitions: [
+        for (final entry in userDefinitions)
+          BackupUserDefinition(
+            term: entry.expression,
+            reading: entry.reading,
+            definition: DictionaryRepository.userDefinitionText(entry),
+          ),
+      ],
       savedWords: savedWords
           .map(
             (w) => BackupSavedWordEntry(

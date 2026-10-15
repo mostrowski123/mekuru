@@ -6,6 +6,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/user_definition_dialog.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/presentation/widgets/sentence_translation_view.dart';
@@ -212,6 +213,20 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
       }
     }
     return allResults;
+  }
+
+  /// Runs the lookup again after the user's own definitions changed.
+  void _onUserDefinitionChanged() {
+    if (mounted) setState(_refreshLookupFutures);
+  }
+
+  Future<void> _addUserDefinition() async {
+    if (await showUserDefinitionDialog(
+      context,
+      term: _editedText ?? widget.selectedText,
+    )) {
+      _onUserDefinitionChanged();
+    }
   }
 
   void _onEditSubmitted(String value) {
@@ -511,7 +526,20 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
           );
         }
         if (results.isEmpty) {
-          return Center(child: Text(context.l10n.dictionaryNoResultsFound));
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(context.l10n.dictionaryNoResultsFound),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: _addUserDefinition,
+                  icon: const Icon(Icons.add),
+                  label: Text(context.l10n.userDefinitionAdd),
+                ),
+              ],
+            ),
+          );
         }
 
         // Group results by (expression, reading).
@@ -579,6 +607,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
                         fontSize: fontSize,
                         onWordTap: _navigateToWord,
                         sliver: true,
+                        onUserDefinitionChanged: _onUserDefinitionChanged,
                       ),
                     ],
                   ),

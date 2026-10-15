@@ -1207,5 +1207,14 @@
   "mangaDetectSpreadsSubtitle": "見開きで横長のページを単独表示",
   "mangaShiftSpreadsTitle": "ページの組み合わせを1ページずらす",
   "mangaShiftSpreadsSubtitle": "ページの組み合わせがずれている本向け",
-  "readerAddNote": "メモを追加"
+  "readerAddNote": "メモを追加",
+  "userDictionaryName": "マイ辞書",
+  "userDictionarySubtitle": "自分で追加した定義",
+  "userDictionaryDeleteBody": "マイ辞書を削除しますか？\n自分で書いた定義はすべて失われます。この操作は元に戻せません。",
+  "userDefinitionAdd": "自分の定義を追加",
+  "userDefinitionEdit": "自分の定義を編集",
+  "userDefinitionTermLabel": "語句",
+  "userDefinitionReadingLabel": "読み（任意）",
+  "userDefinitionDefinitionLabel": "定義",
+  "userDefinitionDeleteTitle": "「{term}」の定義を削除しますか？"
 }

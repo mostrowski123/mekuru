@@ -337,6 +337,13 @@ class RestoreNotifier extends Notifier<RestoreState> {
       // Reload all in-memory settings providers from SharedPreferences
       if (settingsOk) await _reloadSettingsProviders();
 
+      // Before the dictionary settings, so they find the user dictionary.
+      await dictionaryRepository.mergeUserDefinitions([
+        for (final d in manifest.userDefinitions)
+          (term: d.term, reading: d.reading, definition: d.definition),
+      ]);
+      ref.read(dictionaryQueryServiceProvider).invalidateMetasCache();
+
       final dictionaryPreferencesResult = await pendingDictionaryRestoreService
           .queueFromBackup(
             preferences: manifest.dictionaryPreferences,
