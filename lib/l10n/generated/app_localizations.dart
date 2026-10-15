@@ -1239,6 +1239,42 @@ abstract class AppLocalizations {
   /// **'Word frequency data from JPDB (jpdb.io), distributed by Kuuuube.'**
   String get downloadsJpdbAttribution;
 
+  /// Joins the items of a short inline list, such as tab names. Keep the trailing space where the language uses one.
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get commonListSeparator;
+
+  /// Follows the linked name KANJIDIC or JMdict in the download attribution.
+  ///
+  /// In en, this message translates to:
+  /// **' by the Electronic Dictionary Research and Development Group (EDRDG), licensed under CC BY-SA 4.0.'**
+  String get downloadsEdrdgAttributionSuffix;
+
+  /// Precedes the linked name KanjiVG in the download attribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Kanji stroke order data by '**
+  String get downloadsKanjiVgAttributionPrefix;
+
+  /// Follows the linked name KanjiVG in the download attribution.
+  ///
+  /// In en, this message translates to:
+  /// **' (Ulrich Apel), licensed under CC BY-SA 3.0.'**
+  String get downloadsKanjiVgAttributionSuffix;
+
+  /// Precedes the linked name UniDic in the enhanced furigana attribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by '**
+  String get downloadsUniDicAttributionPrefix;
+
+  /// Follows the linked name UniDic in the enhanced furigana attribution.
+  ///
+  /// In en, this message translates to:
+  /// **' (NINJAL), distributed under the BSD/GPL/LGPL triple license.'**
+  String get downloadsUniDicAttributionSuffix;
+
   /// Title for the KanjiVG download tile.
   ///
   /// In en, this message translates to:

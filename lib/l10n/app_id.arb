@@ -734,6 +734,12 @@
   "@downloadsJpdbAttribution": {
     "description": "Attribution text for JPDB frequency data."
   },
+  "commonListSeparator": ", ",
+  "downloadsEdrdgAttributionSuffix": " oleh Electronic Dictionary Research and Development Group (EDRDG), dilisensikan di bawah CC BY-SA 4.0.",
+  "downloadsKanjiVgAttributionPrefix": "Data urutan guratan kanji dari ",
+  "downloadsKanjiVgAttributionSuffix": " (Ulrich Apel), dilisensikan di bawah CC BY-SA 3.0.",
+  "downloadsUniDicAttributionPrefix": "Didukung oleh ",
+  "downloadsUniDicAttributionSuffix": " (NINJAL), didistribusikan di bawah lisensi tripel BSD/GPL/LGPL.",
   "downloadsKanjiStrokeOrderTitle": "Urutan Guratan Kanji",
   "@downloadsKanjiStrokeOrderTitle": {
     "description": "Title for the KanjiVG download tile."

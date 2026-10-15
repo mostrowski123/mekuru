@@ -913,6 +913,30 @@
   "@downloadsJpdbAttribution": {
     "description": "Attribution text for JPDB frequency data."
   },
+  "commonListSeparator": ", ",
+  "@commonListSeparator": {
+    "description": "Joins the items of a short inline list, such as tab names. Keep the trailing space where the language uses one."
+  },
+  "downloadsEdrdgAttributionSuffix": " by the Electronic Dictionary Research and Development Group (EDRDG), licensed under CC BY-SA 4.0.",
+  "@downloadsEdrdgAttributionSuffix": {
+    "description": "Follows the linked name KANJIDIC or JMdict in the download attribution."
+  },
+  "downloadsKanjiVgAttributionPrefix": "Kanji stroke order data by ",
+  "@downloadsKanjiVgAttributionPrefix": {
+    "description": "Precedes the linked name KanjiVG in the download attribution."
+  },
+  "downloadsKanjiVgAttributionSuffix": " (Ulrich Apel), licensed under CC BY-SA 3.0.",
+  "@downloadsKanjiVgAttributionSuffix": {
+    "description": "Follows the linked name KanjiVG in the download attribution."
+  },
+  "downloadsUniDicAttributionPrefix": "Powered by ",
+  "@downloadsUniDicAttributionPrefix": {
+    "description": "Precedes the linked name UniDic in the enhanced furigana attribution."
+  },
+  "downloadsUniDicAttributionSuffix": " (NINJAL), distributed under the BSD/GPL/LGPL triple license.",
+  "@downloadsUniDicAttributionSuffix": {
+    "description": "Follows the linked name UniDic in the enhanced furigana attribution."
+  },
   "downloadsKanjiStrokeOrderTitle": "Kanji Stroke Order",
   "@downloadsKanjiStrokeOrderTitle": {
     "description": "Title for the KanjiVG download tile."

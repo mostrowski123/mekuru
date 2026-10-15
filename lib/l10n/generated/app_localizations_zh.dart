@@ -679,6 +679,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadsJpdbAttribution => '词频数据来自 JPDB（jpdb.io），由 Kuuuube 分发。';
 
   @override
+  String get commonListSeparator => '、';
+
+  @override
+  String get downloadsEdrdgAttributionSuffix =>
+      ' 由电子词典研究开发组（EDRDG）制作，采用 CC BY-SA 4.0 许可。';
+
+  @override
+  String get downloadsKanjiVgAttributionPrefix => '汉字笔顺数据来自 ';
+
+  @override
+  String get downloadsKanjiVgAttributionSuffix =>
+      '（Ulrich Apel），采用 CC BY-SA 3.0 许可。';
+
+  @override
+  String get downloadsUniDicAttributionPrefix => '由 ';
+
+  @override
+  String get downloadsUniDicAttributionSuffix =>
+      '（NINJAL）提供支持，以 BSD/GPL/LGPL 三重许可发布。';
+
+  @override
   String get downloadsKanjiStrokeOrderTitle => '汉字笔顺';
 
   @override
@@ -5019,6 +5040,27 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadsJpdbAttribution => '词频数据来自 JPDB（jpdb.io），由 Kuuuube 分发。';
+
+  @override
+  String get commonListSeparator => '、';
+
+  @override
+  String get downloadsEdrdgAttributionSuffix =>
+      ' 由电子词典研究开发组（EDRDG）制作，采用 CC BY-SA 4.0 许可。';
+
+  @override
+  String get downloadsKanjiVgAttributionPrefix => '汉字笔顺数据来自 ';
+
+  @override
+  String get downloadsKanjiVgAttributionSuffix =>
+      '（Ulrich Apel），采用 CC BY-SA 3.0 许可。';
+
+  @override
+  String get downloadsUniDicAttributionPrefix => '由 ';
+
+  @override
+  String get downloadsUniDicAttributionSuffix =>
+      '（NINJAL）提供支持，以 BSD/GPL/LGPL 三重许可发布。';
 
   @override
   String get downloadsKanjiStrokeOrderTitle => '汉字笔顺';

@@ -734,6 +734,12 @@
   "@downloadsJpdbAttribution": {
     "description": "Attribution text for JPDB frequency data."
   },
+  "commonListSeparator": "、",
+  "downloadsEdrdgAttributionSuffix": " 由电子词典研究开发组（EDRDG）制作，采用 CC BY-SA 4.0 许可。",
+  "downloadsKanjiVgAttributionPrefix": "汉字笔顺数据来自 ",
+  "downloadsKanjiVgAttributionSuffix": "（Ulrich Apel），采用 CC BY-SA 3.0 许可。",
+  "downloadsUniDicAttributionPrefix": "由 ",
+  "downloadsUniDicAttributionSuffix": "（NINJAL）提供支持，以 BSD/GPL/LGPL 三重许可发布。",
   "downloadsKanjiStrokeOrderTitle": "汉字笔顺",
   "@downloadsKanjiStrokeOrderTitle": {
     "description": "Title for the KanjiVG download tile."

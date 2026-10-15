@@ -705,6 +705,28 @@ class AppLocalizationsId extends AppLocalizations {
       'Data frekuensi kata dari JPDB (jpdb.io), didistribusikan oleh Kuuuube.';
 
   @override
+  String get commonListSeparator => ', ';
+
+  @override
+  String get downloadsEdrdgAttributionSuffix =>
+      ' oleh Electronic Dictionary Research and Development Group (EDRDG), dilisensikan di bawah CC BY-SA 4.0.';
+
+  @override
+  String get downloadsKanjiVgAttributionPrefix =>
+      'Data urutan guratan kanji dari ';
+
+  @override
+  String get downloadsKanjiVgAttributionSuffix =>
+      ' (Ulrich Apel), dilisensikan di bawah CC BY-SA 3.0.';
+
+  @override
+  String get downloadsUniDicAttributionPrefix => 'Didukung oleh ';
+
+  @override
+  String get downloadsUniDicAttributionSuffix =>
+      ' (NINJAL), didistribusikan di bawah lisensi tripel BSD/GPL/LGPL.';
+
+  @override
   String get downloadsKanjiStrokeOrderTitle => 'Urutan Guratan Kanji';
 
   @override

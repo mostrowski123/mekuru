@@ -122,7 +122,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             title: Text(l10n.settingsNavBarTitle),
             subtitle: Text(
-              homeTabs.visible.map((tab) => tab.label(l10n)).join(', '),
+              homeTabs.visible
+                  .map((tab) => tab.label(l10n))
+                  .join(l10n.commonListSeparator),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {

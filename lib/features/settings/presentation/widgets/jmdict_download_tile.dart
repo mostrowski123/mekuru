@@ -58,9 +58,7 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
           child: DownloadAttributionText(
             linkText: 'JMdict',
             url: edrdgJmdictUrl,
-            suffix:
-                ' by the Electronic Dictionary Research and '
-                'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
+            suffix: context.l10n.downloadsEdrdgAttributionSuffix,
           ),
         ),
       ],

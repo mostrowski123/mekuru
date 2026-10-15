@@ -688,6 +688,27 @@ class AppLocalizationsJa extends AppLocalizations {
       '単語の頻度データはJPDB（jpdb.io）のもので、Kuuuubeが配布しています。';
 
   @override
+  String get commonListSeparator => '、';
+
+  @override
+  String get downloadsEdrdgAttributionSuffix =>
+      '：電子辞書研究開発グループ（EDRDG）作成、CC BY-SA 4.0ライセンス。';
+
+  @override
+  String get downloadsKanjiVgAttributionPrefix => '漢字の書き順データ：';
+
+  @override
+  String get downloadsKanjiVgAttributionSuffix =>
+      '（Ulrich Apel）、CC BY-SA 3.0ライセンス。';
+
+  @override
+  String get downloadsUniDicAttributionPrefix => '形態素解析：';
+
+  @override
+  String get downloadsUniDicAttributionSuffix =>
+      '（国立国語研究所）、BSD/GPL/LGPLのトリプルライセンスで配布。';
+
+  @override
   String get downloadsKanjiStrokeOrderTitle => '漢字の書き順';
 
   @override

@@ -85,9 +85,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             child: DownloadAttributionText(
               linkText: 'KANJIDIC',
               url: edrdgKanjidicUrl,
-              suffix:
-                  ' by the Electronic Dictionary Research and '
-                  'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
+              suffix: l10n.downloadsEdrdgAttributionSuffix,
             ),
           ),
           const SizedBox(height: 8),
@@ -129,10 +127,10 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
-              prefix: 'Kanji stroke order data by ',
+              prefix: l10n.downloadsKanjiVgAttributionPrefix,
               linkText: 'KanjiVG',
               url: 'https://kanjivg.tagaini.net/',
-              suffix: ' (Ulrich Apel), licensed under CC BY-SA 3.0.',
+              suffix: l10n.downloadsKanjiVgAttributionSuffix,
             ),
           ),
           const SizedBox(height: 8),
@@ -194,12 +192,10 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
-              prefix: 'Powered by ',
+              prefix: l10n.downloadsUniDicAttributionPrefix,
               linkText: 'UniDic',
               url: 'https://clrd.ninjal.ac.jp/unidic/',
-              suffix:
-                  ' (NINJAL), distributed under the BSD/GPL/LGPL triple '
-                  'license.',
+              suffix: l10n.downloadsUniDicAttributionSuffix,
             ),
           ),
           const SizedBox(height: 8),

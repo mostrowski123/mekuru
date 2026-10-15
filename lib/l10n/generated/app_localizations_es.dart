@@ -711,6 +711,28 @@ class AppLocalizationsEs extends AppLocalizations {
       'Datos de frecuencia de palabras de JPDB (jpdb.io), distribuidos por Kuuuube.';
 
   @override
+  String get commonListSeparator => ', ';
+
+  @override
+  String get downloadsEdrdgAttributionSuffix =>
+      ' del Electronic Dictionary Research and Development Group (EDRDG), con licencia CC BY-SA 4.0.';
+
+  @override
+  String get downloadsKanjiVgAttributionPrefix =>
+      'Datos del orden de trazos de kanji de ';
+
+  @override
+  String get downloadsKanjiVgAttributionSuffix =>
+      ' (Ulrich Apel), con licencia CC BY-SA 3.0.';
+
+  @override
+  String get downloadsUniDicAttributionPrefix => 'Con la tecnología de ';
+
+  @override
+  String get downloadsUniDicAttributionSuffix =>
+      ' (NINJAL), distribuido bajo la triple licencia BSD/GPL/LGPL.';
+
+  @override
   String get downloadsKanjiStrokeOrderTitle => 'Orden de los trazos de kanji';
 
   @override

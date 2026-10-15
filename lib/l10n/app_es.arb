@@ -734,6 +734,12 @@
   "@downloadsJpdbAttribution": {
     "description": "Attribution text for JPDB frequency data."
   },
+  "commonListSeparator": ", ",
+  "downloadsEdrdgAttributionSuffix": " del Electronic Dictionary Research and Development Group (EDRDG), con licencia CC BY-SA 4.0.",
+  "downloadsKanjiVgAttributionPrefix": "Datos del orden de trazos de kanji de ",
+  "downloadsKanjiVgAttributionSuffix": " (Ulrich Apel), con licencia CC BY-SA 3.0.",
+  "downloadsUniDicAttributionPrefix": "Con la tecnología de ",
+  "downloadsUniDicAttributionSuffix": " (NINJAL), distribuido bajo la triple licencia BSD/GPL/LGPL.",
   "downloadsKanjiStrokeOrderTitle": "Orden de los trazos de kanji",
   "@downloadsKanjiStrokeOrderTitle": {
     "description": "Title for the KanjiVG download tile."
