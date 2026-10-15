@@ -66,8 +66,13 @@ class HighlightsSheet extends ConsumerWidget {
                           onNavigate!(highlight.cfiRange);
                         }
                       },
-                      onDelete: () => _deleteHighlight(ref, highlight),
-                      onEditNote: () => _editHighlightNote(context, highlight),
+                      onDelete: () =>
+                          _deleteHighlight(ref, highlight, onRemoveHighlight),
+                      onEditNote: () => showHighlightNoteEditor(
+                        context,
+                        highlightId: highlight.id,
+                        note: highlight.userNote,
+                      ),
                     );
                   },
                 );
@@ -82,44 +87,150 @@ class HighlightsSheet extends ConsumerWidget {
       ),
     );
   }
+}
 
-  void _deleteHighlight(WidgetRef ref, Highlight highlight) {
-    ref.read(highlightRepositoryProvider).deleteHighlight(highlight.id);
-    onRemoveHighlight?.call(highlight.cfiRange);
-  }
-
-  void _editHighlightNote(BuildContext context, Highlight highlight) {
-    // Resolved before the dialog opens: the sheet can unmount while it's up.
-    final container = ProviderScope.containerOf(context, listen: false);
-    final controller = TextEditingController(text: highlight.userNote);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.readerEditNoteTitle),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 3,
-          decoration: InputDecoration(
-            hintText: context.l10n.readerAddNoteHint,
-            border: OutlineInputBorder(),
-          ),
+/// Opens the note editor for highlight [highlightId], filled with [note].
+/// Save stores the text as its note; Cancel leaves the highlight as it was.
+Future<void> showHighlightNoteEditor(
+  BuildContext context, {
+  required int highlightId,
+  String note = '',
+}) {
+  // Resolved before the dialog opens: the sheet can unmount while it's up.
+  final container = ProviderScope.containerOf(context, listen: false);
+  final controller = TextEditingController(text: note);
+  return showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(context.l10n.readerEditNoteTitle),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        maxLines: 3,
+        decoration: InputDecoration(
+          hintText: context.l10n.readerAddNoteHint,
+          border: OutlineInputBorder(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              container
-                  .read(highlightRepositoryProvider)
-                  .updateHighlightNote(highlight.id, controller.text);
-              Navigator.pop(context);
-            },
-            child: Text(context.l10n.commonSave),
-          ),
-        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(context.l10n.commonCancel),
+        ),
+        FilledButton(
+          onPressed: () {
+            container
+                .read(highlightRepositoryProvider)
+                .updateHighlightNote(highlightId, controller.text);
+            Navigator.pop(context);
+          },
+          child: Text(context.l10n.commonSave),
+        ),
+      ],
+    ),
+  );
+}
+
+void _deleteHighlight(
+  WidgetRef ref,
+  Highlight highlight,
+  void Function(String cfiRange)? onRemoveHighlight,
+) {
+  ref.read(highlightRepositoryProvider).deleteHighlight(highlight.id);
+  onRemoveHighlight?.call(highlight.cfiRange);
+}
+
+/// Bottom sheet for the highlight drawn at [cfiRange], tapped on the page:
+/// its text and note, with actions to edit the note or delete it.
+/// [onRemoveHighlight] removes the drawn highlight, as for [HighlightsSheet].
+class HighlightDetailsSheet extends ConsumerWidget {
+  final int bookId;
+  final String cfiRange;
+  final void Function(String cfiRange)? onRemoveHighlight;
+
+  const HighlightDetailsSheet({
+    super.key,
+    required this.bookId,
+    required this.cfiRange,
+    this.onRemoveHighlight,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watched, so a note saved from here shows at once.
+    final highlight = ref
+        .watch(highlightsForBookProvider(bookId))
+        .value
+        ?.where((h) => h.cfiRange == cfiRange)
+        .firstOrNull;
+    if (highlight == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final hasNote = highlight.userNote.isNotEmpty;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 4,
+                  height: 24,
+                  margin: const EdgeInsets.only(right: 12),
+                  color: HighlightColor.fromName(highlight.color).color,
+                ),
+                Expanded(
+                  child: Text(
+                    highlight.selectedText,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            if (hasNote) ...[
+              const SizedBox(height: 12),
+              Text(
+                highlight.userNote,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            OverflowBar(
+              alignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text(l10n.commonDelete),
+                  onPressed: () {
+                    _deleteHighlight(ref, highlight, onRemoveHighlight);
+                    Navigator.pop(context);
+                  },
+                ),
+                TextButton.icon(
+                  icon: const Icon(Icons.edit_note),
+                  label: Text(
+                    hasNote ? l10n.readerEditNoteTitle : l10n.readerAddNote,
+                  ),
+                  onPressed: () => showHighlightNoteEditor(
+                    context,
+                    highlightId: highlight.id,
+                    note: highlight.userNote,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

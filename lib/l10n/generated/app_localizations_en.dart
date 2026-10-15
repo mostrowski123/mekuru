@@ -4579,4 +4579,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mangaShiftSpreadsSubtitle =>
       'For books whose pages pair up wrongly';
+
+  @override
+  String get readerAddNote => 'Add note';
 }

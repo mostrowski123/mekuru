@@ -4604,4 +4604,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get mangaShiftSpreadsSubtitle =>
       'Untuk buku yang pasangan halamannya salah';
+
+  @override
+  String get readerAddNote => 'Add note';
 }

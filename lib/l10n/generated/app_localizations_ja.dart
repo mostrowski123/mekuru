@@ -4457,4 +4457,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mangaShiftSpreadsSubtitle => 'ページの組み合わせがずれている本向け';
+
+  @override
+  String get readerAddNote => 'メモを追加';
 }

@@ -92,6 +92,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.onTouchDown,
     this.onTouchUp,
     this.onWordTapped,
+    this.onHighlightPressed,
     this.onSentenceSelected,
     this.onImageLongPressed,
     this.onLoadError,
@@ -180,6 +181,10 @@ class CustomEpubViewer extends StatefulWidget {
     double y,
   )?
   onWordTapped;
+
+  /// A long press on a drawn highlight, named by the CFI it was added with, at
+  /// ([x], [y]) as for [onTouchUp]. No touch-up follows it.
+  final void Function(String cfiRange, double x, double y)? onHighlightPressed;
   final ValueChanged<EpubSelectionData>? onSentenceSelected;
 
   /// A long press on an image.
@@ -571,6 +576,18 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           tappedChar,
           x,
           y,
+        );
+      },
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'highlightPressed',
+      callback: (data) {
+        if (data.length < 3) return;
+        widget.onHighlightPressed?.call(
+          data[0] as String,
+          (data[1] as num).toDouble(),
+          (data[2] as num).toDouble(),
         );
       },
     );

@@ -11,6 +11,7 @@ var currentMargins = { horizontal: 28, vertical: 28 };
 var _lastTappedBlock = null;       // block element from last getTextAtPoint
 var _lastTappedDoc = null;         // document from last getTextAtPoint
 var _currentWordHighlightCfi = null; // CFI of current word highlight
+var _highlightPressTs = 0;           // When a long press last opened a highlight
 var _disableLinks = false;           // When true, links trigger dictionary instead of navigating
 var _furiganaMode = 'book';          // 'hide' | 'book' | 'all' | 'aboveLevel' | 'wanikani'
 var _furiganaProcessedDocs = new WeakSet(); // iframe documents already processed
@@ -327,6 +328,13 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   // ── Selection ─────────────────────────────────────────────────────
 
   rendition.on('selected', function (cfiRange, contents) {
+    // The finger that opened a highlight stays down into the native long
+    // press, which selects a word under the highlight's sheet: drop it.
+    if (Date.now() - _highlightPressTs < 2000) {
+      var held = contents.window.getSelection();
+      if (held) held.removeAllRanges();
+      return;
+    }
     hasSelection = true;
     try {
       var selectedText = '';
@@ -504,9 +512,10 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
       }
     }, { passive: true });
 
-    // ── Long press on an image: the zoom viewer ─────────────────────
-    // Only a finger held still on an image opens it, so text selection is
-    // untouched. The lift after it is no tap.
+    // ── Long press on an image or a highlight ───────────────────────
+    // A finger held still on an image opens the zoom viewer; on one of the
+    // reader's highlights, the highlight (a tap there still looks a word
+    // up). The lift after it is no tap.
     var press = null;
     var pressOpened = false;
 
@@ -524,15 +533,26 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
         x: touch.clientX,
         y: touch.clientY,
         timer: setTimeout(function () {
-          var image = zoomableImageAt(doc, press.x, press.y);
+          var x = press.x;
+          var y = press.y;
           press = null;
           var sel = contents.window.getSelection();
-          if (!image || (sel && sel.toString().length > 0) ||
-              touchScrolledStrip()) {
+          if ((sel && sel.toString().length > 0) || touchScrolledStrip()) {
             return;
           }
+          var image = zoomableImageAt(doc, x, y);
+          if (image) {
+            pressOpened = true;
+            sendImageLongPress(contents, image);
+            return;
+          }
+          var highlightCfi = highlightAtPoint(contents, x, y);
+          var coords = normalizedCoords({ clientX: x, clientY: y }, contents);
+          if (!highlightCfi || !coords) return;
           pressOpened = true;
-          sendImageLongPress(contents, image);
+          _highlightPressTs = Date.now();
+          console.log('[EPUB_BRIDGE] highlight long-pressed');
+          callDart('highlightPressed', highlightCfi, coords.x, coords.y);
         }, IMAGE_LONG_PRESS_MS)
       };
     }, { passive: true });
@@ -1715,6 +1735,32 @@ function addHighlight(cfi, color, opacity, text) {
 function removeHighlight(cfi) {
   if (!rendition) return;
   rendition.annotations.remove(cfi, 'highlight');
+}
+
+// The CFI (as passed to addHighlight) of the reader's highlight drawn under
+// (x, y), a point in contents' viewport, or null; never the tapped-word
+// mark. Hit-tested here because epub.js's mark callbacks fire on touchstart
+// (a swipe too) and on click, after touchend already sent the tap to Dart.
+function highlightAtPoint(contents, x, y) {
+  if (!rendition) return null;
+  var annotations = rendition.annotations;
+  var hashes = annotations._annotationsAt(contents.sectionIndex) || [];
+  // Newest first: the one drawn on top.
+  for (var i = hashes.length - 1; i >= 0; i--) {
+    var a = annotations._annotations[hashes[i]];
+    if (!a || a.type !== 'highlight' || !a.mark ||
+        a.cfiRange === _currentWordHighlightCfi) {
+      continue;
+    }
+    var rects = a.mark.range.getClientRects();
+    for (var j = 0; j < rects.length; j++) {
+      var r = rects[j];
+      if (x >= r.left && x < r.right && y >= r.top && y < r.bottom) {
+        return a.cfiRange;
+      }
+    }
+  }
+  return null;
 }
 
 function addUnderline(cfi) {

@@ -708,6 +708,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                     settings.swipeSensitivity,
                                   );
                                 },
+                            onHighlightPressed: (cfiRange, x, y) {
+                              if (_consumeSwipe(
+                                x,
+                                y,
+                                settings.readingDirection,
+                                settings.swipeSensitivity,
+                              )) {
+                                return;
+                              }
+                              _showHighlightDetails(cfiRange);
+                            },
                             onLoadError: _onLoadError,
                             onRendererGone: _onRendererGone,
                           ),
@@ -736,6 +747,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                           _selectionData!.cfi,
                           _selectionData!.text,
                           color,
+                        ),
+                        onAddNote: () => _createHighlightWithNote(
+                          _selectionData!.cfi,
+                          _selectionData!.text,
                         ),
                         onLockedTap: () => unawaited(
                           _openProUpgradeFromReader(
@@ -1663,6 +1678,22 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
+  void _showHighlightDetails(String cfiRange) {
+    if (!proUnlockedValue(ref.read(proUnlockedProvider))) {
+      unawaited(_openProUpgradeFromReader(feature: 'highlights'));
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => HighlightDetailsSheet(
+        bookId: widget.book.id,
+        cfiRange: cfiRange,
+        onRemoveHighlight: _epubController.removeHighlight,
+      ),
+    );
+  }
+
   // ── Highlights ──────────────────────────────────────────────────
 
   Future<void> _restoreHighlights() async {
@@ -1691,21 +1722,23 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _hasRestoredHighlights = true;
   }
 
-  Future<void> _createHighlight(
+  /// Returns the new highlight's id, or null when none was made.
+  Future<int?> _createHighlight(
     String cfi,
     String text,
     HighlightColor color,
   ) async {
-    if (cfi.isEmpty) return;
+    if (cfi.isEmpty) return null;
     if (!proUnlockedValue(ref.read(proUnlockedProvider))) {
       unawaited(_openProUpgradeFromReader(feature: 'create_highlight'));
-      return;
+      return null;
     }
 
     // Persist first; if the DB write fails the visual highlight would be
     // orphaned (visible until reload, gone afterward), so don't apply it.
+    final int id;
     try {
-      await ref
+      id = await ref
           .read(highlightRepositoryProvider)
           .addHighlight(
             bookId: widget.book.id,
@@ -1715,13 +1748,22 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           );
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      return;
+      return null;
     }
-    if (!mounted) return;
+    if (!mounted) return null;
 
     _epubController.addHighlight(cfi: cfi, color: color.color, text: text);
     _dismissSelectionBar();
     AppHaptics.medium();
+    return id;
+  }
+
+  /// Highlights the selection in the first colour, then opens the note
+  /// editor for it. Cancelling the editor keeps the plain highlight.
+  Future<void> _createHighlightWithNote(String cfi, String text) async {
+    final id = await _createHighlight(cfi, text, HighlightColor.values.first);
+    if (id == null || !mounted) return;
+    await showHighlightNoteEditor(context, highlightId: id);
   }
 
   void _dismissSelectionBar() {
@@ -1956,12 +1998,14 @@ class _FlattenedChapter {
 class _HighlightSpeedDial extends StatefulWidget {
   final bool isLocked;
   final void Function(HighlightColor color) onColorSelected;
+  final VoidCallback onAddNote;
   final VoidCallback onLockedTap;
   final VoidCallback onExpandToSentence;
 
   const _HighlightSpeedDial({
     required this.isLocked,
     required this.onColorSelected,
+    required this.onAddNote,
     required this.onLockedTap,
     required this.onExpandToSentence,
   });
@@ -2051,6 +2095,27 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
                     onPressed: () => widget.onColorSelected(colors[i]),
                   ),
                 ),
+
+              // Highlight with a note — shown when expanded
+              AnimatedScale(
+                scale: _expanded && !isLocked ? 1.0 : 0.0,
+                duration: Duration(
+                  milliseconds: _expanded && !isLocked
+                      ? 150 + colors.length * 40
+                      : 100,
+                ),
+                curve: _expanded && !isLocked
+                    ? Curves.easeOutBack
+                    : Curves.easeIn,
+                child: FloatingActionButton.small(
+                  heroTag: null,
+                  tooltip: l10n.readerAddNote,
+                  elevation: 2,
+                  shape: const CircleBorder(),
+                  onPressed: widget.onAddNote,
+                  child: const Icon(Icons.edit_note, size: 18),
+                ),
+              ),
 
               // Select Sentence button — shown when expanded
               AnimatedScale(

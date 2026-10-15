@@ -7411,6 +7411,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'For books whose pages pair up wrongly'**
   String get mangaShiftSpreadsSubtitle;
+
+  /// Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight tapped on the page.
+  ///
+  /// In en, this message translates to:
+  /// **'Add note'**
+  String get readerAddNote;
 }
 
 class _AppLocalizationsDelegate

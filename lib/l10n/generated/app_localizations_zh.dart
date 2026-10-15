@@ -4365,6 +4365,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mangaShiftSpreadsSubtitle => '适用于页面配对错误的书';
+
+  @override
+  String get readerAddNote => 'Add note';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

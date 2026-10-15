@@ -1206,5 +1206,6 @@
   "mangaDetectSpreadsTitle": "見開きページを検出",
   "mangaDetectSpreadsSubtitle": "見開きで横長のページを単独表示",
   "mangaShiftSpreadsTitle": "ページの組み合わせを1ページずらす",
-  "mangaShiftSpreadsSubtitle": "ページの組み合わせがずれている本向け"
+  "mangaShiftSpreadsSubtitle": "ページの組み合わせがずれている本向け",
+  "readerAddNote": "メモを追加"
 }

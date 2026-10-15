@@ -4634,4 +4634,7 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get mangaShiftSpreadsSubtitle =>
       'Para libros cuyas páginas se emparejan mal';
+
+  @override
+  String get readerAddNote => 'Add note';
 }

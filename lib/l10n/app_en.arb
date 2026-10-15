@@ -5887,5 +5887,9 @@
   "mangaShiftSpreadsSubtitle": "For books whose pages pair up wrongly",
   "@mangaShiftSpreadsSubtitle": {
     "description": "Subtitle of the per-book setting that moves every page pair in Spread view by one page."
+  },
+  "readerAddNote": "Add note",
+  "@readerAddNote": {
+    "description": "Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight tapped on the page."
   }
 }
