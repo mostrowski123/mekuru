@@ -102,10 +102,12 @@ jobs:
           restore-keys: gradle-
 
       - name: Configure Gradle for GitHub runner
+        # The daemon stays up between a shard's builds instead of every build
+        # starting a cold Gradle JVM.
         run: |
           mkdir -p ~/.gradle
           cat > ~/.gradle/gradle.properties <<'EOF'
-          org.gradle.daemon=false
+          org.gradle.daemon=true
           org.gradle.jvmargs=-Xmx3G -XX:MaxMetaspaceSize=1G -XX:ReservedCodeCacheSize=512m -XX:+HeapDumpOnOutOfMemoryError
           org.gradle.workers.max=2
           org.gradle.vfs.watch=false
@@ -239,6 +241,10 @@ jobs:
             status=$?;
             adb -s emulator-5554 logcat -d -s MekuruLocalOcr AndroidRuntime > build/android-ocr-logcat.txt || true;
             exit "$status"
+
+      - name: Stop the Gradle daemon
+        # Before the post step saves ~/.gradle/caches.
+        run: android/gradlew -p android --stop
 
       - name: Upload Android test reports
         if: always()
