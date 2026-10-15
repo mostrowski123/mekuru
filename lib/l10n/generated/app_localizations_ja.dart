@@ -280,7 +280,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get libraryLargeImportWarnAction => 'このままインポート';
 
   @override
-  String get libraryImportMangaSubtitle => 'マンガのアーカイブまたはMokuroフォルダを選択';
+  String get libraryImportMangaSubtitle => 'マンガのアーカイブかMokuroフォルダを選択';
 
   @override
   String get libraryImportPdf => 'PDFをインポート';
@@ -616,14 +616,14 @@ class AppLocalizationsJa extends AppLocalizations {
       'Appleの文字認識を使い、端末上でオフラインでマンガの文字を認識します。Mekuruを離れてもスキャンは続き、iOSに停止された場合は一時停止します。';
 
   @override
-  String get proFeatureCustomOcrTitle => 'カスタムOCRサーバー';
+  String get proFeatureCustomOcrTitle => 'OCRサーバー連携';
 
   @override
   String get proFeatureCustomOcrDescription =>
       'ご自身のサーバーと共有キーで、リモートでマンガOCRを実行します。';
 
   @override
-  String get proServerRepo => 'サーバーのリポジトリ';
+  String get proServerRepo => 'リポジトリ';
 
   @override
   String get proAlreadyUnlocked => 'アンロック済み';
@@ -1011,7 +1011,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsKeepScreenOnTitle => '画面をオンのままにする';
 
   @override
-  String get settingsKeepScreenOnSubtitle => '読書中に画面がスリープしないようにします';
+  String get settingsKeepScreenOnSubtitle => '読書中は画面をスリープさせない';
 
   @override
   String settingsHorizontalMarginValue({required int pixels}) {
@@ -1035,7 +1035,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsSwipeSensitivityHint => '低いほど、少ない指の動きでスワイプできます';
 
   @override
-  String get settingsManageDictionariesSubtitle => 'インポート、並べ替え、有効/無効の切り替え';
+  String get settingsManageDictionariesSubtitle => 'インポート、並べ替え、オン/オフ';
 
   @override
   String get settingsLookupFontSizeTitle => '辞書検索の文字サイズ';
@@ -1044,8 +1044,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsFilterRomanLetterEntriesTitle => 'アルファベットの項目を除外';
 
   @override
-  String get settingsFilterRomanLetterEntriesSubtitle =>
-      '見出し語にアルファベットを含む項目を表示しません';
+  String get settingsFilterRomanLetterEntriesSubtitle => '見出し語にアルファベットを含む項目を隠す';
 
   @override
   String get settingsAutoFocusSearchTitle => '検索欄に自動フォーカス';
@@ -1059,7 +1058,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get settingsAnkiDroidIntegrationSubtitle => 'ノートタイプ、デッキ、フィールドの割り当てを設定';
+  String get settingsAnkiDroidIntegrationSubtitle => 'ノートタイプ、デッキ、フィールドを設定';
 
   @override
   String get settingsProUnavailableSubtitle => 'Proサービスは一時的に利用できません。';
@@ -1164,7 +1163,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsRateMekuruTitle => 'Mekuruを評価';
 
   @override
-  String get settingsRateMekuruSubtitle => 'Mekuruを気に入っていただけたら、レビューをお願いします';
+  String get settingsRateMekuruSubtitle => '気に入ったらレビューをお願いします';
 
   @override
   String get settingsDocumentationTitle => 'ドキュメント';
@@ -1219,7 +1218,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '設定、読書の進捗、ブックマーク、ハイライト、単語帳、統計を小さな.mekuruファイルに保存します。本、マンガ、辞書は含まれません。';
 
   @override
-  String get backupExportTitle => '読書データのバックアップをエクスポート（.mekuru）';
+  String get backupExportTitle => 'バックアップをエクスポート（.mekuru）';
 
   @override
   String get backupExportSubtitle => '最新の読書データのバックアップを、選んだ場所にファイルとして保存します。';
@@ -1546,7 +1545,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get readerAnimationsTitle => 'アニメーション';
 
   @override
-  String get readerAnimationsSubtitle => '電子ペーパー端末ではオフがおすすめ';
+  String get readerAnimationsSubtitle => '電子ペーパー端末ではオフを推奨';
 
   @override
   String get settingsReadingTitle => 'リーダー設定';
@@ -1555,7 +1554,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsSectionReading => '読書';
 
   @override
-  String get settingsReadingSubtitle => '文字サイズ、色、余白、マンガの初期設定';
+  String get settingsReadingSubtitle => '文字サイズ、色、余白、マンガ設定';
 
   @override
   String get settingsReadingSectionShared => 'すべての本';
@@ -1579,7 +1578,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get readerScrollViewTitle => 'スクロール表示';
 
   @override
-  String get readerScrollViewSubtitle => 'ページをめくらず、章ごとにスクロールして読む';
+  String get readerScrollViewSubtitle => 'ページをめくらず、章をスクロールして読む';
 
   @override
   String get readerThisBook => 'この本';
@@ -2044,7 +2043,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mangaViewModeSpread => '見開き';
 
   @override
-  String get mangaViewModeScroll => 'スクロール';
+  String get mangaViewModeScroll => '縦読み';
 
   @override
   String get mangaAutoCropSubtitle => '余白を取り除く';
@@ -2059,7 +2058,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mangaTransparentLookupTitle => '辞書検索の透過表示';
 
   @override
-  String get mangaTransparentLookupSubtitle => '辞書シートの背景を透かして表示';
+  String get mangaTransparentLookupSubtitle => '辞書シートを半透明にする';
 
   @override
   String get mangaPageTurnEdgeZoneTitle => 'ページめくりエリア';
@@ -2068,7 +2067,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mangaPageTurnEdgeZoneSubtitle => '画面の各端のうち、ページめくりに使う範囲の広さです。';
 
   @override
-  String get mangaDebugWordOverlayTitle => '単語オーバーレイのデバッグ表示';
+  String get mangaDebugWordOverlayTitle => '単語枠をデバッグ表示';
 
   @override
   String get mangaDebugWordOverlaySubtitle => '単語の検出枠を表示';
@@ -2622,7 +2621,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get serverDialogSecretLabel => 'APIキー';
 
   @override
-  String get serverDialogSecretLabelKomga => 'APIキー（またはユーザー名:パスワード）';
+  String get serverDialogSecretLabelKomga => 'APIキーまたはID:パスワード';
 
   @override
   String get serverDialogSecretKeepHint => '変更しない場合は空欄のまま';
@@ -2646,7 +2645,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get serverDialogTest => '接続テスト';
+  String get serverDialogTest => 'テスト';
 
   @override
   String get serverDialogRemoveTitle => 'サーバーを削除しますか？';
@@ -3634,7 +3633,7 @@ class AppLocalizationsJa extends AppLocalizations {
     required String date,
     required String version,
   }) {
-    return '$dateにインポート・バージョン $version';
+    return '$dateに追加・v$version';
   }
 
   @override
@@ -3947,7 +3946,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get freeBooksTadokuAudio => 'tadoku.orgで音声を再生できます。';
 
   @override
-  String get freeBooksViewOnTadoku => 'tadoku.orgで見る';
+  String get freeBooksViewOnTadoku => 'Tadokuで見る';
 
   @override
   String get freeBooksTadokuLicense => 'ライセンス：CC BY-NC-ND 4.0';
@@ -4430,7 +4429,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mangaDetectSpreadsTitle => '見開きページを検出';
 
   @override
-  String get mangaDetectSpreadsSubtitle => '見開き表示で横長のページを単独で表示';
+  String get mangaDetectSpreadsSubtitle => '見開きで横長のページを単独表示';
 
   @override
   String get mangaShiftSpreadsTitle => 'ページの組み合わせを1ページずらす';
