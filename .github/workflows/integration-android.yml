@@ -36,10 +36,11 @@ concurrency:
 jobs:
   android-integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
-    # Each shard pays about ten minutes before its first test (setup, the AVD
-    # cache, a cold Gradle build), then about 80 seconds per later build; the
-    # tests themselves take seconds per file. Linux runners are free for this
+    timeout-minutes: 45
+    # Each shard pays about eight minutes before its first test (setup, the AVD
+    # cache, a cold Gradle build), then 40 to 60 seconds per later build; the
+    # tests themselves take seconds per file. A shard took 15 to 23 minutes
+    # (2026-10-15). Linux runners are free for this
     # public repo and GitHub Free runs 20 jobs at once (macOS: five).
     strategy:
       fail-fast: false
@@ -162,7 +163,7 @@ jobs:
       # the files iOS runs together. The files after it build on their own
       # (see scripts/run_integration_tests.sh).
       - name: Run Android integration tests
-        timeout-minutes: 60
+        timeout-minutes: 35
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
