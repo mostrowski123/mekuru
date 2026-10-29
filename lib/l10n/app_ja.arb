@@ -76,6 +76,7 @@
   "libraryLargeImportWarnTitle": "大きな本",
   "libraryLargeImportWarnBody": "選択した本のうち最も大きいものは{sizeMb} MBです。この端末はメモリが少ないため、非常に大きな本はリーダーで開けない場合があります。このままインポートしますか？",
   "libraryLargeImportWarnAction": "このままインポート",
+  "libraryFileNameTooLong": "ファイル名が長すぎるため開けません。短い名前に変更してから、もう一度お試しください。",
   "libraryImportMangaSubtitle": "マンガのアーカイブかMokuroフォルダを選択",
   "libraryImportPdf": "PDFをインポート",
   "libraryImportPdfSubtitle": "PDFファイルをインポート",

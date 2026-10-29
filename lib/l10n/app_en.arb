@@ -358,6 +358,10 @@
   "@libraryLargeImportWarnAction": {
     "description": "Dialog button confirming import of a large EPUB despite the low-memory warning."
   },
+  "libraryFileNameTooLong": "A file name is too long to open. Rename the file to something shorter and try again.",
+  "@libraryFileNameTooLong": {
+    "description": "Snackbar when the system file picker cannot copy a picked book because its file name is too long."
+  },
   "libraryImportMangaSubtitle": "Choose a manga archive or Mokuro folder",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."

@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
+
+/// Fails every pick the way Android does for a name over 255 bytes.
+class _NameTooLongFilePicker extends FilePickerPlatform {
+  @override
+  Future<FilePickerResult?> pickFiles({
+    String? dialogTitle,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    Function(FilePickerStatus)? onFileLoading,
+    int compressionQuality = 0,
+    bool allowMultiple = false,
+    bool withData = false,
+    bool withReadStream = false,
+    bool lockParentWindow = false,
+    bool readSequential = false,
+    bool cancelUploadOnWindowBlur = true,
+    AndroidSAFOptions? androidSafOptions,
+  }) async => throw PlatformException(
+    code: 'file_picker_error',
+    message: 'File name too long',
+  );
+}
 
 class _ImportSucceeded extends BookImportNotifier {
   @override
@@ -128,6 +152,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(bridgeCalls, ['pickFolder']);
+  });
+
+  // MEKURU-2R: Android's picker cannot copy a file whose name is over 255
+  // bytes; the import used to fail silently with an unhandled exception.
+  testWidgets('a file name too long to copy explains how to fix it', (
+    tester,
+  ) async {
+    final original = FilePickerPlatform.instance;
+    FilePickerPlatform.instance = _NameTooLongFilePicker();
+    addTearDown(() => FilePickerPlatform.instance = original);
+    await pumpEmptyLibrary(tester);
+
+    await tester.tap(find.text('Import EPUB'));
+    await tester.pump();
+
+    expect(
+      find.text(
+        'A file name is too long to open. Rename the file to something shorter and try again.',
+      ),
+      findsOneWidget,
+    );
   });
 
   group('mostRecentlyReadBook', () {

@@ -280,6 +280,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get libraryLargeImportWarnAction => 'このままインポート';
 
   @override
+  String get libraryFileNameTooLong =>
+      'ファイル名が長すぎるため開けません。短い名前に変更してから、もう一度お試しください。';
+
+  @override
   String get libraryImportMangaSubtitle => 'マンガのアーカイブかMokuroフォルダを選択';
 
   @override

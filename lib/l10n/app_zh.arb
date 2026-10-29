@@ -240,6 +240,7 @@
   "libraryLargeImportWarnTitle": "书籍较大",
   "libraryLargeImportWarnBody": "所选的最大书籍为 {sizeMb} MB。此设备内存有限，过大的书籍可能无法在阅读器中打开。仍要导入吗？",
   "libraryLargeImportWarnAction": "仍然导入",
+  "libraryFileNameTooLong": "文件名过长，无法打开。请将文件重命名为较短的名称，然后重试。",
   "libraryImportMangaSubtitle": "选择漫画压缩包或 Mokuro 文件夹",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."

@@ -240,6 +240,7 @@
   "libraryLargeImportWarnTitle": "Libro grande",
   "libraryLargeImportWarnBody": "El libro seleccionado más grande ocupa {sizeMb} MB. Este dispositivo tiene memoria limitada, por lo que los libros muy grandes podrían no abrirse en el lector. ¿Importar de todos modos?",
   "libraryLargeImportWarnAction": "Importar de todos modos",
+  "libraryFileNameTooLong": "El nombre de un archivo es demasiado largo para abrirlo. Cámbiale el nombre por uno más corto e inténtalo de nuevo.",
   "libraryImportMangaSubtitle": "Elegir un archivo de manga o una carpeta Mokuro",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."

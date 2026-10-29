@@ -285,6 +285,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get libraryLargeImportWarnAction => 'Tetap Impor';
 
   @override
+  String get libraryFileNameTooLong =>
+      'Nama file terlalu panjang untuk dibuka. Ganti nama file menjadi lebih pendek, lalu coba lagi.';
+
+  @override
   String get libraryImportMangaSubtitle =>
       'Pilih arsip manga atau folder Mokuro';
 

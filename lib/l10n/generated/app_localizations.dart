@@ -564,6 +564,12 @@ abstract class AppLocalizations {
   /// **'Import Anyway'**
   String get libraryLargeImportWarnAction;
 
+  /// Snackbar when the system file picker cannot copy a picked book because its file name is too long.
+  ///
+  /// In en, this message translates to:
+  /// **'A file name is too long to open. Rename the file to something shorter and try again.'**
+  String get libraryFileNameTooLong;
+
   /// Subtitle describing manga import.
   ///
   /// In en, this message translates to:

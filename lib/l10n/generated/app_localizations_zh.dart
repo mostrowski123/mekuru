@@ -278,6 +278,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryLargeImportWarnAction => '仍然导入';
 
   @override
+  String get libraryFileNameTooLong => '文件名过长，无法打开。请将文件重命名为较短的名称，然后重试。';
+
+  @override
   String get libraryImportMangaSubtitle => '选择漫画压缩包或 Mokuro 文件夹';
 
   @override
@@ -4672,6 +4675,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryLargeImportWarnAction => '仍然导入';
+
+  @override
+  String get libraryFileNameTooLong => '文件名过长，无法打开。请将文件重命名为较短的名称，然后重试。';
 
   @override
   String get libraryImportMangaSubtitle => '选择漫画压缩包或 Mokuro 文件夹';

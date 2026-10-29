@@ -849,6 +849,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       if (e.code == 'already_active' || e.code == 'unknown_activity') {
         return const [];
       }
+      // MEKURU-2R: on Android the plugin copies each pick into its cache
+      // under the file's own name, which fails past 255 bytes (~85 Japanese
+      // characters) and drops the whole selection.
+      if (e.code == 'file_picker_error' &&
+          (e.message?.contains('File name too long') ?? false)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.libraryFileNameTooLong)),
+          );
+        }
+        return const [];
+      }
       rethrow;
     }
 
