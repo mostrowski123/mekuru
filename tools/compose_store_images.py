@@ -53,6 +53,9 @@ CREDIT = {
     None: 'Give My Regards to Black Jack SHUHO SATO',
 }
 PRO_LABEL = 'PRO'
+# Shots whose app bar title is a price word ("Free books"), which App Store
+# guideline 2.3.7 rejects even inside the app's UI: the title bar is cut out.
+NO_TITLE_BAR = {'06'}
 
 
 @dataclass(frozen=True)
@@ -151,6 +154,37 @@ def device(screen: Image.Image, tablet: bool) -> Image.Image:
     return body
 
 
+def without_title_bar(screen: Image.Image) -> Image.Image:
+    """The screen with the app bar's title row cut out and the status bar kept.
+
+    The top of the screen holds three rows of text on a plain background (status
+    bar, title, tab labels); the cut runs from mid-gap to mid-gap around the title,
+    so it needs no per-device pixel offsets.
+    """
+    gray = screen.convert('L')
+    w, h = gray.size
+    bands: list[list[int]] = []
+    inked = False
+    for y in range(h // 3):
+        row = sorted(gray.crop((0, y, w, y + 1)).tobytes())
+        median = row[w // 2]
+        ink = row[-1] - median > 60 or median - row[0] > 60
+        if ink and not inked:
+            if len(bands) == 3:
+                break
+            bands.append([y, y])
+        if ink:
+            bands[-1][1] = y
+        inked = ink
+    assert len(bands) == 3, f'expected status bar, title and tab rows at the top, found {len(bands)}'
+    (_, status_end), (title_start, title_end), (tabs_start, _) = bands
+    top, bottom = (status_end + title_start) // 2, (title_end + tabs_start) // 2
+    out = Image.new(screen.mode, (w, h - (bottom - top)))
+    out.paste(screen.crop((0, 0, w, top)), (0, 0))
+    out.paste(screen.crop((0, bottom, w, h)), (0, top))
+    return out
+
+
 def shadow(size: tuple[int, int], box: tuple[int, int, int, int], radius: int) -> Image.Image:
     layer = Image.new('L', size, 0)
     x0, y0, x1, y1 = box
@@ -208,7 +242,7 @@ def compose(raw: Image.Image, target: Target, lang: str, key: str, captions) -> 
     # The device is sized by width and runs off the bottom edge: the top of
     # the screen carries the point, and a bigger screen reads better small.
     top = y + int(h * 0.03)
-    framed = device(raw, target.tablet)
+    framed = device(without_title_bar(raw) if key in NO_TITLE_BAR else raw, target.tablet)
     fit = w * (0.84 if target.tablet else 0.8) / framed.width
     # Play's Anki shot has its button at the very bottom: show the whole device.
     whole = key == '05' and target.store == 'play'

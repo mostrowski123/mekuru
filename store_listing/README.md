@@ -40,3 +40,4 @@ Every image that shows Black Jack must carry the credit "Give My Regards to Blac
 - The first ~250 characters of a description show before "Read more" and must work on their own.
 - No competitor app names, no features that are only planned.
 - App Store keywords name no other product or service (Yomitan, mokuro, Komga, Kavita, Anki, Aozora Bunko): Apple flags them under guideline 2.3.7. The description may still say what Mekuru works with.
+- Image captions and App Store promotional text never mention price, and "free" counts (guideline 2.3.7; 1.62.0 was rejected for "Free books at your level"). Only the description may say Mekuru or its books are free. Shots whose screen shows a price word in the app bar go in `NO_TITLE_BAR` in `tools/compose_store_images.py`, which cuts the title bar out.
