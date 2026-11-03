@@ -121,6 +121,7 @@ dependencies:
   # engine on Android and iOS (scripts/verify_native_libs.py checks its .so)
   pdfrx: ^2.6.5
   liquid_glass_widgets: ^1.9.0
+  audioplayers: 6.8.1
 
 dev_dependencies:
   sentry_dart_plugin: ^3.2.1

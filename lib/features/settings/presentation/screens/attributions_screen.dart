@@ -26,6 +26,7 @@ class AttributionsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           const OcrAttributions(),
+          const _WordAudioAttribution(),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -756,5 +757,83 @@ class AttributionsScreen extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+}
+
+/// Credits the word audio's voice and model, and says the audio is generated
+/// and unofficial: the voice model's licence (ACML 1.0) asks that audio never
+/// passes for the speaker's own or an official release.
+class _WordAudioAttribution extends StatelessWidget {
+  const _WordAudioAttribution();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.volume_up_outlined,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.aboutWordAudioTitle,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.aboutWordAudioDescription,
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              DownloadAttributionText(
+                prefix: l10n.aboutWordAudioVoiceLabel,
+                linkText: l10n.aboutWordAudioVoiceCredit,
+                url: 'https://x.com/morioki_5',
+              ),
+              DownloadAttributionText(
+                prefix: l10n.aboutWordAudioModelLabel,
+                linkText: 'morioki, yuki (@ai_shirohana)',
+                url:
+                    'https://hub.aivis-project.com/aivm-models/baaae3c0-7b22-4605-8ba5-80c959b41a48',
+              ),
+              DownloadAttributionText(
+                prefix: l10n.aboutLicensedUnderPrefix,
+                linkText: 'Aivis Common Model License 1.0',
+                url:
+                    'https://github.com/Aivis-Project/ACML/blob/master/ACML-1.0.md',
+              ),
+              DownloadAttributionText(
+                prefix: l10n.aboutWordAudioEngineLabel,
+                linkText: 'AivisSpeech Engine',
+                url: 'https://github.com/Aivis-Project/AivisSpeech-Engine',
+              ),
+              DownloadAttributionText(
+                prefix: l10n.aboutWordAudioWordsLabel,
+                linkText: 'JMdict (EDRDG, CC BY-SA 4.0)',
+                url:
+                    'https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

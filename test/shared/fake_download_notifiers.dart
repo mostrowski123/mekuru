@@ -2,6 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
+import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
@@ -24,6 +26,7 @@ List<Override> fakeDownloadNotifierOverrides(
   bool jmdictDownloading = false,
 }) => [
   dictionariesProvider.overrideWith((ref) => Stream.value(installed)),
+  wordAudioProvider.overrideWithValue(FakeNotInstalledWordAudio()),
   for (final entry in CatalogDictionary.values)
     catalogDownloadProvider(entry).overrideWith(
       () => FakeCatalogDownloadNotifier(
@@ -52,6 +55,13 @@ List<Override> fakeDownloadNotifierOverrides(
     ),
   ),
 ];
+
+/// The real one checks a file, which never answers under a widget test's fake
+/// clock, so the Downloads row would spin for ever.
+class FakeNotInstalledWordAudio extends WordAudio {
+  @override
+  Future<bool> get installed async => false;
+}
 
 /// Answers the Wi-Fi check that `isOnWifi()` makes, on Android and on iOS,
 /// for the rest of the test.

@@ -3,8 +3,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/platform/network_status.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import 'manga_ocr_ios.dart';
 import 'model_download.dart';
@@ -38,17 +36,8 @@ class NdlTextModel {
   NdlTextModel._();
   static final NdlTextModel instance = NdlTextModel._();
 
-  /// Where the files live, kept out of backups because they can be
-  /// downloaded again. On Android that is `noBackupFilesDir`, like the
-  /// manga-ocr models: the app support directory is `Context.filesDir`, and
-  /// `no_backup` sits next to it. iOS flags the directory instead.
-  Future<String> get path async {
-    final support = (await getApplicationSupportDirectory()).path;
-    final root = defaultTargetPlatform == TargetPlatform.iOS
-        ? support
-        : p.join(p.dirname(support), 'no_backup');
-    return p.join(root, 'ndl_text_model');
-  }
+  /// Where the files live.
+  Future<String> get path => noBackupModelDir('ndl_text_model');
 
   Future<bool> get installed async =>
       modelFilesInstalled(Directory(await path));

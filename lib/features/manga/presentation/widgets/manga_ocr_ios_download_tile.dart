@@ -32,6 +32,9 @@ class MangaOcrIosDownloadTile extends StatelessWidget {
       installed: () => ocr.installed,
       download: ocr.download,
       remove: ocr.remove,
+      readyText: context.l10n.localOcrModelReady,
+      mobileDataBody: (size) =>
+          context.l10n.localOcrMobileDownloadBody(size: size),
     );
   }
 }
@@ -52,6 +55,9 @@ class NdlTextModelDownloadTile extends StatelessWidget {
       installed: () => model.installed,
       download: model.download,
       remove: model.remove,
+      readyText: context.l10n.localOcrModelReady,
+      mobileDataBody: (size) =>
+          context.l10n.localOcrMobileDownloadBody(size: size),
     );
   }
 }
@@ -69,6 +75,8 @@ class ModelDownloadTile extends StatefulWidget {
     required this.installed,
     required this.download,
     required this.remove,
+    required this.readyText,
+    required this.mobileDataBody,
   });
 
   final IconData icon;
@@ -82,6 +90,12 @@ class ModelDownloadTile extends StatefulWidget {
   })
   download;
   final Future<void> Function() remove;
+
+  /// Shown once installed.
+  final String readyText;
+
+  /// The question off Wi-Fi, for this size.
+  final String Function(String size) mobileDataBody;
 
   @override
   State<ModelDownloadTile> createState() => _ModelDownloadTileState();
@@ -123,7 +137,7 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
       final confirmed = await confirmMobileData(
         context,
         size: _size,
-        body: context.l10n.localOcrMobileDownloadBody(size: _size),
+        body: widget.mobileDataBody(_size),
       );
       if (!mounted) return;
       if (!confirmed) {
@@ -167,7 +181,7 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
             _error != null
                 ? modelDownloadFailureReason(l, _error!)
                 : _installed == true
-                ? l.localOcrModelReady
+                ? widget.readyText
                 : '${widget.description} ($_size)',
           ),
           trailing: _installed == null || busy

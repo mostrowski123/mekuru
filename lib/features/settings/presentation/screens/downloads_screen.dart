@@ -22,6 +22,7 @@ import 'package:mekuru/features/settings/presentation/providers/kanjivg_provider
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
+import 'package:mekuru/features/word_audio/presentation/widgets/word_audio_download_tile.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
@@ -199,6 +200,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             ),
           ),
           const SizedBox(height: 8),
+          const WordAudioDownloadTile(),
           // iOS finds text with Apple Vision and needs only the manga-ocr
           // files; Android's pack and its download run in the native service.
           if (defaultTargetPlatform == TargetPlatform.iOS)

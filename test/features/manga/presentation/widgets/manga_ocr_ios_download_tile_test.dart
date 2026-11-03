@@ -134,6 +134,8 @@ void main() {
                 removed++;
                 installed = false;
               },
+              readyText: 'Models installed · works offline',
+              mobileDataBody: (size) => 'The model is $size.',
             ),
           ),
         ),

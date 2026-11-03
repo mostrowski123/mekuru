@@ -126,6 +126,7 @@ jobs:
           integration_test/mecab_enhanced_dict_upgrade_test.dart
           integration_test/epub_furigana_export_flow_test.dart
           integration_test/furigana_generator_flow_test.dart
+          integration_test/word_audio_test.dart
           integration_test/manga_word_segmentation_test.dart
           integration_test/server_sync_flow_test.dart
           integration_test/epub_manga_convert_flow_test.dart

@@ -20,6 +20,7 @@ import 'package:mekuru/features/dictionary/presentation/widgets/tappable_express
 import 'package:mekuru/features/dictionary/presentation/widgets/user_definition_dialog.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
+import 'package:mekuru/features/word_audio/presentation/widgets/word_audio_button.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';
@@ -540,6 +541,11 @@ class _GroupedDictionaryEntryHeaderState
     final ankiBusy =
         _preparingAnkiNote || (_isCheckingAnki && ankidroidConfig.isConfigured);
     return [
+      WordAudioButton(
+        expression: _primaryEntry.expression,
+        reading: _primaryEntry.reading,
+        glossaries: _primaryEntry.glossaries,
+      ),
       IconButton(
         onPressed: _copyExpression,
         icon: const Icon(Icons.copy_outlined),

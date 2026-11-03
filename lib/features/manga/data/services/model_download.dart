@@ -2,10 +2,12 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart'
     show downloadResumable;
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 /// One file of a downloadable model (OCR, translation), pinned by size and
 /// sha256.
@@ -16,6 +18,19 @@ const _marker = 'INSTALLED';
 /// The download size of [files] for display, e.g. "42.6 MB".
 String modelFilesSize(List<ModelFile> files) =>
     '${(files.fold<int>(0, (a, f) => a + f.bytes) / 1000000).toStringAsFixed(1)} MB';
+
+/// The folder for an optional download called [name], kept out of device
+/// backups because it can be downloaded again. On Android that is
+/// `noBackupFilesDir`, like the manga-ocr models: the app support directory is
+/// `Context.filesDir`, and `no_backup` sits next to it. iOS flags the directory
+/// instead ([excludeFromIosBackup]).
+Future<String> noBackupModelDir(String name) async {
+  final support = (await getApplicationSupportDirectory()).path;
+  final root = defaultTargetPlatform == TargetPlatform.iOS
+      ? support
+      : p.join(p.dirname(support), 'no_backup');
+  return p.join(root, name);
+}
 
 /// Whether [downloadModelFiles] finished in [dir].
 Future<bool> modelFilesInstalled(Directory dir) =>
