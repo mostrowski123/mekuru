@@ -102,6 +102,10 @@ void applySharedSentryOptions(SentryOptions options, SentryAudience audience) {
   // can't silence synthetic clients: `sampleRate` never reaches the Android
   // SDK, which went on reporting their NDK crashes (MEKURU-26).
   options.dsn = audience.isSynthetic ? '' : EnvironmentConfig.sentryDsn;
+  // Debug mode makes the iOS SDK check for a duplicate SDK while holding dyld's
+  // lock. If its app-hang tracker pauses that thread to take a stack trace, the
+  // app deadlocks: debug builds and integration tests froze on iOS 27.
+  if (defaultTargetPlatform == TargetPlatform.iOS) options.debug = false;
   options.environment = audience.environment;
   options.enableLogs = true;
   options.enableMetrics = true;

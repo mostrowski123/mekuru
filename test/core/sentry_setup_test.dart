@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/services/sentry_setup.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -43,5 +44,21 @@ void main() {
 
     expect(await options.beforeSend!(event, Hint()), isNotNull);
     expect(logged, isEmpty);
+  });
+
+  test('debug mode stays off on iOS, where it can deadlock the app', () {
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final ios = SentryOptions()..debug = true;
+    applySharedSentryOptions(ios, (environment: 'debug', isSynthetic: true));
+    expect(ios.debug, isFalse);
+
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    final android = SentryOptions()..debug = true;
+    applySharedSentryOptions(android, (
+      environment: 'debug',
+      isSynthetic: true,
+    ));
+    expect(android.debug, isTrue);
   });
 }
