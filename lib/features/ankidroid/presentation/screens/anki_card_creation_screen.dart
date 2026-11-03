@@ -14,15 +14,17 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+/// How a card sent from [AnkiCardCreationScreen] went.
+enum AnkiCardResult { sent, sentWithoutAudio }
+
 /// Screen for reviewing and sending a note to AnkiDroid.
 ///
-/// Pops with `true` on success, `null` on cancel.
+/// Pops with an [AnkiCardResult] on success, `null` on cancel.
 class AnkiCardCreationScreen extends ConsumerStatefulWidget {
   const AnkiCardCreationScreen({
     super.key,
     required this.noteData,
     this.saveSource = 'other',
-    this.onWordAudioFailed,
   });
 
   final AnkiNoteData noteData;
@@ -30,9 +32,6 @@ class AnkiCardCreationScreen extends ConsumerStatefulWidget {
   /// Surface the card was created from, recorded on the word event
   /// (`'epub'`, `'manga'`, or `'other'` for non-reader surfaces).
   final String saveSource;
-
-  /// The card goes without its word audio; the caller says so with its result.
-  final VoidCallback? onWordAudioFailed;
 
   @override
   ConsumerState<AnkiCardCreationScreen> createState() =>
@@ -219,24 +218,31 @@ class _AnkiCardCreationScreenState
     // screen is disposed while addNote is in flight.
     final statsRepository = ref.read(statsRepositoryProvider);
     final wordAudio = ref.read(wordAudioProvider);
+    var audioFailed = false;
     int? noteId;
     Object? sendError;
     try {
-      final resolved = await AnkiFieldMapper.resolveWordAudio(fields, (
-        clipId,
-      ) async {
-        try {
-          return await service.audioFieldValue(wordAudio, clipId);
-        } catch (e) {
-          logFailure('word_audio.anki_failed', e);
-          return null;
+      // Only now, so a cancelled card adds no media. Failed audio leaves its
+      // field empty: the card matters more.
+      if (widget.noteData.wordAudioClipId case final clip?) {
+        final placeholder = AnkiFieldMapper.wordAudioPlaceholder(clip);
+        if (fields.any((f) => f.contains(placeholder))) {
+          String? value;
+          try {
+            value = await service.audioFieldValue(wordAudio, clip);
+          } catch (e) {
+            logFailure('word_audio.anki_failed', e);
+          }
+          audioFailed = value == null;
+          for (var i = 0; i < fields.length; i++) {
+            fields[i] = fields[i].replaceAll(placeholder, value ?? '');
+          }
         }
-      });
-      if (resolved.failed) widget.onWordAudioFailed?.call();
+      }
       noteId = await service.addNote(
         modelId: config.modelId!,
         deckId: _selectedDeckId!,
-        fields: resolved.fields,
+        fields: fields,
         tags: tags,
       );
     } catch (e) {
@@ -265,7 +271,10 @@ class _AnkiCardCreationScreenState
       if (noteId != null) {
         // The caller shows the success snackbar on its own messenger, the
         // lookup sheet's when it has one.
-        Navigator.pop(context, true);
+        Navigator.pop(
+          context,
+          audioFailed ? AnkiCardResult.sentWithoutAudio : AnkiCardResult.sent,
+        );
       } else {
         final errorMsg = context.l10n.ankidroidFailedToAddNote(
           app: ankiAppName,

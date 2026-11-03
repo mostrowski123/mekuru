@@ -69,38 +69,6 @@ void main() {
     });
   });
 
-  group('resolveWordAudio', () {
-    test('swaps the placeholder and leaves other fields alone', () async {
-      final resolved = await AnkiFieldMapper.resolveWordAudio([
-        '学校',
-        'said: $_placeholder',
-      ], (id) async => '[sound:$id-stored.mp3]');
-      expect(resolved.fields, ['学校', 'said: [sound:$_clip-stored.mp3]']);
-      expect(resolved.failed, isFalse);
-    });
-
-    test('a clip it cannot get empties the field and says so', () async {
-      final resolved = await AnkiFieldMapper.resolveWordAudio([
-        '学校',
-        _placeholder,
-      ], (_) async => null);
-      expect(resolved.fields, ['学校', '']);
-      expect(resolved.failed, isTrue);
-    });
-
-    test('asks for nothing when no field holds a clip', () async {
-      var asked = 0;
-      final resolved = await AnkiFieldMapper.resolveWordAudio(['学校'], (
-        _,
-      ) async {
-        asked++;
-        return 'x';
-      });
-      expect(asked, 0);
-      expect(resolved.failed, isFalse);
-    });
-  });
-
   group('the three routes', () {
     late Directory dir;
     late WordAudio audio;
@@ -195,12 +163,12 @@ void main() {
   group('the card screen', () {
     late AppDatabase db;
     late FakeAnkidroidService service;
-    var audioFailed = false;
+    Object? popped;
 
     setUp(() {
       db = createTestDatabase();
       service = FakeAnkidroidService();
-      audioFailed = false;
+      popped = null;
     });
 
     tearDown(() async => db.close());
@@ -225,19 +193,30 @@ void main() {
             wordAudioProvider.overrideWithValue(_LocalClipAudio('unused')),
           ],
           child: buildLocalizedTestApp(
-            home: AnkiCardCreationScreen(
-              noteData: const AnkiNoteData(
-                expression: '学校',
-                reading: 'がっこう',
-                glossaries: '["school"]',
-                dictionaryName: 'JMdict',
-                wordAudioClipId: _clip,
+            home: Builder(
+              builder: (context) => FilledButton(
+                onPressed: () async =>
+                    popped = await Navigator.of(context).push<AnkiCardResult>(
+                      MaterialPageRoute(
+                        builder: (_) => const AnkiCardCreationScreen(
+                          noteData: AnkiNoteData(
+                            expression: '学校',
+                            reading: 'がっこう',
+                            glossaries: '["school"]',
+                            dictionaryName: 'JMdict',
+                            wordAudioClipId: _clip,
+                          ),
+                        ),
+                      ),
+                    ),
+                child: const Text('open'),
               ),
-              onWordAudioFailed: () => audioFailed = true,
             ),
           ),
         ),
       );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
     }
 
@@ -255,7 +234,7 @@ void main() {
 
       expect(service.audioRequests, [_clip]);
       expect(service.sentFields, ['学校', '[sound:stored.mp3]']);
-      expect(audioFailed, isFalse);
+      expect(popped, AnkiCardResult.sent);
     });
 
     testWidgets('failed audio still sends the card, with an empty field', (
@@ -268,7 +247,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(service.sentFields, ['学校', '']);
-      expect(audioFailed, isTrue);
+      expect(popped, AnkiCardResult.sentWithoutAudio);
     });
 
     testWidgets('the user clearing the field adds no media', (tester) async {
@@ -280,7 +259,7 @@ void main() {
 
       expect(service.audioRequests, isEmpty);
       expect(service.sentFields, ['学校', '']);
-      expect(audioFailed, isFalse);
+      expect(popped, AnkiCardResult.sent);
     });
   });
 }

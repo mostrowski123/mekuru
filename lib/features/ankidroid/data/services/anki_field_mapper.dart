@@ -57,7 +57,7 @@ enum AppDataSource {
       AppDataSource.dictionaryName => note.dictionaryName,
       AppDataSource.pitchAccent => AnkiFieldMapper._formatPitchAccents(note),
       AppDataSource.wordAudio => switch (note.wordAudioClipId) {
-        final id? => '[sound:mekuru_$id.mp3]',
+        final id? => AnkiFieldMapper.wordAudioPlaceholder(id),
         null => '',
       },
       AppDataSource.empty => '',
@@ -104,32 +104,10 @@ class AnkiFieldMapper {
     ];
   }
 
-  /// Replaces each field's word audio placeholder ([AppDataSource.wordAudio])
-  /// with what Anki needs ([valueFor]), only when the card is really sent, so a
-  /// cancelled card adds no media. A clip [valueFor] can't provide leaves its
-  /// field without audio and sets `failed`: the card matters more.
-  static Future<({List<String> fields, bool failed})> resolveWordAudio(
-    List<String> fields,
-    Future<String?> Function(String clipId) valueFor,
-  ) async {
-    var failed = false;
-    final resolved = <String>[];
-    for (final field in fields) {
-      final match = _wordAudioPlaceholder.firstMatch(field);
-      if (match == null) {
-        resolved.add(field);
-        continue;
-      }
-      final value = await valueFor(match[1]!);
-      failed |= value == null;
-      resolved.add(field.replaceAll(_wordAudioPlaceholder, value ?? ''));
-    }
-    return (fields: resolved, failed: failed);
-  }
-
-  static final _wordAudioPlaceholder = RegExp(
-    r'\[sound:mekuru_([0-9a-f]{16})\.mp3\]',
-  );
+  /// What a field mapped to [AppDataSource.wordAudio] holds until the card is
+  /// really sent, so a cancelled card adds no media.
+  static String wordAudioPlaceholder(String clipId) =>
+      '[sound:mekuru_$clipId.mp3]';
 
   static String _formatPitchAccents(AnkiNoteData noteData) {
     if (noteData.pitchAccents.isEmpty) return '';

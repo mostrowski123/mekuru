@@ -455,20 +455,18 @@ class _GroupedDictionaryEntryHeaderState
       return;
     }
 
-    var wordAudioFailed = false;
     Navigator.of(context)
-        .push<bool>(
+        .push<AnkiCardResult>(
           namedRoute(
             'anki_card',
             (_) => AnkiCardCreationScreen(
               noteData: noteData,
               saveSource: widget.saveSource,
-              onWordAudioFailed: () => wordAudioFailed = true,
             ),
           ),
         )
         .then((result) {
-          if (result == true) {
+          if (result != null) {
             _checkIfInAnki(force: true);
             if (!messenger.mounted) return;
             messenger.showSnackBar(
@@ -476,13 +474,15 @@ class _GroupedDictionaryEntryHeaderState
                 // AnkiMobile only reports that it opened, not whether it
                 // took the card; the service that sent it is still current.
                 content: Text(
-                  wordAudioFailed
+                  result == AnkiCardResult.sentWithoutAudio
                       ? l10n.wordAudioAnkiFailed
                       : ref.read(ankidroidServiceProvider) is AnkiMobileService
                       ? l10n.dictionarySentToAnkiMobile(expression: expression)
                       : l10n.dictionaryAddedToAnki(expression: expression),
                 ),
-                duration: Duration(seconds: wordAudioFailed ? 4 : 2),
+                duration: Duration(
+                  seconds: result == AnkiCardResult.sentWithoutAudio ? 4 : 2,
+                ),
                 behavior: SnackBarBehavior.floating,
               ),
             );
