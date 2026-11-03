@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
@@ -291,6 +292,48 @@ void main() {
     expect(proOpens, 1);
     expect(client.started, isEmpty);
     expect(find.byType(OcrActionSheet), findsOneWidget);
+  });
+  testWidgets('a message from inside the sheet shows on the sheet, which stays '
+      'the height of its content', (tester) async {
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      LocalMangaOcr.channel,
+      (_) async => <String, dynamic>{},
+    );
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(LocalMangaOcr.channel, null),
+    );
+    // The clipboard.
+    messenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (_) async => null,
+    );
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+    await open(tester);
+
+    await tester.tap(find.text('Copy OCR diagnostics'));
+    await tester.pumpAndSettle();
+
+    final sheet = find.byType(BottomSheet);
+    expect(
+      find.descendant(of: sheet, matching: find.text('OCR diagnostics copied')),
+      findsOneWidget,
+    );
+    expect(
+      tester.getSize(sheet).height,
+      tester.getSize(find.byType(OcrActionSheet)).height,
+    );
+
+    // The controls under the message still work, and so does the barrier
+    // right above the sheet.
+    await tester.tap(find.text('Replace existing OCR'));
+    await tester.pump();
+    expect(find.text('Recognize 3 pages'), findsOneWidget);
+    await tester.tapAt(tester.getRect(sheet).topCenter - const Offset(0, 10));
+    await tester.pumpAndSettle();
+    expect(find.byType(OcrActionSheet), findsNothing);
   });
   testWidgets('missing models explain the download; Cancel keeps the sheet', (
     tester,

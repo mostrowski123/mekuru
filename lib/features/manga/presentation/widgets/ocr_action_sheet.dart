@@ -34,10 +34,27 @@ Future<void> showOcrActionSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => OcrActionSheet(
-      book: book,
-      visiblePages: visiblePages,
-      initialManga: initialManga,
+    // Messages from inside the sheet appear on it. The app-wide messenger would
+    // put them on the page's Scaffold, underneath this route. A Scaffold fills
+    // the height it is given, so it lies over the sheet instead of holding it:
+    // the sheet keeps the height of its content and the barrier stays tappable.
+    builder: (_) => ScaffoldMessenger(
+      child: Stack(
+        children: [
+          OcrActionSheet(
+            book: book,
+            visiblePages: visiblePages,
+            initialManga: initialManga,
+          ),
+          // shortcut: touches pass through to the sheet, so a SnackBarAction
+          // would not work here; none of this sheet's messages has one.
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: Scaffold(backgroundColor: Colors.transparent),
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
