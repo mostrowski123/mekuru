@@ -91,6 +91,9 @@ void main() {
       expect(RomajiConverter.convert('chi'), 'ち');
       expect(RomajiConverter.convert('tsu'), 'つ');
       expect(RomajiConverter.convert('fu'), 'ふ');
+      expect(RomajiConverter.convert('ji'), 'じ');
+      expect(RomajiConverter.convert('jitensha'), 'じてんしゃ');
+      expect(RomajiConverter.convert('jisho'), 'じしょ');
     });
 
     test('converts ga/za/da/ba/pa rows', () {

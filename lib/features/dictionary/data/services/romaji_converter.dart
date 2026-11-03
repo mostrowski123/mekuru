@@ -156,6 +156,7 @@ class RomajiConverter {
     'de': 'で',
     'do': 'ど',
     'ja': 'じゃ',
+    'ji': 'じ',
     'ju': 'じゅ',
     'je': 'じぇ',
     'jo': 'じょ',
