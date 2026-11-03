@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -508,7 +511,17 @@ class _GroupedDictionaryEntryHeaderState
       height: 1.0,
     );
 
-    final actionButtons = _buildActionButtons();
+    // A little closer together than the default 48, still 48 tall, and a Wrap
+    // so they fit a screen too narrow for one row of them.
+    final actions = IconButtonTheme(
+      data: const IconButtonThemeData(
+        style: ButtonStyle(visualDensity: VisualDensity(horizontal: -1)),
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        children: _buildActionButtons(),
+      ),
+    );
     final partOfSpeech = PartOfSpeechResolver.resolve(_taggedResult.entry);
 
     return Padding(
@@ -529,27 +542,16 @@ class _GroupedDictionaryEntryHeaderState
                   _kanjiDisplayData,
                 ),
                 const SizedBox(height: 8),
-                Wrap(spacing: 4, runSpacing: 4, children: actionButtons),
+                Align(alignment: Alignment.centerRight, child: actions),
               ] else if (_kanjiDisplayData == null)
-                // A Wrap, so a word too wide to share its line with the
-                // buttons keeps the reader's font size and the buttons move
-                // under it.
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.end,
-                  runSpacing: 8,
-                  children: [
-                    _buildHeaderContent(
-                      theme,
-                      expressionStyle,
-                      furiganaStyle,
-                      null,
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: actionButtons,
-                    ),
-                  ],
+                _WordAndActions(
+                  word: _buildHeaderContent(
+                    theme,
+                    expressionStyle,
+                    furiganaStyle,
+                    null,
+                  ),
+                  actions: actions,
                 )
               else
                 Row(
@@ -563,7 +565,7 @@ class _GroupedDictionaryEntryHeaderState
                         _kanjiDisplayData,
                       ),
                     ),
-                    ...actionButtons,
+                    actions,
                   ],
                 ),
 
@@ -807,6 +809,71 @@ class _GroupedDictionaryEntryHeaderState
       furiganaStyle: furiganaStyle,
     );
   }
+}
+
+/// A word on the left and its buttons on the right, on one line when both fit.
+/// Otherwise the buttons take the next line, still on the right: the word keeps
+/// the reader's font size and the buttons line up with other entries' buttons.
+///
+/// A [Wrap] can't do this: it is only as wide as its widest line, and it aligns
+/// every line the same way.
+///
+/// shortcut: left-to-right only; mirror it if a right-to-left locale is added.
+class _WordAndActions extends MultiChildRenderObjectWidget {
+  _WordAndActions({required Widget word, required Widget actions})
+    : super(children: [word, actions]);
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderWordAndActions();
+}
+
+class _WordAndActionsParentData extends ContainerBoxParentData<RenderBox> {}
+
+class _RenderWordAndActions extends RenderBox
+    with
+        ContainerRenderObjectMixin<RenderBox, _WordAndActionsParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _WordAndActionsParentData> {
+  static const double _lineGap = 8;
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! _WordAndActionsParentData) {
+      child.parentData = _WordAndActionsParentData();
+    }
+  }
+
+  @override
+  void performLayout() {
+    final word = firstChild!;
+    final actions = lastChild!;
+    final width = constraints.maxWidth;
+    final loose = BoxConstraints(maxWidth: width);
+    word.layout(loose, parentUsesSize: true);
+    actions.layout(loose, parentUsesSize: true);
+
+    final oneLine = word.size.width + actions.size.width <= width;
+    final height = oneLine
+        ? math.max(word.size.height, actions.size.height)
+        : word.size.height + _lineGap + actions.size.height;
+    (word.parentData! as _WordAndActionsParentData).offset = Offset(
+      0,
+      oneLine ? height - word.size.height : 0,
+    );
+    (actions.parentData! as _WordAndActionsParentData).offset = Offset(
+      width - actions.size.width,
+      height - actions.size.height,
+    );
+    size = constraints.constrain(Size(width, height));
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) =>
+      defaultPaint(context, offset);
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      defaultHitTestChildren(result, position: position);
 }
 
 class GroupedDictionaryEntryBody extends StatelessWidget {

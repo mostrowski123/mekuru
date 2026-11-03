@@ -155,6 +155,137 @@ void main() {
     expect(find.text('Poco común'), findsOneWidget);
   });
 
+  group('header buttons', () {
+    Future<void> pumpCard(
+      WidgetTester tester, {
+      required String expression,
+      required String reading,
+      required double width,
+      double fontSize = 16,
+      double textScale = 1,
+    }) async {
+      await tester.pumpWidget(
+        _buildTestApp(
+          db: db,
+          width: width,
+          child: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
+            child: GroupedDictionaryEntryCard(
+              key: ValueKey('$expression $width $fontSize $textScale'),
+              entries: [
+                DictionaryEntryWithSource(
+                  entry: _buildEntry(
+                    id: 1,
+                    expression: expression,
+                    reading: reading,
+                  ),
+                  dictionaryName: 'JMdict',
+                  frequencyRank: 3000,
+                ),
+              ],
+              pitchAccents: const [],
+              fontSize: fontSize,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+
+    /// The header's content, inside its padding.
+    Rect content(WidgetTester tester) {
+      final header = find.byType(GroupedDictionaryEntryHeader);
+      return tester
+          .widget<GroupedDictionaryEntryHeader>(header)
+          .padding
+          .resolve(TextDirection.ltr)
+          .deflateRect(tester.getRect(header));
+    }
+
+    /// The whole button, tap target included. Its tooltip only covers what is
+    /// drawn, which is narrower.
+    Rect button(WidgetTester tester, IconData icon) =>
+        tester.getRect(find.widgetWithIcon(IconButton, icon));
+
+    testWidgets('share the word\'s line on the right when both fit', (
+      tester,
+    ) async {
+      await pumpCard(tester, expression: '猫', reading: 'ねこ', width: 400);
+
+      final save = button(tester, Icons.bookmark_add_outlined);
+      final word = tester.getRect(find.byType(FuriganaText));
+      expect(save.right, moreOrLessEquals(content(tester).right));
+      expect(word.left, moreOrLessEquals(content(tester).left));
+      expect(save.top, lessThan(word.bottom), reason: 'on the word\'s line');
+    });
+
+    testWidgets('go under a word too long to share with, still on the right', (
+      tester,
+    ) async {
+      for (final (width, fontSize, textScale) in [
+        (300.0, 32.0, 1.0), // A long word at a large lookup font.
+        (360.0, 16.0, 3.0), // Large system font.
+        (264.0, 22.0, 1.0), // A small screen.
+      ]) {
+        await pumpCard(
+          tester,
+          expression: '一生懸命',
+          reading: 'いっしょうけんめい',
+          width: width,
+          fontSize: fontSize,
+          textScale: textScale,
+        );
+
+        final save = button(tester, Icons.bookmark_add_outlined);
+        final word = tester.getRect(find.byType(FuriganaText));
+        final copy = button(tester, Icons.copy_outlined);
+        final reason = 'at $width wide';
+        expect(
+          save.right,
+          moreOrLessEquals(content(tester).right),
+          reason: reason,
+        );
+        expect(copy.top, greaterThanOrEqualTo(word.bottom), reason: reason);
+        expect(
+          word.left,
+          moreOrLessEquals(content(tester).left),
+          reason: reason,
+        );
+      }
+    });
+
+    testWidgets('stay on the right on the narrowest screens', (tester) async {
+      // Narrow enough that the buttons need more than one row.
+      for (final width in [240.0, 150.0]) {
+        await pumpCard(
+          tester,
+          expression: '一生懸命',
+          reading: 'いっしょうけんめい',
+          width: width,
+        );
+
+        expect(
+          button(tester, Icons.bookmark_add_outlined).right,
+          moreOrLessEquals(content(tester).right),
+        );
+      }
+    });
+
+    testWidgets('sit a little closer than the default, keeping their height', (
+      tester,
+    ) async {
+      await pumpCard(tester, expression: '猫', reading: 'ねこ', width: 400);
+
+      final copy = button(tester, Icons.copy_outlined);
+      final send = button(tester, Icons.electric_bolt_outlined);
+      final save = button(tester, Icons.bookmark_add_outlined);
+      expect(send.center.dx - copy.center.dx, 44);
+      expect(save.center.dx - send.center.dx, 44);
+      expect(copy.height, 48);
+    });
+  });
+
   testWidgets('a long word at the largest font keeps its size and wraps', (
     tester,
   ) async {
