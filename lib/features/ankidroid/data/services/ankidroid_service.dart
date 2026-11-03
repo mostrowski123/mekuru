@@ -1,5 +1,6 @@
 import 'package:ankidroid_for_flutter/ankidroid_for_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 
 /// Wrapper around the AnkiDroid AddContentApi.
 ///
@@ -129,6 +130,17 @@ class AnkidroidService {
       'deckId': deckId,
       'fields': fields,
       'tags': tags,
+    });
+  }
+
+  /// What an Anki field must contain to carry this clip, or null if it can't.
+  /// Throws when the clip can't be fetched or handed to Anki.
+  Future<String?> audioFieldValue(WordAudio audio, String clipId) async {
+    if (!_initialized) return null;
+    final clip = await audio.clipFile(clipId);
+    return _nativeChannel.invokeMethod<String>('addMedia', {
+      'path': clip.path,
+      'name': 'mekuru_$clipId',
     });
   }
 

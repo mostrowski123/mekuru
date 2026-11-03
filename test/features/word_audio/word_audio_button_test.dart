@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
+import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
@@ -13,6 +16,7 @@ import 'package:mekuru/features/word_audio/presentation/providers/word_audio_pro
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 
+import '../ankidroid/ankidroid_test_doubles.dart';
 import '../../shared/fake_download_notifiers.dart';
 import '../../test_app.dart';
 
@@ -68,12 +72,31 @@ void main() {
     await db.close();
   });
 
-  Future<void> pump(WidgetTester tester, WordAudio audio) async {
+  Future<void> pump(
+    WidgetTester tester,
+    WordAudio audio, {
+    Map<String, String>? ankiFields,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
           wordAudioProvider.overrideWithValue(audio),
+          if (ankiFields != null) ...[
+            ankidroidAvailableProvider.overrideWithValue(true),
+            ankidroidServiceProvider.overrideWithValue(FakeAnkidroidService()),
+            ankidroidConfigProvider.overrideWith(
+              () => TestAnkidroidConfigNotifier(
+                AnkidroidConfig(
+                  modelId: 5,
+                  modelName: 'Basic',
+                  deckId: 1,
+                  deckName: 'Default',
+                  fieldMapping: ankiFields,
+                ),
+              ),
+            ),
+          ],
         ],
         child: buildLocalizedTestApp(
           home: Scaffold(
@@ -195,6 +218,59 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('Check your internet'), findsOneWidget);
+  });
+
+  group('the Anki button', () {
+    const mapped = {'Front': 'expression', 'Back': 'word_audio'};
+    final anki = find.byIcon(Icons.electric_bolt_outlined);
+
+    testWidgets('a mapped field gets the clip of this word', (tester) async {
+      await pump(tester, _FakeWordAudio(clip: 'abc'), ankiFields: mapped);
+
+      await tester.tap(anki);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AnkiCardCreationScreen), findsOneWidget);
+      expect(find.text('[sound:mekuru_abc.mp3]'), findsOneWidget);
+    });
+
+    testWidgets('no mapped field: the word list is left alone', (tester) async {
+      final audio = _FakeWordAudio(isInstalled: false, afterDownload: 'abc');
+      await pump(tester, audio, ankiFields: const {'Front': 'expression'});
+
+      await tester.tap(anki);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AnkiCardCreationScreen), findsOneWidget);
+      expect(audio.downloads, 0);
+    });
+
+    testWidgets('a mapped field downloads a missing word list', (tester) async {
+      final audio = _FakeWordAudio(isInstalled: false, afterDownload: 'abc');
+      await pump(tester, audio, ankiFields: mapped);
+
+      await tester.tap(anki);
+      await tester.pumpAndSettle();
+
+      expect(audio.downloads, 1);
+      expect(find.text('[sound:mekuru_abc.mp3]'), findsOneWidget);
+    });
+
+    testWidgets('declining the word list still opens the card', (tester) async {
+      mockWifiConnected(false);
+      final audio = _FakeWordAudio(isInstalled: false, afterDownload: 'abc');
+      await pump(tester, audio, ankiFields: mapped);
+
+      await tester.tap(anki);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(audio.downloads, 0);
+      expect(find.byType(AnkiCardCreationScreen), findsOneWidget);
+      expect(find.text('[sound:mekuru_abc.mp3]'), findsNothing);
+    });
   });
 
   testWidgets('playback fails: a snackbar says so', (tester) async {

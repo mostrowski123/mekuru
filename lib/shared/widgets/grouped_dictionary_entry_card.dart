@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
@@ -20,9 +21,12 @@ import 'package:mekuru/features/dictionary/presentation/widgets/tappable_express
 import 'package:mekuru/features/dictionary/presentation/widgets/user_definition_dialog.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
+import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 import 'package:mekuru/features/word_audio/presentation/widgets/word_audio_button.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
+import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 import 'package:mekuru/shared/widgets/structured_glossary_view.dart';
@@ -292,6 +296,7 @@ class _GroupedDictionaryEntryHeaderState
   AnkiNoteData _buildAnkiNoteData({
     String? glossaries,
     String? sentenceTranslation,
+    String? wordAudioClipId,
   }) {
     return AnkiNoteData(
       expression: _primaryEntry.expression,
@@ -301,6 +306,7 @@ class _GroupedDictionaryEntryHeaderState
       frequencyRank: _frequencyRank,
       sentenceContext: widget.sentenceContext,
       sentenceTranslation: sentenceTranslation,
+      wordAudioClipId: wordAudioClipId,
       pitchAccents: widget.pitchAccents,
     );
   }
@@ -325,6 +331,36 @@ class _GroupedDictionaryEntryHeaderState
       highQuality:
           ref.read(translationModelProvider) == TranslationModelChoice.high,
     );
+  }
+
+  /// The word's audio clip, fetched only when an Anki field is mapped to it.
+  /// Mapping the field asks for audio, so a missing word list is offered here
+  /// rather than skipped. Whatever goes wrong, the card still opens.
+  Future<String?> _ankiWordAudio(
+    Map<String, String> fieldMapping,
+    ScaffoldMessengerState messenger,
+    AppLocalizations l10n,
+  ) async {
+    if (!fieldMapping.containsValue(AppDataSource.wordAudio.key)) return null;
+    final audio = ref.read(wordAudioProvider);
+    try {
+      if (!await ensureWordAudioList(context, audio)) return null;
+      return await audio.clipFor(
+        _primaryEntry.expression,
+        _primaryEntry.reading,
+        glossaries: _primaryEntry.glossaries,
+      );
+    } catch (e) {
+      logFailure('word_audio.anki_lookup_failed', e);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(dictionaryDownloadError(l10n, e)!),
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return null;
+    }
   }
 
   ({String cacheKey, int modelId, int deckId, String firstFieldValue})?
@@ -395,16 +431,18 @@ class _GroupedDictionaryEntryHeaderState
     // Taken now: this header's messenger is the lookup sheet's when it has one.
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _preparingAnkiNote = true);
-    final (glossaries, sentenceTranslation) =
+    final (glossaries, sentenceTranslation, wordAudioClipId) =
         await (
           _exportGlossaries(),
           _ankiSentenceTranslation(config.fieldMapping, target),
+          _ankiWordAudio(config.fieldMapping, messenger, l10n),
         ).wait.whenComplete(() {
           if (mounted) setState(() => _preparingAnkiNote = false);
         });
     final noteData = _buildAnkiNoteData(
       glossaries: glossaries,
       sentenceTranslation: sentenceTranslation,
+      wordAudioClipId: wordAudioClipId,
     );
     if (!mounted) return;
     if (!config.isConfigured) {
@@ -417,6 +455,7 @@ class _GroupedDictionaryEntryHeaderState
       return;
     }
 
+    var wordAudioFailed = false;
     Navigator.of(context)
         .push<bool>(
           namedRoute(
@@ -424,6 +463,7 @@ class _GroupedDictionaryEntryHeaderState
             (_) => AnkiCardCreationScreen(
               noteData: noteData,
               saveSource: widget.saveSource,
+              onWordAudioFailed: () => wordAudioFailed = true,
             ),
           ),
         )
@@ -436,11 +476,13 @@ class _GroupedDictionaryEntryHeaderState
                 // AnkiMobile only reports that it opened, not whether it
                 // took the card; the service that sent it is still current.
                 content: Text(
-                  ref.read(ankidroidServiceProvider) is AnkiMobileService
+                  wordAudioFailed
+                      ? l10n.wordAudioAnkiFailed
+                      : ref.read(ankidroidServiceProvider) is AnkiMobileService
                       ? l10n.dictionarySentToAnkiMobile(expression: expression)
                       : l10n.dictionaryAddedToAnki(expression: expression),
                 ),
-                duration: const Duration(seconds: 2),
+                duration: Duration(seconds: wordAudioFailed ? 4 : 2),
                 behavior: SnackBarBehavior.floating,
               ),
             );

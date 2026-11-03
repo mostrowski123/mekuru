@@ -7555,6 +7555,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Word list: '**
   String get aboutWordAudioWordsLabel;
+
+  /// Anki field mapping source
+  ///
+  /// In en, this message translates to:
+  /// **'Word Audio'**
+  String get ankidroidDataSourceWordAudio;
+
+  /// Shown after a card went to Anki without its word audio
+  ///
+  /// In en, this message translates to:
+  /// **'The card was sent without audio, because the word\'s audio couldn\'t be added.'**
+  String get wordAudioAnkiFailed;
 }
 
 class _AppLocalizationsDelegate

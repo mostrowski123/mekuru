@@ -13,6 +13,7 @@ import android.provider.OpenableColumns
 import android.provider.Settings
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -499,6 +500,15 @@ class MainActivity : FlutterActivity() {
                     )
                 }
             }
+            "addMedia" -> {
+                val path = call.argument<String>("path")
+                val name = call.argument<String>("name")
+                if (path == null || name == null) {
+                    result.error("bad_args", "path and name are required", null)
+                    return
+                }
+                runIo(result) { addAnkiMedia(File(path), name) }
+            }
             "hasDuplicateInDeck" -> {
                 val modelId = call.longArgument("modelId")
                 val deckId = call.longArgument("deckId")
@@ -567,6 +577,18 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }.start()
+    }
+
+    /** Hands AnkiDroid a word audio clip; returns the `[sound:…]` text for a field. */
+    private fun addAnkiMedia(file: File, name: String): String? {
+        val anki = AddContentApi.getAnkiDroidPackageName(applicationContext) ?: return null
+        val uri = FileProvider.getUriForFile(this, "$packageName.wordaudio", file)
+        grantUriPermission(anki, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            return AddContentApi(applicationContext).addMediaFromUri(uri, name, "audio")
+        } finally {
+            revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
     }
 
     private fun hasDuplicateInDeck(

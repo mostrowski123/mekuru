@@ -1,4 +1,5 @@
 import 'package:mekuru/features/ankidroid/data/services/ankidroid_service.dart';
+import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// AnkiMobile backend (iOS): the Anki app on this device, driven through its
@@ -141,6 +142,11 @@ class AnkiMobileService implements AnkidroidService {
     if (!launched) throw Exception('AnkiMobile launch failed');
     return syntheticId;
   }
+
+  /// AnkiMobile takes media only as a link, which it downloads itself.
+  @override
+  Future<String?> audioFieldValue(WordAudio audio, String clipId) async =>
+      audio.clipUrl(clipId);
 
   @override
   void dispose() {

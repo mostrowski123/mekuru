@@ -5993,5 +5993,13 @@
   "aboutWordAudioWordsLabel": "Word list: ",
   "@aboutWordAudioWordsLabel": {
     "description": "Attribution line prefix"
+  },
+  "ankidroidDataSourceWordAudio": "Word Audio",
+  "@ankidroidDataSourceWordAudio": {
+    "description": "Anki field mapping source"
+  },
+  "wordAudioAnkiFailed": "The card was sent without audio, because the word's audio couldn't be added.",
+  "@wordAudioAnkiFailed": {
+    "description": "Shown after a card went to Anki without its word audio"
   }
 }

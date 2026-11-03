@@ -3263,5 +3263,7 @@
   "aboutWordAudioVoiceCredit": "もりおき (@morioki_5)",
   "aboutWordAudioModelLabel": "Voice model: ",
   "aboutWordAudioEngineLabel": "Speech engine: ",
-  "aboutWordAudioWordsLabel": "Word list: "
+  "aboutWordAudioWordsLabel": "Word list: ",
+  "ankidroidDataSourceWordAudio": "Word Audio",
+  "wordAudioAnkiFailed": "The card was sent without audio, because the word's audio couldn't be added."
 }

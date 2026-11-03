@@ -9,6 +9,18 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
+/// Downloads the word list if it's missing, asking first off Wi-Fi. False when
+/// the user declined.
+Future<bool> ensureWordAudioList(BuildContext context, WordAudio audio) async {
+  if (await audio.installed) return true;
+  if (!context.mounted) return false;
+  final size = modelFilesSize([wordAudioIndexFile]);
+  final body = context.l10n.wordAudioMobileBody(size: size);
+  if (!await okToDownload(context, size: size, body: body)) return false;
+  await audio.download();
+  return true;
+}
+
 /// The speaker in a dictionary lookup. It offers the word list until that is
 /// installed, then shows only for words that have a clip.
 class WordAudioButton extends ConsumerStatefulWidget {
@@ -77,18 +89,7 @@ class _WordAudioButtonState extends ConsumerState<WordAudioButton> {
     setState(() => _busy = true);
     try {
       if (_clip == null) {
-        if (!await audio.installed) {
-          final size = modelFilesSize([wordAudioIndexFile]);
-          if (!mounted ||
-              !await okToDownload(
-                context,
-                size: size,
-                body: l10n.wordAudioMobileBody(size: size),
-              )) {
-            return;
-          }
-          await audio.download();
-        }
+        if (!await ensureWordAudioList(context, audio)) return;
         // A word the list turns out not to have loses its speaker here.
         await _check();
       }

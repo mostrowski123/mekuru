@@ -4445,6 +4445,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aboutWordAudioWordsLabel => 'Word list: ';
+
+  @override
+  String get ankidroidDataSourceWordAudio => 'Word Audio';
+
+  @override
+  String get wordAudioAnkiFailed =>
+      'The card was sent without audio, because the word\'s audio couldn\'t be added.';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -8855,4 +8862,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get aboutWordAudioWordsLabel => 'Word list: ';
+
+  @override
+  String get ankidroidDataSourceWordAudio => 'Word Audio';
+
+  @override
+  String get wordAudioAnkiFailed =>
+      'The card was sent without audio, because the word\'s audio couldn\'t be added.';
 }

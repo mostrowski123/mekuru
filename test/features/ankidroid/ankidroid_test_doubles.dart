@@ -1,6 +1,7 @@
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/services/ankidroid_service.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 
 /// Fake AnkiDroid backend with mutable canned data. Null `fieldList` /
 /// `deckList` simulate a failed query, mirroring [AnkidroidService].
@@ -14,6 +15,10 @@ class FakeAnkidroidService extends AnkidroidService {
   Set<int> duplicateDeckIds = {2};
   Object? addNoteError;
   int? addNoteResult = 42;
+  List<String>? sentFields;
+  final List<String> audioRequests = [];
+  String? audioValue;
+  Object? audioError;
 
   @override
   Future<bool> requestPermission() async => true;
@@ -38,6 +43,7 @@ class FakeAnkidroidService extends AnkidroidService {
     List<String> tags = const ['mekuru'],
   }) async {
     if (addNoteError != null) throw addNoteError!;
+    sentFields = fields;
     return addNoteResult;
   }
 
@@ -53,6 +59,13 @@ class FakeAnkidroidService extends AnkidroidService {
       firstFieldValue: firstFieldValue,
     ));
     return duplicateDeckIds.contains(deckId);
+  }
+
+  @override
+  Future<String?> audioFieldValue(WordAudio audio, String clipId) async {
+    audioRequests.add(clipId);
+    if (audioError != null) throw audioError!;
+    return audioValue;
   }
 
   @override

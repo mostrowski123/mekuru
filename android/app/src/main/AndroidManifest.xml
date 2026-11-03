@@ -41,6 +41,16 @@
             android:name=".FullBackupJobService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+        <!-- Hands word audio clips to AnkiDroid, one read grant at a time. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.wordaudio"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/word_audio_paths" />
+        </provider>
         <!-- LiteRT-LM's GPU backend (GemmaBridge); CPU is used where absent. -->
         <uses-native-library android:name="libOpenCL.so" android:required="false"/>
         <uses-native-library android:name="libvndksupport.so" android:required="false"/>

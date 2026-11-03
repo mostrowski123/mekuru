@@ -11,6 +11,9 @@ class AnkiNoteData {
 
   /// Machine translation of [sentenceContext], when a field asks for it.
   final String? sentenceTranslation;
+
+  /// The word's audio clip, when a field asks for it.
+  final String? wordAudioClipId;
   final List<PitchAccentResult> pitchAccents;
 
   const AnkiNoteData({
@@ -21,6 +24,7 @@ class AnkiNoteData {
     this.frequencyRank,
     this.sentenceContext,
     this.sentenceTranslation,
+    this.wordAudioClipId,
     this.pitchAccents = const [],
   });
 }
@@ -35,6 +39,7 @@ const exampleAnkiNoteData = AnkiNoteData(
   frequencyRank: 120,
   sentenceContext: '毎朝パンを食べる。',
   sentenceTranslation: 'I eat bread every morning.',
+  wordAudioClipId: '0000000000000000',
   pitchAccents: [
     PitchAccentResult(
       reading: 'たべる',

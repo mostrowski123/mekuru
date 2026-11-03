@@ -9,6 +9,7 @@ import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
+import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -21,6 +22,7 @@ class AnkiCardCreationScreen extends ConsumerStatefulWidget {
     super.key,
     required this.noteData,
     this.saveSource = 'other',
+    this.onWordAudioFailed,
   });
 
   final AnkiNoteData noteData;
@@ -28,6 +30,9 @@ class AnkiCardCreationScreen extends ConsumerStatefulWidget {
   /// Surface the card was created from, recorded on the word event
   /// (`'epub'`, `'manga'`, or `'other'` for non-reader surfaces).
   final String saveSource;
+
+  /// The card goes without its word audio; the caller says so with its result.
+  final VoidCallback? onWordAudioFailed;
 
   @override
   ConsumerState<AnkiCardCreationScreen> createState() =>
@@ -213,13 +218,25 @@ class _AnkiCardCreationScreenState
     // Read before the await so the provider is still reachable even if this
     // screen is disposed while addNote is in flight.
     final statsRepository = ref.read(statsRepositoryProvider);
+    final wordAudio = ref.read(wordAudioProvider);
     int? noteId;
     Object? sendError;
     try {
+      final resolved = await AnkiFieldMapper.resolveWordAudio(fields, (
+        clipId,
+      ) async {
+        try {
+          return await service.audioFieldValue(wordAudio, clipId);
+        } catch (e) {
+          logFailure('word_audio.anki_failed', e);
+          return null;
+        }
+      });
+      if (resolved.failed) widget.onWordAudioFailed?.call();
       noteId = await service.addNote(
         modelId: config.modelId!,
         deckId: _selectedDeckId!,
-        fields: fields,
+        fields: resolved.fields,
         tags: tags,
       );
     } catch (e) {

@@ -15,6 +15,7 @@ enum AppDataSource {
   frequency('Frequency Rank', 'frequency'),
   dictionaryName('Dictionary Name', 'dictionary_name'),
   pitchAccent('Pitch Accent', 'pitch_accent'),
+  wordAudio('Word Audio', 'word_audio'),
   empty('(Empty)', 'empty');
 
   final String displayName;
@@ -33,6 +34,7 @@ enum AppDataSource {
       AppDataSource.frequency => l10n.ankidroidDataSourceFrequency,
       AppDataSource.dictionaryName => l10n.ankidroidDataSourceDictionaryName,
       AppDataSource.pitchAccent => l10n.ankidroidDataSourcePitchAccent,
+      AppDataSource.wordAudio => l10n.ankidroidDataSourceWordAudio,
       AppDataSource.empty => l10n.ankidroidDataSourceEmpty,
     };
   }
@@ -54,6 +56,10 @@ enum AppDataSource {
       AppDataSource.frequency => note.frequencyRank?.toString() ?? '',
       AppDataSource.dictionaryName => note.dictionaryName,
       AppDataSource.pitchAccent => AnkiFieldMapper._formatPitchAccents(note),
+      AppDataSource.wordAudio => switch (note.wordAudioClipId) {
+        final id? => '[sound:mekuru_$id.mp3]',
+        null => '',
+      },
       AppDataSource.empty => '',
     };
   }
@@ -97,6 +103,33 @@ class AnkiFieldMapper {
           entry.key,
     ];
   }
+
+  /// Replaces each field's word audio placeholder ([AppDataSource.wordAudio])
+  /// with what Anki needs ([valueFor]), only when the card is really sent, so a
+  /// cancelled card adds no media. A clip [valueFor] can't provide leaves its
+  /// field without audio and sets `failed`: the card matters more.
+  static Future<({List<String> fields, bool failed})> resolveWordAudio(
+    List<String> fields,
+    Future<String?> Function(String clipId) valueFor,
+  ) async {
+    var failed = false;
+    final resolved = <String>[];
+    for (final field in fields) {
+      final match = _wordAudioPlaceholder.firstMatch(field);
+      if (match == null) {
+        resolved.add(field);
+        continue;
+      }
+      final value = await valueFor(match[1]!);
+      failed |= value == null;
+      resolved.add(field.replaceAll(_wordAudioPlaceholder, value ?? ''));
+    }
+    return (fields: resolved, failed: failed);
+  }
+
+  static final _wordAudioPlaceholder = RegExp(
+    r'\[sound:mekuru_([0-9a-f]{16})\.mp3\]',
+  );
 
   static String _formatPitchAccents(AnkiNoteData noteData) {
     if (noteData.pitchAccents.isEmpty) return '';

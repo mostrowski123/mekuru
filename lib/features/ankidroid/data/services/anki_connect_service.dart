@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:mekuru/features/ankidroid/data/services/ankidroid_service.dart';
+import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 
 /// Anki desktop backend (iOS): the AnkiConnect add-on's HTTP JSON API behind
 /// the same contract as [AnkidroidService].
@@ -140,6 +142,18 @@ class AnkiConnectService implements AnkidroidService {
       },
     });
     return noteId as int?;
+  }
+
+  /// Sends the clip's bytes, so Anki's computer needs no internet for it.
+  /// AnkiConnect may store it under another name, which is the one to use.
+  @override
+  Future<String?> audioFieldValue(WordAudio audio, String clipId) async {
+    final clip = await audio.clipFile(clipId);
+    final stored = await _invoke('storeMediaFile', {
+      'filename': 'mekuru_$clipId.mp3',
+      'data': base64Encode(await File(clip.path).readAsBytes()),
+    });
+    return '[sound:$stored]';
   }
 
   @override
