@@ -23,6 +23,7 @@ import '../../data/models/mokuro_models.dart';
 import '../../../settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import '../../../reader/data/services/gemma_translation.dart';
+import '../../../word_audio/data/services/word_audio_pack.dart';
 import '../../../reader/data/services/mecab_service.dart';
 import 'manga_cache_store.dart';
 import 'manga_ocr_client.dart';
@@ -183,6 +184,12 @@ void ocrWorkerCallbackDispatcher() {
       return _runModelDownloadTask(
         'translation.high_quality_download_failed',
         () => runGemmaDownloadWork(inputData),
+      );
+    }
+    if (taskName == wordAudioPackTaskName && inputData != null) {
+      return _runModelDownloadTask(
+        'word_audio.pack_download_failed',
+        () => runWordAudioPackWork(inputData),
       );
     }
     if (taskName != ocrTaskName || inputData == null) return true;

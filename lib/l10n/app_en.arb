@@ -6001,5 +6001,43 @@
   "wordAudioAnkiFailed": "The card was sent without audio, because the word's audio couldn't be added.",
   "@wordAudioAnkiFailed": {
     "description": "Shown after a card went to Anki without its word audio"
+  },
+  "wordAudioPackTitle": "Word audio offline pack",
+  "@wordAudioPackTitle": {
+    "description": "Downloads screen row"
+  },
+  "wordAudioPackDescription": "Every word's audio on this device, so the speaker and Anki cards work without a connection.",
+  "@wordAudioPackDescription": {
+    "description": "Downloads screen row subtitle"
+  },
+  "wordAudioPackReady": "Installed. Word audio works offline.",
+  "@wordAudioPackReady": {
+    "description": "Downloads screen row subtitle once installed"
+  },
+  "wordAudioPackWarning": "This download is {size} and stays on your device. Word audio works without it: each word then downloads when you tap its speaker.",
+  "@wordAudioPackWarning": {
+    "description": "Asked before the offline pack starts downloading",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "wordAudioPackMobileBody": "The offline pack is {size}. You're on mobile data or a hotspot, so downloading it may use your data plan.",
+  "@wordAudioPackMobileBody": {
+    "description": "Asked before the offline pack downloads off Wi-Fi",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "wordAudioPackFailedTitle": "Word audio download failed",
+  "@wordAudioPackFailedTitle": {
+    "description": "Android notification when the offline pack's download gives up"
+  },
+  "backgroundWorkWordAudio": "Downloading word audio",
+  "@backgroundWorkWordAudio": {
+    "description": "iOS Live Activity text while the offline pack downloads"
   }
 }

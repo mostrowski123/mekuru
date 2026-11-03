@@ -79,6 +79,7 @@ void main() {
           required int downloads,
           required int scans,
           required int dictionaries,
+      required int wordAudio,
           required int percent,
         }) => (title: '$downloads/$scans/$dictionaries', subtitle: '');
     work.start('dictionary:a', BackgroundJobKind.dictionary, onStopped: () {});

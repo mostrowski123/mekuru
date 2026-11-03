@@ -4722,4 +4722,30 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get wordAudioAnkiFailed =>
       'The card was sent without audio, because the word\'s audio couldn\'t be added.';
+
+  @override
+  String get wordAudioPackTitle => 'Word audio offline pack';
+
+  @override
+  String get wordAudioPackDescription =>
+      'Every word\'s audio on this device, so the speaker and Anki cards work without a connection.';
+
+  @override
+  String get wordAudioPackReady => 'Installed. Word audio works offline.';
+
+  @override
+  String wordAudioPackWarning({required String size}) {
+    return 'This download is $size and stays on your device. Word audio works without it: each word then downloads when you tap its speaker.';
+  }
+
+  @override
+  String wordAudioPackMobileBody({required String size}) {
+    return 'The offline pack is $size. You\'re on mobile data or a hotspot, so downloading it may use your data plan.';
+  }
+
+  @override
+  String get wordAudioPackFailedTitle => 'Word audio download failed';
+
+  @override
+  String get backgroundWorkWordAudio => 'Downloading word audio';
 }

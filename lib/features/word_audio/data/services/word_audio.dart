@@ -2,13 +2,16 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:convert/convert.dart' show hex;
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio_lookup.dart';
+import 'package:mekuru/features/word_audio/data/services/word_audio_pack.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -34,10 +37,12 @@ class WordAudio {
   WordAudio({
     @visibleForTesting this.base = AppLinks.wordAudioBase,
     @visibleForTesting this.indexFile = wordAudioIndexFile,
-  });
+    WordAudioPack? pack,
+  }) : pack = pack ?? WordAudioPack();
 
   final String base;
   final ModelFile indexFile;
+  final WordAudioPack pack;
 
   // Asked once per result in a list, so neither crosses to the platform again.
   late final Future<String> _dir = storageDir();
@@ -113,6 +118,10 @@ class WordAudio {
     final path = p.join(await _cacheDir(), id.substring(0, 2), '$id.mp3');
     if (await File(path).exists()) return (path: path, source: 'cache');
     await Directory(p.dirname(path)).create(recursive: true);
+    if (await pack.clip(hex.decode(id)) case final mp3?) {
+      await writeBytesAtomic(File(path), mp3);
+      return (path: path, source: 'pack');
+    }
     // A half-written file under the final name could play.
     final partial = '$path.part';
     await downloadToFile(clipUrl(id), partial);
@@ -153,6 +162,7 @@ class WordAudio {
   void dispose() {
     _index?.close();
     _index = null;
+    pack.close();
     unawaited(_player?.dispose());
     _player = null;
   }

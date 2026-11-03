@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
+import 'package:mekuru/features/word_audio/data/services/word_audio_pack.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -246,6 +247,7 @@ Future<void> _runDeferredStartupWarmups() => tracedOperation(
             await EnhancedFuriganaDictDownloadService.getStorageDir(),
             await KanjiVgDownloadService.getStorageDir(),
             await WordAudio.storageDir(),
+            await WordAudioPack.storageDir(),
           ]);
         },
       ),

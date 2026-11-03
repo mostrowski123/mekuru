@@ -71,6 +71,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
     required int downloads,
     required int scans,
     required int dictionaries,
+    required int wordAudio,
     required int percent,
   }) {
     final l10n = appL10n();
@@ -80,6 +81,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
         if (scans > 0) l10n.backgroundWorkScanning(count: scans),
         if (dictionaries > 0)
           l10n.backgroundWorkDictionaries(count: dictionaries),
+        if (wordAudio > 0) l10n.backgroundWorkWordAudio,
       ].join(' · '),
       subtitle: l10n.backgroundWorkPercent(percent: percent),
     );

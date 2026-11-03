@@ -1232,5 +1232,12 @@
   "aboutWordAudioEngineLabel": "Speech engine: ",
   "aboutWordAudioWordsLabel": "Word list: ",
   "ankidroidDataSourceWordAudio": "Word Audio",
-  "wordAudioAnkiFailed": "The card was sent without audio, because the word's audio couldn't be added."
+  "wordAudioAnkiFailed": "The card was sent without audio, because the word's audio couldn't be added.",
+  "wordAudioPackTitle": "Word audio offline pack",
+  "wordAudioPackDescription": "Every word's audio on this device, so the speaker and Anki cards work without a connection.",
+  "wordAudioPackReady": "Installed. Word audio works offline.",
+  "wordAudioPackWarning": "This download is {size} and stays on your device. Word audio works without it: each word then downloads when you tap its speaker.",
+  "wordAudioPackMobileBody": "The offline pack is {size}. You're on mobile data or a hotspot, so downloading it may use your data plan.",
+  "wordAudioPackFailedTitle": "Word audio download failed",
+  "backgroundWorkWordAudio": "Downloading word audio"
 }

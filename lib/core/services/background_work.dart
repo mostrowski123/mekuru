@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// [download] is a server book, [dictionary] a dictionary download.
-enum BackgroundJobKind { download, scan, dictionary }
+/// [download] is a server book, [dictionary] a dictionary download, [wordAudio]
+/// the offline pack.
+enum BackgroundJobKind { download, scan, dictionary, wordAudio }
 
 /// Live Activity text for the running work: what is being done and how far
 /// along it is (0-100).
@@ -13,6 +14,7 @@ typedef BackgroundWorkText =
       required int downloads,
       required int scans,
       required int dictionaries,
+      required int wordAudio,
       required int percent,
     });
 
@@ -160,6 +162,7 @@ class BackgroundWork {
           downloads: count(BackgroundJobKind.download),
           scans: count(BackgroundJobKind.scan),
           dictionaries: count(BackgroundJobKind.dictionary),
+          wordAudio: count(BackgroundJobKind.wordAudio),
           percent: percent,
         ) ??
         (title: 'Mekuru', subtitle: '$percent%');

@@ -201,6 +201,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           ),
           const SizedBox(height: 8),
           const WordAudioDownloadTile(),
+          const WordAudioPackTile(),
           // iOS finds text with Apple Vision and needs only the manga-ocr
           // files; Android's pack and its download run in the native service.
           if (defaultTargetPlatform == TargetPlatform.iOS)

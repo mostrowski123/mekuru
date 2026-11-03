@@ -7567,6 +7567,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The card was sent without audio, because the word\'s audio couldn\'t be added.'**
   String get wordAudioAnkiFailed;
+
+  /// Downloads screen row
+  ///
+  /// In en, this message translates to:
+  /// **'Word audio offline pack'**
+  String get wordAudioPackTitle;
+
+  /// Downloads screen row subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Every word\'s audio on this device, so the speaker and Anki cards work without a connection.'**
+  String get wordAudioPackDescription;
+
+  /// Downloads screen row subtitle once installed
+  ///
+  /// In en, this message translates to:
+  /// **'Installed. Word audio works offline.'**
+  String get wordAudioPackReady;
+
+  /// Asked before the offline pack starts downloading
+  ///
+  /// In en, this message translates to:
+  /// **'This download is {size} and stays on your device. Word audio works without it: each word then downloads when you tap its speaker.'**
+  String wordAudioPackWarning({required String size});
+
+  /// Asked before the offline pack downloads off Wi-Fi
+  ///
+  /// In en, this message translates to:
+  /// **'The offline pack is {size}. You\'re on mobile data or a hotspot, so downloading it may use your data plan.'**
+  String wordAudioPackMobileBody({required String size});
+
+  /// Android notification when the offline pack's download gives up
+  ///
+  /// In en, this message translates to:
+  /// **'Word audio download failed'**
+  String get wordAudioPackFailedTitle;
+
+  /// iOS Live Activity text while the offline pack downloads
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading word audio'**
+  String get backgroundWorkWordAudio;
 }
 
 class _AppLocalizationsDelegate
