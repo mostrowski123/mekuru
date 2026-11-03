@@ -4690,6 +4690,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get ankidroidDataSourceWordAudio => 'Audio Kata';
 
   @override
+  String get ankidroidWordAudioPreview => 'Audio untuk kata ini';
+
+  @override
   String get wordAudioAnkiFailed =>
       'Kartu dikirim tanpa audio karena audio kata tidak dapat ditambahkan.';
 

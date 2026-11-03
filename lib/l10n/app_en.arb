@@ -5998,6 +5998,10 @@
   "@ankidroidDataSourceWordAudio": {
     "description": "Anki field mapping source"
   },
+  "ankidroidWordAudioPreview": "Audio for this word",
+  "@ankidroidWordAudioPreview": {
+    "description": "Preview under Word Audio in the Anki field mapping sheet, where other sources show the text they would fill in"
+  },
   "wordAudioAnkiFailed": "The card was sent without audio, because the word's audio couldn't be added.",
   "@wordAudioAnkiFailed": {
     "description": "Shown after a card went to Anki without its word audio"

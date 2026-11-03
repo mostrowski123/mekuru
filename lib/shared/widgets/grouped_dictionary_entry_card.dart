@@ -336,18 +336,20 @@ class _GroupedDictionaryEntryHeaderState
     );
   }
 
-  /// The word's audio clip, fetched only when an Anki field is mapped to it.
-  /// Mapping the field asks for audio, so a missing word list is offered here
-  /// rather than skipped. Whatever goes wrong, the card still opens.
+  /// The word's audio clip, if the word list is here. A note with no mapped
+  /// field gets it too, so the mapping sheet can preview it and a field mapped
+  /// from the card screen fills in. Mapping the field asks for audio, so only
+  /// then is a missing word list offered rather than skipped. Whatever goes
+  /// wrong, the card still opens.
   Future<String?> _ankiWordAudio(
     Map<String, String> fieldMapping,
     ScaffoldMessengerState messenger,
     AppLocalizations l10n,
   ) async {
-    if (!fieldMapping.containsValue(AppDataSource.wordAudio.key)) return null;
+    final mapped = fieldMapping.containsValue(AppDataSource.wordAudio.key);
     final audio = ref.read(wordAudioProvider);
     try {
-      if (!await ensureWordAudioList(context, audio)) return null;
+      if (mapped && !await ensureWordAudioList(context, audio)) return null;
       return await audio.clipFor(
         _primaryEntry.expression,
         _primaryEntry.reading,
@@ -355,13 +357,15 @@ class _GroupedDictionaryEntryHeaderState
       );
     } catch (e) {
       logFailure('word_audio.anki_lookup_failed', e);
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(dictionaryDownloadError(l10n, e)!),
-          duration: const Duration(seconds: 4),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (mapped) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(dictionaryDownloadError(l10n, e)!),
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
       return null;
     }
   }

@@ -3265,6 +3265,7 @@
   "aboutWordAudioEngineLabel": "Motor de voz: ",
   "aboutWordAudioWordsLabel": "Lista de palabras: ",
   "ankidroidDataSourceWordAudio": "Audio de la palabra",
+  "ankidroidWordAudioPreview": "Audio de esta palabra",
   "wordAudioAnkiFailed": "La tarjeta se envió sin audio porque no se pudo añadir el audio de la palabra.",
   "wordAudioPackTitle": "Paquete sin conexión de audio de palabras",
   "wordAudioPackDescription": "El audio de todas las palabras en este dispositivo, para que el altavoz y las tarjetas de Anki funcionen sin conexión.",

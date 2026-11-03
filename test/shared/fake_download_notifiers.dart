@@ -26,7 +26,7 @@ List<Override> fakeDownloadNotifierOverrides(
   bool jmdictDownloading = false,
 }) => [
   dictionariesProvider.overrideWith((ref) => Stream.value(installed)),
-  wordAudioProvider.overrideWithValue(FakeNotInstalledWordAudio()),
+  wordAudioProvider.overrideWithValue(FakeWordAudio()),
   for (final entry in CatalogDictionary.values)
     catalogDownloadProvider(entry).overrideWith(
       () => FakeCatalogDownloadNotifier(
@@ -58,9 +58,12 @@ List<Override> fakeDownloadNotifierOverrides(
 
 /// The real one checks a file, which never answers under a widget test's fake
 /// clock, so the Downloads row would spin for ever.
-class FakeNotInstalledWordAudio extends WordAudio {
+class FakeWordAudio extends WordAudio {
+  FakeWordAudio({this.isInstalled = false});
+  final bool isInstalled;
+
   @override
-  Future<bool> get installed async => false;
+  Future<bool> get installed async => isInstalled;
 }
 
 /// Answers the Wi-Fi check that `isOnWifi()` makes, on Android and on iOS,

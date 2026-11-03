@@ -4449,6 +4449,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ankidroidDataSourceWordAudio => '单词音频';
 
   @override
+  String get ankidroidWordAudioPreview => '这个单词的音频';
+
+  @override
   String get wordAudioAnkiFailed => '无法添加单词音频，卡片已在没有音频的情况下发送。';
 
   @override
@@ -8887,6 +8890,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ankidroidDataSourceWordAudio => '单词音频';
+
+  @override
+  String get ankidroidWordAudioPreview => '这个单词的音频';
 
   @override
   String get wordAudioAnkiFailed => '无法添加单词音频，卡片已在没有音频的情况下发送。';

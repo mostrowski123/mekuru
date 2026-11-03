@@ -7,6 +7,7 @@ import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_connect_service.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
@@ -650,13 +651,18 @@ class _AnkidroidSettingsScreenState
     );
   }
 
-  void _showFieldMappingPicker(
+  Future<void> _showFieldMappingPicker(
     BuildContext context,
     String ankiFieldName,
     String currentKey,
-  ) {
+  ) async {
     final l10n = context.l10n;
     final note = widget.previewNote ?? exampleAnkiNoteData;
+    // Without the word list, a word with no clip may still have audio.
+    final mayHaveAudio =
+        note.wordAudioClipId != null ||
+        !await ref.read(wordAudioProvider).installed;
+    if (!context.mounted) return;
     showSettingsOptionPickerSheet<AppDataSource>(
       context: context,
       title: l10n.ankidroidSettingsMapFieldTo(ankiFieldName: ankiFieldName),
@@ -668,6 +674,9 @@ class _AnkidroidSettingsScreenState
       labelOf: (source) => source.localizedLabel(l10n),
       subtitleOf: (source) {
         if (source == AppDataSource.empty) return null;
+        if (source == AppDataSource.wordAudio && mayHaveAudio) {
+          return l10n.ankidroidWordAudioPreview;
+        }
         final preview = source.valueFor(note).trim();
         return preview.isEmpty ? l10n.ankidroidDataSourceEmpty : preview;
       },

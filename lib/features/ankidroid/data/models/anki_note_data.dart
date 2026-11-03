@@ -12,7 +12,7 @@ class AnkiNoteData {
   /// Machine translation of [sentenceContext], when a field asks for it.
   final String? sentenceTranslation;
 
-  /// The word's audio clip, when a field asks for it.
+  /// The word's audio clip, when the word list has one.
   final String? wordAudioClipId;
   final List<PitchAccentResult> pitchAccents;
 

@@ -26,6 +26,7 @@ class _FakeWordAudio extends WordAudio {
   bool isInstalled;
   String? clip;
   String? afterDownload;
+  Object? lookupError;
   Object? playError;
   Completer<void>? playGate;
   final plays = <String>[];
@@ -39,7 +40,10 @@ class _FakeWordAudio extends WordAudio {
     String expression,
     String reading, {
     String glossaries = '',
-  }) async => isInstalled ? clip : null;
+  }) async {
+    if (lookupError case final error?) throw error;
+    return isInstalled ? clip : null;
+  }
 
   @override
   Future<void> download({
@@ -222,6 +226,7 @@ void main() {
 
   group('the Anki button', () {
     const mapped = {'Front': 'expression', 'Back': 'word_audio'};
+    const unmapped = {'Front': 'expression'};
     final anki = find.byIcon(Icons.electric_bolt_outlined);
 
     testWidgets('a mapped field gets the clip of this word', (tester) async {
@@ -236,13 +241,40 @@ void main() {
 
     testWidgets('no mapped field: the word list is left alone', (tester) async {
       final audio = _FakeWordAudio(isInstalled: false, afterDownload: 'abc');
-      await pump(tester, audio, ankiFields: const {'Front': 'expression'});
+      await pump(tester, audio, ankiFields: unmapped);
 
       await tester.tap(anki);
       await tester.pumpAndSettle();
 
       expect(find.byType(AnkiCardCreationScreen), findsOneWidget);
       expect(audio.downloads, 0);
+    });
+
+    testWidgets('no mapped field: the note still knows its clip', (
+      tester,
+    ) async {
+      await pump(tester, _FakeWordAudio(clip: 'abc'), ankiFields: unmapped);
+
+      await tester.tap(anki);
+      await tester.pumpAndSettle();
+
+      final card = tester.widget<AnkiCardCreationScreen>(
+        find.byType(AnkiCardCreationScreen),
+      );
+      expect(card.noteData.wordAudioClipId, 'abc');
+      expect(find.text('[sound:mekuru_abc.mp3]'), findsNothing);
+    });
+
+    testWidgets('no mapped field: a failed lookup stays quiet', (tester) async {
+      final audio = _FakeWordAudio(clip: 'abc');
+      await pump(tester, audio, ankiFields: unmapped);
+      audio.lookupError = Exception('broken list');
+
+      await tester.tap(anki);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AnkiCardCreationScreen), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
     });
 
     testWidgets('a mapped field downloads a missing word list', (tester) async {

@@ -6,7 +6,9 @@ import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
+import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 
+import '../../../../shared/fake_download_notifiers.dart';
 import '../../../../test_app.dart';
 import '../../ankidroid_test_doubles.dart';
 
@@ -18,6 +20,12 @@ void main() {
     deckName: 'Default',
     fieldMapping: {'Front': 'expression', 'Word': 'reading'},
   );
+  const cat = AnkiNoteData(
+    expression: '猫',
+    reading: 'ねこ',
+    glossaries: '["cat"]',
+    dictionaryName: 'JMdict',
+  );
 
   late FakeAnkidroidService fakeService;
 
@@ -26,6 +34,7 @@ void main() {
     required AnkidroidConfig config,
     void Function(FakeAnkidroidService service)? setUpService,
     AnkiNoteData? previewNote,
+    bool wordListInstalled = true,
   }) async {
     fakeService = FakeAnkidroidService()
       // The configured note type kept "Word" but lost "Front".
@@ -38,6 +47,9 @@ void main() {
           ankidroidServiceProvider.overrideWithValue(fakeService),
           ankidroidConfigProvider.overrideWith(
             () => TestAnkidroidConfigNotifier(config),
+          ),
+          wordAudioProvider.overrideWithValue(
+            FakeWordAudio(isInstalled: wordListInstalled),
           ),
         ],
         child: buildLocalizedTestApp(
@@ -140,6 +152,7 @@ void main() {
   Future<void> openWordSheet(
     WidgetTester tester, {
     AnkiNoteData? previewNote,
+    bool wordListInstalled = true,
   }) async {
     await tester.binding.setSurfaceSize(const Size(800, 2000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -147,6 +160,7 @@ void main() {
       tester,
       config: configWithStaleField,
       previewNote: previewNote,
+      wordListInstalled: wordListInstalled,
     );
     await tester.tap(find.text('Word'));
     await tester.pumpAndSettle();
@@ -163,30 +177,54 @@ void main() {
     expect(find.text('to eat'), findsOneWidget);
   });
 
+  Finder sourcePreview(String source, String text) => find.descendant(
+    of: find.widgetWithText(ListTile, source),
+    matching: find.text(text),
+  );
+
   testWidgets('the mapping sheet previews the word the user came from', (
     tester,
   ) async {
-    await openWordSheet(
-      tester,
-      previewNote: const AnkiNoteData(
-        expression: '猫',
-        reading: 'ねこ',
-        glossaries: '["cat"]',
-        dictionaryName: 'JMdict',
-      ),
-    );
+    await openWordSheet(tester, previewNote: cat);
 
     expect(find.textContaining('"猫", the word you looked up'), findsOneWidget);
     expect(find.text('cat'), findsOneWidget);
     expect(find.text('食べる'), findsNothing);
     // A source this word has no value for previews as empty.
-    expect(
-      find.descendant(
-        of: find.widgetWithText(ListTile, 'Sentence Context'),
-        matching: find.text('(Empty)'),
-      ),
-      findsOneWidget,
-    );
+    expect(sourcePreview('Sentence Context', '(Empty)'), findsOneWidget);
+  });
+
+  group('the mapping sheet previews Word Audio', () {
+    testWidgets('as audio for a word with a clip, not as its sound tag', (
+      tester,
+    ) async {
+      await openWordSheet(tester);
+
+      expect(
+        sourcePreview('Word Audio', 'Audio for this word'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('[sound:'), findsNothing);
+    });
+
+    testWidgets('as empty for a word the word list has no clip for', (
+      tester,
+    ) async {
+      await openWordSheet(tester, previewNote: cat);
+
+      expect(sourcePreview('Word Audio', '(Empty)'), findsOneWidget);
+    });
+
+    testWidgets('as audio when there is no word list to rule it out yet', (
+      tester,
+    ) async {
+      await openWordSheet(tester, previewNote: cat, wordListInstalled: false);
+
+      expect(
+        sourcePreview('Word Audio', 'Audio for this word'),
+        findsOneWidget,
+      );
+    });
   });
 
   testWidgets('a failed field query while picking a note type keeps the '

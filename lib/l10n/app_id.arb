@@ -3265,6 +3265,7 @@
   "aboutWordAudioEngineLabel": "Mesin suara: ",
   "aboutWordAudioWordsLabel": "Daftar kata: ",
   "ankidroidDataSourceWordAudio": "Audio Kata",
+  "ankidroidWordAudioPreview": "Audio untuk kata ini",
   "wordAudioAnkiFailed": "Kartu dikirim tanpa audio karena audio kata tidak dapat ditambahkan.",
   "wordAudioPackTitle": "Paket offline audio kata",
   "wordAudioPackDescription": "Audio semua kata di perangkat ini, sehingga ikon speaker dan kartu Anki berfungsi tanpa koneksi.",

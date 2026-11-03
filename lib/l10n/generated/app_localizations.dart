@@ -7562,6 +7562,12 @@ abstract class AppLocalizations {
   /// **'Word Audio'**
   String get ankidroidDataSourceWordAudio;
 
+  /// Preview under Word Audio in the Anki field mapping sheet, where other sources show the text they would fill in
+  ///
+  /// In en, this message translates to:
+  /// **'Audio for this word'**
+  String get ankidroidWordAudioPreview;
+
   /// Shown after a card went to Anki without its word audio
   ///
   /// In en, this message translates to:

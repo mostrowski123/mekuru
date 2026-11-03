@@ -4721,6 +4721,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ankidroidDataSourceWordAudio => 'Audio de la palabra';
 
   @override
+  String get ankidroidWordAudioPreview => 'Audio de esta palabra';
+
+  @override
   String get wordAudioAnkiFailed =>
       'La tarjeta se envió sin audio porque no se pudo añadir el audio de la palabra.';
 

@@ -1232,6 +1232,7 @@
   "aboutWordAudioEngineLabel": "音声合成エンジン：",
   "aboutWordAudioWordsLabel": "単語リスト：",
   "ankidroidDataSourceWordAudio": "単語の音声",
+  "ankidroidWordAudioPreview": "この単語の音声",
   "wordAudioAnkiFailed": "単語の音声を追加できなかったため、音声なしでカードを送信しました。",
   "wordAudioPackTitle": "単語の音声のオフラインパック",
   "wordAudioPackDescription": "すべての単語の音声を端末に保存します。スピーカーとAnkiカードが接続なしで使えます。",

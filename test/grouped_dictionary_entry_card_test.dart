@@ -20,12 +20,14 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_query_servic
 import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 import 'package:mekuru/main.dart' show databaseProvider, scaffoldMessengerKey;
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 
 import 'features/ankidroid/ankidroid_test_doubles.dart';
+import 'shared/fake_download_notifiers.dart';
 import 'shared/yomitan_glossary_fixtures.dart';
 import 'test_app.dart';
 
@@ -66,7 +68,11 @@ Widget _buildTestApp({
   Locale? locale,
 }) {
   return ProviderScope(
-    overrides: [databaseProvider.overrideWithValue(db), ...overrides],
+    overrides: [
+      databaseProvider.overrideWithValue(db),
+      wordAudioProvider.overrideWithValue(FakeWordAudio()),
+      ...overrides,
+    ],
     child: buildLocalizedTestApp(
       locale: locale,
       // The card shows Anki's result through the app-wide messenger.

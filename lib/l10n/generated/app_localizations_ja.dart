@@ -4542,6 +4542,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ankidroidDataSourceWordAudio => '単語の音声';
 
   @override
+  String get ankidroidWordAudioPreview => 'この単語の音声';
+
+  @override
   String get wordAudioAnkiFailed => '単語の音声を追加できなかったため、音声なしでカードを送信しました。';
 
   @override
