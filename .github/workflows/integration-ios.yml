@@ -35,7 +35,7 @@ concurrency:
 
 jobs:
   ios-integration:
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 120
     # Each shard pays for one cold app build (about ten minutes on a runner)
     # for its shared files, plus three to five minutes per file that builds
@@ -92,7 +92,7 @@ jobs:
         id: simulator
         run: |
           udid=$(xcrun simctl list devices available --json |
-            python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r in sorted(d, reverse=True) if 'iOS' in r for x in d[r] if x['name'].startswith('iPhone')))")
+            python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r in sorted(d, reverse=True) if 'iOS' in r for x in d[r] if x['name'].startswith('iPhone') and 'Duo' not in x['name']))")
           xcrun simctl boot "$udid"
           xcrun simctl bootstatus "$udid" -b
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
