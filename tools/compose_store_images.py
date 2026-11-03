@@ -73,9 +73,8 @@ TARGETS = (
     Target('play', 'tablet-10', 'tablet', (1600, 2560), True),
     Target('app_store', 'iphone', 'iphone', (1320, 2868), False),
     Target('app_store', 'ipad', 'ipad', (2064, 2752), True),
-    # iPhone Duo's inner display (669 x 951 pt). Its simulator ships only with
-    # Xcode 27.1 beta; until it is captured, the iPad shots stand in.
-    Target('app_store', 'duo', 'ipad', (2007, 2853), True),
+    # iPhone Duo's inner display held upright (669 x 951 pt).
+    Target('app_store', 'duo', 'duo', (2007, 2853), True),
 )
 
 # App Store creative assets: canvas and the centred "art safe area" in Apple's
