@@ -294,7 +294,12 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
           ),
           // Covers every route and dialog while a full backup or restore
           // runs.
-          child: FullBackupJobGate(child: child ?? const SizedBox.shrink()),
+          child: FullBackupJobGate(
+            child: usesGlassTabBar
+                // Moves the glass tab bar into iPhone Duo's strip.
+                ? GlassNavigationShell(child: child ?? const SizedBox.shrink())
+                : child ?? const SizedBox.shrink(),
+          ),
         );
       },
       home: const _MainShell(),
@@ -416,35 +421,51 @@ class _MainShellState extends ConsumerState<_MainShell> {
     final selectedIndex = tabs.indexOf(_currentTab);
     // Library alone needs no bar.
     final showBar = tabs.length > 1;
+    final glassBar = GlassTabBar.bottom(
+      selectedIndex: selectedIndex,
+      onTabSelected: (index) => _selectTab(tabs[index]),
+      tabs: [
+        for (final tab in tabs)
+          GlassTab(
+            icon: Icon(tab.icon),
+            activeIcon: Icon(tab.selectedIcon),
+            label: tab.label(l10n),
+          ),
+      ],
+    );
+    // In iPhone Duo's strip the bar fills the screen and aligns itself. As a
+    // bottom bar that height would count as bottom padding for every tab.
+    final barInStrip =
+        showBar && usesGlassTabBar && GlassVerticalBar.maybeOf(context) != null;
     return Scaffold(
-      body: IndexedStack(
-        index: selectedIndex,
+      // Each tab makes room for the keyboard itself. If the shell did too, the
+      // keyboard would push the bar up the strip and into the status bar.
+      resizeToAvoidBottomInset: !barInStrip,
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Keyed, so a reordered bar moves each tab's state with it.
-          for (final tab in tabs)
-            KeyedSubtree(
-              key: ValueKey(tab),
-              child: _loadedScreens[tab] ?? const SizedBox.shrink(),
+          VerticalBarInset(
+            child: IndexedStack(
+              index: selectedIndex,
+              children: [
+                // Keyed, so a reordered bar moves each tab's state with it.
+                for (final tab in tabs)
+                  KeyedSubtree(
+                    key: ValueKey(tab),
+                    child: _loadedScreens[tab] ?? const SizedBox.shrink(),
+                  ),
+              ],
             ),
+          ),
+          if (barInStrip) glassBar,
         ],
       ),
       // The glass bar floats over the tabs, which scroll under it.
       extendBody: showBar && usesGlassTabBar,
-      bottomNavigationBar: !showBar
+      bottomNavigationBar: !showBar || barInStrip
           ? null
           : usesGlassTabBar
-          ? GlassTabBar.bottom(
-              selectedIndex: selectedIndex,
-              onTabSelected: (index) => _selectTab(tabs[index]),
-              tabs: [
-                for (final tab in tabs)
-                  GlassTab(
-                    icon: Icon(tab.icon),
-                    activeIcon: Icon(tab.selectedIcon),
-                    label: tab.label(l10n),
-                  ),
-              ],
-            )
+          ? glassBar
           : NavigationBar(
               selectedIndex: selectedIndex,
               onDestinationSelected: (index) => _selectTab(tabs[index]),

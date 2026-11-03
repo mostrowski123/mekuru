@@ -6,6 +6,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/presentation/screens/manga_reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
+import 'package:mekuru/shared/widgets/glass_tab_bar.dart';
 
 /// The one way to push a screen. A route without a static name is invisible
 /// to Sentry (screen transactions, navigation breadcrumbs) and to Firebase
@@ -18,9 +19,14 @@ Route<T> namedRoute<T>(
   bool fullscreenDialog = false,
 }) => MaterialPageRoute<T>(
   settings: RouteSettings(name: name),
-  builder: builder,
+  builder: _fullBleedRoutes.contains(name)
+      ? builder
+      : (context) => VerticalBarInset(child: builder(context)),
   fullscreenDialog: fullscreenDialog,
 );
+
+/// Screens that draw under iPhone Duo's strip and place their own content.
+const _fullBleedRoutes = {'reader', 'manga_reader', 'epub_image_zoom'};
 
 /// Opens whichever reader matches the book's type, at [initialCfi] if given.
 /// The route is restorable: when the system kills Mekuru in the background,

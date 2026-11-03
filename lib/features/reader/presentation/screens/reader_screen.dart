@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
@@ -474,7 +475,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         : EdgeInsets.zero;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: readerSystemBarsOverlayStyle,
+      // iPhone Duo's status bar sits beside the control bar, over the page.
+      value:
+          GlassVerticalBar.maybeOf(context) != null &&
+              readerTheme.backgroundColor.computeLuminance() > 0.5
+          ? readerSystemBarsOverlayStyle.copyWith(
+              statusBarIconBrightness: Brightness.dark,
+              statusBarBrightness: Brightness.light,
+            )
+          : readerSystemBarsOverlayStyle,
       child: Scaffold(
         backgroundColor: readerTheme.backgroundColor,
         body: _errorMessage != null

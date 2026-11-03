@@ -1,6 +1,7 @@
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' show max;
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
@@ -53,6 +54,13 @@ import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/widgets/glass_tab_bar.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
+
+/// How many covers fit across a window [width] points wide. On iOS a wide
+/// window (the open iPhone Duo, an iPad) shows more covers at a phone's size;
+/// Android keeps three at any width.
+@visibleForTesting
+int libraryGridColumns(double width) =>
+    defaultTargetPlatform == TargetPlatform.iOS ? max(3, width ~/ 180) : 3;
 
 /// The book the user most recently read, or null when none has been opened
 /// yet. Derived from the already-watched book list so it stays reactive and
@@ -530,8 +538,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             16 + glassTabBarInset(context),
           ),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: libraryGridColumns(
+                MediaQuery.sizeOf(context).width,
+              ),
               childAspectRatio: 0.65,
               crossAxisSpacing: 12,
               mainAxisSpacing: 16,
@@ -1936,8 +1946,9 @@ Route<void> _folderRoute(int collectionId, {required bool instant}) {
     settings: const RouteSettings(name: 'collection'),
     transitionDuration: duration,
     reverseTransitionDuration: duration,
-    pageBuilder: (_, _, _) =>
-        CollectionFolderScreen(collectionId: collectionId),
+    pageBuilder: (_, _, _) => VerticalBarInset(
+      child: CollectionFolderScreen(collectionId: collectionId),
+    ),
     transitionsBuilder: (_, animation, _, child) =>
         FadeTransition(opacity: animation, child: child),
   );
@@ -2296,8 +2307,10 @@ class _CollectionFolderScreenState
                 key: _gridKey,
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: libraryGridColumns(
+                    MediaQuery.sizeOf(context).width,
+                  ),
                   childAspectRatio: 0.65,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 16,
