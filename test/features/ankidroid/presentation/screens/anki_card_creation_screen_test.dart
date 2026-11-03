@@ -57,9 +57,13 @@ void main() {
         ],
         child: buildLocalizedTestApp(
           home: saveSource == null
-              ? const AnkiCardCreationScreen(noteData: noteData)
+              ? const AnkiCardCreationScreen(
+                  noteData: noteData,
+                  entryGlossaries: '',
+                )
               : AnkiCardCreationScreen(
                   noteData: noteData,
+                  entryGlossaries: '',
                   saveSource: saveSource,
                 ),
         ),

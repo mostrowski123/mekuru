@@ -277,6 +277,87 @@ void main() {
       expect(find.byType(SnackBar), findsNothing);
     });
 
+    /// The Anki button with nothing mapped, the card's settings, the "Back"
+    /// field mapped to word audio, then back to the card.
+    Future<void> mapWordAudioFromCard(
+      WidgetTester tester,
+      WordAudio audio,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 2000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await pump(tester, audio, ankiFields: unmapped);
+      await tester.tap(anki);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Back'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Word Audio'));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+    }
+
+    testWidgets('mapped from the card: gets the word list and the clip', (
+      tester,
+    ) async {
+      final audio = _FakeWordAudio(isInstalled: false, afterDownload: 'abc');
+      await mapWordAudioFromCard(tester, audio);
+      await tester.pumpAndSettle();
+
+      expect(audio.downloads, 1);
+      expect(find.text('[sound:mekuru_abc.mp3]'), findsOneWidget);
+    });
+
+    testWidgets(
+      'mapped from the card: declining the word list keeps the card',
+      (tester) async {
+        mockWifiConnected(false);
+        final audio = _FakeWordAudio(isInstalled: false, afterDownload: 'abc');
+        await mapWordAudioFromCard(tester, audio);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+
+        expect(audio.downloads, 0);
+        expect(find.text('Add to Anki'), findsOneWidget);
+        expect(find.text('[sound:mekuru_abc.mp3]'), findsNothing);
+      },
+    );
+
+    testWidgets('mapped from the card: a failure shows and keeps the card', (
+      tester,
+    ) async {
+      final audio = _FakeWordAudio()..lookupError = Exception('broken list');
+      await mapWordAudioFromCard(tester, audio);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('broken list'), findsOneWidget);
+      expect(find.text('Add to Anki'), findsOneWidget);
+    });
+
+    testWidgets('already mapped: back from settings asks nothing again', (
+      tester,
+    ) async {
+      mockWifiConnected(false);
+      final audio = _FakeWordAudio(isInstalled: false, afterDownload: 'abc');
+      await pump(tester, audio, ankiFields: mapped);
+      await tester.tap(anki);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cancel'), findsNothing);
+      expect(audio.downloads, 0);
+      expect(find.text('Add to Anki'), findsOneWidget);
+    });
+
     testWidgets('a mapped field downloads a missing word list', (tester) async {
       final audio = _FakeWordAudio(isInstalled: false, afterDownload: 'abc');
       await pump(tester, audio, ankiFields: mapped);

@@ -27,6 +27,18 @@ class AnkiNoteData {
     this.wordAudioClipId,
     this.pitchAccents = const [],
   });
+
+  AnkiNoteData withWordAudioClip(String? clipId) => AnkiNoteData(
+    expression: expression,
+    reading: reading,
+    glossaries: glossaries,
+    dictionaryName: dictionaryName,
+    frequencyRank: frequencyRank,
+    sentenceContext: sentenceContext,
+    sentenceTranslation: sentenceTranslation,
+    wordAudioClipId: clipId,
+    pitchAccents: pitchAccents,
+  );
 }
 
 /// Stands in for a looked-up word when previewing field mappings, so every

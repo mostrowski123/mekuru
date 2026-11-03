@@ -206,6 +206,7 @@ void main() {
                             dictionaryName: 'JMdict',
                             wordAudioClipId: _clip,
                           ),
+                          entryGlossaries: '["school"]',
                         ),
                       ),
                     ),

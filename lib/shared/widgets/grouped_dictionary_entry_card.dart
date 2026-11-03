@@ -469,6 +469,7 @@ class _GroupedDictionaryEntryHeaderState
             (_) => AnkiCardCreationScreen(
               noteData: noteData,
               saveSource: widget.saveSource,
+              entryGlossaries: _primaryEntry.glossaries,
             ),
           ),
         )

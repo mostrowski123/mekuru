@@ -10,8 +10,10 @@ import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_provi
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
+import 'package:mekuru/features/word_audio/presentation/widgets/word_audio_button.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
+import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// How a card sent from [AnkiCardCreationScreen] went.
@@ -24,10 +26,15 @@ class AnkiCardCreationScreen extends ConsumerStatefulWidget {
   const AnkiCardCreationScreen({
     super.key,
     required this.noteData,
+    required this.entryGlossaries,
     this.saveSource = 'other',
   });
 
   final AnkiNoteData noteData;
+
+  /// The entry's own glossaries. [noteData] has a redirect's target instead,
+  /// and finding the word's audio follows the redirect.
+  final String entryGlossaries;
 
   /// Surface the card was created from, recorded on the word event
   /// (`'epub'`, `'manga'`, or `'other'` for non-reader surfaces).
@@ -42,6 +49,7 @@ class _AnkiCardCreationScreenState
     extends ConsumerState<AnkiCardCreationScreen> {
   final List<TextEditingController> _controllers = [];
   late TextEditingController _tagsController;
+  late var _note = widget.noteData;
   List<String> _fieldNames = [];
   bool _isLoading = true;
   bool _isSending = false;
@@ -98,7 +106,7 @@ class _AnkiCardCreationScreenState
 
   /// Reload fields after returning from settings (model or mapping may have
   /// changed).
-  Future<void> _reloadFields() async {
+  Future<void> _reloadFields({required bool audioNewlyMapped}) async {
     if (ref.read(ankidroidConfigProvider).modelId == null) return;
 
     setState(() {
@@ -106,7 +114,33 @@ class _AnkiCardCreationScreenState
       _error = null;
     });
 
-    await _loadFields();
+    if (audioNewlyMapped) await _fetchWordAudio();
+    if (mounted) await _loadFields();
+  }
+
+  bool get _wordAudioMapped => ref
+      .read(ankidroidConfigProvider)
+      .fieldMapping
+      .containsValue(AppDataSource.wordAudio.key);
+
+  /// The card opened before a field was mapped to word audio, maybe before the
+  /// word list was here. Mapping it asks for audio, so get it now, as the Anki
+  /// button would have. Whatever goes wrong, the card stays usable.
+  Future<void> _fetchWordAudio() async {
+    final audio = ref.read(wordAudioProvider);
+    try {
+      if (!await ensureWordAudioList(context, audio)) return;
+      _note = _note.withWordAudioClip(
+        await audio.clipFor(
+          _note.expression,
+          _note.reading,
+          glossaries: widget.entryGlossaries,
+        ),
+      );
+    } catch (e) {
+      logFailure('word_audio.anki_lookup_failed', e);
+      if (mounted) _error = dictionaryDownloadError(context.l10n, e);
+    }
   }
 
   /// Applies freshly fetched Anki state. Anki is the source of truth — but
@@ -148,7 +182,7 @@ class _AnkiCardCreationScreenState
     final values = AnkiFieldMapper.resolveFields(
       ankiFieldNames: _fieldNames,
       fieldMapping: config.fieldMapping,
-      noteData: widget.noteData,
+      noteData: _note,
     );
 
     for (final value in values) {
@@ -224,7 +258,7 @@ class _AnkiCardCreationScreenState
     try {
       // Only now, so a cancelled card adds no media. Failed audio leaves its
       // field empty: the card matters more.
-      if (widget.noteData.wordAudioClipId case final clip?) {
+      if (_note.wordAudioClipId case final clip?) {
         final placeholder = AnkiFieldMapper.wordAudioPlaceholder(clip);
         if (fields.any((f) => f.contains(placeholder))) {
           String? value;
@@ -325,13 +359,16 @@ class _AnkiCardCreationScreenState
   }
 
   Future<void> _openSettings() async {
+    final audioWasMapped = _wordAudioMapped;
     await Navigator.of(context).push(
       namedRoute(
         'anki_settings',
-        (_) => AnkidroidSettingsScreen(previewNote: widget.noteData),
+        (_) => AnkidroidSettingsScreen(previewNote: _note),
       ),
     );
-    if (mounted) _reloadFields();
+    if (mounted) {
+      _reloadFields(audioNewlyMapped: !audioWasMapped && _wordAudioMapped);
+    }
   }
 
   Widget _buildErrorState(ThemeData theme) {
