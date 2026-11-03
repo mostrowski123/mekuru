@@ -21,7 +21,6 @@ import 'package:mekuru/features/dictionary/presentation/widgets/user_definition_
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
-import 'package:mekuru/main.dart' show scaffoldMessengerKey;
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
@@ -392,6 +391,8 @@ class _GroupedDictionaryEntryHeaderState
     final l10n = context.l10n;
     final expression = _primaryEntry.expression;
     final target = translationTargetFor(Localizations.localeOf(context));
+    // Taken now: this header's messenger is the lookup sheet's when it has one.
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _preparingAnkiNote = true);
     final (glossaries, sentenceTranslation) =
         await (
@@ -428,7 +429,8 @@ class _GroupedDictionaryEntryHeaderState
         .then((result) {
           if (result == true) {
             _checkIfInAnki(force: true);
-            scaffoldMessengerKey.currentState?.showSnackBar(
+            if (!messenger.mounted) return;
+            messenger.showSnackBar(
               SnackBar(
                 // AnkiMobile only reports that it opened, not whether it
                 // took the card; the service that sent it is still current.

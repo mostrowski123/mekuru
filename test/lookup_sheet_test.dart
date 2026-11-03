@@ -227,6 +227,60 @@ void main() {
     expect(find.text('Transitive verb'), findsOneWidget);
   });
 
+  testWidgets('a message from inside the sheet shows on the sheet', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    final service = _FakeDictionaryQueryService(
+      db,
+      lookupResultsByTerm: {
+        '食べる': [
+          DictionaryEntryWithSource(
+            entry: _buildEntry(
+              id: 1,
+              expression: '食べる',
+              reading: 'たべる',
+              glossaries: '["to eat"]',
+            ),
+            dictionaryName: 'JMdict',
+          ),
+        ],
+      },
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          dictionaryQueryServiceProvider.overrideWithValue(service),
+          dictionariesProvider.overrideWith((ref) => Stream.value([_jmdict])),
+        ],
+        child: buildLocalizedTestApp(
+          home: const Scaffold(
+            body: SizedBox.expand(child: LookupSheet(selectedText: '食べる')),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byIcon(Icons.copy_outlined));
+    await tester.pump();
+
+    expect(
+      find.descendant(
+        of: find.byType(LookupSheet),
+        matching: find.byType(SnackBar),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('offers a definition after the results too, and puts it '
       'first in the word\'s card', (tester) async {
     SharedPreferences.setMockInitialValues({});

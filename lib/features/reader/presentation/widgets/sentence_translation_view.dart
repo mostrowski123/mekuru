@@ -8,7 +8,6 @@ import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/l10n/l10n.dart';
-import 'package:mekuru/main.dart' show scaffoldMessengerKey;
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 /// The lookup sheet's Sentence tab: the sentence around the tapped word and
@@ -191,7 +190,7 @@ class _SentenceTranslationViewState
 
   void _copy(String text) {
     Clipboard.setData(ClipboardData(text: text));
-    scaffoldMessengerKey.currentState?.showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(context.l10n.readerCopiedToClipboard),
         duration: const Duration(seconds: 2),

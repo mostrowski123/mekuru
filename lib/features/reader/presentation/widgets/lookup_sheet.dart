@@ -284,7 +284,15 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
           );
         }
 
-        return content;
+        // Messages from inside the sheet appear on it. The app-wide messenger
+        // would put them on the page's Scaffold, underneath this route.
+        return ScaffoldMessenger(
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            resizeToAvoidBottomInset: false,
+            body: content,
+          ),
+        );
       },
     );
   }
