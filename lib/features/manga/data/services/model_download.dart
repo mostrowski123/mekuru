@@ -13,7 +13,8 @@ import 'package:path_provider/path_provider.dart';
 /// sha256.
 typedef ModelFile = ({String name, String url, int bytes, String sha256});
 
-const _marker = 'INSTALLED';
+/// The file in a model's folder that says it finished.
+const modelInstalledMarker = 'INSTALLED';
 
 /// The download size of [files] for display, e.g. "42.6 MB".
 String modelFilesSize(List<ModelFile> files) =>
@@ -34,24 +35,27 @@ Future<String> noBackupModelDir(String name) async {
 
 /// Whether [downloadModelFiles] finished in [dir].
 Future<bool> modelFilesInstalled(Directory dir) =>
-    File(p.join(dir.path, _marker)).exists();
+    File(p.join(dir.path, modelInstalledMarker)).exists();
 
 /// Downloads and verifies every one of [files] into the existing [dir], then
 /// marks it installed. [onProgress] is the fraction of all bytes. An
 /// interrupted download keeps its partial file, and the next one resumes it.
 /// With [wifiOnly] the download stops with [WifiLostException] when the
-/// network stops being Wi-Fi.
+/// network stops being Wi-Fi. Closing [client] with `force: true` stops it too;
+/// it serves one file, and is closed when that ends.
 Future<void> downloadModelFiles(
   Directory dir,
   List<ModelFile> files, {
   void Function(double)? onProgress,
   bool wifiOnly = false,
+  HttpClient? client,
 }) => _downloads[dir.path] ??=
     _download(
       dir,
       files,
       onProgress: onProgress,
       wifiOnly: wifiOnly,
+      client: client,
     ).whenComplete(() {
       _downloads.remove(dir.path);
     });
@@ -67,29 +71,39 @@ Future<void> _download(
   List<ModelFile> files, {
   void Function(double)? onProgress,
   bool wifiOnly = false,
+  HttpClient? client,
 }) async {
   final total = files.fold<int>(0, (a, f) => a + f.bytes);
   var done = 0;
+  // At most once per whole percent: a socket chunk is far smaller than the
+  // progress a listener can show.
+  var lastPercent = -1;
+  void report(int bytes) {
+    final percent = bytes * 100 ~/ total;
+    if (percent == lastPercent) return;
+    lastPercent = percent;
+    onProgress?.call(bytes / total);
+  }
+
   for (final file in files) {
     final target = File(p.join(dir.path, file.name));
     if (!await _matches(target, file)) {
       final partial = '${target.path}.part';
-      final client = HttpClient();
+      final fileClient = client ?? HttpClient();
       Future<void> fetch() => downloadResumable(
         file.url,
         partial,
-        client: client,
+        client: fileClient,
         // GitHub gzips text files: the body would then outgrow its
         // Content-Length once unzipped, and a byte range would count
         // compressed bytes. The pinned sizes and hashes are of the file.
         headers: const {HttpHeaders.acceptEncodingHeader: 'identity'},
-        onProgress: (received, _) =>
-            onProgress?.call((done + received) / total),
+        onProgress: (received, _) => report(done + received),
       );
       try {
-        await (wifiOnly ? whileOnWifi(client, fetch) : fetch());
+        await (wifiOnly ? whileOnWifi(fileClient, fetch) : fetch());
       } finally {
-        client.close(force: true);
+        fileClient.close(force: true);
       }
       if (!await _matches(File(partial), file)) {
         await File(partial).delete();
@@ -98,9 +112,9 @@ Future<void> _download(
       await File(partial).rename(target.path);
     }
     done += file.bytes;
-    onProgress?.call(done / total);
+    report(done);
   }
-  await File(p.join(dir.path, _marker)).writeAsString('ok');
+  await File(p.join(dir.path, modelInstalledMarker)).writeAsString('ok');
 }
 
 /// A downloaded model file did not match its pinned size and sha256.
@@ -108,14 +122,18 @@ class ModelVerificationException extends FileSystemException {
   const ModelVerificationException() : super('Model file failed verification');
 }
 
-/// Hashed off the UI isolate: model files run to tens of MB.
 Future<bool> _matches(File file, ModelFile expected) async {
   if (!await file.exists() || await file.length() != expected.bytes) {
     return false;
   }
-  final path = file.path;
-  return await Isolate.run(() => _sha256Of(path)) == expected.sha256;
+  return await fileSha256(file.path) == expected.sha256;
 }
 
-Future<String> _sha256Of(String path) async =>
-    (await sha256.bind(File(path).openRead()).first).toString();
+// A function of its own, so the isolate takes nothing along but [path]: a
+// closure sent to an isolate carries everything its function's closures
+// capture, and a caller's closure could take its HttpClient along, which can't
+// be sent.
+/// The file's sha256, hashed off the UI isolate: models run to gigabytes.
+Future<String> fileSha256(String path) => Isolate.run(
+  () async => (await sha256.bind(File(path).openRead()).first).toString(),
+);

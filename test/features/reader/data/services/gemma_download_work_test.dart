@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/manga/data/services/model_download_job.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:path/path.dart' as p;
@@ -203,7 +204,7 @@ void main() {
       expect(File(p.join(dir.path, 'INSTALLED')).existsSync(), isFalse);
       final status = await work().readStatus();
       expect(status?.state, ServerDownloadWorkState.failed);
-      expect(status?.error, gemmaVerificationError);
+      expect(status?.error, modelJobVerificationError);
     });
 
     test('giving up posts a notification in the app language', () async {
@@ -395,7 +396,7 @@ void main() {
       await jobWrites(
         const ServerDownloadWorkStatus(
           state: ServerDownloadWorkState.failed,
-          error: gemmaVerificationError,
+          error: modelJobVerificationError,
         ),
       );
       await expectLater(done, throwsA(isA<FileSystemException>()));

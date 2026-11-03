@@ -180,22 +180,10 @@ void ocrWorkerCallbackDispatcher() {
       }
     }
     if (taskName == gemmaDownloadTaskName && inputData != null) {
-      await initSentryForBackgroundIsolate();
-      try {
-        return await runGemmaDownloadWork(inputData);
-      } catch (e, st) {
-        // runGemmaDownloadWork records its own failures; this is a bug. Give
-        // up rather than retry it forever; the app reports it interrupted.
-        logFailure(
-          'translation.high_quality_download_failed',
-          e,
-          stackTrace: st,
-          attrs: {'route': 'worker'},
-        );
-        return true;
-      } finally {
-        await _flushSentry();
-      }
+      return _runModelDownloadTask(
+        'translation.high_quality_download_failed',
+        () => runGemmaDownloadWork(inputData),
+      );
     }
     if (taskName != ocrTaskName || inputData == null) return true;
 
@@ -229,6 +217,23 @@ void ocrWorkerCallbackDispatcher() {
       await _flushSentry();
     }
   });
+}
+
+/// A model download's worker records its own failures, so what escapes is a
+/// bug. Gives up rather than retry it forever; the app reports it interrupted.
+Future<bool> _runModelDownloadTask(
+  String failedEvent,
+  Future<bool> Function() work,
+) async {
+  await initSentryForBackgroundIsolate();
+  try {
+    return await work();
+  } catch (e, st) {
+    logFailure(failedEvent, e, stackTrace: st, attrs: {'route': 'worker'});
+    return true;
+  } finally {
+    await _flushSentry();
+  }
 }
 
 /// Flushes batched logs before the isolate goes away, bounded so a dead
