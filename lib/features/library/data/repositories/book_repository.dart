@@ -81,7 +81,14 @@ class BookRepository {
   /// True while any import is writing into `books/` (see
   /// [inFlightImportDirNames]); a full backup taken now would ship a
   /// half-written directory.
-  static bool get hasImportInFlight => inFlightImportDirNames.isNotEmpty;
+  static bool get hasImportInFlight =>
+      inFlightImportDirNames.isNotEmpty || _pdfImportsPending > 0;
+
+  /// PDF imports run one at a time. Each encodes a few pages in isolates, and
+  /// the UI isolate can't run while the Dart VM's isolate slots (8 on a phone)
+  /// are all encoding: three books added together froze the app (MEKURU-2P).
+  static Future<void> _pdfImports = Future.value();
+  static var _pdfImportsPending = 0;
 
   static const booksSegment = 'books';
 
@@ -411,6 +418,27 @@ class BookRepository {
   /// [scanned] is true when most pages had no text: the user is told why its
   /// words can't be tapped.
   Future<({Book book, bool scanned})> importPdf(
+    String sourcePath, {
+    String? title,
+    String? sourceId,
+    void Function(double progress)? onProgress,
+  }) {
+    _pdfImportsPending++;
+    final imported = _pdfImports
+        .then(
+          (_) => _importPdf(
+            sourcePath,
+            title: title,
+            sourceId: sourceId,
+            onProgress: onProgress,
+          ),
+        )
+        .whenComplete(() => _pdfImportsPending--);
+    _pdfImports = imported.then((_) {}, onError: (_) {});
+    return imported;
+  }
+
+  Future<({Book book, bool scanned})> _importPdf(
     String sourcePath, {
     String? title,
     String? sourceId,

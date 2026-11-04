@@ -369,6 +369,20 @@ void main() {
       expect(BookRepository.inFlightImportDirNames, isEmpty);
     });
 
+    test(
+      'a failed PDF import counts until done and holds nothing up',
+      () async {
+        final missing = p.join(tempDir.path, 'missing.pdf');
+        final imports = [repo.importPdf(missing), repo.importPdf(missing)];
+
+        expect(BookRepository.hasImportInFlight, isTrue);
+        await expectLater(imports[0], throwsA(anything));
+        expect(BookRepository.hasImportInFlight, isTrue);
+        await expectLater(imports[1], throwsA(anything));
+        expect(BookRepository.hasImportInFlight, isFalse);
+      },
+    );
+
     test('a sweep racing a live import never breaks it', () async {
       await seedLiveManga();
       final archive = Archive();

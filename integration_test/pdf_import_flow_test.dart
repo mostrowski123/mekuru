@@ -114,6 +114,28 @@ void main() {
     }
   });
 
+  testWidgets('PDFs added together import one after another', (tester) async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repo = BookRepository(db);
+    final path = await writeFixture('graded_reader.pdf', textPdfBase64);
+    final progress = <String>[];
+
+    final imports = [
+      for (final title in ['first', 'second'])
+        repo.importPdf(
+          path,
+          title: title,
+          onProgress: (_) => progress.add(title),
+        ),
+    ];
+    expect(BookRepository.hasImportInFlight, isTrue);
+    await Future.wait(imports);
+
+    expect(progress, ['first', 'first', 'second', 'second']);
+    expect(BookRepository.hasImportInFlight, isFalse);
+  });
+
   testWidgets('a scanned PDF tells the user why its words are not tappable', (
     tester,
   ) async {
