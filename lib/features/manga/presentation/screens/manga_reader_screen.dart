@@ -1198,7 +1198,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         body: pagesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(32),
               child: Column(
                 mainAxisSize: MainAxisSize.min,

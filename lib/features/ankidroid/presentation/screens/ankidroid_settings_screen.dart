@@ -357,7 +357,7 @@ class _AnkidroidSettingsScreenState
     final l10n = context.l10n;
 
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
