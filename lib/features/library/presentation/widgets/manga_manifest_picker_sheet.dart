@@ -16,6 +16,13 @@ Future<List<String>?> showMangaManifestPickerSheet(
       MangaManifestPickerSheet(files: files, folderLabel: folderLabel),
 );
 
+/// Whether a file in a chosen folder is a manga manifest. A dotfile never is:
+/// macOS leaves a metadata file named `._vol.mokuro` beside each file it copies
+/// to a drive that isn't its own.
+bool isMangaManifestName(String name) =>
+    !name.startsWith('.') &&
+    (_isMokuro(name) || p.extension(name).toLowerCase() == '.html');
+
 /// The manifests ticked when the sheet opens: one per volume. mokuro can
 /// write both `vol.mokuro` and `vol.html` for one volume; the `.mokuro`
 /// wins, and an `.html` is ticked only when its volume has no `.mokuro`.

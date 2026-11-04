@@ -5,6 +5,14 @@ import 'package:mekuru/features/library/presentation/widgets/manga_manifest_pick
 import '../../../../test_app.dart';
 
 void main() {
+  test('isMangaManifestName takes manifests, not macOS sidecar files', () {
+    expect(isMangaManifestName('vol1.mokuro'), isTrue);
+    expect(isMangaManifestName('Vol1.HTML'), isTrue);
+    expect(isMangaManifestName('._vol1.mokuro'), isFalse);
+    expect(isMangaManifestName('._vol1.html'), isFalse);
+    expect(isMangaManifestName('vol1.png'), isFalse);
+  });
+
   test('defaultManifestSelection ticks one manifest per volume', () {
     expect(
       defaultManifestSelection([

@@ -1001,7 +1001,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     if (folder == null) return;
 
     final names = await AndroidSafService.listNamesInTreeDir(folder.treeUri);
-    final candidates = names.where(_isSupportedMangaManifestName).toList()
+    final candidates = names.where(isMangaManifestName).toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     if (candidates.isEmpty) {
@@ -1061,7 +1061,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         entities
             .whereType<File>()
             .map((f) => p.basename(f.path))
-            .where(_isSupportedMangaManifestName)
+            .where(isMangaManifestName)
             .toList()
           ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
@@ -1085,11 +1085,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     await ref.read(bookImportProvider.notifier).importFiles([
       for (final name in selectedNames) p.join(dirPath, name),
     ], format: 'manga');
-  }
-
-  bool _isSupportedMangaManifestName(String name) {
-    final lower = name.toLowerCase();
-    return lower.endsWith('.mokuro') || lower.endsWith('.html');
   }
 
   String _folderLabelFromTreeDocumentId(
