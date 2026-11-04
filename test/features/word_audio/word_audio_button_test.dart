@@ -29,6 +29,7 @@ class _FakeWordAudio extends WordAudio {
   Object? lookupError;
   Object? playError;
   Completer<void>? playGate;
+  Completer<void>? downloadGate;
   final plays = <String>[];
   var downloads = 0;
 
@@ -51,6 +52,7 @@ class _FakeWordAudio extends WordAudio {
     bool wifiOnly = false,
   }) async {
     downloads++;
+    await downloadGate?.future;
     isInstalled = true;
     clip = afterDownload;
   }
@@ -383,6 +385,62 @@ void main() {
       expect(audio.downloads, 0);
       expect(find.byType(AnkiCardCreationScreen), findsOneWidget);
       expect(find.text('[sound:mekuru_abc.mp3]'), findsNothing);
+    });
+  });
+
+  group('the lookup closes while the word list downloads', () {
+    // Takes the speaker and the sheet's messenger with it, as closing does.
+    Future<void> closeDuringDownload(
+      WidgetTester tester,
+      Finder button,
+      _FakeWordAudio audio, {
+      Object? error,
+    }) async {
+      final gate = audio.downloadGate = Completer<void>();
+      await tester.tap(button);
+      await tester.pump();
+      await tester.pumpWidget(const SizedBox());
+      error == null ? gate.complete() : gate.completeError(error);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    }
+
+    testWidgets('it finishes and nothing plays', (tester) async {
+      final audio = _FakeWordAudio(isInstalled: false, afterDownload: 'abc');
+      await pump(tester, audio);
+
+      await closeDuringDownload(tester, speaker, audio);
+
+      expect(audio.isInstalled, isTrue);
+      expect(audio.plays, isEmpty);
+    });
+
+    testWidgets('it fails and nothing is left to show that on', (tester) async {
+      final audio = _FakeWordAudio(isInstalled: false);
+      await pump(tester, audio);
+
+      await closeDuringDownload(
+        tester,
+        speaker,
+        audio,
+        error: const SocketException('offline'),
+      );
+    });
+
+    testWidgets('the Anki button fails the same way', (tester) async {
+      final audio = _FakeWordAudio(isInstalled: false);
+      await pump(
+        tester,
+        audio,
+        ankiFields: const {'Front': 'expression', 'Back': 'word_audio'},
+      );
+
+      await closeDuringDownload(
+        tester,
+        find.byIcon(Icons.electric_bolt_outlined),
+        audio,
+        error: const SocketException('offline'),
+      );
     });
   });
 

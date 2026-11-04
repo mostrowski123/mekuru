@@ -357,7 +357,7 @@ class _GroupedDictionaryEntryHeaderState
       );
     } catch (e) {
       logFailure('word_audio.anki_lookup_failed', e);
-      if (mapped) {
+      if (mapped && messenger.mounted) {
         messenger.showSnackBar(
           SnackBar(
             content: Text(dictionaryDownloadError(l10n, e)!),

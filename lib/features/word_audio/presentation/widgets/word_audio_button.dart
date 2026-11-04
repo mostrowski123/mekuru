@@ -89,13 +89,15 @@ class _WordAudioButtonState extends ConsumerState<WordAudioButton> {
     setState(() => _busy = true);
     try {
       if (_clip == null) {
-        if (!await ensureWordAudioList(context, audio)) return;
+        if (!await ensureWordAudioList(context, audio) || !mounted) return;
         // A word the list turns out not to have loses its speaker here.
         await _check();
       }
       if (_clip case final clip?) await audio.play(clip);
     } catch (e) {
       logFailure('word_audio.failed', e);
+      // The lookup sheet's messenger goes when the sheet closes.
+      if (!messenger.mounted) return;
       messenger.showSnackBar(
         SnackBar(
           content: Text(
