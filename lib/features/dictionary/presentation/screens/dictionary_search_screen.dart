@@ -443,7 +443,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   Widget _buildNoDictionariesState(ThemeData theme) {
     final l10n = context.l10n;
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -495,7 +495,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   Widget _buildNoEnabledDictionariesState(ThemeData theme) {
     final l10n = context.l10n;
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -670,7 +670,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
 
     if (history.isEmpty) {
       return Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,

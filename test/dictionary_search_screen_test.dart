@@ -183,6 +183,36 @@ void main() {
     expect(focusNode.hasFocus, isFalse);
   }, variant: TargetPlatformVariant.mobile());
 
+  group('the empty states fit a short screen', () {
+    for (final (name, dictionaries) in [
+      ('no dictionaries', <DictionaryMeta>[]),
+      ('all turned off', [_enabledDictionary().copyWith(isEnabled: false)]),
+      ('nothing searched yet', [_enabledDictionary()]),
+    ]) {
+      testWidgets(name, (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        tester.view
+          ..devicePixelRatio = 1
+          ..physicalSize = const Size(600, 260);
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              dictionariesProvider.overrideWith(
+                (ref) => Stream.value(dictionaries),
+              ),
+            ],
+            child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
   testWidgets('shows guidance when all imported dictionaries are disabled', (
     tester,
   ) async {
