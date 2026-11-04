@@ -1301,7 +1301,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (identification == null) {
       debugPrint(
         '[READER] wordTapped but MeCab could not identify word '
-        '(char="$tappedChar" offset=$charOffset)',
+        '(offset=$charOffset)',
       );
       // The dictionary is still loading, or failed to load. Surface that
       // instead of leaving the tap looking broken.
@@ -1324,12 +1324,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final resolver = ref.read(compoundWordResolverProvider);
     final compound = await resolver.resolve(identification);
 
-    debugPrint(
-      '[READER] wordTapped resolved: '
-      'surface="${compound.surfaceForm}" '
-      'dict="${compound.dictionaryForm}" '
-      'tokens=${compound.tokenCount}',
-    );
+    debugPrint('[READER] wordTapped resolved: tokens=${compound.tokenCount}');
 
     if (!mounted) return;
 

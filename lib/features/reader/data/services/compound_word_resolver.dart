@@ -118,18 +118,10 @@ class CompoundWordResolver {
     }
 
     if (winner != null) {
-      if (winner.isDeinflection) {
-        debugPrint(
-          '[Compound] Found deinflected compound match: '
-          '"${winner.candidate.surface}" → "${winner.dictionaryForm}" '
-          '(${winner.tokenCount} tokens)',
-        );
-      } else {
-        debugPrint(
-          '[Compound] Found compound match: "${winner.candidate.surface}" '
-          '(${winner.tokenCount} tokens)',
-        );
-      }
+      debugPrint(
+        '[Compound] Found ${winner.isDeinflection ? 'deinflected ' : ''}'
+        'compound match (${winner.tokenCount} tokens)',
+      );
       return CompoundWordResult(
         surfaceForm: winner.candidate.surface,
         dictionaryForm: winner.dictionaryForm,

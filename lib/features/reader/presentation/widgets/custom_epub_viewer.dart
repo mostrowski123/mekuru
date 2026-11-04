@@ -565,7 +565,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         final x = (map['x'] as num?)?.toDouble() ?? 0;
         final y = (map['y'] as num?)?.toDouble() ?? 0;
         debugPrint(
-          '[EPUB_DART] wordTapped char="$tappedChar" '
+          '[EPUB_DART] wordTapped '
           'offset=$charOffset blockOffset=$blockCharOffset '
           'textLen=${surroundingText.length}',
         );
@@ -612,7 +612,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           }
         }
         debugPrint(
-          '[EPUB_DART] sentenceSelected text="${(map['text'] as String? ?? '').substring(0, (map['text'] as String? ?? '').length.clamp(0, 40))}"',
+          '[EPUB_DART] sentenceSelected '
+          'textLen=${(map['text'] as String? ?? '').length}',
         );
         widget.onSentenceSelected?.call(
           EpubSelectionData(
