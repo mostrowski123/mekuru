@@ -16,6 +16,9 @@ import onnxruntime_objc
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // ONNX Runtime's official builds send usage events and a device ID to
+    // Microsoft unless this is set before its first environment is created.
+    setenv("ORT_DISABLE_TELEMETRY", "1", 1)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

@@ -25,6 +25,8 @@ android {
 }
 repositories { google(); mavenCentral() }
 dependencies {
+    // 1.29 and later report usage to Microsoft unless ORT_DISABLE_TELEMETRY is
+    // set before ONNX Runtime starts (see AppDelegate.swift): add that with a bump.
     implementation "com.microsoft.onnxruntime:onnxruntime-android:1.24.3"
     implementation "org.opencv:opencv:4.12.0"
     // AVIF where Android cannot decode it (Avif.kt); the app uses it too.
