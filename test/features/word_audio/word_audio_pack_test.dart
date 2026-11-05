@@ -157,6 +157,57 @@ void main() {
       await expectLater(audio.clipFile(_clip), throwsA(isA<SocketException>()));
     });
 
+    group('an older pin', () {
+      File older(String name) =>
+          File(p.join(packDir.path, name))..writeAsStringSync('old');
+      void markInstalled() => File(
+        p.join(packDir.path, modelInstalledMarker),
+      ).writeAsStringSync('ok');
+
+      test('goes, and leaves nothing that says installed', () async {
+        final pack = older('word_audio_pack_2026-07-27.sqlite');
+        final partial = older('word_audio_pack_2026-01-01.sqlite.part');
+        markInstalled();
+        await ServerDownloadWorkDir(packDir.path).writeStatus(
+          const ServerDownloadWorkStatus(
+            state: ServerDownloadWorkState.done,
+            received: 1,
+            total: 1,
+          ),
+        );
+        final current = WordAudioPack();
+
+        expect(await current.installed, isFalse);
+        expect(await current.clip(const [1]), isNull);
+        expect(await current.pending(), isFalse);
+        expect(await current.hasFiles(), isFalse);
+        expect(pack.existsSync(), isFalse);
+        expect(partial.existsSync(), isFalse);
+      });
+
+      test('goes without touching the current pack', () async {
+        final pack = older('word_audio_pack_2026-07-27.sqlite');
+        buildPack();
+        markInstalled();
+        final current = WordAudioPack();
+        addTearDown(current.close);
+
+        expect(await current.installed, isTrue);
+        expect(await current.clip(const [1]), isNull);
+        expect(pack.existsSync(), isFalse);
+      });
+
+      test('goes without touching a partial download to resume', () async {
+        final pack = older('word_audio_pack_2026-07-27.sqlite');
+        final partial = older('${wordAudioPackFile.name}.part');
+        final current = WordAudioPack();
+
+        expect(await current.hasFiles(), isTrue);
+        expect(partial.existsSync(), isTrue);
+        expect(pack.existsSync(), isFalse);
+      });
+    });
+
     test('deleting takes the folder and the open file with it', () async {
       buildPack();
       File(p.join(packDir.path, modelInstalledMarker)).writeAsStringSync('ok');

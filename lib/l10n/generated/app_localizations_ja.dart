@@ -4511,7 +4511,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get wordAudioDescription =>
-      'AI音声が辞書の単語を読み上げます。この単語リストのダウンロードは1回だけです。各単語の音声は、スピーカーをタップしたときにダウンロードします。あまり使われない単語では、アクセントがずれることがあります。';
+      'AI音声が辞書の単語を読み上げます。この単語リストのダウンロードは1回だけです。各単語の音声は、スピーカーをタップしたときにダウンロードします。アクセントは東京方言のものです。あまり使われない単語では、ずれることがあります。';
 
   @override
   String get wordAudioReady => '単語リストはインストール済みです。単語を調べるときにスピーカーをタップしてください。';
@@ -4521,19 +4521,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get aboutWordAudioDescription =>
-      '単語の音声は、moriokiの音声モデルを使ってAIで生成したものです。非公式の音声で、話者やモデルの作者が作成または推奨したものではありません。あまり使われない単語では、アクセントがずれることがあります。';
+      '単語の音声は、Google Cloud Text-to-Speechを使ってAIで生成したものです。人の声を録音したものではありません。アクセントは東京方言のものです。あまり使われない単語では、ずれることがあります。';
 
   @override
   String get aboutWordAudioVoiceLabel => 'ボイス提供：';
 
   @override
-  String get aboutWordAudioVoiceCredit => 'もりおき (@morioki_5)';
+  String get aboutWordAudioAccentsLabel => 'アクセント：';
 
   @override
-  String get aboutWordAudioModelLabel => '音声モデル：';
-
-  @override
-  String get aboutWordAudioEngineLabel => '音声合成エンジン：';
+  String get aboutWordAudioOtherAccentsLabel => 'その他の単語のアクセント：';
 
   @override
   String get aboutWordAudioWordsLabel => '単語リスト：';

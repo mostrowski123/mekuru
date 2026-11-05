@@ -4658,7 +4658,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wordAudioDescription =>
-      'Suara AI membacakan kata-kata kamus. Daftar kata ini hanya perlu diunduh sekali; suara tiap kata lalu diunduh saat Anda mengetuk ikon speakernya. Aksen mungkin kurang tepat pada kata yang jarang dipakai.';
+      'Suara AI membacakan kata-kata kamus. Daftar kata ini hanya perlu diunduh sekali; suara tiap kata lalu diunduh saat Anda mengetuk ikon speakernya. Aksen nada mengikuti dialek Tokyo dan mungkin kurang tepat pada kata yang jarang dipakai.';
 
   @override
   String get wordAudioReady =>
@@ -4669,19 +4669,16 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get aboutWordAudioDescription =>
-      'Audio kata dibuat oleh AI dengan model suara morioki. Audio ini tidak resmi, dan pemilik suara maupun pembuat model tidak membuat atau mendukung audio ini. Aksen mungkin kurang tepat pada kata yang jarang dipakai.';
+      'Audio kata dibuat oleh AI dengan Google Cloud Text-to-Speech. Audio ini bukan rekaman suara orang. Aksen nada mengikuti dialek Tokyo dan mungkin kurang tepat pada kata yang jarang dipakai.';
 
   @override
   String get aboutWordAudioVoiceLabel => 'Suara: ';
 
   @override
-  String get aboutWordAudioVoiceCredit => 'もりおき (@morioki_5)';
+  String get aboutWordAudioAccentsLabel => 'Aksen nada: ';
 
   @override
-  String get aboutWordAudioModelLabel => 'Model suara: ';
-
-  @override
-  String get aboutWordAudioEngineLabel => 'Mesin suara: ';
+  String get aboutWordAudioOtherAccentsLabel => 'Aksen kata lain: ';
 
   @override
   String get aboutWordAudioWordsLabel => 'Daftar kata: ';

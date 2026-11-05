@@ -760,9 +760,8 @@ class AttributionsScreen extends StatelessWidget {
   }
 }
 
-/// Credits the word audio's voice and model, and says the audio is generated
-/// and unofficial: the voice model's licence (ACML 1.0) asks that audio never
-/// passes for the speaker's own or an official release.
+/// Credits the word audio's voice and sources, and says the audio is generated,
+/// not a recording of a person.
 class _WordAudioAttribution extends StatelessWidget {
   const _WordAudioAttribution();
 
@@ -804,23 +803,17 @@ class _WordAudioAttribution extends StatelessWidget {
               const SizedBox(height: 8),
               DownloadAttributionText(
                 prefix: l10n.aboutWordAudioVoiceLabel,
-                linkText: l10n.aboutWordAudioVoiceCredit,
-                url: 'https://x.com/morioki_5',
-              ),
-              DownloadAttributionText(
-                prefix: l10n.aboutWordAudioModelLabel,
-                linkText: 'morioki, yuki (@ai_shirohana)',
+                linkText: 'Google Cloud Text-to-Speech, Chirp 3: HD (Aoede)',
                 url:
-                    'https://hub.aivis-project.com/aivm-models/baaae3c0-7b22-4605-8ba5-80c959b41a48',
+                    'https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd',
               ),
               DownloadAttributionText(
-                prefix: l10n.aboutLicensedUnderPrefix,
-                linkText: 'Aivis Common Model License 1.0',
-                url:
-                    'https://github.com/Aivis-Project/ACML/blob/master/ACML-1.0.md',
+                prefix: l10n.aboutWordAudioAccentsLabel,
+                linkText: 'Kanjium, by Uros O. (CC BY-SA 4.0), adapted',
+                url: 'https://github.com/mifunetoshiro/kanjium',
               ),
               DownloadAttributionText(
-                prefix: l10n.aboutWordAudioEngineLabel,
+                prefix: l10n.aboutWordAudioOtherAccentsLabel,
                 linkText: 'AivisSpeech Engine',
                 url: 'https://github.com/Aivis-Project/AivisSpeech-Engine',
               ),

@@ -4689,7 +4689,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wordAudioDescription =>
-      'Una voz de IA lee en voz alta las palabras del diccionario. Esta lista de palabras se necesita una sola vez; el sonido de cada palabra se descarga luego al tocar su altavoz. El acento puede fallar en las palabras menos comunes.';
+      'Una voz de IA lee en voz alta las palabras del diccionario. Esta lista de palabras se necesita una sola vez; el sonido de cada palabra se descarga luego al tocar su altavoz. El acento tonal es del dialecto de Tokio y puede fallar en las palabras menos comunes.';
 
   @override
   String get wordAudioReady =>
@@ -4700,19 +4700,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get aboutWordAudioDescription =>
-      'El audio de palabras se genera con IA usando el modelo de voz morioki. No es oficial, y ni la persona que presta la voz ni quien creó el modelo hicieron ni respaldaron este audio. El acento puede fallar en las palabras menos comunes.';
+      'El audio de palabras se genera con IA usando Google Cloud Text-to-Speech. No es la grabación de una persona. El acento tonal es del dialecto de Tokio y puede fallar en las palabras menos comunes.';
 
   @override
   String get aboutWordAudioVoiceLabel => 'Voz: ';
 
   @override
-  String get aboutWordAudioVoiceCredit => 'もりおき (@morioki_5)';
+  String get aboutWordAudioAccentsLabel => 'Acento tonal: ';
 
   @override
-  String get aboutWordAudioModelLabel => 'Modelo de voz: ';
-
-  @override
-  String get aboutWordAudioEngineLabel => 'Motor de voz: ';
+  String get aboutWordAudioOtherAccentsLabel => 'Acento de otras palabras: ';
 
   @override
   String get aboutWordAudioWordsLabel => 'Lista de palabras: ';

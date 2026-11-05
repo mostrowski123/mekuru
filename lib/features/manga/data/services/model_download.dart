@@ -33,7 +33,9 @@ Future<String> noBackupModelDir(String name) async {
   return p.join(root, name);
 }
 
-/// Whether [downloadModelFiles] finished in [dir].
+/// Whether [downloadModelFiles] finished in [dir]. The marker doesn't say which
+/// pin it was for, so a pin with a new name has to clear the old one first (see
+/// `dropOlderWordAudioPin`).
 Future<bool> modelFilesInstalled(Directory dir) =>
     File(p.join(dir.path, modelInstalledMarker)).exists();
 

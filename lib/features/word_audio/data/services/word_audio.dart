@@ -18,10 +18,10 @@ import 'package:path_provider/path_provider.dart';
 /// The word list that says which clip speaks which word, pinned by size and
 /// sha256. Uncompressed so [downloadModelFiles] takes it as it is.
 const ModelFile wordAudioIndexFile = (
-  name: 'word_audio_index_2026-07-27.sqlite',
-  url: '${AppLinks.wordAudioBase}/word_audio_index_2026-07-27.sqlite',
+  name: 'word_audio_index_2026-11-05.sqlite',
+  url: '${AppLinks.wordAudioBase}/word_audio_index_2026-11-05.sqlite',
   bytes: 25939968,
-  sha256: 'da195e99820f43215477c6ba060462d0bc8a552044513f105ca92d7a187e5059',
+  sha256: 'f710b8931db3351f62fbfb07883f1417475e44770d748066de837e11b20e2aaf',
 );
 
 /// A clip's file on this device, and where it came from for telemetry.
@@ -45,7 +45,7 @@ class WordAudio {
   final WordAudioPack pack;
 
   // Asked once per result in a list, so neither crosses to the platform again.
-  late final Future<String> _dir = storageDir();
+  late final Future<String> _dir = _preparedDir();
   bool? _installed;
 
   WordAudioIndex? _index;
@@ -55,6 +55,17 @@ class WordAudio {
   /// Where the word list lives; worked out at runtime and never stored, so it
   /// stays out of the library's re-anchoring.
   static Future<String> storageDir() => noBackupModelDir('word_audio');
+
+  Future<String> _preparedDir() async {
+    final dir = await storageDir();
+    // Clips keep their names across pins, so these may be in an older voice.
+    await dropOlderWordAudioPin(
+      Directory(dir),
+      indexFile,
+      clips: Directory(await _cacheDir()),
+    );
+    return dir;
+  }
 
   Future<bool> get installed async =>
       _installed ??= await modelFilesInstalled(Directory(await _dir));

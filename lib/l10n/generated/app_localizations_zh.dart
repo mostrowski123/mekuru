@@ -4418,7 +4418,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get wordAudioDescription =>
-      '由 AI 语音朗读词典中的单词。这个单词列表只需下载一次；之后点按扬声器时才下载对应单词的音频。较少见的单词，音调可能不准确。';
+      '由 AI 语音朗读词典中的单词。这个单词列表只需下载一次；之后点按扬声器时才下载对应单词的音频。音调为东京方言，较少见的单词可能不准确。';
 
   @override
   String get wordAudioReady => '单词列表已安装。查词时点按扬声器即可。';
@@ -4428,19 +4428,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aboutWordAudioDescription =>
-      '单词音频由 AI 使用 morioki 语音模型生成。此音频并非官方内容，声音提供者和模型作者均未制作或认可。较少见的单词，音调可能不准确。';
+      '单词音频由 AI 使用 Google Cloud Text-to-Speech 生成，并非真人录音。音调为东京方言，较少见的单词可能不准确。';
 
   @override
   String get aboutWordAudioVoiceLabel => '声音：';
 
   @override
-  String get aboutWordAudioVoiceCredit => 'もりおき (@morioki_5)';
+  String get aboutWordAudioAccentsLabel => '音调：';
 
   @override
-  String get aboutWordAudioModelLabel => '语音模型：';
-
-  @override
-  String get aboutWordAudioEngineLabel => '语音引擎：';
+  String get aboutWordAudioOtherAccentsLabel => '其他单词的音调：';
 
   @override
   String get aboutWordAudioWordsLabel => '单词列表：';
@@ -8861,7 +8858,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get wordAudioDescription =>
-      '由 AI 语音朗读词典中的单词。这个单词列表只需下载一次；之后点按扬声器时才下载对应单词的音频。较少见的单词，音调可能不准确。';
+      '由 AI 语音朗读词典中的单词。这个单词列表只需下载一次；之后点按扬声器时才下载对应单词的音频。音调为东京方言，较少见的单词可能不准确。';
 
   @override
   String get wordAudioReady => '单词列表已安装。查词时点按扬声器即可。';
@@ -8871,19 +8868,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get aboutWordAudioDescription =>
-      '单词音频由 AI 使用 morioki 语音模型生成。此音频并非官方内容，声音提供者和模型作者均未制作或认可。较少见的单词，音调可能不准确。';
+      '单词音频由 AI 使用 Google Cloud Text-to-Speech 生成，并非真人录音。音调为东京方言，较少见的单词可能不准确。';
 
   @override
   String get aboutWordAudioVoiceLabel => '声音：';
 
   @override
-  String get aboutWordAudioVoiceCredit => 'もりおき (@morioki_5)';
+  String get aboutWordAudioAccentsLabel => '音调：';
 
   @override
-  String get aboutWordAudioModelLabel => '语音模型：';
-
-  @override
-  String get aboutWordAudioEngineLabel => '语音引擎：';
+  String get aboutWordAudioOtherAccentsLabel => '其他单词的音调：';
 
   @override
   String get aboutWordAudioWordsLabel => '单词列表：';

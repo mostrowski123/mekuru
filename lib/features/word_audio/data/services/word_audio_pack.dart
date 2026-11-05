@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/services/background_work.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/backup/data/services/ios_full_backup.dart';
@@ -17,11 +18,45 @@ import 'package:sqlite3/sqlite3.dart';
 /// Every clip in one sqlite file, `clip(id, mp3)`, pinned by size and sha256.
 /// One file instead of 248,000 keeps install, delete and storage sane.
 const ModelFile wordAudioPackFile = (
-  name: 'word_audio_pack_2026-07-27.sqlite',
-  url: '${AppLinks.wordAudioBase}/word_audio_pack_2026-07-27.sqlite',
-  bytes: 2338205696,
-  sha256: 'a7e41c411e683bad67d49c7eb9468c45f596688cc49b0b8c15e34c32d1390bbd',
+  name: 'word_audio_pack_2026-11-05.sqlite',
+  url: '${AppLinks.wordAudioBase}/word_audio_pack_2026-11-05.sqlite',
+  bytes: 2442809344,
+  sha256: '8060cabbfca3d7fb8544a6b540a1f7ef89e3a66d312ae719f04e0d6d7f8e8b4d',
 );
+
+/// Clears [dir] of an older pin of [file], and [clips] when there is one. A new
+/// pin has a new name, so the old file would keep taking up its space while its
+/// marker said installed and the new file was never fetched.
+Future<void> dropOlderWordAudioPin(
+  Directory dir,
+  ModelFile file, {
+  Directory? clips,
+}) async {
+  if (!await dir.exists()) return;
+  try {
+    final older = await dir.list().where((e) {
+      final name = p.basename(e.path);
+      return name.startsWith('word_audio_') && !name.startsWith(file.name);
+    }).toList();
+    if (older.isEmpty) return;
+    // The older file goes last, so a stop halfway comes back here next time,
+    // and never leaves a missing file marked as installed.
+    if (!await File(p.join(dir.path, file.name)).exists()) {
+      final marker = File(p.join(dir.path, modelInstalledMarker));
+      if (await marker.exists()) await marker.delete();
+      // A job's "done" would pass for the new file.
+      await ServerDownloadWorkDir(dir.path).deleteStatus();
+    }
+    if (clips != null && await clips.exists()) {
+      await clips.delete(recursive: true);
+    }
+    for (final entity in older) {
+      await entity.delete();
+    }
+  } on FileSystemException catch (e) {
+    logFailure('word_audio.old_files_cleanup_failed', e);
+  }
+}
 
 /// WorkManager task name of the pack's download (Android), run by
 /// [runWordAudioPackWork].
@@ -43,7 +78,13 @@ class WordAudioPack {
     dir: () async => Directory(await _dir),
   );
 
-  late final Future<String> _dir = storageDir();
+  late final Future<String> _dir = _preparedDir();
+
+  Future<String> _preparedDir() async {
+    final dir = await storageDir();
+    await dropOlderWordAudioPin(Directory(dir), file);
+    return dir;
+  }
 
   /// The transfer running in the app on iOS, closed to stop it.
   HttpClient? _transfer;
@@ -52,7 +93,7 @@ class WordAudioPack {
   /// Not under the word list's folder: each has its own installed marker.
   static Future<String> storageDir() => noBackupModelDir('word_audio_pack');
 
-  /// The download size for display, e.g. "2.3 GB".
+  /// The download size for display, e.g. "2.4 GB".
   String get downloadSize => '${(file.bytes / 1e9).toStringAsFixed(1)} GB';
 
   Future<bool> get installed async =>

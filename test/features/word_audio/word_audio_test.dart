@@ -83,6 +83,51 @@ void main() {
     root.deleteSync(recursive: true);
   });
 
+  group('a word list from an older pin', () {
+    late String oldClip;
+
+    setUp(() async {
+      await audio.download();
+      oldClip = (await audio.clipFile(_clip)).path;
+      File(oldClip).writeAsBytesSync(const [9]);
+      audio.dispose();
+    });
+
+    WordAudio relaunched() =>
+        WordAudio(base: audio.base, indexFile: audio.indexFile);
+
+    test('goes with its clips, and the new one downloads', () async {
+      final dir = await WordAudio.storageDir();
+      File(
+        p.join(dir, audio.indexFile.name),
+      ).renameSync(p.join(dir, 'word_audio_index_2026-07-27.sqlite'));
+      final next = relaunched();
+      addTearDown(next.dispose);
+
+      expect(await next.installed, isFalse);
+      expect(await next.clipFor('学校', 'がっこう'), isNull);
+      expect(Directory(dir).listSync(), isEmpty);
+      expect(File(oldClip).existsSync(), isFalse);
+
+      await next.download();
+      expect(await next.clipFor('学校', 'がっこう'), _clip);
+      expect(File((await next.clipFile(_clip)).path).readAsBytesSync(), [
+        1,
+        2,
+        3,
+      ]);
+    });
+
+    test('leaves the current list and its clips alone', () async {
+      final next = relaunched();
+      addTearDown(next.dispose);
+
+      expect(await next.installed, isTrue);
+      expect(await next.clipFor('学校', 'がっこう'), _clip);
+      expect((await next.clipFile(_clip)).source, 'cache');
+    });
+  });
+
   test('no clip until the word list is installed, then it finds one', () async {
     expect(await audio.installed, isFalse);
     expect(await audio.clipFor('学校', 'がっこう'), isNull);
