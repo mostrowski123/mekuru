@@ -69,6 +69,7 @@ In-memory test databases skip migrations entirely (they start at the latest sche
 - **Dictionary queries**: always join `DictionaryMetas` and filter by `isEnabled`. Disabled dictionaries must never surface results.
 - **Glossaries**: stored as raw JSON strings in Drift — no type converters. Parse on read.
 - **Glossary FTS**: `dictionary_entries_fts` (FTS5) is synced by triggers built from a single DDL map in `database_provider.dart`. Two creation paths (open-time ensure, bulk import) must never construct different triggers.
+- **Kanji glyph forms**: Chinese and Japanese fonts draw some shared kanji differently (直, 骨, 角). Every theme text style is `japaneseTextStyle` (`lib/shared/theme/app_theme.dart`): locale `ja`, plus on Android the bundled Noto Sans JP subset first, because Xiaomi, OnePlus and Oppo system fonts hold every kanji in its Chinese form and ignore the locale. A bare `RichText` or `TextPainter` skips the theme and must start from `japaneseTextStyle`; `test/shared/japanese_text_locale_test.dart` fails on one that doesn't. The reader gives a section that declares no language the book's language, else `ja`, and keeps a declared one so Chinese books stay Chinese (`tagSectionLanguage` in `reader_bridge.js`).
 - **`searchText`**: lowercased plain-text projection of `glossaries` that FTS tokenizes — any writer that updates `glossaries` must refresh `searchText` too.
 
 ## Reader / EPUB viewer

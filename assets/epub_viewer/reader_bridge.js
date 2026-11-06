@@ -36,6 +36,25 @@ window._forceHorizontalAxis = false;
 // [MEKURU PATCH] in Contents.columns().
 window._verticalBlockCount = 1;
 
+// ── Document language ────────────────────────────────────────────────
+
+// Chinese and Japanese fonts draw some shared Han characters differently
+// (直, 骨, 角). The WebView picks the face from the document language, and a
+// section that declares none follows the system locale, which on an English
+// device means the Chinese glyphs. Screen readers also pick their voice from
+// it. Such a section gets the book's language, else Japanese; a declared one
+// is kept, so a Chinese book stays Chinese. Done before epub.js serializes the
+// section into the iframe, so the first layout already uses the right fonts.
+// Attributes only: the node tree, and so every CFI, is unchanged.
+function tagSectionLanguage(doc) {
+  var root = doc.documentElement;
+  if (root.getAttribute('lang') || root.getAttribute('xml:lang')) return;
+  var metadata = book.packaging && book.packaging.metadata;
+  root.setAttribute('lang', (metadata && metadata.language) || 'ja');
+}
+
+book.spine.hooks.content.register(tagSectionLanguage);
+
 function callDart(name) {
   var args = Array.prototype.slice.call(arguments, 1);
   try {
@@ -389,14 +408,6 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   rendition.hooks.content.register(function (contents) {
     var doc = contents.window.document;
     _registerUserFont(contents.window, doc);
-
-    // Screen readers pick their voice from the page's language, and many
-    // books never declare one: fall back to the book's own, else Japanese.
-    var root = doc.documentElement;
-    if (!root.getAttribute('lang') && !root.getAttribute('xml:lang')) {
-      var metadata = book.packaging && book.packaging.metadata;
-      root.setAttribute('lang', (metadata && metadata.language) || 'ja');
-    }
 
     doc.addEventListener('keydown', forwardPageTurnKey);
 

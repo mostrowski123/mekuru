@@ -340,6 +340,12 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = androidNdkVersion
 
+    androidResources {
+        // The bundled Japanese fonts deflate by only ~12%. Stored, the engine
+        // maps them instead of inflating both weights (4.3 MB) into memory.
+        noCompress += "otf"
+    }
+
     sourceSets {
         getByName("main") {
             // Make AGP merge libc++_shared.so from the dedicated dir populated

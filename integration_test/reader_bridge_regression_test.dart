@@ -55,6 +55,33 @@ void main() {
       db: db,
     );
 
+    // The pages declare no language, but shared Han characters (直, 骨) must
+    // get Japanese glyphs, which the WebView picks from the language.
+    expect(
+      (await evalJson(
+        controller,
+        'JSON.stringify({ja: rendition.getContents()[0].document.body'
+        '.matches(":lang(ja)")})',
+      ))['ja'],
+      isTrue,
+    );
+    // A declared language is kept: a Chinese book stays Chinese.
+    expect(
+      await evalJson(controller, r'''(function () {
+        var doc = new DOMParser().parseFromString(
+          '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh">' +
+            '<body></body></html>',
+          'application/xhtml+xml');
+        tagSectionLanguage(doc);
+        var root = doc.documentElement;
+        return JSON.stringify({
+          lang: root.getAttribute('lang'),
+          xmlLang: root.getAttribute('xml:lang'),
+        });
+      })()'''),
+      {'lang': null, 'xmlLang': 'zh'},
+    );
+
     // A selection across ruby reports its base text, not the readings
     // ("羅生らしょう門もん…"), which would end up in a highlight's excerpt.
     await controller.debugEvaluateJavascript(
@@ -292,7 +319,9 @@ Future<String> _writeEpub(Directory dir) async {
       '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'
       '<!DOCTYPE html>'
       '<html xmlns="http://www.w3.org/1999/xhtml" '
-      'xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="ja">'
+      // No language, as in many books: the bridge must fill it in (see
+      // tagSectionLanguage).
+      'xmlns:epub="http://www.idpf.org/2007/ops">'
       '<head><title>$title</title>'
       '<link href="style.css" rel="stylesheet" type="text/css"/>'
       '</head><body>$body</body></html>';

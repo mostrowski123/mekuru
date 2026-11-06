@@ -6,10 +6,12 @@ import 'package:mekuru/shared/utils/app_routes.dart';
 Widget buildLocalizedTestApp({
   required Widget home,
   Locale? locale,
+  ThemeData? theme,
   GlobalKey<NavigatorState>? navigatorKey,
   GlobalKey<ScaffoldMessengerState>? scaffoldMessengerKey,
 }) {
   return MaterialApp(
+    theme: theme,
     navigatorKey: navigatorKey,
     scaffoldMessengerKey: scaffoldMessengerKey,
     locale: locale,

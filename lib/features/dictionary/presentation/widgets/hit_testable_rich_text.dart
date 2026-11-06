@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 
 class TextTapTarget {
   const TextTapTarget({
@@ -16,6 +17,9 @@ class TextTapTarget {
 /// Renders a [RichText] while delegating all tap handling through one
 /// [GestureDetector]. Taps are resolved by mapping the pointer location to
 /// selection boxes from the laid-out [RenderParagraph].
+///
+/// A bare [RichText] skips [DefaultTextStyle] and takes its locale from the
+/// UI language, so its text starts from [japaneseTextStyle] here.
 class HitTestableRichText extends StatefulWidget {
   const HitTestableRichText({
     super.key,
@@ -46,7 +50,7 @@ class _HitTestableRichTextState extends State<HitTestableRichText> {
       onTapUp: _handleTap,
       child: RichText(
         key: _richTextKey,
-        text: widget.text,
+        text: TextSpan(style: japaneseTextStyle, children: [widget.text]),
         textAlign: widget.textAlign,
         softWrap: widget.softWrap,
         textScaler: MediaQuery.textScalerOf(context),
