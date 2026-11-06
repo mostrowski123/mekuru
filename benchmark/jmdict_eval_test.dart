@@ -469,6 +469,41 @@ const List<EvalQuery> _battery = [
     expect: [Expect('切る', maxRank: 2)],
     note: 'control: verb stays first (Jisho shows 削減)',
   ),
+  EvalQuery(
+    'new.vowel.kujo',
+    'くじょ',
+    EvalCategory.newFeature,
+    expect: [Expect('駆除', maxRank: 0), Expect('苦情', maxRank: 3)],
+    note: 'kana as typed beats the more frequent くじょう guess',
+  ),
+  EvalQuery(
+    'new.vowel.kibo',
+    'きぼ',
+    EvalCategory.newFeature,
+    expect: [Expect('規模', maxRank: 0)],
+    note: 'kana as typed beats 希望 (きぼう)',
+  ),
+  EvalQuery(
+    'new.vowel.fuufu',
+    'ふうふ',
+    EvalCategory.newFeature,
+    expect: [Expect('夫婦', maxRank: 0)],
+    note: 'kana-only guess ふうふう gets no spelling-match head start',
+  ),
+  EvalQuery(
+    'new.vowel.fuufu.romaji',
+    'fuufu',
+    EvalCategory.newFeature,
+    expect: [Expect('夫婦', maxRank: 0)],
+    note: 'same, from romaji',
+  ),
+  EvalQuery(
+    'new.vowel.kibo.romaji',
+    'kibo',
+    EvalCategory.newFeature,
+    expect: [Expect('希望', maxRank: 0)],
+    note: 'control: romaji drops long vowels, frequency still decides',
+  ),
   // --- Noise-risk probes: per-keystroke states; flooding hypothesis. ---
   EvalQuery(
     'noise.kana.ho',

@@ -864,7 +864,12 @@ class DictionaryQueryService {
   ///   turned "konnyaku" from 7ms into ~480ms);
   /// - not single-kana terms — completing ほ to ほう floods the exact tier
   ///   with more-frequent ほう words above every as-typed ほ word.
-  ({List<String> exact, List<String> asTyped, List<String> prefix})
+  ({
+    List<String> exact,
+    List<String> asTyped,
+    List<String> prefix,
+    Set<String> completions,
+  })
   _expandSearchTerms(String term) {
     // Insertion-ordered set: dedups while keeping the typed term first.
     final terms = <String>{};
@@ -920,7 +925,12 @@ class DictionaryQueryService {
     };
     terms.addAll(particleSpellings);
 
-    return (exact: terms.toList(), asTyped: asTyped, prefix: prefix);
+    return (
+      exact: terms.toList(),
+      asTyped: asTyped,
+      prefix: prefix,
+      completions: completions,
+    );
   }
 
   /// Adds the katakana form and its long-vowel-collapsed variant for every
@@ -1113,15 +1123,24 @@ class DictionaryQueryService {
     ];
     final ranks = await _getFrequencyRanks(allResults, exactMatchTerms);
 
+    // A long-vowel guess (くじょ → くじょう) never gets a typed spelling's
+    // head start. Kana input chose its vowel length, so guess-only matches
+    // follow every typed match (駆除 before 苦情); romaji usually drops long
+    // vowels (kyo → 今日), so there they compete on frequency like a
+    // reading match. Every exact-tier row matched an exactMatchTerm, so
+    // priority 2 here means it matched only a guess.
+    final exactPriorities = _buildExactMatchPriorities(
+      exactResults,
+      exactMatchTerms.difference(expansion.completions),
+    );
+    if (isRomaji) exactPriorities.updateAll((_, p) => p > 1 ? 1 : p);
+
     return [
       ..._applyFrequencyRanks(
         exactResults,
         ranks,
         cache,
-        matchPriorities: _buildExactMatchPriorities(
-          exactResults,
-          exactMatchTerms,
-        ),
+        matchPriorities: exactPriorities,
       ),
       ..._applyFrequencyRanks(
         glossaryExactResults,

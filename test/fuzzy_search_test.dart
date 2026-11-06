@@ -732,6 +732,75 @@ void main() {
     });
   });
 
+  group('fuzzySearchWithSource — typed vowel length vs long-vowel guesses', () {
+    late AppDatabase db2;
+    late DictionaryQueryService queryService2;
+
+    setUp(() async {
+      db2 = createTestDatabase();
+      final repo2 = DictionaryRepository(db2);
+      queryService2 = DictionaryQueryService(db2);
+
+      final entriesId = await repo2.insertDictionary('Entries');
+      final freqId = await repo2.insertDictionary('Freq');
+      // Real JPDB ranks: the +う guess is the more frequent (or, for
+      // ふうふう, a kana-only) word in each pair.
+      const words = [
+        ('駆除', 'くじょ', 14974),
+        ('苦情', 'くじょう', 11376),
+        ('夫婦', 'ふうふ', 2247),
+        ('ふうふう', 'ふうふう', 40024),
+      ];
+      await repo2.batchInsertEntries([
+        for (final (expression, reading, _) in words)
+          DictionaryEntriesCompanion.insert(
+            expression: expression,
+            reading: Value(reading),
+            glossaries: jsonEncode([expression]),
+            dictionaryId: entriesId,
+          ),
+      ]);
+      await repo2.batchInsertFrequencies([
+        for (final (expression, reading, rank) in words)
+          FrequenciesCompanion.insert(
+            expression: expression,
+            reading: Value(reading),
+            frequencyRank: rank,
+            dictionaryId: freqId,
+          ),
+      ]);
+    });
+
+    tearDown(() async {
+      await db2.close();
+    });
+
+    Future<List<String>> search(String query) async => [
+      for (final r in await queryService2.fuzzySearchWithSource(query))
+        r.entry.expression,
+    ];
+
+    test('kana input puts the word as typed before its +う guess', () async {
+      final kujo = await search('くじょ');
+      expect(kujo.first, '駆除');
+      expect(kujo, contains('苦情'));
+
+      expect((await search('ふうふ')).first, '夫婦');
+    });
+
+    test('romaji input lets the +う guess compete on frequency', () async {
+      // Romaji usually leaves long vowels out (kyo → 今日), so the more
+      // common 苦情 still leads.
+      expect((await search('kujo')).first, '苦情');
+    });
+
+    test('a kana-only +う guess gets no spelling-match head start', () async {
+      // ふうふう is rarer than 夫婦; matching it only through the guess must
+      // not lift it above a typed reading match.
+      expect((await search('fuufu')).first, '夫婦');
+    });
+  });
+
   group('fuzzySearchWithSource — dictionary priority within a word', () {
     late AppDatabase db2;
     late DictionaryQueryService queryService2;
