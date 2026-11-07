@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../core/services/firebase_runtime.dart';
 import '../../../../core/services/http_transport.dart';
+import '../../../../core/services/usage_telemetry.dart';
 import '../../../../firebase_options.dart';
 import 'ocr_account_link_service.dart';
 
@@ -110,6 +111,8 @@ class PreloadedProEntitlement {
 
   static void setInitialSnapshot(OcrBillingCacheSnapshot? snapshot) {
     initialSnapshot = snapshot;
+    // Later usage logs carry the current Pro state, not the launch one.
+    setUsageTag('pro', '$isInitiallyUnlocked');
   }
 }
 
@@ -246,7 +249,7 @@ class OcrBillingClient {
     }
   }
 
-  Future<void> setPlayEntitlement(bool owned) async {
+  Future<void> setPlayEntitlement(bool owned, {required String reason}) async {
     if (await hasPlayEntitlement() == owned) return;
     try {
       if (owned) {
@@ -254,7 +257,12 @@ class OcrBillingClient {
       } else {
         await _statusStorage.delete(key: _playEntitlementKey);
       }
-      _log('play entitlement updated', {'owned': owned});
+      _log('play entitlement updated', {'owned': owned, 'reason': reason});
+      // When and why the Play (or App Store) unlock was granted or removed.
+      logUsage(
+        'pro.entitlement_changed',
+        attrs: {'owned': owned, 'reason': reason},
+      );
     } catch (e) {
       _log('failed to write play entitlement', {'error': e.toString()});
     }

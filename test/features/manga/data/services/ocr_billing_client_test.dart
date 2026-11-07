@@ -182,7 +182,7 @@ void main() {
     final storage = _FakeStatusStorage();
     final client = OcrBillingClient(statusStorage: storage);
 
-    await client.setPlayEntitlement(true);
+    await client.setPlayEntitlement(true, reason: 'test');
     final status = await client.readLastKnownStatus();
 
     expect(status, isNotNull);
@@ -200,7 +200,7 @@ void main() {
         statusStorage: storage,
         readCurrentUid: () => 'user-1',
       );
-      await client.setPlayEntitlement(true);
+      await client.setPlayEntitlement(true, reason: 'test');
       await client.cacheStatusForTesting(
         const OcrBillingStatus(ocrUnlocked: true, creditBalance: 500),
       );

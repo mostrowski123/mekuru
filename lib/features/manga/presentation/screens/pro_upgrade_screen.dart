@@ -47,6 +47,8 @@ String? describeBillingError(AppLocalizations l, Object error) {
       'purchase_pending' => l.proPurchasePending,
       'payment_declined' => l.proErrorPaymentDeclined,
       'purchase_cancelled' => l.proErrorPurchaseCancelled,
+      // already_owned: Play's cache was refreshed by then, so Restore finds it.
+      'already_owned' ||
       'purchase_delivery_failed' ||
       'purchase_verify_failed' => l.proErrorPurchaseNotConfirmed,
       // The billing server's own codes.
@@ -328,7 +330,11 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     return _runBusyAction(() async {
       try {
         final snapshot = await (widget.restoreUpgrade ?? _restoreDefault)();
-        logUsage('pro.restore', attrs: {'result': 'ok'});
+        // `owned`: whether Restore found Pro; `ok` alone only means no error.
+        logUsage(
+          'pro.restore',
+          attrs: {'result': 'ok', 'owned': snapshot.isUnlocked},
+        );
         return snapshot;
       } catch (e) {
         logUsage(

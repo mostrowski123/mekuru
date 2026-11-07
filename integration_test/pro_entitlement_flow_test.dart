@@ -43,7 +43,7 @@ void main() {
           e.findAncestorWidgetOfExactType<LocalOcrDownloadTile>() == null,
     );
     addTearDown(() async {
-      await client.setPlayEntitlement(false);
+      await client.setPlayEntitlement(false, reason: 'test');
       client.dispose();
     });
 
@@ -55,7 +55,7 @@ void main() {
     // The entitlement survives a round trip through the real secure-storage
     // plugin and composes into an unlocked snapshot for a fresh client, the
     // same way main() preloads it.
-    await client.setPlayEntitlement(true);
+    await client.setPlayEntitlement(true, reason: 'test');
     final freshClient = OcrBillingClient();
     expect(await freshClient.hasPlayEntitlement(), isTrue);
     await PreloadedProEntitlement.load(billingClient: freshClient);
@@ -79,7 +79,7 @@ void main() {
 
     // Clearing the entitlement (what a refund convergence does) locks the
     // screen again and brings the purchase button back.
-    await client.setPlayEntitlement(false);
+    await client.setPlayEntitlement(false, reason: 'test');
     await tester.pumpWidget(const SizedBox.shrink());
     await pumpProScreen(tester);
     await pumpUntilVisible(tester, find.text(l10n.proStatusLocked));

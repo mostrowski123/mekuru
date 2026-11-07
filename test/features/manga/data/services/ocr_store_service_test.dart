@@ -9,6 +9,7 @@ import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
 
@@ -53,6 +54,20 @@ GooglePlayPurchaseDetails _ownedProPurchase({bool pendingComplete = true}) =>
       purchaseState: PurchaseStateWrapper.purchased,
       pendingComplete: pendingComplete,
     );
+
+/// What the Android plugin emits when the Play sheet closes without a
+/// purchase: no product ID, only a status.
+PurchaseDetails _noPurchaseUpdate(PurchaseStatus status) => PurchaseDetails(
+  purchaseID: '',
+  productID: '',
+  status: status,
+  transactionDate: null,
+  verificationData: PurchaseVerificationData(
+    localVerificationData: '',
+    serverVerificationData: '',
+    source: 'google_play',
+  ),
+);
 
 /// The credit-consumable twin of [_ownedProPurchase].
 GooglePlayPurchaseDetails _creditPurchase({bool pendingComplete = true}) =>
@@ -229,11 +244,11 @@ class _RecordingBillingClient extends OcrBillingClient {
   Object? setPlayEntitlementError;
 
   @override
-  Future<void> setPlayEntitlement(bool owned) async {
+  Future<void> setPlayEntitlement(bool owned, {required String reason}) async {
     callLog.add('setPlayEntitlement($owned)');
     final error = setPlayEntitlementError;
     if (error != null) throw error;
-    await super.setPlayEntitlement(owned);
+    await super.setPlayEntitlement(owned, reason: reason);
   }
 
   @override
@@ -783,20 +798,8 @@ void main() {
       ]) {
         test('a ${status.name} flow with no product answers the waiting buyer '
             'with $code', () async {
-          final noPurchase = PurchaseDetails(
-            purchaseID: '',
-            productID: '',
-            status: status,
-            transactionDate: null,
-            verificationData: PurchaseVerificationData(
-              localVerificationData: '',
-              serverVerificationData: '',
-              source: 'google_play',
-            ),
-          );
-
           await expectLater(
-            h.buyAndDeliver(proUnlockProductId, noPurchase),
+            h.buyAndDeliver(proUnlockProductId, _noPurchaseUpdate(status)),
             throwsA(
               isA<OcrBillingException>().having((e) => e.code, 'code', code),
             ),
@@ -804,6 +807,71 @@ void main() {
           expect(h.hasEntitlement, isFalse);
         }, timeout: const Timeout(Duration(seconds: 5)));
       }
+
+      group('ITEM_ALREADY_OWNED from a stale Play purchase cache', () {
+        // What the plugin emits when Play answers the purchase with
+        // ITEM_ALREADY_OWNED: no purchase, the response code as the message.
+        PurchaseDetails alreadyOwned() =>
+            _noPurchaseUpdate(PurchaseStatus.error)
+              ..error = IAPError(
+                source: 'google_play',
+                code: 'purchase_error',
+                message: BillingResponse.itemAlreadyOwned.toString(),
+              );
+
+        final logs = <String, Map<String, Object?>>{};
+
+        setUp(() {
+          logs.clear();
+          usageLogSinkOverride = (message, attributes, {required isWarning}) =>
+              logs[message] = {
+                for (final e in attributes.entries) e.key: e.value.value,
+              };
+          usageAnalyticsSinkOverride = (name, parameters) {};
+        });
+
+        tearDown(() {
+          usageLogSinkOverride = null;
+          usageAnalyticsSinkOverride = null;
+        });
+
+        test('queries Play again and unlocks the waiting buyer', () async {
+          // The owned-purchases query before the buy misses the purchase; the
+          // error refreshes Play's cache, so the next query has it.
+          h.iap.onBuy = (_) {
+            h.playOwns([_ownedProPurchase(pendingComplete: false)]);
+            h.iap.purchaseUpdates.add([alreadyOwned()]);
+          };
+
+          final result = await h.service.purchaseProduct(proUnlockProductId);
+
+          expect(result.ocrUnlocked, isTrue);
+          expect(h.hasEntitlement, isTrue);
+          expect(logs['pro.already_owned'], containsPair('recovered', true));
+          expect(
+            logs['pro.entitlement_changed'],
+            allOf(
+              containsPair('owned', true),
+              containsPair('reason', 'query_past:already_owned'),
+            ),
+          );
+        }, timeout: const Timeout(Duration(seconds: 5)));
+
+        test('asks for a restore when Play still does not list it', () async {
+          await expectLater(
+            h.buyAndDeliver(proUnlockProductId, alreadyOwned()),
+            throwsA(
+              isA<OcrBillingException>().having(
+                (e) => e.code,
+                'code',
+                'already_owned',
+              ),
+            ),
+          );
+          expect(h.hasEntitlement, isFalse);
+          expect(logs['pro.already_owned'], containsPair('recovered', false));
+        }, timeout: const Timeout(Duration(seconds: 5)));
+      });
 
       test('surfaces purchase_not_started when Play refuses to open the '
           'sheet', () async {

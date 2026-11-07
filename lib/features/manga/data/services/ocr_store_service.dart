@@ -257,23 +257,11 @@ class OcrStoreService {
       );
     }
 
-    await _syncOwnedPurchases(reason: 'pre_purchase:$productId');
-    if (productId == proUnlockProductId) {
-      // The sync above just refreshed the local Play entitlement, so this
-      // also self-heals installs stuck with an unverified old purchase.
-      final localStatus = await _billingClient.readLastKnownStatus();
-      if (localStatus?.ocrUnlocked ?? false) {
-        _log('purchase short-circuited by existing unlock', {
-          'productId': productId,
-          'creditBalance': localStatus!.creditBalance,
-        });
-        return PurchaseGrantResult(
-          ocrUnlocked: true,
-          creditBalance: localStatus.creditBalance,
-          grantedCredits: 0,
-        );
-      }
-    }
+    final existing = await _ownedProGrant(
+      productId,
+      reason: 'pre_purchase:$productId',
+    );
+    if (existing != null) return existing;
 
     final products = await queryProducts({productId});
     final productDetails = products[productId]!;
@@ -320,8 +308,45 @@ class OcrStoreService {
         'error': e.toString(),
       });
       _removeWaiter(productId, waiter);
+      if (e is OcrBillingException && e.code == 'already_owned') {
+        // The sync above found nothing, yet Play says it is owned: its
+        // purchase cache was stale (seen on a fresh install). Per Google's
+        // billing docs this error refreshes that cache, so sync again.
+        PurchaseGrantResult? grant;
+        try {
+          grant = await _ownedProGrant(productId, reason: 'already_owned');
+        } catch (syncError) {
+          _log('already-owned re-sync failed', {'error': '$syncError'});
+        }
+        logUsage('pro.already_owned', attrs: {'recovered': grant != null});
+        if (grant != null) return grant;
+      }
       rethrow;
     }
+  }
+
+  /// Syncs owned purchases, then returns the unlock when [productId] is Pro
+  /// and the install now has it. The sync refreshes the local Play
+  /// entitlement, so this also self-heals installs stuck with an unverified
+  /// old purchase.
+  Future<PurchaseGrantResult?> _ownedProGrant(
+    String productId, {
+    required String reason,
+  }) async {
+    await _syncOwnedPurchases(reason: reason);
+    if (productId != proUnlockProductId) return null;
+    final localStatus = await _billingClient.readLastKnownStatus();
+    if (!(localStatus?.ocrUnlocked ?? false)) return null;
+    _log('purchase short-circuited by existing unlock', {
+      'productId': productId,
+      'reason': reason,
+      'creditBalance': localStatus!.creditBalance,
+    });
+    return PurchaseGrantResult(
+      ocrUnlocked: true,
+      creditBalance: localStatus.creditBalance,
+      grantedCredits: 0,
+    );
   }
 
   Future<OcrBillingStatus> restorePurchases() async {
@@ -408,13 +433,20 @@ class OcrStoreService {
       if (details.status == PurchaseStatus.error) {
         _completeWaiterWithError(
           details.productID,
-          OcrBillingException(
-            502,
-            details.error?.message ??
-                'Your payment could not be processed. '
-                    'Please try a different payment method.',
-            code: 'payment_declined',
-          ),
+          // The plugin's only signal for this is the response code's name.
+          details.error?.message == BillingResponse.itemAlreadyOwned.toString()
+              ? const OcrBillingException(
+                  409,
+                  'Google Play says this account already owns it.',
+                  code: 'already_owned',
+                )
+              : OcrBillingException(
+                  502,
+                  details.error?.message ??
+                      'Your payment could not be processed. '
+                          'Please try a different payment method.',
+                  code: 'payment_declined',
+                ),
         );
         await _completeIfPending(details, 'stream_error');
         continue;
@@ -515,7 +547,7 @@ class OcrStoreService {
 
     final ownsPro = proOwnershipFrom(response);
     if (ownsPro != null) {
-      await _billingClient.setPlayEntitlement(ownsPro);
+      await _billingClient.setPlayEntitlement(ownsPro, reason: reason);
     }
   }
 
@@ -558,7 +590,7 @@ class OcrStoreService {
       'count': transactions.length,
       'ownsPro': ownsPro,
     });
-    await _billingClient.setPlayEntitlement(ownsPro);
+    await _billingClient.setPlayEntitlement(ownsPro, reason: reason);
   }
 
   Future<void> _deliverPurchase(
@@ -633,7 +665,7 @@ class OcrStoreService {
       return;
     }
 
-    await _billingClient.setPlayEntitlement(true);
+    await _billingClient.setPlayEntitlement(true, reason: source);
     await _completeIfPending(details, source);
 
     final cached = await _billingClient.readLastKnownStatus();
