@@ -4497,6 +4497,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'The purchase couldn\'t be confirmed. Tap Restore Purchase to try again.';
 
   @override
+  String get proRestoreNothingFound =>
+      'No Pro purchase was found for the Google account signed in to Google Play.';
+
+  @override
+  String get proRestoreNothingFoundIos =>
+      'No Pro purchase was found for the Apple Account signed in to the App Store.';
+
+  @override
   String get proErrorSignInCancelled => 'Google sign-in was cancelled.';
 
   @override

@@ -4522,6 +4522,14 @@ class AppLocalizationsId extends AppLocalizations {
       'Pembelian tidak dapat dikonfirmasi. Ketuk Pulihkan Pembelian untuk mencoba lagi.';
 
   @override
+  String get proRestoreNothingFound =>
+      'Tidak ada pembelian Pro yang ditemukan untuk akun Google yang masuk di Google Play.';
+
+  @override
+  String get proRestoreNothingFoundIos =>
+      'Tidak ada pembelian Pro yang ditemukan untuk Akun Apple yang masuk di App Store.';
+
+  @override
   String get proErrorSignInCancelled => 'Masuk dengan Google dibatalkan.';
 
   @override

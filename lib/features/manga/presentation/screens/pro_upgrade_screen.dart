@@ -335,6 +335,19 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
           'pro.restore',
           attrs: {'result': 'ok', 'owned': snapshot.isUnlocked},
         );
+        if (!snapshot.isUnlocked && mounted) {
+          // Without this the screen just stays locked and users keep tapping.
+          final l10n = context.l10n;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                defaultTargetPlatform == TargetPlatform.iOS
+                    ? l10n.proRestoreNothingFoundIos
+                    : l10n.proRestoreNothingFound,
+              ),
+            ),
+          );
+        }
         return snapshot;
       } catch (e) {
         logUsage(

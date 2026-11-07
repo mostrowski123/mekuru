@@ -4287,6 +4287,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get proErrorPurchaseNotConfirmed => '无法确认这笔购买。请点按“恢复购买”重试。';
 
   @override
+  String get proRestoreNothingFound =>
+      '在 Google Play 当前登录的 Google 账号下未找到 Pro 购买记录。';
+
+  @override
+  String get proRestoreNothingFoundIos =>
+      '在 App Store 当前登录的 Apple 账户下未找到 Pro 购买记录。';
+
+  @override
   String get proErrorSignInCancelled => 'Google 登录已取消。';
 
   @override
@@ -8758,6 +8766,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get proErrorPurchaseNotConfirmed => '无法确认这笔购买。请点按“恢复购买”重试。';
+
+  @override
+  String get proRestoreNothingFound =>
+      '在 Google Play 当前登录的 Google 账号下未找到 Pro 购买记录。';
+
+  @override
+  String get proRestoreNothingFoundIos =>
+      '在 App Store 当前登录的 Apple 账户下未找到 Pro 购买记录。';
 
   @override
   String get proErrorSignInCancelled => 'Google 登录已取消。';

@@ -4379,6 +4379,14 @@ class AppLocalizationsJa extends AppLocalizations {
       '購入を確認できませんでした。「購入を復元」をタップして、もう一度お試しください。';
 
   @override
+  String get proRestoreNothingFound =>
+      'Google PlayにサインインしているGoogleアカウントでは、Proの購入が見つかりませんでした。';
+
+  @override
+  String get proRestoreNothingFoundIos =>
+      'App StoreにサインインしているApple Accountでは、Proの購入が見つかりませんでした。';
+
+  @override
   String get proErrorSignInCancelled => 'Googleへのサインインがキャンセルされました。';
 
   @override

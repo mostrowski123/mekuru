@@ -3215,6 +3215,8 @@
   "proErrorPaymentDeclined": "Pembayaran Anda tidak dapat diproses. Coba metode pembayaran lain.",
   "proErrorPurchaseCancelled": "Pembelian dibatalkan.",
   "proErrorPurchaseNotConfirmed": "Pembelian tidak dapat dikonfirmasi. Ketuk Pulihkan Pembelian untuk mencoba lagi.",
+  "proRestoreNothingFound": "Tidak ada pembelian Pro yang ditemukan untuk akun Google yang masuk di Google Play.",
+  "proRestoreNothingFoundIos": "Tidak ada pembelian Pro yang ditemukan untuk Akun Apple yang masuk di App Store.",
   "proErrorSignInCancelled": "Masuk dengan Google dibatalkan.",
   "proErrorTooManySignIns": "Terlalu banyak percobaan masuk baru-baru ini. Tunggu beberapa menit, lalu coba lagi.",
   "settingsCustomOcrServerUnhealthy": "Terhubung, tetapi /health melaporkan status \"{status}\", bukan \"ok\".",

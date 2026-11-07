@@ -5785,6 +5785,14 @@
   "@proErrorPurchaseNotConfirmed": {
     "description": "Pro: the store reported the purchase but the app could not confirm or record it. 'Restore Purchase' is the button on the same screen (proRestorePurchase)."
   },
+  "proRestoreNothingFound": "No Pro purchase was found for the Google account signed in to Google Play.",
+  "@proRestoreNothingFound": {
+    "description": "Pro, Android: shown after Restore Purchase when Google Play lists no Pro purchase."
+  },
+  "proRestoreNothingFoundIos": "No Pro purchase was found for the Apple Account signed in to the App Store.",
+  "@proRestoreNothingFoundIos": {
+    "description": "Pro, iOS: shown after Restore Purchase when the App Store lists no Pro purchase. 'Apple Account' is Apple's own name for the account."
+  },
   "proErrorSignInCancelled": "Google sign-in was cancelled.",
   "@proErrorSignInCancelled": {
     "description": "Pro: the user closed the Google sign-in sheet."

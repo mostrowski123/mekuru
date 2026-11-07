@@ -26,12 +26,13 @@ const _lockedSnapshot = ProUpgradeSnapshot(
 );
 
 /// Captures every usage-telemetry log as `<level>:<event>` (plus any
-/// `stage`/`result` attribute as `(<key>=<value>)`) for the current test.
+/// `stage`/`result`/`owned` attribute as `(<key>=<value>)`) for the current
+/// test.
 List<String> captureUsageLogs() {
   final logged = <String>[];
   usageLogSinkOverride = (message, attributes, {required isWarning}) {
     final details = [
-      for (final key in const ['stage', 'result'])
+      for (final key in const ['stage', 'result', 'owned'])
         if (attributes[key] != null) '$key=${attributes[key]!.value}',
     ].join(',');
     logged.add(
@@ -417,6 +418,35 @@ void main() {
     expect(logged, contains('info:pro.restore(result=cancelled)'));
     expect(logged, isNot(contains('info:pro.restore(result=error)')));
   });
+
+  testWidgets(
+    'a restore that finds no Pro says so',
+    (tester) async {
+      final logged = captureUsageLogs();
+      await pumpLockedScreen(
+        tester,
+        restoreUpgrade: () async => _lockedSnapshot,
+      );
+
+      await tapAndSettleSnackBar(tester, find.byIcon(Icons.refresh));
+
+      expect(
+        find.text(
+          defaultTargetPlatform == TargetPlatform.iOS
+              ? 'No Pro purchase was found for the Apple Account signed in to '
+                    'the App Store.'
+              : 'No Pro purchase was found for the Google account signed in '
+                    'to Google Play.',
+        ),
+        findsOneWidget,
+      );
+      expect(logged, contains('info:pro.restore(result=ok,owned=false)'));
+    },
+    variant: TargetPlatformVariant({
+      TargetPlatform.android,
+      TargetPlatform.iOS,
+    }),
+  );
 
   // MEKURU-20: the library's book sheet closes itself, then opens the Pro
   // screen from its own Consumer, which is gone by the time Pro closes.

@@ -3215,6 +3215,8 @@
   "proErrorPaymentDeclined": "无法处理你的付款。请尝试其他付款方式。",
   "proErrorPurchaseCancelled": "购买已取消。",
   "proErrorPurchaseNotConfirmed": "无法确认这笔购买。请点按“恢复购买”重试。",
+  "proRestoreNothingFound": "在 Google Play 当前登录的 Google 账号下未找到 Pro 购买记录。",
+  "proRestoreNothingFoundIos": "在 App Store 当前登录的 Apple 账户下未找到 Pro 购买记录。",
   "proErrorSignInCancelled": "Google 登录已取消。",
   "proErrorTooManySignIns": "最近的登录尝试过多。请等待几分钟后再试。",
   "settingsCustomOcrServerUnhealthy": "已连接，但 /health 返回的状态是“{status}”，而不是“ok”。",

@@ -7280,6 +7280,18 @@ abstract class AppLocalizations {
   /// **'The purchase couldn\'t be confirmed. Tap Restore Purchase to try again.'**
   String get proErrorPurchaseNotConfirmed;
 
+  /// Pro, Android: shown after Restore Purchase when Google Play lists no Pro purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'No Pro purchase was found for the Google account signed in to Google Play.'**
+  String get proRestoreNothingFound;
+
+  /// Pro, iOS: shown after Restore Purchase when the App Store lists no Pro purchase. 'Apple Account' is Apple's own name for the account.
+  ///
+  /// In en, this message translates to:
+  /// **'No Pro purchase was found for the Apple Account signed in to the App Store.'**
+  String get proRestoreNothingFoundIos;
+
   /// Pro: the user closed the Google sign-in sheet.
   ///
   /// In en, this message translates to:

@@ -1185,6 +1185,8 @@
   "proErrorPaymentDeclined": "お支払いを処理できませんでした。別のお支払い方法をお試しください。",
   "proErrorPurchaseCancelled": "購入がキャンセルされました。",
   "proErrorPurchaseNotConfirmed": "購入を確認できませんでした。「購入を復元」をタップして、もう一度お試しください。",
+  "proRestoreNothingFound": "Google PlayにサインインしているGoogleアカウントでは、Proの購入が見つかりませんでした。",
+  "proRestoreNothingFoundIos": "App StoreにサインインしているApple Accountでは、Proの購入が見つかりませんでした。",
   "proErrorSignInCancelled": "Googleへのサインインがキャンセルされました。",
   "proErrorTooManySignIns": "サインインの試行回数が多すぎます。数分待ってから、もう一度お試しください。",
   "settingsCustomOcrServerUnhealthy": "接続できましたが、/health のステータスが「ok」ではなく「{status}」でした。",
