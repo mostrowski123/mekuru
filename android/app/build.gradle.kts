@@ -388,6 +388,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Lets Play Console name functions in native crash reports. Only adds
+        // metadata to the bundle, not to what users download.
+        ndk { debugSymbolLevel = "SYMBOL_TABLE" }
     }
 
     flavorDimensions += "variant"
