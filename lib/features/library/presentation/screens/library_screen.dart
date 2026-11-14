@@ -57,10 +57,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// How many covers fit across a window [width] points wide. On iOS a wide
 /// window (the open iPhone Duo, an iPad) shows more covers at a phone's size;
-/// Android keeps three at any width.
+/// Android keeps three at any width. [chosen] is the Library Columns setting
+/// and wins when it is not 0 (Auto).
 @visibleForTesting
-int libraryGridColumns(double width) =>
-    defaultTargetPlatform == TargetPlatform.iOS ? max(3, width ~/ 180) : 3;
+int libraryGridColumns(double width, [int chosen = 0]) => chosen > 0
+    ? chosen
+    : defaultTargetPlatform == TargetPlatform.iOS
+    ? max(3, width ~/ 180)
+    : 3;
 
 /// The book the user most recently read, or null when none has been opened
 /// yet. Derived from the already-watched book list so it stays reactive and
@@ -541,6 +545,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: libraryGridColumns(
                 MediaQuery.sizeOf(context).width,
+                ref.watch(libraryColumnsProvider),
               ),
               childAspectRatio: 0.65,
               crossAxisSpacing: 12,
@@ -2305,6 +2310,7 @@ class _CollectionFolderScreenState
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: libraryGridColumns(
                     MediaQuery.sizeOf(context).width,
+                    ref.watch(libraryColumnsProvider),
                   ),
                   childAspectRatio: 0.65,
                   crossAxisSpacing: 12,

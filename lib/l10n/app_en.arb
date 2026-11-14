@@ -1245,6 +1245,14 @@
   "@settingsPureBlackSubtitle": {
     "description": "Subtitle of the pure black switch (settingsPureBlackTitle): who it is for and what turns black. \"The reader's dark pages\" is the EPUB reader's Dark color mode."
   },
+  "settingsLibraryColumnsTitle": "Library columns",
+  "@settingsLibraryColumnsTitle": {
+    "description": "Settings › Appearance: title of the option that sets how many columns of book covers the Library grid shows. The choices are Auto and the numbers 2 to 6."
+  },
+  "settingsLibraryColumnsAuto": "Auto",
+  "@settingsLibraryColumnsAuto": {
+    "description": "Choice for the Library columns setting (settingsLibraryColumnsTitle): Mekuru picks the number of columns from the screen width."
+  },
   "settingsColorThemeMekuruRed": "Mekuru Red",
   "@settingsColorThemeMekuruRed": {
     "description": "Color theme label for Mekuru Red."

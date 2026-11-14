@@ -29,6 +29,7 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   AppLanguage? _appLanguage;
   ThemeMode? _themeMode;
   String? _sortOrder;
+  int? _libraryColumns;
   double? _lookupFontSize;
   List<String> _searchHistory = const [];
   bool? _filterRomanLetters;
@@ -56,6 +57,12 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   Future<String?> loadSortOrder() async => _sortOrder;
   @override
   Future<void> saveSortOrder(String order) async => _sortOrder = order;
+
+  @override
+  Future<int?> loadLibraryColumns() async => _libraryColumns;
+  @override
+  Future<void> saveLibraryColumns(int columns) async =>
+      _libraryColumns = columns;
 
   @override
   Future<double?> loadLookupFontSize() async => _lookupFontSize;

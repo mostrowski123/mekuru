@@ -7,6 +7,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/library/presentation/widgets/collection_widgets.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,6 +80,39 @@ void main() {
     expect(find.text('Shelf'), findsOneWidget);
     expect(find.byKey(ValueKey('book-tile-$inShelf')), findsNothing);
     expect(find.text('吾輩は猫である'), findsWidgets);
+
+    await unmount(tester);
+  });
+
+  testWidgets('the Library columns setting sets both grids', (tester) async {
+    final inShelf = await insertBook(tester, 'In shelf');
+    await insertBook(tester, 'Loose');
+    await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.setBookCollections(inShelf, {shelf});
+    });
+    await pumpWithDb(tester, const LibraryScreen());
+
+    int columns(SliverGridDelegate delegate) =>
+        (delegate as SliverGridDelegateWithFixedCrossAxisCount).crossAxisCount;
+    // The first SliverGrid is the page's; folder faces hold their own.
+    int rootColumns() => columns(
+      tester.widget<SliverGrid>(find.byType(SliverGrid).first).gridDelegate,
+    );
+    expect(rootColumns(), 3);
+
+    ProviderScope.containerOf(
+      tester.element(find.byType(LibraryScreen)),
+    ).read(libraryColumnsProvider.notifier).setColumns(4);
+    await tester.pump();
+    expect(rootColumns(), 4);
+
+    await tester.tap(find.text('Shelf'));
+    await tester.pumpAndSettle();
+    expect(
+      columns(tester.widget<GridView>(find.byType(GridView)).gridDelegate),
+      4,
+    );
 
     await unmount(tester);
   });

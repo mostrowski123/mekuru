@@ -464,6 +464,39 @@ final autoFocusSearchProvider = NotifierProvider<AutoFocusSearchNotifier, bool>(
   AutoFocusSearchNotifier.new,
 );
 
+// ──────────────── Library columns ────────────────
+
+/// What the Library Columns setting offers. 0 is Auto: the grid picks by
+/// platform and width (`libraryGridColumns`).
+const libraryColumnChoices = [0, 2, 3, 4, 5, 6];
+
+class LibraryColumnsNotifier extends Notifier<int> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  int build() => 0;
+
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadLibraryColumns();
+    // A restored backup can hold anything; only a choice reaches the grid.
+    if (libraryColumnChoices.contains(persisted)) state = persisted!;
+  }
+
+  void setColumns(int columns) {
+    state = columns;
+    unawaited(ref.read(appSettingsStorageProvider).saveLibraryColumns(columns));
+  }
+}
+
+final libraryColumnsProvider = NotifierProvider<LibraryColumnsNotifier, int>(
+  LibraryColumnsNotifier.new,
+);
+
 /// Low RAM mode (Android): Mekuru keeps less in memory, for e-ink readers
 /// and devices with 4 GB of RAM or less. Starts from the value `main`
 /// preloaded, so the first frame already follows it. Off by default.

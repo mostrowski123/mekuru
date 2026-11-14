@@ -944,6 +944,12 @@ class AppLocalizationsJa extends AppLocalizations {
       'AMOLED画面向け：ダークモードとリーダーのダーク表示で背景を真っ黒にします';
 
   @override
+  String get settingsLibraryColumnsTitle => 'Library columns';
+
+  @override
+  String get settingsLibraryColumnsAuto => 'Auto';
+
+  @override
   String get settingsColorThemeMekuruRed => 'Mekuruレッド';
 
   @override

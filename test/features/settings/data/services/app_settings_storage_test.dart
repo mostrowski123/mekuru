@@ -6,6 +6,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _allowSelfSignedKey = 'app.ocr_server_allow_self_signed';
+const _libraryColumnsKey = 'app.library_columns';
 
 void main() {
   setUp(() {
@@ -60,6 +61,52 @@ void main() {
       expect(container.read(ocrServerAllowSelfSignedProvider), isTrue);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool(_allowSelfSignedKey), isTrue);
+    });
+  });
+
+  group('library columns', () {
+    test('is unset until saved, then round-trips', () async {
+      final storage = SharedPreferencesAppSettingsStorage();
+      expect(await storage.loadLibraryColumns(), isNull);
+
+      await storage.saveLibraryColumns(4);
+      expect(await storage.loadLibraryColumns(), 4);
+    });
+
+    test('is carried by backups', () {
+      expect(BackupService.appKeys, contains(_libraryColumnsKey));
+    });
+
+    Future<int> loaded(Object? stored) async {
+      SharedPreferences.setMockInitialValues({_libraryColumnsKey: ?stored});
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      await container
+          .read(libraryColumnsProvider.notifier)
+          .loadPersistedSettings();
+      return container.read(libraryColumnsProvider);
+    }
+
+    test('provider is Auto by default and loads a saved choice', () async {
+      expect(await loaded(null), 0);
+      expect(await loaded(4), 4);
+    });
+
+    test('a stored value that is not a choice loads as Auto', () async {
+      // A hand-edited or damaged backup must never reach the grid.
+      for (final bad in [1, 99, -3]) {
+        expect(await loaded(bad), 0, reason: '$bad');
+      }
+    });
+
+    test('provider persists a change', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container.read(libraryColumnsProvider.notifier).setColumns(5);
+      expect(container.read(libraryColumnsProvider), 5);
+      await pumpEventQueue();
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt(_libraryColumnsKey), 5);
     });
   });
 }

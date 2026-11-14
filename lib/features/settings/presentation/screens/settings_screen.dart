@@ -53,6 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);
     final pureBlack = ref.watch(pureBlackProvider);
+    final libraryColumns = ref.watch(libraryColumnsProvider);
     final homeTabs = ref.watch(homeTabsProvider);
     final startupScreen = ref.watch(effectiveStartupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
@@ -186,6 +187,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               AppHaptics.light();
               _showColorThemePicker(colorTheme);
+            },
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.grid_view_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.settingsLibraryColumnsTitle),
+            subtitle: Text(_libraryColumnsLabel(l10n, libraryColumns)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              showSettingsOptionPickerSheet(
+                context: context,
+                title: l10n.settingsLibraryColumnsTitle,
+                values: libraryColumnChoices,
+                selected: libraryColumns,
+                labelOf: (columns) => _libraryColumnsLabel(l10n, columns),
+                onSelected: ref
+                    .read(libraryColumnsProvider.notifier)
+                    .setColumns,
+              );
             },
           ),
           const Divider(),
@@ -607,6 +630,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         AppColorTheme.pink => l10n.settingsColorThemePink,
         AppColorTheme.blueGrey => l10n.settingsColorThemeBlueGrey,
       };
+
+  String _libraryColumnsLabel(AppLocalizations l10n, int columns) =>
+      columns == 0 ? l10n.settingsLibraryColumnsAuto : '$columns';
 
   void _showThemeModePicker(ThemeMode currentMode) {
     final l10n = context.l10n;

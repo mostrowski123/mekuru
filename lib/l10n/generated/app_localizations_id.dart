@@ -972,6 +972,12 @@ class AppLocalizationsId extends AppLocalizations {
       'Untuk layar AMOLED: latar hitam di mode gelap dan di halaman gelap pembaca';
 
   @override
+  String get settingsLibraryColumnsTitle => 'Library columns';
+
+  @override
+  String get settingsLibraryColumnsAuto => 'Auto';
+
+  @override
   String get settingsColorThemeMekuruRed => 'Mekuru Merah';
 
   @override

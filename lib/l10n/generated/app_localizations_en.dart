@@ -965,6 +965,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'For AMOLED screens: black backgrounds in dark mode and on the reader\'s dark pages';
 
   @override
+  String get settingsLibraryColumnsTitle => 'Library columns';
+
+  @override
+  String get settingsLibraryColumnsAuto => 'Auto';
+
+  @override
   String get settingsColorThemeMekuruRed => 'Mekuru Red';
 
   @override

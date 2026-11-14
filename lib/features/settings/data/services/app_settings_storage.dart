@@ -143,6 +143,8 @@ abstract class AppSettingsStorage {
   Future<void> saveThemeMode(ThemeMode mode);
   Future<String?> loadSortOrder();
   Future<void> saveSortOrder(String order);
+  Future<int?> loadLibraryColumns();
+  Future<void> saveLibraryColumns(int columns);
   Future<double?> loadLookupFontSize();
   Future<void> saveLookupFontSize(double size);
   Future<List<String>> loadSearchHistory();
@@ -232,6 +234,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _appLanguageKey = 'app.language';
   static const _themeModeKey = 'app.theme_mode';
   static const _sortOrderKey = 'app.library_sort_order';
+  static const _libraryColumnsKey = 'app.library_columns';
   static const _lookupFontSizeKey = 'app.lookup_font_size';
   static const _searchHistoryKey = 'app.dictionary_search_history';
   static const _filterRomanLettersKey = 'app.filter_roman_letters';
@@ -265,6 +268,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
     _appLanguageKey,
     _themeModeKey,
     _sortOrderKey,
+    _libraryColumnsKey,
     _lookupFontSizeKey,
     _searchHistoryKey,
     _filterRomanLettersKey,
@@ -324,6 +328,18 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveSortOrder(String order) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_sortOrderKey, order);
+  }
+
+  @override
+  Future<int?> loadLibraryColumns() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_libraryColumnsKey);
+  }
+
+  @override
+  Future<void> saveLibraryColumns(int columns) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_libraryColumnsKey, columns);
   }
 
   @override

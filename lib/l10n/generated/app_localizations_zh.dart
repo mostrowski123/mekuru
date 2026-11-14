@@ -928,6 +928,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPureBlackSubtitle => '适用于 AMOLED 屏幕：深色模式和阅读器深色页面使用纯黑背景';
 
   @override
+  String get settingsLibraryColumnsTitle => 'Library columns';
+
+  @override
+  String get settingsLibraryColumnsAuto => 'Auto';
+
+  @override
   String get settingsColorThemeMekuruRed => 'Mekuru红';
 
   @override

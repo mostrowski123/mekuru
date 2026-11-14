@@ -1707,6 +1707,18 @@ abstract class AppLocalizations {
   /// **'For AMOLED screens: black backgrounds in dark mode and on the reader\'s dark pages'**
   String get settingsPureBlackSubtitle;
 
+  /// Settings › Appearance: title of the option that sets how many columns of book covers the Library grid shows. The choices are Auto and the numbers 2 to 6.
+  ///
+  /// In en, this message translates to:
+  /// **'Library columns'**
+  String get settingsLibraryColumnsTitle;
+
+  /// Choice for the Library columns setting (settingsLibraryColumnsTitle): Mekuru picks the number of columns from the screen width.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get settingsLibraryColumnsAuto;
+
   /// Color theme label for Mekuru Red.
   ///
   /// In en, this message translates to:

@@ -104,5 +104,13 @@ void main() {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
       expect(libraryGridColumns(1600), 3);
     });
+
+    test('a chosen count wins on both platforms', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      expect(libraryGridColumns(375, 4), 4);
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      expect(libraryGridColumns(1024, 2), 2);
+      expect(libraryGridColumns(1024, 0), 5); // Auto
+    });
   });
 }

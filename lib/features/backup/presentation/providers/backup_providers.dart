@@ -465,6 +465,7 @@ class RestoreNotifier extends Notifier<RestoreState> {
         .loadPersistedSettings();
     await ref.refresh(readerSettingsProvider.notifier).loadPersistedSettings();
     await ref.refresh(librarySortProvider.notifier).loadPersistedSort();
+    await ref.refresh(libraryColumnsProvider.notifier).loadPersistedSettings();
 
     // FutureProvider state is derived directly from SharedPreferences.
     ref.invalidate(autoBackupIntervalProvider);
