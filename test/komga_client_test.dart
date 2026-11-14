@@ -141,6 +141,10 @@ void main() {
   test('pullProgress converts 1-based pages and merges R2 locator', () async {
     final client = clientWith((request) async {
       if (request.url.path.endsWith('/progression')) {
+        // Served as a Readium media type: plain JSON is not acceptable.
+        if (request.headers['Accept'] == 'application/json') {
+          return http.Response('', 406);
+        }
         return ok({
           'modified': '2026-09-01T10:00:00Z',
           'locator': {
@@ -178,6 +182,16 @@ void main() {
     final client = clientWith((request) async => ok({'id': 'b1'}));
 
     expect(await client.pullProgress({'bookId': 'b1'}), isNull);
+  });
+
+  test('pullProgress reads an EPUB with no progression record yet', () async {
+    final client = clientWith(
+      (request) async => request.url.path.endsWith('/progression')
+          ? http.Response('', 204)
+          : ok({'id': 'b2'}),
+    );
+
+    expect(await client.pullProgress({'bookId': 'b2', 'epub': 'true'}), isNull);
   });
 
   test(

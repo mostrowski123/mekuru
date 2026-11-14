@@ -146,7 +146,12 @@ class ProgressSyncService {
       // Remote wins only when strictly newer than both the last local read
       // and the last sync: a record this device pushed is stamped after
       // lastReadAt, so lastReadAt alone would re-apply it on every open.
-      final remoteAt = remote?.lastModified;
+      // The book's times are stored in whole seconds: cut the server's to
+      // match, or this device's own push can read as newer than its sync.
+      final remoteAt = remote?.lastModified?.copyWith(
+        millisecond: 0,
+        microsecond: 0,
+      );
       final remoteNewer =
           remote != null &&
           (localAt == null ||

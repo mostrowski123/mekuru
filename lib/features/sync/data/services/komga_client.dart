@@ -49,6 +49,11 @@ class KomgaClient extends HttpServerClient {
     path,
   );
 
+  /// Komga serves a book's progression and position list as Readium media
+  /// types and answers 406 to the `Accept: application/json` every other
+  /// request sends.
+  static const _readiumAccept = {'Accept': '*/*'};
+
   /// The start of each `message` Komga refuses a progress write with, and
   /// the code reported for it. The message itself can name a file in the
   /// book, so it stays here.
@@ -195,7 +200,13 @@ class KomgaClient extends HttpServerClient {
     if (ids['epub'] == 'true') {
       // The Readium progression record carries the precise EPUB position.
       try {
-        final r2 = await getJson('/api/v1/books/$bookId/progression');
+        final r2 = decodeJsonBody(
+          await send(
+            'GET',
+            '/api/v1/books/$bookId/progression',
+            headers: _readiumAccept,
+          ),
+        );
         if (r2 is Map<String, dynamic>) {
           final locator = r2['locator'] as Map<String, dynamic>?;
           final locations = locator?['locations'] as Map<String, dynamic>?;
@@ -206,8 +217,10 @@ class KomgaClient extends HttpServerClient {
           locatorModified = DateTime.tryParse(r2['modified'] as String? ?? '');
         }
       } on SyncException {
-        // No progression record yet (or an older Komga) — the page-based
-        // read progress below still applies.
+        // An older Komga without the record: the page-based read progress
+        // below still applies.
+      } on FormatException {
+        // No record yet: a 204 with no body.
       }
     }
 
@@ -251,13 +264,11 @@ class KomgaClient extends HttpServerClient {
     }
     var list = const <Map<String, dynamic>>[];
     try {
-      // Komga serves the list as a Readium media type, which the
-      // `Accept: application/json` of every other request does not allow.
       final body = decodeJsonBody(
         await send(
           'GET',
           '/api/v1/books/$bookId/positions',
-          headers: const {'Accept': '*/*'},
+          headers: _readiumAccept,
         ),
       );
       if (body case {'positions': final List positions}) {

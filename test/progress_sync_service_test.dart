@@ -400,21 +400,24 @@ void main() {
     expect(client.pushes, hasLength(1));
   });
 
-  test('syncOnOpen ignores the record this device itself pushed', () async {
-    // Pushed (lastSyncedAt) after the last local read; the server echoes
-    // that push back stamped in between the two.
-    final book = await insertLinkedManga(
-      lastReadAt: readAt,
-      lastSyncedAt: after,
-    );
-    client.pullResult = RemoteProgress(
-      page: 12,
-      lastModified: readAt.add(const Duration(minutes: 30)),
-    );
+  // Pushed (lastSyncedAt) after the last local read; the server echoes that
+  // push back stamped between the two, or part-way into the second of the
+  // sync, which the book's whole-second times cannot tell from its start.
+  for (final (stamped, echoedAt) in [
+    ('before its sync', readAt.add(const Duration(minutes: 30))),
+    ('in the second of its sync', after.add(const Duration(milliseconds: 400))),
+  ]) {
+    test('syncOnOpen ignores the record this device pushed $stamped', () async {
+      final book = await insertLinkedManga(
+        lastReadAt: readAt,
+        lastSyncedAt: after,
+      );
+      client.pullResult = RemoteProgress(page: 12, lastModified: echoedAt);
 
-    expect(await service.syncOnOpen(book), isNull);
-    expect((await reload(book.id)).lastReadCfi, '5');
-  });
+      expect(await service.syncOnOpen(book), isNull);
+      expect((await reload(book.id)).lastReadCfi, '5');
+    });
+  }
 
   test(
     'an epub remote with no whole-book fraction is not marked synced',
