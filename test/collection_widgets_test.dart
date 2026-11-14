@@ -117,6 +117,123 @@ void main() {
     await unmount(tester);
   });
 
+  Future<int> insertDatedBook(
+    WidgetTester tester,
+    String title,
+    DateTime dateAdded, {
+    bool favorite = false,
+  }) async {
+    return (await tester.runAsync(
+      () => db
+          .into(db.books)
+          .insert(
+            BooksCompanion.insert(
+              title: title,
+              filePath: '/books/$title',
+              dateAdded: Value(dateAdded),
+              isFavorite: Value(favorite),
+            ),
+          ),
+    ))!;
+  }
+
+  Future<void> settleWrite(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('a book added to favorites moves ahead of newer books', (
+    tester,
+  ) async {
+    final older = await insertDatedBook(tester, 'Older', DateTime(2026, 1, 1));
+    final newer = await insertDatedBook(tester, 'Newer', DateTime(2026, 2, 1));
+    await pumpWithDb(tester, const LibraryScreen());
+
+    double left(int id) =>
+        tester.getTopLeft(find.byKey(ValueKey('book-tile-$id'))).dx;
+    // Date imported, newest first.
+    expect(left(newer), lessThan(left(older)));
+    expect(find.byIcon(Icons.star), findsNothing);
+
+    await tester.longPress(find.byKey(ValueKey('book-tile-$older')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Add to favorites'));
+    await tester.tap(find.text('Add to favorites'));
+    await settleWrite(tester);
+
+    expect(left(older), lessThan(left(newer)));
+    expect(find.byIcon(Icons.star), findsOneWidget);
+
+    // The same sheet now takes it out again.
+    await tester.longPress(find.byKey(ValueKey('book-tile-$older')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Remove from favorites'));
+    await tester.tap(find.text('Remove from favorites'));
+    await settleWrite(tester);
+
+    expect(left(newer), lessThan(left(older)));
+    expect(find.byIcon(Icons.star), findsNothing);
+
+    await unmount(tester);
+  });
+
+  testWidgets('a favorite book inside a folder has no star and no option', (
+    tester,
+  ) async {
+    final inShelf = await insertDatedBook(
+      tester,
+      'In shelf',
+      DateTime(2026, 1, 1),
+      favorite: true,
+    );
+    await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.setBookCollections(inShelf, {shelf});
+    });
+    await pumpWithDb(tester, const LibraryScreen());
+
+    await tester.tap(find.text('Shelf'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(ValueKey('book-tile-$inShelf')), findsOneWidget);
+    expect(find.byIcon(Icons.star), findsNothing);
+
+    await tester.longPress(find.byKey(ValueKey('book-tile-$inShelf')));
+    await tester.pumpAndSettle();
+    expect(find.text('Add to collection'), findsOneWidget);
+    expect(find.text('Add to favorites'), findsNothing);
+    expect(find.text('Remove from favorites'), findsNothing);
+
+    await unmount(tester);
+  });
+
+  testWidgets('a folder is added to favorites from its long-press sheet', (
+    tester,
+  ) async {
+    await tester.runAsync(() => repo.createCollection('Shelf'));
+    await pumpWithDb(tester, const LibraryScreen());
+    expect(find.byIcon(Icons.star), findsNothing);
+
+    await tester.longPress(find.text('Shelf'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add to favorites'));
+    await settleWrite(tester);
+
+    final shelf = await tester.runAsync(
+      () => db.select(db.collections).getSingle(),
+    );
+    expect(shelf!.isFavorite, isTrue);
+    // The sheet is closed; the star is on the folder's face.
+    expect(find.text('Add to favorites'), findsNothing);
+    expect(find.byIcon(Icons.star), findsOneWidget);
+
+    await tester.longPress(find.text('Shelf'));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove from favorites'), findsOneWidget);
+
+    await unmount(tester);
+  });
+
   testWidgets('tapping a folder opens its book grid', (tester) async {
     final inShelf = await insertBook(tester, '坊っちゃん');
     await insertBook(tester, '吾輩は猫である');

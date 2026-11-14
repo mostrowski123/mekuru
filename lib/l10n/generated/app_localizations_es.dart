@@ -1844,6 +1844,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get libraryAddToCollectionAction => 'Añadir a colección';
 
   @override
+  String get libraryAddToFavorites => 'Add to favorites';
+
+  @override
+  String get libraryRemoveFromFavorites => 'Remove from favorites';
+
+  @override
+  String get libraryFavoriteBadge => 'Favorite';
+
+  @override
   String get libraryNewCollectionAction => 'Nueva colección';
 
   @override

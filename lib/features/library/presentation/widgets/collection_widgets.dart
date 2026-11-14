@@ -262,6 +262,23 @@ class CollectionManageSheet extends ConsumerWidget {
           ),
           const Divider(height: 1),
           ListTile(
+            leading: Icon(
+              collection.isFavorite ? Icons.star : Icons.star_outline,
+            ),
+            title: Text(
+              collection.isFavorite
+                  ? context.l10n.libraryRemoveFromFavorites
+                  : context.l10n.libraryAddToFavorites,
+            ),
+            onTap: () {
+              AppHaptics.light();
+              ref
+                  .read(collectionRepositoryProvider)
+                  .setFavorite(collection.id, !collection.isFavorite);
+              Navigator.of(context).maybePop();
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.edit_outlined),
             title: Text(context.l10n.commonRename),
             onTap: () {

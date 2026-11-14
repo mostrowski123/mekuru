@@ -1831,6 +1831,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get libraryAddToCollectionAction => 'Tambahkan ke koleksi';
 
   @override
+  String get libraryAddToFavorites => 'Add to favorites';
+
+  @override
+  String get libraryRemoveFromFavorites => 'Remove from favorites';
+
+  @override
+  String get libraryFavoriteBadge => 'Favorite';
+
+  @override
   String get libraryNewCollectionAction => 'Koleksi baru';
 
   @override

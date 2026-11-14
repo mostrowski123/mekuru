@@ -82,6 +82,21 @@ Book? mostRecentlyReadBook(List<Book> books) {
   return recent;
 }
 
+/// The library page's tiles in order: favorite folders, favorite books, the
+/// other folders, the other books. Each group keeps the order it came in
+/// (folders by name, books by the selected sort). Every element is a
+/// [Collection] or a [Book].
+@visibleForTesting
+List<Object> libraryGridEntries({
+  required List<Collection> collections,
+  required List<Book> looseBooks,
+}) => [
+  ...collections.where((c) => c.isFavorite),
+  ...looseBooks.where((b) => b.isFavorite),
+  ...collections.where((c) => !c.isFavorite),
+  ...looseBooks.where((b) => !b.isFavorite),
+];
+
 /// Library screen displaying imported books in a grid view.
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
@@ -522,6 +537,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     required List<Book> looseBooks,
     required Book? recent,
   }) {
+    final entries = libraryGridEntries(
+      collections: collections,
+      looseBooks: looseBooks,
+    );
     return CustomScrollView(
       slivers: [
         if (recent != null)
@@ -552,15 +571,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               mainAxisSpacing: 16,
             ),
             delegate: SliverChildBuilderDelegate((context, index) {
-              if (index < collections.length) {
-                final collection = collections[index];
+              final entry = entries[index];
+              if (entry is Collection) {
                 return _CollectionFolderTile(
-                  key: ValueKey('folder-tile-${collection.id}'),
-                  collection: collection,
-                  books: folderBooks[collection.id] ?? const [],
+                  key: ValueKey('folder-tile-${entry.id}'),
+                  collection: entry,
+                  books: folderBooks[entry.id] ?? const [],
                 );
               }
-              final book = looseBooks[index - collections.length];
+              final book = entry as Book;
               return _BookTile(
                 key: ValueKey('book-tile-${book.id}'),
                 book: book,
@@ -568,7 +587,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 isSelected: _selectedIds.contains(book.id),
                 onToggleSelection: () => _toggleSelection(book.id),
               );
-            }, childCount: collections.length + looseBooks.length),
+            }, childCount: entries.length),
           ),
         ),
       ],
@@ -1129,9 +1148,14 @@ class _BookTile extends ConsumerStatefulWidget {
     this.isSelectionMode = false,
     this.isSelected = false,
     this.onToggleSelection,
+    this.inFolder = false,
   });
 
   final Book book;
+
+  /// A folder has its own manual order, so a tile shown inside one has no
+  /// favorite star and no favorite option.
+  final bool inFolder;
 
   /// When set, the cover flies under this tag as a folder opens or closes.
   /// Only the covers a folder's face shows get one; see
@@ -1325,6 +1349,11 @@ class _BookTileState extends ConsumerState<_BookTile>
                               ),
                             if (book.bookType == 'manga')
                               OcrProgressOverlay(bookId: book.id),
+                            // The selection tick takes this corner.
+                            if (book.isFavorite &&
+                                !widget.inFolder &&
+                                !widget.isSelectionMode)
+                              const _FavoriteStar(),
                             if (widget.isSelectionMode)
                               Positioned(
                                 // top/right is taken by the manga badge.
@@ -1516,6 +1545,24 @@ class _BookTileState extends ConsumerState<_BookTile>
                 ),
               ],
               const Divider(),
+              if (!widget.inFolder)
+                ListTile(
+                  leading: Icon(
+                    book.isFavorite ? Icons.star : Icons.star_outline,
+                  ),
+                  title: Text(
+                    book.isFavorite
+                        ? context.l10n.libraryRemoveFromFavorites
+                        : context.l10n.libraryAddToFavorites,
+                  ),
+                  onTap: () {
+                    AppHaptics.light();
+                    Navigator.of(sheetContext).pop();
+                    container
+                        .read(bookRepositoryProvider)
+                        .setFavorite(book.id, !book.isFavorite);
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.collections_bookmark_outlined),
                 title: Text(context.l10n.libraryAddToCollectionAction),
@@ -1828,6 +1875,33 @@ class _CoverTilt extends StatelessWidget {
   }
 }
 
+/// Marks a favorite in the top-left corner of a cover or a folder's face.
+/// Goes in a [Stack]; it looks like the manga badge in the other corner.
+class _FavoriteStar extends StatelessWidget {
+  const _FavoriteStar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 4,
+      left: 4,
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Icon(
+          Icons.star,
+          color: Colors.white,
+          size: 12,
+          semanticLabel: context.l10n.libraryFavoriteBadge,
+        ),
+      ),
+    );
+  }
+}
+
 class _CollectionFolderTile extends ConsumerWidget {
   const _CollectionFolderTile({
     super.key,
@@ -1861,7 +1935,13 @@ class _CollectionFolderTile extends ConsumerWidget {
           Expanded(
             child: _CoverTilt(
               borderRadius: BorderRadius.circular(_folderCornerRadius),
-              child: _FolderPreview(books: books, collectionId: collection.id),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _FolderPreview(books: books, collectionId: collection.id),
+                  if (collection.isFavorite) const _FavoriteStar(),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -2175,6 +2255,7 @@ class _CollectionFolderScreenState
       isSelectionMode: _isSelectionMode,
       isSelected: _selectedIds.contains(members[index].id),
       onToggleSelection: () => _toggleSelection(members[index].id),
+      inFolder: true,
     );
     if (index < _FolderPreview.previewCount) return tile;
     return _StaggeredEntrance(

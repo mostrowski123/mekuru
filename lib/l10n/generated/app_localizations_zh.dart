@@ -1741,6 +1741,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryAddToCollectionAction => '添加到收藏集';
 
   @override
+  String get libraryAddToFavorites => 'Add to favorites';
+
+  @override
+  String get libraryRemoveFromFavorites => 'Remove from favorites';
+
+  @override
+  String get libraryFavoriteBadge => 'Favorite';
+
+  @override
   String get libraryNewCollectionAction => '新建收藏集';
 
   @override

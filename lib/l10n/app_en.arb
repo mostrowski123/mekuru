@@ -2350,6 +2350,18 @@
   "@libraryAddToCollectionAction": {
     "description": "Book menu action that opens the collection assignment sheet."
   },
+  "libraryAddToFavorites": "Add to favorites",
+  "@libraryAddToFavorites": {
+    "description": "Action in the long-press menu of a book or a folder on the Library page: marks it as a favorite, so it comes first on the page."
+  },
+  "libraryRemoveFromFavorites": "Remove from favorites",
+  "@libraryRemoveFromFavorites": {
+    "description": "Action in the long-press menu of a favorite book or folder on the Library page: it stops being a favorite."
+  },
+  "libraryFavoriteBadge": "Favorite",
+  "@libraryFavoriteBadge": {
+    "description": "Screen-reader label of the star shown on the cover of a favorite book or folder in the Library."
+  },
   "libraryNewCollectionAction": "New collection",
   "@libraryNewCollectionAction": {
     "description": "Action that creates a new collection, also used as the creation dialog title."

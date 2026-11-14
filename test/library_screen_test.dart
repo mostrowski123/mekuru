@@ -206,6 +206,39 @@ void main() {
     });
   });
 
+  group('libraryGridEntries', () {
+    Book book(int id, {bool favorite = false}) => Book(
+      id: id,
+      isFavorite: favorite,
+      title: 'Book $id',
+      filePath: '/books/$id',
+      bookType: 'epub',
+      totalPages: 0,
+      readProgress: 0.0,
+      dateAdded: DateTime(2026, 1, 1),
+    );
+    Collection folder(int id, {bool favorite = false}) =>
+        Collection(id: id, name: 'Folder $id', isFavorite: favorite);
+    String label(Object entry) =>
+        entry is Collection ? 'F${entry.id}' : 'B${(entry as Book).id}';
+
+    test('favorites come first, folders ahead of books in each half', () {
+      final entries = libraryGridEntries(
+        collections: [folder(1), folder(2, favorite: true)],
+        looseBooks: [book(1), book(2, favorite: true), book(3)],
+      );
+      expect(entries.map(label), ['F2', 'B2', 'F1', 'B1', 'B3']);
+    });
+
+    test('with no favorites the order is the old one', () {
+      final entries = libraryGridEntries(
+        collections: [folder(1), folder(2)],
+        looseBooks: [book(1), book(2)],
+      );
+      expect(entries.map(label), ['F1', 'F2', 'B1', 'B2']);
+    });
+  });
+
   testWidgets('screen readers announce the import result', (tester) async {
     final semantics = tester.ensureSemantics();
     await pumpEmptyLibrary(

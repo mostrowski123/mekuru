@@ -3147,6 +3147,24 @@ abstract class AppLocalizations {
   /// **'Add to collection'**
   String get libraryAddToCollectionAction;
 
+  /// Action in the long-press menu of a book or a folder on the Library page: marks it as a favorite, so it comes first on the page.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favorites'**
+  String get libraryAddToFavorites;
+
+  /// Action in the long-press menu of a favorite book or folder on the Library page: it stops being a favorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get libraryRemoveFromFavorites;
+
+  /// Screen-reader label of the star shown on the cover of a favorite book or folder in the Library.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite'**
+  String get libraryFavoriteBadge;
+
   /// Action that creates a new collection, also used as the creation dialog title.
   ///
   /// In en, this message translates to:
