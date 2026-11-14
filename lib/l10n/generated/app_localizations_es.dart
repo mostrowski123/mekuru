@@ -980,10 +980,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Para pantallas AMOLED: fondos negros en el modo oscuro y en las páginas oscuras del lector';
 
   @override
-  String get settingsLibraryColumnsTitle => 'Library columns';
+  String get settingsLibraryColumnsTitle => 'Columnas de la biblioteca';
 
   @override
-  String get settingsLibraryColumnsAuto => 'Auto';
+  String get settingsLibraryColumnsAuto => 'Automático';
 
   @override
   String get settingsColorThemeMekuruRed => 'Rojo Mekuru';
@@ -1844,13 +1844,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get libraryAddToCollectionAction => 'Añadir a colección';
 
   @override
-  String get libraryAddToFavorites => 'Add to favorites';
+  String get libraryAddToFavorites => 'Añadir a favoritos';
 
   @override
-  String get libraryRemoveFromFavorites => 'Remove from favorites';
+  String get libraryRemoveFromFavorites => 'Quitar de favoritos';
 
   @override
-  String get libraryFavoriteBadge => 'Favorite';
+  String get libraryFavoriteBadge => 'Favorito';
 
   @override
   String get libraryNewCollectionAction => 'Nueva colección';

@@ -944,10 +944,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'AMOLED画面向け：ダークモードとリーダーのダーク表示で背景を真っ黒にします';
 
   @override
-  String get settingsLibraryColumnsTitle => 'Library columns';
+  String get settingsLibraryColumnsTitle => 'ライブラリの列数';
 
   @override
-  String get settingsLibraryColumnsAuto => 'Auto';
+  String get settingsLibraryColumnsAuto => '自動';
 
   @override
   String get settingsColorThemeMekuruRed => 'Mekuruレッド';
@@ -1771,13 +1771,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get libraryAddToCollectionAction => 'コレクションに追加';
 
   @override
-  String get libraryAddToFavorites => 'Add to favorites';
+  String get libraryAddToFavorites => 'お気に入りに追加';
 
   @override
-  String get libraryRemoveFromFavorites => 'Remove from favorites';
+  String get libraryRemoveFromFavorites => 'お気に入りから削除';
 
   @override
-  String get libraryFavoriteBadge => 'Favorite';
+  String get libraryFavoriteBadge => 'お気に入り';
 
   @override
   String get libraryNewCollectionAction => '新しいコレクション';

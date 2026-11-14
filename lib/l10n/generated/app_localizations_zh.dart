@@ -928,10 +928,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPureBlackSubtitle => '适用于 AMOLED 屏幕：深色模式和阅读器深色页面使用纯黑背景';
 
   @override
-  String get settingsLibraryColumnsTitle => 'Library columns';
+  String get settingsLibraryColumnsTitle => '书库列数';
 
   @override
-  String get settingsLibraryColumnsAuto => 'Auto';
+  String get settingsLibraryColumnsAuto => '自动';
 
   @override
   String get settingsColorThemeMekuruRed => 'Mekuru红';
@@ -1741,13 +1741,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryAddToCollectionAction => '添加到收藏集';
 
   @override
-  String get libraryAddToFavorites => 'Add to favorites';
+  String get libraryAddToFavorites => '设为星标';
 
   @override
-  String get libraryRemoveFromFavorites => 'Remove from favorites';
+  String get libraryRemoveFromFavorites => '取消星标';
 
   @override
-  String get libraryFavoriteBadge => 'Favorite';
+  String get libraryFavoriteBadge => '星标';
 
   @override
   String get libraryNewCollectionAction => '新建收藏集';
@@ -5424,6 +5424,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get settingsPureBlackSubtitle => '适用于 AMOLED 屏幕：深色模式和阅读器深色页面使用纯黑背景';
 
   @override
+  String get settingsLibraryColumnsTitle => '书库列数';
+
+  @override
+  String get settingsLibraryColumnsAuto => '自动';
+
+  @override
   String get settingsColorThemeMekuruRed => 'Mekuru红';
 
   @override
@@ -6229,6 +6235,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryAddToCollectionAction => '添加到收藏集';
+
+  @override
+  String get libraryAddToFavorites => '设为星标';
+
+  @override
+  String get libraryRemoveFromFavorites => '取消星标';
+
+  @override
+  String get libraryFavoriteBadge => '星标';
 
   @override
   String get libraryNewCollectionAction => '新建收藏集';

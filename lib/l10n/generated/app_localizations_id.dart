@@ -972,10 +972,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Untuk layar AMOLED: latar hitam di mode gelap dan di halaman gelap pembaca';
 
   @override
-  String get settingsLibraryColumnsTitle => 'Library columns';
+  String get settingsLibraryColumnsTitle => 'Kolom perpustakaan';
 
   @override
-  String get settingsLibraryColumnsAuto => 'Auto';
+  String get settingsLibraryColumnsAuto => 'Otomatis';
 
   @override
   String get settingsColorThemeMekuruRed => 'Mekuru Merah';
@@ -1831,13 +1831,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get libraryAddToCollectionAction => 'Tambahkan ke koleksi';
 
   @override
-  String get libraryAddToFavorites => 'Add to favorites';
+  String get libraryAddToFavorites => 'Tambahkan ke favorit';
 
   @override
-  String get libraryRemoveFromFavorites => 'Remove from favorites';
+  String get libraryRemoveFromFavorites => 'Keluarkan dari favorit';
 
   @override
-  String get libraryFavoriteBadge => 'Favorite';
+  String get libraryFavoriteBadge => 'Favorit';
 
   @override
   String get libraryNewCollectionAction => 'Koleksi baru';
