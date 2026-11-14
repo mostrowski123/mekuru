@@ -27,7 +27,7 @@ A reading data backup contains:
 - reading progress, and each book's own settings;
 - bookmarks and highlights;
 - your vocabulary;
-- collections;
+- collections, and which books and folders are favorites;
 - reading stats;
 - the order of your dictionaries, and which ones are turned on;
 - your book server connections (names and addresses, never keys or passwords).

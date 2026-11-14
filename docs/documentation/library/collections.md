@@ -4,7 +4,7 @@ Group books and manga into folders on your library grid, for example by series o
 
 ## How collections work
 
-- Each collection is a folder on the **Library** tab. Folders come first on the grid, sorted by name. The books that are in no folder follow.
+- Each collection is a folder on the **Library** tab. Folders come first on the grid, sorted by name. The books that are in no folder follow. [Favorites](#favorites) come before both.
 - A book in a collection appears inside its folder, not on the main grid.
 - A book can be in more than one collection.
 - A folder shows the covers of its first four books.
@@ -66,6 +66,28 @@ To remove one book without edit mode, press and hold it, tap **Add to collection
 
 The books in a deleted collection stay in your library.
 
+## Favorites
+
+Favorite books and folders come first on the **Library** tab. A star marks each one.
+
+To add a favorite:
+
+1. In the **Library** tab, press and hold a book or a folder.
+2. Tap **Add to favorites**.
+
+To remove a favorite, press and hold it and tap **Remove from favorites**.
+
+The grid then shows, in this order:
+
+1. favorite folders, sorted by name;
+2. favorite books, in the order you chose under **Sort by**;
+3. the other folders, sorted by name;
+4. the other books, in the order you chose under **Sort by**.
+
+There are no favorites inside a collection. To put a book first there, [reorder the collection](#edit-a-collection).
+
+A favorite book that you add to a collection moves into its folder, like any other book. It is a favorite again when you take it out of all its collections.
+
 ## Sort the library
 
 1. Tap the sort button at the top of the **Library** tab.
@@ -74,7 +96,9 @@ The books in a deleted collection stay in your library.
     - **Recently read**: the book you opened last comes first. Books you have never opened go last.
     - **Alphabetical**: by title, A to Z.
 
-Mekuru remembers your choice. The sort applies to the books on the main grid. Folders stay first, sorted by name, and books inside a collection keep the order you gave them.
+Mekuru remembers your choice. The sort applies to the books on the main grid. Folders are always sorted by name and come before the books, [favorites](#favorites) come before everything else, and books inside a collection keep the order you gave them.
+
+To change how many columns the grid has, use **Library columns** in [App Settings](../settings/app-settings.md#appearance).
 
 ## Continue reading
 
@@ -84,4 +108,4 @@ After you have opened a book, a **Continue reading** card appears at the top of 
 
 - [Importing Books (EPUB and PDF)](../getting-started/importing-books.md)
 - [Importing Manga](../getting-started/importing-manga.md)
-- [Backup & Restore](../settings/backup-restore.md): backups keep your collections and the order of books in each.
+- [Backup & Restore](../settings/backup-restore.md): backups keep your collections, the order of books in each, and your favorites.

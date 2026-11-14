@@ -32,6 +32,7 @@ Shown only when a page has no tab in the navigation bar. Tap a page to open it. 
 
 - **Theme**: **Light**, **Dark** or **System default**.
 - **Color Theme**: the app's accent color. **Mekuru Red** is the default. Others include **Indigo**, **Teal** and **Blue**.
+- **Library columns**: how many columns of covers the **Library** tab shows. **Auto** is the default: Mekuru picks the number for your screen. You can also choose **2** to **6**. The books inside a collection use the same number.
 
 ## Reading
 
