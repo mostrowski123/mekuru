@@ -244,7 +244,6 @@ Future<void> showCollectionManageSheet(
   );
 }
 
-/// Rename/delete actions for one collection.
 /// "Add to favorites" / "Remove from favorites" in the long-press sheet of
 /// a book or a folder.
 class FavoriteToggleTile extends StatelessWidget {
@@ -274,6 +273,7 @@ class FavoriteToggleTile extends StatelessWidget {
   }
 }
 
+/// Favorite/rename/delete actions for one collection.
 class CollectionManageSheet extends ConsumerWidget {
   const CollectionManageSheet({super.key, required this.collection});
 

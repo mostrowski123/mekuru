@@ -94,7 +94,7 @@ void main() {
 
     test('a stored value that is not a choice loads as Auto', () async {
       // A hand-edited or damaged backup must never reach the grid.
-      for (final bad in [1, 99, -3]) {
+      for (final bad in [1, 99, -3, '4', 4.0]) {
         expect(await loaded(bad), 0, reason: '$bad');
       }
     });

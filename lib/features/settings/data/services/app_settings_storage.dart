@@ -333,7 +333,9 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   @override
   Future<int?> loadLibraryColumns() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_libraryColumnsKey);
+    // A restored backup can hold any type under this key; getInt would throw.
+    final value = prefs.get(_libraryColumnsKey);
+    return value is int ? value : null;
   }
 
   @override
