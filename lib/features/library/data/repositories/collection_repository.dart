@@ -37,6 +37,12 @@ class CollectionRepository {
     );
   }
 
+  /// Puts a folder among the favorites, or takes it out.
+  Future<void> setFavorite(int id, bool favorite) =>
+      (_db.update(_db.collections)..where((t) => t.id.equals(id))).write(
+        CollectionsCompanion(isFavorite: Value(favorite)),
+      );
+
   /// Deletes the collection and its memberships. Books are never deleted.
   ///
   /// Membership rows dropped here (and by [BookRepository.deleteBook]) are

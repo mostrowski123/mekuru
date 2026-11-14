@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
@@ -410,6 +411,11 @@ void main() {
         .customSelect('SELECT COUNT(*) AS c FROM book_collections')
         .getSingle();
     expect(memberCount.data['c'], 1);
+
+    // The table is created in today's shape, so the schema 27 repair pass
+    // must find is_favorite there and not add it a second time.
+    final novels = await migratedDb.select(migratedDb.collections).getSingle();
+    expect(novels.isFavorite, isFalse);
   });
 
   test('adds book_collections.position when migrating to schema 22', () async {
@@ -625,6 +631,54 @@ void main() {
 
     await repo.updateMangaSpreadShift(bookId, true);
     expect((await repo.getBookById(bookId))!.mangaSpreadShift, isTrue);
+  });
+
+  test('adds is_favorite to books and collections at schema 27', () async {
+    final tempDir = await Directory.systemTemp.createTemp('mekuru_favorite_');
+    addTearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final dbFile = File('${tempDir.path}/mekuru.sqlite');
+    final seedDb = AppDatabase(NativeDatabase(dbFile));
+    final bookId = await seedDb
+        .into(seedDb.books)
+        .insert(BooksCompanion.insert(title: 'Book', filePath: '/books/1'));
+    final collectionId = await CollectionRepository(
+      seedDb,
+    ).createCollection('Series');
+    await seedDb.close();
+
+    // Rewind to v26: neither table has is_favorite.
+    final legacyDb = sqlite.sqlite3.open(dbFile.path);
+    legacyDb.execute('PRAGMA user_version = 26;');
+    legacyDb.execute('ALTER TABLE books DROP COLUMN is_favorite;');
+    legacyDb.execute('ALTER TABLE collections DROP COLUMN is_favorite;');
+    legacyDb.close();
+
+    final migratedDb = AppDatabase(NativeDatabase(dbFile));
+    addTearDown(migratedDb.close);
+    final books = BookRepository(migratedDb);
+    final collections = CollectionRepository(migratedDb);
+    Future<bool> folderIsFavorite() async =>
+        (await migratedDb.select(migratedDb.collections).getSingle())
+            .isFavorite;
+
+    // Rows that predate the column are not favorites.
+    expect((await books.getBookById(bookId))!.isFavorite, isFalse);
+    expect(await folderIsFavorite(), isFalse);
+
+    await books.setFavorite(bookId, true);
+    await collections.setFavorite(collectionId, true);
+    expect((await books.getBookById(bookId))!.isFavorite, isTrue);
+    expect(await folderIsFavorite(), isTrue);
+
+    await books.setFavorite(bookId, false);
+    await collections.setFavorite(collectionId, false);
+    expect((await books.getBookById(bookId))!.isFavorite, isFalse);
+    expect(await folderIsFavorite(), isFalse);
   });
 
   test(

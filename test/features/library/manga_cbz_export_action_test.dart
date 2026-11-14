@@ -43,6 +43,7 @@ void main() {
     addTearDown(db.close);
     final book = Book(
       id: 1,
+      isFavorite: false,
       title: 'Manga',
       filePath: '/unused',
       bookType: 'manga',

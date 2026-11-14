@@ -178,6 +178,7 @@ void main() {
   group('mostRecentlyReadBook', () {
     Book makeBook(int id, {DateTime? lastReadAt}) => Book(
       id: id,
+      isFavorite: false,
       title: 'Book $id',
       filePath: '/books/$id',
       bookType: 'epub',
@@ -227,6 +228,7 @@ void main() {
       double readProgress = 0.0,
     }) => Book(
       id: id,
+      isFavorite: false,
       title: title,
       filePath: '/books/$id',
       bookType: 'epub',

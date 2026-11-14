@@ -87,6 +87,18 @@ class AppDatabase extends _$AppDatabase {
     'manga_spread_shift':
         'ALTER TABLE books ADD COLUMN manga_spread_shift INTEGER NULL '
         'CHECK (manga_spread_shift IN (0, 1))',
+    // Favorites (schema 27), repair-only like v26.
+    'is_favorite':
+        'ALTER TABLE books ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0 '
+        'CHECK (is_favorite IN (0, 1))',
+  };
+
+  /// Favorite folders (schema 27), repair-only. A database older than
+  /// schema 21 gets the column from the v21 createTable instead.
+  static const Map<String, String> _collectionsRepairColumns = {
+    'is_favorite':
+        'ALTER TABLE collections ADD COLUMN is_favorite INTEGER NOT NULL '
+        'DEFAULT 0 CHECK (is_favorite IN (0, 1))',
   };
 
   /// Columns added to server_connections after schema 23 shipped. The table
@@ -105,7 +117,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// The schema this build writes. Static so code that must not open a
   /// database (the boot-time full restore) can still compare versions.
-  static const int latestSchemaVersion = 26;
+  static const int latestSchemaVersion = 27;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -220,8 +232,9 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(bookCollections, bookCollections.position);
       }
       // v18 (search_text), v20 (has_vertical_css), v23 (server sync), v24
-      // (dictionary revision, dictionary_media), v25 (books.source_id) and
-      // v26 (books.manga_spread_shift) have no migration blocks: the repair
+      // (dictionary revision, dictionary_media), v25 (books.source_id), v26
+      // (books.manga_spread_shift) and v27 (is_favorite on books and
+      // collections) have no migration blocks: the repair
       // pass in beforeOpen adds the columns via the repair-column maps and
       // creates the tables, which also covers databases that missed
       // migrations entirely.
@@ -232,6 +245,7 @@ class AppDatabase extends _$AppDatabase {
         _dictionaryEntriesRepairColumns,
       );
       await _repairMissingColumns('books', _booksRepairColumns);
+      await _repairMissingColumns('collections', _collectionsRepairColumns);
       // CREATE TABLE IF NOT EXISTS — see the schema 23 note above.
       await createMigrator().createTable(serverConnections);
       await _repairMissingColumns(

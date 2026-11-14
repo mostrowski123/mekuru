@@ -283,6 +283,21 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
       'CHECK ("manga_spread_shift" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
+    'isFavorite',
+  );
+  @override
+  late final GeneratedColumn<bool> isFavorite = GeneratedColumn<bool>(
+    'is_favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -309,6 +324,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     lastReadProgression,
     sourceId,
     mangaSpreadShift,
+    isFavorite,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -512,6 +528,12 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('is_favorite')) {
+      context.handle(
+        _isFavoriteMeta,
+        isFavorite.isAcceptableOrUnknown(data['is_favorite']!, _isFavoriteMeta),
+      );
+    }
     return context;
   }
 
@@ -617,6 +639,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.bool,
         data['${effectivePrefix}manga_spread_shift'],
       ),
+      isFavorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favorite'],
+      )!,
     );
   }
 
@@ -691,6 +717,10 @@ class Book extends DataClass implements Insertable<Book> {
   /// Manga: Spread view pairs pages one page later ("Shift pairs by one
   /// page"), for books whose pages pair up wrongly. Null is off.
   final bool? mangaSpreadShift;
+
+  /// Favorites come first on the library page, ahead of the selected sort.
+  /// Not shown or offered inside a folder, which has its own manual order.
+  final bool isFavorite;
   const Book({
     required this.id,
     required this.title,
@@ -716,6 +746,7 @@ class Book extends DataClass implements Insertable<Book> {
     this.lastReadProgression,
     this.sourceId,
     this.mangaSpreadShift,
+    required this.isFavorite,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -782,6 +813,7 @@ class Book extends DataClass implements Insertable<Book> {
     if (!nullToAbsent || mangaSpreadShift != null) {
       map['manga_spread_shift'] = Variable<bool>(mangaSpreadShift);
     }
+    map['is_favorite'] = Variable<bool>(isFavorite);
     return map;
   }
 
@@ -845,6 +877,7 @@ class Book extends DataClass implements Insertable<Book> {
       mangaSpreadShift: mangaSpreadShift == null && nullToAbsent
           ? const Value.absent()
           : Value(mangaSpreadShift),
+      isFavorite: Value(isFavorite),
     );
   }
 
@@ -888,6 +921,7 @@ class Book extends DataClass implements Insertable<Book> {
       ),
       sourceId: serializer.fromJson<String?>(json['sourceId']),
       mangaSpreadShift: serializer.fromJson<bool?>(json['mangaSpreadShift']),
+      isFavorite: serializer.fromJson<bool>(json['isFavorite']),
     );
   }
   @override
@@ -922,6 +956,7 @@ class Book extends DataClass implements Insertable<Book> {
       'lastReadProgression': serializer.toJson<double?>(lastReadProgression),
       'sourceId': serializer.toJson<String?>(sourceId),
       'mangaSpreadShift': serializer.toJson<bool?>(mangaSpreadShift),
+      'isFavorite': serializer.toJson<bool>(isFavorite),
     };
   }
 
@@ -950,6 +985,7 @@ class Book extends DataClass implements Insertable<Book> {
     Value<double?> lastReadProgression = const Value.absent(),
     Value<String?> sourceId = const Value.absent(),
     Value<bool?> mangaSpreadShift = const Value.absent(),
+    bool? isFavorite,
   }) => Book(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -993,6 +1029,7 @@ class Book extends DataClass implements Insertable<Book> {
     mangaSpreadShift: mangaSpreadShift.present
         ? mangaSpreadShift.value
         : this.mangaSpreadShift,
+    isFavorite: isFavorite ?? this.isFavorite,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -1052,6 +1089,9 @@ class Book extends DataClass implements Insertable<Book> {
       mangaSpreadShift: data.mangaSpreadShift.present
           ? data.mangaSpreadShift.value
           : this.mangaSpreadShift,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
     );
   }
 
@@ -1081,7 +1121,8 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('lastReadHref: $lastReadHref, ')
           ..write('lastReadProgression: $lastReadProgression, ')
           ..write('sourceId: $sourceId, ')
-          ..write('mangaSpreadShift: $mangaSpreadShift')
+          ..write('mangaSpreadShift: $mangaSpreadShift, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -1112,6 +1153,7 @@ class Book extends DataClass implements Insertable<Book> {
     lastReadProgression,
     sourceId,
     mangaSpreadShift,
+    isFavorite,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1140,7 +1182,8 @@ class Book extends DataClass implements Insertable<Book> {
           other.lastReadHref == this.lastReadHref &&
           other.lastReadProgression == this.lastReadProgression &&
           other.sourceId == this.sourceId &&
-          other.mangaSpreadShift == this.mangaSpreadShift);
+          other.mangaSpreadShift == this.mangaSpreadShift &&
+          other.isFavorite == this.isFavorite);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -1168,6 +1211,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<double?> lastReadProgression;
   final Value<String?> sourceId;
   final Value<bool?> mangaSpreadShift;
+  final Value<bool> isFavorite;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -1193,6 +1237,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.lastReadProgression = const Value.absent(),
     this.sourceId = const Value.absent(),
     this.mangaSpreadShift = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -1219,6 +1264,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.lastReadProgression = const Value.absent(),
     this.sourceId = const Value.absent(),
     this.mangaSpreadShift = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   }) : title = Value(title),
        filePath = Value(filePath);
   static Insertable<Book> custom({
@@ -1246,6 +1292,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<double>? lastReadProgression,
     Expression<String>? sourceId,
     Expression<bool>? mangaSpreadShift,
+    Expression<bool>? isFavorite,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1278,6 +1325,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
         'last_read_progression': lastReadProgression,
       if (sourceId != null) 'source_id': sourceId,
       if (mangaSpreadShift != null) 'manga_spread_shift': mangaSpreadShift,
+      if (isFavorite != null) 'is_favorite': isFavorite,
     });
   }
 
@@ -1306,6 +1354,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<double?>? lastReadProgression,
     Value<String?>? sourceId,
     Value<bool?>? mangaSpreadShift,
+    Value<bool>? isFavorite,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -1334,6 +1383,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       lastReadProgression: lastReadProgression ?? this.lastReadProgression,
       sourceId: sourceId ?? this.sourceId,
       mangaSpreadShift: mangaSpreadShift ?? this.mangaSpreadShift,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 
@@ -1420,6 +1470,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (mangaSpreadShift.present) {
       map['manga_spread_shift'] = Variable<bool>(mangaSpreadShift.value);
     }
+    if (isFavorite.present) {
+      map['is_favorite'] = Variable<bool>(isFavorite.value);
+    }
     return map;
   }
 
@@ -1449,7 +1502,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('lastReadHref: $lastReadHref, ')
           ..write('lastReadProgression: $lastReadProgression, ')
           ..write('sourceId: $sourceId, ')
-          ..write('mangaSpreadShift: $mangaSpreadShift')
+          ..write('mangaSpreadShift: $mangaSpreadShift, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -5887,8 +5941,23 @@ class $CollectionsTable extends Collections
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
+    'isFavorite',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name];
+  late final GeneratedColumn<bool> isFavorite = GeneratedColumn<bool>(
+    'is_favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, isFavorite];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5912,6 +5981,12 @@ class $CollectionsTable extends Collections
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('is_favorite')) {
+      context.handle(
+        _isFavoriteMeta,
+        isFavorite.isAcceptableOrUnknown(data['is_favorite']!, _isFavoriteMeta),
+      );
+    }
     return context;
   }
 
@@ -5929,6 +6004,10 @@ class $CollectionsTable extends Collections
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      isFavorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favorite'],
+      )!,
     );
   }
 
@@ -5941,17 +6020,29 @@ class $CollectionsTable extends Collections
 class Collection extends DataClass implements Insertable<Collection> {
   final int id;
   final String name;
-  const Collection({required this.id, required this.name});
+
+  /// Favorite folders come first on the library page.
+  final bool isFavorite;
+  const Collection({
+    required this.id,
+    required this.name,
+    required this.isFavorite,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
+    map['is_favorite'] = Variable<bool>(isFavorite);
     return map;
   }
 
   CollectionsCompanion toCompanion(bool nullToAbsent) {
-    return CollectionsCompanion(id: Value(id), name: Value(name));
+    return CollectionsCompanion(
+      id: Value(id),
+      name: Value(name),
+      isFavorite: Value(isFavorite),
+    );
   }
 
   factory Collection.fromJson(
@@ -5962,6 +6053,7 @@ class Collection extends DataClass implements Insertable<Collection> {
     return Collection(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      isFavorite: serializer.fromJson<bool>(json['isFavorite']),
     );
   }
   @override
@@ -5970,15 +6062,22 @@ class Collection extends DataClass implements Insertable<Collection> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
+      'isFavorite': serializer.toJson<bool>(isFavorite),
     };
   }
 
-  Collection copyWith({int? id, String? name}) =>
-      Collection(id: id ?? this.id, name: name ?? this.name);
+  Collection copyWith({int? id, String? name, bool? isFavorite}) => Collection(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    isFavorite: isFavorite ?? this.isFavorite,
+  );
   Collection copyWithCompanion(CollectionsCompanion data) {
     return Collection(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
     );
   }
 
@@ -5986,42 +6085,59 @@ class Collection extends DataClass implements Insertable<Collection> {
   String toString() {
     return (StringBuffer('Collection(')
           ..write('id: $id, ')
-          ..write('name: $name')
+          ..write('name: $name, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name);
+  int get hashCode => Object.hash(id, name, isFavorite);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Collection && other.id == this.id && other.name == this.name);
+      (other is Collection &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.isFavorite == this.isFavorite);
 }
 
 class CollectionsCompanion extends UpdateCompanion<Collection> {
   final Value<int> id;
   final Value<String> name;
+  final Value<bool> isFavorite;
   const CollectionsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.isFavorite = const Value.absent(),
   });
   CollectionsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
+    this.isFavorite = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Collection> custom({
     Expression<int>? id,
     Expression<String>? name,
+    Expression<bool>? isFavorite,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (isFavorite != null) 'is_favorite': isFavorite,
     });
   }
 
-  CollectionsCompanion copyWith({Value<int>? id, Value<String>? name}) {
-    return CollectionsCompanion(id: id ?? this.id, name: name ?? this.name);
+  CollectionsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<bool>? isFavorite,
+  }) {
+    return CollectionsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      isFavorite: isFavorite ?? this.isFavorite,
+    );
   }
 
   @override
@@ -6033,6 +6149,9 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (isFavorite.present) {
+      map['is_favorite'] = Variable<bool>(isFavorite.value);
+    }
     return map;
   }
 
@@ -6040,7 +6159,8 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
   String toString() {
     return (StringBuffer('CollectionsCompanion(')
           ..write('id: $id, ')
-          ..write('name: $name')
+          ..write('name: $name, ')
+          ..write('isFavorite: $isFavorite')
           ..write(')'))
         .toString();
   }
@@ -7197,6 +7317,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<double?> lastReadProgression,
       Value<String?> sourceId,
       Value<bool?> mangaSpreadShift,
+      Value<bool> isFavorite,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -7224,6 +7345,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<double?> lastReadProgression,
       Value<String?> sourceId,
       Value<bool?> mangaSpreadShift,
+      Value<bool> isFavorite,
     });
 
 final class $$BooksTableReferences
@@ -7412,6 +7534,11 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<bool> get mangaSpreadShift => $composableBuilder(
     column: $table.mangaSpreadShift,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7619,6 +7746,11 @@ class $$BooksTableOrderingComposer
     column: $table.mangaSpreadShift,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableAnnotationComposer
@@ -7731,6 +7863,11 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<bool> get mangaSpreadShift => $composableBuilder(
     column: $table.mangaSpreadShift,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
     builder: (column) => column,
   );
 
@@ -7866,6 +8003,7 @@ class $$BooksTableTableManager
                 Value<double?> lastReadProgression = const Value.absent(),
                 Value<String?> sourceId = const Value.absent(),
                 Value<bool?> mangaSpreadShift = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 title: title,
@@ -7891,6 +8029,7 @@ class $$BooksTableTableManager
                 lastReadProgression: lastReadProgression,
                 sourceId: sourceId,
                 mangaSpreadShift: mangaSpreadShift,
+                isFavorite: isFavorite,
               ),
           createCompanionCallback:
               ({
@@ -7918,6 +8057,7 @@ class $$BooksTableTableManager
                 Value<double?> lastReadProgression = const Value.absent(),
                 Value<String?> sourceId = const Value.absent(),
                 Value<bool?> mangaSpreadShift = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 title: title,
@@ -7943,6 +8083,7 @@ class $$BooksTableTableManager
                 lastReadProgression: lastReadProgression,
                 sourceId: sourceId,
                 mangaSpreadShift: mangaSpreadShift,
+                isFavorite: isFavorite,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -10615,9 +10756,17 @@ typedef $$WordEventsTableProcessedTableManager =
       PrefetchHooks Function()
     >;
 typedef $$CollectionsTableCreateCompanionBuilder =
-    CollectionsCompanion Function({Value<int> id, required String name});
+    CollectionsCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<bool> isFavorite,
+    });
 typedef $$CollectionsTableUpdateCompanionBuilder =
-    CollectionsCompanion Function({Value<int> id, Value<String> name});
+    CollectionsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<bool> isFavorite,
+    });
 
 final class $$CollectionsTableReferences
     extends BaseReferences<_$AppDatabase, $CollectionsTable, Collection> {
@@ -10666,6 +10815,11 @@ class $$CollectionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> bookCollectionsRefs(
     Expression<bool> Function($$BookCollectionsTableFilterComposer f) f,
   ) {
@@ -10710,6 +10864,11 @@ class $$CollectionsTableOrderingComposer
     column: $table.name,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CollectionsTableAnnotationComposer
@@ -10726,6 +10885,11 @@ class $$CollectionsTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => column,
+  );
 
   Expression<T> bookCollectionsRefs<T extends Object>(
     Expression<T> Function($$BookCollectionsTableAnnotationComposer a) f,
@@ -10783,10 +10947,22 @@ class $$CollectionsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
-              }) => CollectionsCompanion(id: id, name: name),
+                Value<bool> isFavorite = const Value.absent(),
+              }) => CollectionsCompanion(
+                id: id,
+                name: name,
+                isFavorite: isFavorite,
+              ),
           createCompanionCallback:
-              ({Value<int> id = const Value.absent(), required String name}) =>
-                  CollectionsCompanion.insert(id: id, name: name),
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<bool> isFavorite = const Value.absent(),
+              }) => CollectionsCompanion.insert(
+                id: id,
+                name: name,
+                isFavorite: isFavorite,
+              ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (

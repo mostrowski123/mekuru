@@ -67,4 +67,8 @@ class Books extends Table {
   /// Manga: Spread view pairs pages one page later ("Shift pairs by one
   /// page"), for books whose pages pair up wrongly. Null is off.
   BoolColumn get mangaSpreadShift => boolean().nullable()();
+
+  /// Favorites come first on the library page, ahead of the selected sort.
+  /// Not shown or offered inside a folder, which has its own manual order.
+  BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
 }

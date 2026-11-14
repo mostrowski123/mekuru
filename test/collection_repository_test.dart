@@ -226,6 +226,7 @@ void main() {
 
   Book makeBook(int id) => Book(
     id: id,
+    isFavorite: false,
     title: 'Book $id',
     filePath: '/books/$id',
     bookType: 'epub',

@@ -7,6 +7,9 @@ import 'book.dart';
 class Collections extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
+
+  /// Favorite folders come first on the library page.
+  BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
 }
 
 /// Book ↔ collection membership. The references are documentation only:

@@ -86,6 +86,7 @@ class _FakeWakelockPlatform extends WakelockPlusPlatformInterface {
 Book _buildTestBook() {
   return Book(
     id: 1,
+    isFavorite: false,
     title: 'Regression Test Book',
     filePath: '/tmp/reader-screen-test.epub',
     bookType: 'epub',

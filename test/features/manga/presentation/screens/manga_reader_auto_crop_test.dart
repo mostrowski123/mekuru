@@ -58,6 +58,7 @@ final _offer = find.text(_en.mangaAutoCropComputeTitle);
 
 final _book = Book(
   id: 1,
+  isFavorite: false,
   title: 'Manga',
   filePath: '/unused',
   bookType: 'manga',

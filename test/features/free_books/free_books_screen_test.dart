@@ -99,6 +99,7 @@ class _RecordingDownloads extends FreeBookDownloadNotifier {
 Book _book(String title, {String type = 'epub', String? source, int id = 7}) =>
     Book(
       id: id,
+      isFavorite: false,
       title: title,
       filePath: '/books/$id',
       bookType: type,

@@ -87,6 +87,7 @@ void main() {
     repository = _RecordingRepository(db);
     manga = Book(
       id: 1,
+      isFavorite: false,
       title: 'Test manga',
       filePath: root.path,
       bookType: 'manga',
