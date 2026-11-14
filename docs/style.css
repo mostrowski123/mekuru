@@ -100,6 +100,7 @@ h2 {
 }
 
 .hero-actions,
+.cta-actions,
 .cta,
 footer,
 footer nav {
@@ -108,8 +109,12 @@ footer nav {
   gap: 1rem;
 }
 
-.hero-actions {
+.hero-actions,
+.cta-actions {
   flex-wrap: wrap;
+}
+
+.hero-actions {
   margin-top: 2rem;
 }
 
@@ -139,6 +144,14 @@ footer nav {
 .button-secondary {
   background: var(--surface);
   color: var(--text);
+}
+
+.button-icon {
+  flex: none;
+  width: 1.2em;
+  height: 1.2em;
+  margin-right: 0.55rem;
+  fill: currentColor;
 }
 
 .hero-art {

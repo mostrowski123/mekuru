@@ -1,6 +1,6 @@
 # Installing Mekuru
 
-Install Mekuru from Google Play on Android, or join the TestFlight beta on iPhone and iPad.
+Install Mekuru from Google Play on Android, or from the App Store on iPhone and iPad.
 
 ## On Android
 
@@ -31,13 +31,10 @@ To build Mekuru yourself, follow the [README on GitHub](https://github.com/mostr
 
 ## On iPhone and iPad
 
-Mekuru is coming to the App Store. Until then, you can install the beta through TestFlight, Apple's app for testing new apps. You need iOS 26 or iPadOS 26, or newer.
+You need iOS 26 or iPadOS 26, or newer.
 
-1. Install TestFlight from the App Store.
-2. On your iPhone or iPad, open the invite link: [testflight.apple.com/join/3HegxezW](https://testflight.apple.com/join/3HegxezW).
-3. Follow the steps in TestFlight to install Mekuru.
-
-The beta can have rough edges. Please report problems with **You › Settings › Send Feedback**.
+1. Open [Mekuru on the App Store](https://apps.apple.com/us/app/mekuru-japanese-manga-reader/id6814013845).
+2. Tap **Get**.
 
 ## First launch
 

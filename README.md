@@ -15,7 +15,7 @@ Mekuru is a Japanese-first EPUB and manga reader for Android and iOS, built with
   <img src="docs/documentation/screenshots/manga-reader-spread-settings.jpg" alt="Manga Reader" width="200">
 </p>
 
-**[Homepage](https://mekuru.matthew.moe/)** | **[Documentation](https://mekuru.matthew.moe/documentation/)** | **[Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru)** | **[iOS beta (TestFlight)](https://testflight.apple.com/join/3HegxezW)**
+**[Homepage](https://mekuru.matthew.moe/)** | **[Documentation](https://mekuru.matthew.moe/documentation/)** | **[Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru)** | **[App Store](https://apps.apple.com/us/app/mekuru-japanese-manga-reader/id6814013845)**
 
 ## Install
 
@@ -27,9 +27,13 @@ Mekuru is a Japanese-first EPUB and manga reader for Android and iOS, built with
 
 Signed APKs are also available on [GitHub Releases](https://github.com/mostrowski123/mekuru/releases).
 
-### iOS (beta)
+### iOS
 
-The iOS version is in beta. Install it through TestFlight: [testflight.apple.com/join/3HegxezW](https://testflight.apple.com/join/3HegxezW). It needs iOS 26 or newer. Expect rough edges, and please report what you find.
+<a href="https://apps.apple.com/us/app/mekuru-japanese-manga-reader/id6814013845">
+  <img alt="Download on the App Store" src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" height="52">
+</a>
+
+Mekuru needs iOS 26 or iPadOS 26, or newer.
 
 ### Android Beta Testing
 

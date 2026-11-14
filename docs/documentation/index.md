@@ -18,7 +18,7 @@ Mekuru (めくる, "to turn a page") is a free app for reading Japanese books an
 ## Where Mekuru runs
 
 - **Android:** install Mekuru from [Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru).
-- **iPhone and iPad:** Mekuru is coming to the App Store. Until then, join the beta on [TestFlight](https://testflight.apple.com/join/3HegxezW). It needs iOS 26 or newer.
+- **iPhone and iPad:** install Mekuru from the [App Store](https://apps.apple.com/us/app/mekuru-japanese-manga-reader/id6814013845). It needs iOS 26 or newer.
 
 [Installing Mekuru](getting-started/installing-mekuru.md) has the details.
 
