@@ -119,7 +119,7 @@ class ProgressSyncService {
     } catch (e) {
       _noteReachability(connectionId, e);
       if (!await _unlinkIfGone(book, link, e)) {
-        logFailure('sync.progress_pushed', e, attrs: {'format': book.bookType});
+        logFailure('sync.progress_pushed', e, attrs: _failureAttrs(book, e));
       }
       rethrow;
     }
@@ -180,7 +180,7 @@ class ProgressSyncService {
       final connectionId = book.serverConnectionId;
       if (connectionId != null) _noteReachability(connectionId, e);
       if (link == null || !await _unlinkIfGone(book, link, e)) {
-        logFailure('sync.open_sync', e, attrs: {'format': book.bookType});
+        logFailure('sync.open_sync', e, attrs: _failureAttrs(book, e));
       }
       return null;
     } finally {
@@ -270,6 +270,11 @@ class ProgressSyncService {
     onLinkDropped?.call(book);
     return true;
   }
+
+  Map<String, Object> _failureAttrs(Book book, Object error) => {
+    'format': book.bookType,
+    if (error case SyncException(:final reason?)) 'reason': reason,
+  };
 
   Future<_Link?> _linkFor(Book book) async {
     final connectionId = book.serverConnectionId;

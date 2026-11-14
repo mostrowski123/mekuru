@@ -13,7 +13,12 @@ class SyncException implements Exception {
   final int statusCode;
   final String message;
 
-  const SyncException(this.statusCode, this.message);
+  /// Why the server refused, as one of the client's fixed codes, when the
+  /// server said. Never the server's own text: that can name a file in a
+  /// book, and this goes to telemetry.
+  final String? reason;
+
+  const SyncException(this.statusCode, this.message, {this.reason});
 
   bool get isAuthFailure => statusCode == 401 || statusCode == 403;
 

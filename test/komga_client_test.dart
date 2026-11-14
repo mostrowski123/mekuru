@@ -26,8 +26,8 @@ void main() {
 
   // Response(String) encodes latin1 and rejects Japanese — always answer
   // with UTF-8 bytes, as a real server does.
-  http.Response ok(Object json) =>
-      http.Response.bytes(utf8.encode(jsonEncode(json)), 200);
+  http.Response ok(Object json, [int status = 200]) =>
+      http.Response.bytes(utf8.encode(jsonEncode(json)), status);
 
   test('sends X-API-Key header and strips trailing base-url slash', () async {
     late http.Request seen;
@@ -226,36 +226,216 @@ void main() {
     expect(jsonDecode(seen.body), {'page': 42, 'completed': false});
   });
 
-  test('pushProgress PUTs an R2 locator for EPUBs', () async {
-    final requests = <http.Request>[];
-    final client = clientWith((request) async {
-      requests.add(request);
+  test(
+    'pushProgress PUTs the reader locator when the server lists no positions',
+    () async {
+      final requests = <http.Request>[];
+      final client = clientWith((request) async {
+        requests.add(request);
+        return request.method == 'GET'
+            ? http.Response('', 404)
+            : http.Response('', 204);
+      });
+
+      await client.pushProgress(
+        {'bookId': 'b2', 'epub': 'true'},
+        const RemoteProgress(
+          href: 'OEBPS/ch3.xhtml',
+          progression: 0.25,
+          totalProgression: 0.4,
+          completed: true,
+        ),
+      );
+
+      expect(requests, hasLength(3));
+      expect(requests[0].url.path, '/api/v1/books/b2/positions');
+      expect(requests[1].method, 'PUT');
+      expect(requests[1].url.path, '/api/v1/books/b2/progression');
+      final body = jsonDecode(requests[1].body) as Map<String, dynamic>;
+      final locator = body['locator'] as Map<String, dynamic>;
+      expect(locator['href'], 'OEBPS/ch3.xhtml');
+      expect(locator['locations'], {
+        'progression': 0.25,
+        'totalProgression': 0.4,
+      });
+      // completed additionally marks the book read.
+      expect(requests[2].method, 'PATCH');
+      expect(jsonDecode(requests[2].body), {'completed': true});
+    },
+  );
+
+  // Komga refuses a locator that is not in its own position list: an href
+  // relative to the package file, or a progression past a chapter's last
+  // position.
+  group('EPUB progress on a Komga that lists positions', () {
+    Map<String, dynamic> position(String href, double progression, int n) => {
+      'href': href,
+      'type': 'application/xhtml+xml',
+      'locations': {
+        'progression': progression,
+        'position': n,
+        'totalProgression': n / 6,
+      },
+    };
+
+    // As Komga lists them: one per KB of a chapter, by zip-root path.
+    final positions = [
+      position('OEBPS/ch1.xhtml', 0, 1),
+      position('OEBPS/ch1.xhtml', 0.5, 2),
+      position('OEBPS/ch3.xhtml', 0, 3),
+      position('OEBPS/ch3.xhtml', 0.25, 4),
+      position('OEBPS/ch3.xhtml', 0.5, 5),
+      position('OEBPS/ch3.xhtml', 0.75, 6),
+    ];
+
+    late List<Map<String, dynamic>> saved;
+    late int positionRequests;
+
+    http.Response refused(String message) =>
+        ok({'status': 400, 'error': 'Bad Request', 'message': message}, 400);
+
+    Future<http.Response> komga(http.Request request) async {
+      if (request.url.path.endsWith('/positions')) {
+        positionRequests++;
+        // Served as a Readium media type: plain JSON is not acceptable.
+        return request.headers['Accept'] == 'application/json'
+            ? http.Response('', 406)
+            : ok({'total': positions.length, 'positions': positions});
+      }
+      saved.add(
+        (jsonDecode(request.body) as Map<String, dynamic>)['locator']
+            as Map<String, dynamic>,
+      );
       return http.Response('', 204);
+    }
+
+    setUp(() {
+      saved = [];
+      positionRequests = 0;
     });
 
-    await client.pushProgress(
-      {'bookId': 'b2', 'epub': 'true'},
-      const RemoteProgress(
-        href: 'OEBPS/ch3.xhtml',
-        progression: 0.25,
-        totalProgression: 0.4,
-        completed: true,
-      ),
-    );
+    Future<void> push(KomgaClient client, RemoteProgress progress) =>
+        client.pushProgress({'bookId': 'b2', 'epub': 'true'}, progress);
 
-    expect(requests, hasLength(2));
-    expect(requests[0].method, 'PUT');
-    expect(requests[0].url.path, '/api/v1/books/b2/progression');
-    final body = jsonDecode(requests[0].body) as Map<String, dynamic>;
-    final locator = body['locator'] as Map<String, dynamic>;
-    expect(locator['href'], 'OEBPS/ch3.xhtml');
-    expect(locator['locations'], {
-      'progression': 0.25,
-      'totalProgression': 0.4,
+    test('a book whose package file sits in a folder is saved', () async {
+      // The reader reports the chapter relative to the package file.
+      await push(
+        clientWith(komga),
+        const RemoteProgress(
+          href: 'ch3.xhtml',
+          progression: 0.6,
+          totalProgression: 0.8,
+        ),
+      );
+
+      expect(saved.single, positions[4]);
     });
-    // completed additionally marks the book read.
-    expect(requests[1].method, 'PATCH');
-    expect(jsonDecode(requests[1].body), {'completed': true});
+
+    test('the last pages of a chapter are saved', () async {
+      await push(
+        clientWith(komga),
+        const RemoteProgress(
+          href: 'ch3.xhtml',
+          progression: 0.95,
+          totalProgression: 0.99,
+        ),
+      );
+
+      expect(saved.single, positions[5]);
+    });
+
+    test('a percent-encoded chapter name is matched', () async {
+      positions.add(position('OEBPS/第 7 章.xhtml', 0, 6));
+      addTearDown(positions.removeLast);
+
+      await push(
+        clientWith(komga),
+        const RemoteProgress(
+          href: '%E7%AC%AC%207%20%E7%AB%A0.xhtml',
+          progression: 0.4,
+          totalProgression: 0.1,
+        ),
+      );
+
+      expect(saved.single['href'], 'OEBPS/第 7 章.xhtml');
+    });
+
+    test('a chapter the server copy lacks is saved by book fraction', () async {
+      await push(
+        clientWith(komga),
+        const RemoteProgress(
+          href: 'text/part0004.html',
+          progression: 0.3,
+          totalProgression: 0.5,
+        ),
+      );
+
+      expect(saved.single, positions[2]);
+    });
+
+    test('a file name shared by two chapters is saved by book fraction', () {
+      final twins = [
+        position('a/ch.xhtml', 0, 1),
+        position('b/ch.xhtml', 0, 2),
+      ];
+
+      expect(
+        komgaPositionFor(
+          twins,
+          const RemoteProgress(href: 'ch.xhtml', totalProgression: 0.2),
+        ),
+        twins[0],
+      );
+    });
+
+    test('the position list is asked for once per book', () async {
+      final client = clientWith(komga);
+      const progress = RemoteProgress(
+        href: 'ch1.xhtml',
+        progression: 0.1,
+        totalProgression: 0.1,
+      );
+
+      await push(client, progress);
+      await push(client, progress);
+
+      expect(saved, hasLength(2));
+      expect(positionRequests, 1);
+    });
+
+    test('a refused locator makes the next push read the list again', () async {
+      var refuse = true;
+      final client = clientWith(
+        (request) async => request.method == 'PUT' && refuse
+            ? refused('Invalid progression')
+            : komga(request),
+      );
+      const progress = RemoteProgress(href: 'ch1.xhtml', progression: 0.1);
+
+      await expectLater(push(client, progress), throwsA(isA<SyncException>()));
+      refuse = false;
+      await push(client, progress);
+
+      expect(positionRequests, 2);
+    });
+
+    test('a refusal carries a fixed reason code, not the file name', () async {
+      final client = clientWith(
+        (request) async => request.method == 'GET'
+            ? http.Response('', 404)
+            : refused('Resource does not exist in book: OEBPS/秘密.xhtml'),
+      );
+
+      await expectLater(
+        push(client, const RemoteProgress(href: 'ch1.xhtml', progression: 0.1)),
+        throwsA(
+          isA<SyncException>()
+              .having((e) => e.statusCode, 'statusCode', 400)
+              .having((e) => e.reason, 'reason', 'resource_not_in_book')
+              .having((e) => '$e', 'text', isNot(contains('秘密'))),
+        ),
+      );
+    });
   });
 
   test('non-2xx responses become SyncException with the status', () async {

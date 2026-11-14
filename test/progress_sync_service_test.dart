@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
@@ -352,6 +353,23 @@ void main() {
       expect((await reload(book.id)).serverConnectionId, connectionId);
       expect(dropped, isEmpty);
     });
+  });
+
+  test("a refused push logs the server's reason code", () async {
+    final reasons = <Object?>[];
+    usageLogSinkOverride = (message, attributes, {required isWarning}) =>
+        reasons.add(attributes['reason']?.value);
+    addTearDown(() => usageLogSinkOverride = null);
+    final book = await insertLinkedManga(lastReadAt: readAt);
+    client.pushFailure = const SyncException(
+      400,
+      'PUT …/progression',
+      reason: 'invalid_progression',
+    );
+
+    await expectLater(service.pushBook(book.id), throwsA(isA<SyncException>()));
+
+    expect(reasons, ['invalid_progression']);
   });
 
   test('unlinked books and disabled connections are ignored', () async {

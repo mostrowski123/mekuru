@@ -74,10 +74,15 @@ abstract class HttpServerClient implements ServerClient {
       throw SyncException(
         response.statusCode,
         '$serverName request failed: $method $path',
+        reason: refusalReason(response),
       );
     }
     return response;
   }
+
+  /// [SyncException.reason] for a failed [response]; null when the server
+  /// gives none this client knows.
+  String? refusalReason(http.Response response) => null;
 
   Future<dynamic> getJson(String path) async =>
       decodeJsonBody(await send('GET', path));
