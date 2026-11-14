@@ -31,6 +31,7 @@ void main() {
         'app.startup_screen': 'library',
         'app.home_tabs': _homeTabs,
         'app.library_sort_order': 'dateAdded',
+        'app.library_columns': 4,
         'reader.font_size': 22.0,
         'reader.keep_screen_on': true,
       });
@@ -78,6 +79,7 @@ void main() {
               overrideReadingDirection: const Value('rtl'),
               primaryWritingMode: const Value('vertical-rl'),
               pageProgressionDirection: const Value('rtl'),
+              isFavorite: const Value(true),
             ),
           );
       final kokoroId = await sourceDb
@@ -104,6 +106,8 @@ void main() {
         melosId,
       ]);
       await sourceCollections.createCollection('積読');
+      // One favorite folder, one favorite book (走れメロス): both round-trip.
+      await sourceCollections.setFavorite(bungakuId, true);
 
       await sourceDb
           .into(sourceDb.bookmarks)
@@ -190,6 +194,7 @@ void main() {
       // The bar's first frame after the restore already uses it.
       expect(PreloadedAppSettings.initialHomeTabs, _homeTabs);
       expect(prefs.getString('app.library_sort_order'), 'dateAdded');
+      expect(prefs.getInt('app.library_columns'), 4);
       expect(prefs.getDouble('reader.font_size'), 22.0);
       expect(prefs.getBool('reader.keep_screen_on'), true);
       expect(PreloadedAppSettings.initialThemeMode, ThemeMode.dark);
@@ -212,6 +217,7 @@ void main() {
       expect(melosBook.lastReadAt?.toUtc(), DateTime.utc(2026, 5, 10, 14, 30));
       expect(melosBook.overrideVerticalText, true);
       expect(melosBook.overrideReadingDirection, 'rtl');
+      expect(melosBook.isFavorite, isTrue);
 
       final bookmarks = await (targetDb.select(
         targetDb.bookmarks,
@@ -241,10 +247,13 @@ void main() {
       expect(restoredCollections.map((c) => c.name).toSet(), {'文学', '積読'});
       final bungaku = restoredCollections.firstWhere((c) => c.name == '文学');
       final tsundoku = restoredCollections.firstWhere((c) => c.name == '積読');
+      expect(bungaku.isFavorite, isTrue);
+      expect(tsundoku.isFavorite, isFalse);
 
       final kokoroBook = await (targetDb.select(
         targetDb.books,
       )..where((t) => t.title.equals('こころ'))).getSingle();
+      expect(kokoroBook.isFavorite, isFalse);
       final memberships = await targetDb.select(targetDb.bookCollections).get();
       final bungakuRows =
           memberships.where((m) => m.collectionId == bungaku.id).toList()
