@@ -897,7 +897,6 @@ class BookRepository {
         BooksCompanion(mangaSpreadShift: Value(shift)),
       );
 
-  /// Puts a book among the favorites, or takes it out.
   Future<void> setFavorite(int bookId, bool favorite) =>
       (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
         BooksCompanion(isFavorite: Value(favorite)),

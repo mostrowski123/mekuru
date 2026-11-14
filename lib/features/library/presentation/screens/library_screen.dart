@@ -66,6 +66,19 @@ int libraryGridColumns(double width, [int chosen = 0]) => chosen > 0
     ? max(3, width ~/ 180)
     : 3;
 
+/// The cover grid of the library page and of a folder: the same columns,
+/// spacing and cover shape in both.
+SliverGridDelegate _libraryGridDelegate(BuildContext context, WidgetRef ref) =>
+    SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: libraryGridColumns(
+        MediaQuery.sizeOf(context).width,
+        ref.watch(libraryColumnsProvider),
+      ),
+      childAspectRatio: 0.65,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 16,
+    );
+
 /// The book the user most recently read, or null when none has been opened
 /// yet. Derived from the already-watched book list so it stays reactive and
 /// independent of the user's chosen sort order.
@@ -561,15 +574,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             16 + glassTabBarInset(context),
           ),
           sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: libraryGridColumns(
-                MediaQuery.sizeOf(context).width,
-                ref.watch(libraryColumnsProvider),
-              ),
-              childAspectRatio: 0.65,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 16,
-            ),
+            gridDelegate: _libraryGridDelegate(context, ref),
             delegate: SliverChildBuilderDelegate((context, index) {
               final entry = entries[index];
               if (entry is Collection) {
@@ -1314,21 +1319,9 @@ class _BookTileState extends ConsumerState<_BookTile>
                             // tile already reads out.
                             ExcludeSemantics(child: BookCoverImage(book: book)),
                             if (book.bookType == 'manga')
-                              Positioned(
-                                top: 4,
+                              const _CoverBadge(
+                                icon: Icons.photo_library,
                                 right: 4,
-                                child: Container(
-                                  padding: const EdgeInsets.all(3),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black54,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Icon(
-                                    Icons.photo_library,
-                                    color: Colors.white,
-                                    size: 12,
-                                  ),
-                                ),
                               ),
                             if (book.readProgress > 0)
                               Positioned(
@@ -1353,7 +1346,11 @@ class _BookTileState extends ConsumerState<_BookTile>
                             if (book.isFavorite &&
                                 !widget.inFolder &&
                                 !widget.isSelectionMode)
-                              const _FavoriteStar(),
+                              _CoverBadge(
+                                icon: Icons.star,
+                                left: 4,
+                                semanticLabel: l10n.libraryFavoriteBadge,
+                              ),
                             if (widget.isSelectionMode)
                               Positioned(
                                 // top/right is taken by the manga badge.
@@ -1546,17 +1543,9 @@ class _BookTileState extends ConsumerState<_BookTile>
               ],
               const Divider(),
               if (!widget.inFolder)
-                ListTile(
-                  leading: Icon(
-                    book.isFavorite ? Icons.star : Icons.star_outline,
-                  ),
-                  title: Text(
-                    book.isFavorite
-                        ? context.l10n.libraryRemoveFromFavorites
-                        : context.l10n.libraryAddToFavorites,
-                  ),
-                  onTap: () {
-                    AppHaptics.light();
+                FavoriteToggleTile(
+                  isFavorite: book.isFavorite,
+                  onToggle: () {
                     Navigator.of(sheetContext).pop();
                     container
                         .read(bookRepositoryProvider)
@@ -1875,16 +1864,27 @@ class _CoverTilt extends StatelessWidget {
   }
 }
 
-/// Marks a favorite in the top-left corner of a cover or a folder's face.
-/// Goes in a [Stack]; it looks like the manga badge in the other corner.
-class _FavoriteStar extends StatelessWidget {
-  const _FavoriteStar();
+/// A small icon in a top corner of a cover or a folder's face: the manga
+/// badge on the right, the favorite star on the left. Goes in a [Stack].
+class _CoverBadge extends StatelessWidget {
+  const _CoverBadge({
+    required this.icon,
+    this.left,
+    this.right,
+    this.semanticLabel,
+  });
+
+  final IconData icon;
+  final double? left;
+  final double? right;
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
       top: 4,
-      left: 4,
+      left: left,
+      right: right,
       child: Container(
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
@@ -1892,10 +1892,10 @@ class _FavoriteStar extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Icon(
-          Icons.star,
+          icon,
           color: Colors.white,
           size: 12,
-          semanticLabel: context.l10n.libraryFavoriteBadge,
+          semanticLabel: semanticLabel,
         ),
       ),
     );
@@ -1939,7 +1939,12 @@ class _CollectionFolderTile extends ConsumerWidget {
                 fit: StackFit.expand,
                 children: [
                   _FolderPreview(books: books, collectionId: collection.id),
-                  if (collection.isFavorite) const _FavoriteStar(),
+                  if (collection.isFavorite)
+                    _CoverBadge(
+                      icon: Icons.star,
+                      left: 4,
+                      semanticLabel: context.l10n.libraryFavoriteBadge,
+                    ),
                 ],
               ),
             ),
@@ -2388,15 +2393,7 @@ class _CollectionFolderScreenState
                 key: _gridKey,
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: libraryGridColumns(
-                    MediaQuery.sizeOf(context).width,
-                    ref.watch(libraryColumnsProvider),
-                  ),
-                  childAspectRatio: 0.65,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 16,
-                ),
+                gridDelegate: _libraryGridDelegate(context, ref),
                 itemCount: members.length,
                 itemBuilder: (context, index) =>
                     itemBuilder(_tile(members, index, routeAnimation), index),

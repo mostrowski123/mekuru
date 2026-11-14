@@ -229,11 +229,10 @@ class RestoreService {
     }
     // Only ever sets the flag: a backup from before favorites lists none
     // and must not clear the ones the user has now.
-    for (final name in manifest.favoriteCollections) {
-      final id = await _ensureCollection(name);
-      await (_db.update(_db.collections)..where((t) => t.id.equals(id))).write(
-        const CollectionsCompanion(isFavorite: Value(true)),
-      );
+    if (manifest.favoriteCollections.isNotEmpty) {
+      await (_db.update(_db.collections)
+            ..where((t) => t.name.isIn(manifest.favoriteCollections)))
+          .write(const CollectionsCompanion(isFavorite: Value(true)));
     }
 
     // Recreate server connections and remap each book's link to this

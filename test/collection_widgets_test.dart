@@ -31,6 +31,8 @@ void main() {
     WidgetTester tester,
     String title, {
     DateTime? lastReadAt,
+    DateTime? dateAdded,
+    bool favorite = false,
   }) async {
     return (await tester.runAsync(
       () => db
@@ -40,6 +42,8 @@ void main() {
               title: title,
               filePath: '/books/$title',
               lastReadAt: Value(lastReadAt),
+              dateAdded: Value.absentIfNull(dateAdded),
+              isFavorite: Value(favorite),
             ),
           ),
     ))!;
@@ -117,26 +121,6 @@ void main() {
     await unmount(tester);
   });
 
-  Future<int> insertDatedBook(
-    WidgetTester tester,
-    String title,
-    DateTime dateAdded, {
-    bool favorite = false,
-  }) async {
-    return (await tester.runAsync(
-      () => db
-          .into(db.books)
-          .insert(
-            BooksCompanion.insert(
-              title: title,
-              filePath: '/books/$title',
-              dateAdded: Value(dateAdded),
-              isFavorite: Value(favorite),
-            ),
-          ),
-    ))!;
-  }
-
   Future<void> settleWrite(WidgetTester tester) async {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -146,8 +130,16 @@ void main() {
   testWidgets('a book added to favorites moves ahead of newer books', (
     tester,
   ) async {
-    final older = await insertDatedBook(tester, 'Older', DateTime(2026, 1, 1));
-    final newer = await insertDatedBook(tester, 'Newer', DateTime(2026, 2, 1));
+    final older = await insertBook(
+      tester,
+      'Older',
+      dateAdded: DateTime(2026, 1, 1),
+    );
+    final newer = await insertBook(
+      tester,
+      'Newer',
+      dateAdded: DateTime(2026, 2, 1),
+    );
     await pumpWithDb(tester, const LibraryScreen());
 
     double left(int id) =>
@@ -181,12 +173,7 @@ void main() {
   testWidgets('a favorite book inside a folder has no star and no option', (
     tester,
   ) async {
-    final inShelf = await insertDatedBook(
-      tester,
-      'In shelf',
-      DateTime(2026, 1, 1),
-      favorite: true,
-    );
+    final inShelf = await insertBook(tester, 'In shelf', favorite: true);
     await tester.runAsync(() async {
       final shelf = await repo.createCollection('Shelf');
       await repo.setBookCollections(inShelf, {shelf});

@@ -245,6 +245,35 @@ Future<void> showCollectionManageSheet(
 }
 
 /// Rename/delete actions for one collection.
+/// "Add to favorites" / "Remove from favorites" in the long-press sheet of
+/// a book or a folder.
+class FavoriteToggleTile extends StatelessWidget {
+  const FavoriteToggleTile({
+    super.key,
+    required this.isFavorite,
+    required this.onToggle,
+  });
+
+  final bool isFavorite;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(isFavorite ? Icons.star : Icons.star_outline),
+      title: Text(
+        isFavorite
+            ? context.l10n.libraryRemoveFromFavorites
+            : context.l10n.libraryAddToFavorites,
+      ),
+      onTap: () {
+        AppHaptics.light();
+        onToggle();
+      },
+    );
+  }
+}
+
 class CollectionManageSheet extends ConsumerWidget {
   const CollectionManageSheet({super.key, required this.collection});
 
@@ -261,17 +290,9 @@ class CollectionManageSheet extends ConsumerWidget {
             title: Text(collection.name),
           ),
           const Divider(height: 1),
-          ListTile(
-            leading: Icon(
-              collection.isFavorite ? Icons.star : Icons.star_outline,
-            ),
-            title: Text(
-              collection.isFavorite
-                  ? context.l10n.libraryRemoveFromFavorites
-                  : context.l10n.libraryAddToFavorites,
-            ),
-            onTap: () {
-              AppHaptics.light();
+          FavoriteToggleTile(
+            isFavorite: collection.isFavorite,
+            onToggle: () {
               ref
                   .read(collectionRepositoryProvider)
                   .setFavorite(collection.id, !collection.isFavorite);

@@ -7,6 +7,7 @@ import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/backup_service.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -42,9 +43,8 @@ void main() {
         ),
       );
 
-  Future<bool> bookIsFavorite(int id) async => (await (db.select(
-    db.books,
-  )..where((t) => t.id.equals(id))).getSingle()).isFavorite;
+  Future<bool> bookIsFavorite(int id) async =>
+      (await BookRepository(db).getBookById(id))!.isFavorite;
 
   Future<Set<String>> favoriteFolders() async => {
     for (final c in await db.select(db.collections).get())

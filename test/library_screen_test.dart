@@ -175,19 +175,19 @@ void main() {
     );
   });
 
-  group('mostRecentlyReadBook', () {
-    Book makeBook(int id, {DateTime? lastReadAt}) => Book(
-      id: id,
-      isFavorite: false,
-      title: 'Book $id',
-      filePath: '/books/$id',
-      bookType: 'epub',
-      totalPages: 0,
-      readProgress: 0.0,
-      dateAdded: DateTime(2026, 1, 1),
-      lastReadAt: lastReadAt,
-    );
+  Book makeBook(int id, {DateTime? lastReadAt}) => Book(
+    id: id,
+    isFavorite: false,
+    title: 'Book $id',
+    filePath: '/books/$id',
+    bookType: 'epub',
+    totalPages: 0,
+    readProgress: 0.0,
+    dateAdded: DateTime(2026, 1, 1),
+    lastReadAt: lastReadAt,
+  );
 
+  group('mostRecentlyReadBook', () {
     test('returns null for an empty list', () {
       expect(mostRecentlyReadBook([]), isNull);
     });
@@ -207,16 +207,8 @@ void main() {
   });
 
   group('libraryGridEntries', () {
-    Book book(int id, {bool favorite = false}) => Book(
-      id: id,
-      isFavorite: favorite,
-      title: 'Book $id',
-      filePath: '/books/$id',
-      bookType: 'epub',
-      totalPages: 0,
-      readProgress: 0.0,
-      dateAdded: DateTime(2026, 1, 1),
-    );
+    Book book(int id, {bool favorite = false}) =>
+        makeBook(id).copyWith(isFavorite: favorite);
     Collection folder(int id, {bool favorite = false}) =>
         Collection(id: id, name: 'Folder $id', isFavorite: favorite);
     String label(Object entry) =>
