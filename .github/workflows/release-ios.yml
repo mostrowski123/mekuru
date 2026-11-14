@@ -44,7 +44,7 @@ jobs:
       TESTFLIGHT_GROUP: 6dd9114e-1016-45e8-990c-f48fbe977af7
 
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The commit the tests passed on, not whatever main is now. Full
           # history and tags for the What to Test notes.
@@ -58,7 +58,7 @@ jobs:
           cache: true
 
       - name: Cache pub dependencies
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.pub-cache
@@ -67,7 +67,7 @@ jobs:
           restore-keys: pub-macos-
 
       - name: Cache Swift packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: build/ios/SourcePackages
           key: spm-${{ hashFiles('ios/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
