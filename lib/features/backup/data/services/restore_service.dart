@@ -227,6 +227,14 @@ class RestoreService {
     for (final name in manifest.collections) {
       await _ensureCollection(name);
     }
+    // Only ever sets the flag: a backup from before favorites lists none
+    // and must not clear the ones the user has now.
+    for (final name in manifest.favoriteCollections) {
+      final id = await _ensureCollection(name);
+      await (_db.update(_db.collections)..where((t) => t.id.equals(id))).write(
+        const CollectionsCompanion(isFavorite: Value(true)),
+      );
+    }
 
     // Recreate server connections and remap each book's link to this
     // device's connection ids, so links survive the pending-data path too.
@@ -369,6 +377,8 @@ class RestoreService {
         overrideReadingDirection: Value(entry.overrideReadingDirection),
         furiganaMode: Value(entry.furiganaMode),
         mangaSpreadShift: Value(entry.mangaSpreadShift),
+        // Null in a backup from before favorites: keep what the book has.
+        isFavorite: Value.absentIfNull(entry.favorite),
         serverConnectionId: entry.serverLink != null
             ? Value(entry.serverLink!.connectionId)
             : const Value.absent(),

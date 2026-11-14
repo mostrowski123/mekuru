@@ -117,6 +117,7 @@ class BackupService {
           overrideReadingDirection: book.overrideReadingDirection,
           furiganaMode: book.furiganaMode,
           mangaSpreadShift: book.mangaSpreadShift,
+          favorite: book.isFavorite,
           collections: collectionRefsByBook[book.id] ?? const [],
           serverLink: book.serverConnectionId != null && book.remoteIds != null
               ? BackupServerLink(
@@ -184,6 +185,10 @@ class BackupService {
           .toList(),
       books: bookEntries,
       collections: allCollections.map((c) => c.name).toList(),
+      favoriteCollections: [
+        for (final c in allCollections)
+          if (c.isFavorite) c.name,
+      ],
       serverConnections: serverConnections
           .map(
             (c) => BackupServerConnection(

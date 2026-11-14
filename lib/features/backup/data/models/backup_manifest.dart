@@ -21,6 +21,10 @@ class BackupManifest {
   /// the pending-book-data path when a book is imported after the restore.
   final List<String> collections;
 
+  /// Names of the favorite collections. Additive within version 1: older
+  /// backups omit the key, and a restore then changes no favorite.
+  final List<String> favoriteCollections;
+
   /// Komga/Kavita connections (sans credentials). Additive within version
   /// 1: older backups simply omit the key.
   final List<BackupServerConnection> serverConnections;
@@ -39,6 +43,7 @@ class BackupManifest {
     this.readingSessions = const [],
     this.wordEvents = const [],
     this.collections = const [],
+    this.favoriteCollections = const [],
     this.serverConnections = const [],
     this.userDefinitions = const [],
   });
@@ -185,6 +190,10 @@ class BackupBookEntry {
   /// Manga Spread view shift (Books.mangaSpreadShift); null in backups made
   /// before it existed.
   final bool? mangaSpreadShift;
+
+  /// Favorite on the library page (Books.isFavorite); null in backups made
+  /// before favorites existed, which a restore leaves as it is.
+  final bool? favorite;
   final List<BackupBookmarkEntry> bookmarks;
   final List<BackupHighlightEntry> highlights;
 
@@ -209,6 +218,7 @@ class BackupBookEntry {
     this.overrideReadingDirection,
     this.furiganaMode,
     this.mangaSpreadShift,
+    this.favorite,
     required this.bookmarks,
     required this.highlights,
     this.collections = const [],
@@ -232,6 +242,7 @@ class BackupBookEntry {
         overrideReadingDirection: overrideReadingDirection,
         furiganaMode: furiganaMode,
         mangaSpreadShift: mangaSpreadShift,
+        favorite: favorite,
         bookmarks: bookmarks,
         highlights: highlights,
         collections: collections,

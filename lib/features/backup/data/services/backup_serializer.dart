@@ -58,6 +58,7 @@ class BackupSerializer {
           .toList(),
       'books': manifest.books.map(_encodeBookEntry).toList(),
       'collections': manifest.collections,
+      'favoriteCollections': manifest.favoriteCollections,
       'readingSessions': manifest.readingSessions
           .map(
             (s) => {
@@ -191,6 +192,9 @@ class BackupSerializer {
       collections: List<String>.from(
         parsed['collections'] as List? ?? const [],
       ),
+      favoriteCollections: List<String>.from(
+        parsed['favoriteCollections'] as List? ?? const [],
+      ),
       serverConnections: _decodeList(
         parsed['serverConnections'],
         'serverConnections',
@@ -258,6 +262,7 @@ class BackupSerializer {
       'overrideReadingDirection': entry.overrideReadingDirection,
       'furiganaMode': entry.furiganaMode,
       'mangaSpreadShift': entry.mangaSpreadShift,
+      'favorite': entry.favorite,
       'collections': entry.collections
           .map((c) => {'name': c.name, 'position': c.position})
           .toList(),
@@ -406,6 +411,7 @@ class BackupSerializer {
       overrideReadingDirection: item['overrideReadingDirection'] as String?,
       furiganaMode: item['furiganaMode'] as String?,
       mangaSpreadShift: item['mangaSpreadShift'] as bool?,
+      favorite: item['favorite'] as bool?,
       collections: [
         for (final c in item['collections'] as List? ?? const [])
           _decodeCollectionRef(c),
