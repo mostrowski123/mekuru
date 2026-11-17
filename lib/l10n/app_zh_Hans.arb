@@ -113,6 +113,7 @@
       }
     }
   },
+  "commonNoFilePicker": "此设备没有文件选择器，因此 Mekuru 无法在此打开存储中的文件。",
   "ankidroidAlreadyInDeck": "已存在于“{deck}”",
   "@ankidroidAlreadyInDeck": {
     "description": "Warning banner when a note with the same first field already exists in the selected deck.",

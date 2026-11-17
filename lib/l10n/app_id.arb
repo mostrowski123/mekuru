@@ -113,6 +113,7 @@
       }
     }
   },
+  "commonNoFilePicker": "Perangkat ini tidak memiliki pemilih file, sehingga Mekuru tidak dapat membuka file dari penyimpanan di sini.",
   "ankidroidAlreadyInDeck": "Sudah ada di “{deck}”",
   "@ankidroidAlreadyInDeck": {
     "description": "Warning banner when a note with the same first field already exists in the selected deck.",

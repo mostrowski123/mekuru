@@ -137,6 +137,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get commonNoFilePicker => '此设备没有文件选择器，因此 Mekuru 无法在此打开存储中的文件。';
+
+  @override
   String ankidroidAlreadyInDeck({required String deck}) {
     return '已存在于“$deck”';
   }
@@ -4636,6 +4639,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String commonErrorWithDetails({required String details}) {
     return '错误：$details';
   }
+
+  @override
+  String get commonNoFilePicker => '此设备没有文件选择器，因此 Mekuru 无法在此打开存储中的文件。';
 
   @override
   String ankidroidAlreadyInDeck({required String deck}) {

@@ -671,7 +671,11 @@ class _DictionaryManagerScreenState
     } on PlatformException catch (e) {
       // already_active: a second tap while the first pick is still copying
       // its file. unknown_activity: the picker came back without a file.
-      if (e.code != 'already_active' && e.code != 'unknown_activity') rethrow;
+      if (e.code == 'already_active' || e.code == 'unknown_activity') return;
+      // MEKURU-2Z: no app on the device answers the system file picker (an
+      // e-reader without one).
+      if (e.code != 'explorer_not_found') rethrow;
+      if (context.mounted) _showMessage(context.l10n.commonNoFilePicker);
     }
   }
 

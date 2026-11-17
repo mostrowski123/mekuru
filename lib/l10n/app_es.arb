@@ -113,6 +113,7 @@
       }
     }
   },
+  "commonNoFilePicker": "Este dispositivo no tiene selector de archivos, así que Mekuru no puede abrir archivos del almacenamiento aquí.",
   "ankidroidAlreadyInDeck": "Ya está en “{deck}”",
   "@ankidroidAlreadyInDeck": {
     "description": "Warning banner when a note with the same first field already exists in the selected deck.",

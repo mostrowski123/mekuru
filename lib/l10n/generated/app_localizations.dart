@@ -339,6 +339,12 @@ abstract class AppLocalizations {
   /// **'Error: {details}'**
   String commonErrorWithDetails({required String details});
 
+  /// Shown when the user tries to import a book, dictionary or font from a file on an Android device that has no system file picker (some e-readers).
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no file picker, so Mekuru can\'t open files from storage here.'**
+  String get commonNoFilePicker;
+
   /// Warning banner when a note with the same first field already exists in the selected deck.
   ///
   /// In en, this message translates to:

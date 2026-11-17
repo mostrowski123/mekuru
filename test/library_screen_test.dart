@@ -18,8 +18,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
 
-/// Fails every pick the way Android does for a name over 255 bytes.
-class _NameTooLongFilePicker extends FilePickerPlatform {
+/// Fails every pick with [error].
+class _FailingFilePicker extends FilePickerPlatform {
+  _FailingFilePicker(this.error);
+
+  final PlatformException error;
+
   @override
   Future<FilePickerResult?> pickFiles({
     String? dialogTitle,
@@ -35,10 +39,7 @@ class _NameTooLongFilePicker extends FilePickerPlatform {
     bool readSequential = false,
     bool cancelUploadOnWindowBlur = true,
     AndroidSAFOptions? androidSafOptions,
-  }) async => throw PlatformException(
-    code: 'file_picker_error',
-    message: 'File name too long',
-  );
+  }) async => throw error;
 }
 
 class _ImportSucceeded extends BookImportNotifier {
@@ -160,7 +161,12 @@ void main() {
     tester,
   ) async {
     final original = FilePickerPlatform.instance;
-    FilePickerPlatform.instance = _NameTooLongFilePicker();
+    FilePickerPlatform.instance = _FailingFilePicker(
+      PlatformException(
+        code: 'file_picker_error',
+        message: 'File name too long',
+      ),
+    );
     addTearDown(() => FilePickerPlatform.instance = original);
     await pumpEmptyLibrary(tester);
 
@@ -170,6 +176,27 @@ void main() {
     expect(
       find.text(
         'A file name is too long to open. Rename the file to something shorter and try again.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  // MEKURU-2Z: an e-reader with no system file picker. The import used to
+  // fail silently with an unhandled exception.
+  testWidgets('a device with no file picker says so', (tester) async {
+    final original = FilePickerPlatform.instance;
+    FilePickerPlatform.instance = _FailingFilePicker(
+      PlatformException(code: 'explorer_not_found'),
+    );
+    addTearDown(() => FilePickerPlatform.instance = original);
+    await pumpEmptyLibrary(tester);
+
+    await tester.tap(find.text('Import EPUB'));
+    await tester.pump();
+
+    expect(
+      find.text(
+        "This device has no file picker, so Mekuru can't open files from storage here.",
       ),
       findsOneWidget,
     );

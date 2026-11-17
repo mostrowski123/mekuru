@@ -39,6 +39,7 @@
   "commonOpenDownloads": "ダウンロードを開く",
   "commonGotIt": "わかりました",
   "commonErrorWithDetails": "エラー：{details}",
+  "commonNoFilePicker": "この端末にはファイル選択画面がないため、Mekuruはストレージ内のファイルを開けません。",
   "ankidroidAlreadyInDeck": "「{deck}」に登録済み",
   "libraryBatchImportProgress": "{total}件中{current}件をインポート中…",
   "libraryImportedBooks": "{count, plural, one {{count}冊の本をインポートしました} other {{count}冊の本をインポートしました}}",

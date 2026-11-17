@@ -888,19 +888,27 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       if (e.code == 'already_active' || e.code == 'unknown_activity') {
         return const [];
       }
+      // MEKURU-2Z: no app on the device answers the system file picker (an
+      // e-reader without one).
+      final noPicker = e.code == 'explorer_not_found';
       // MEKURU-2R: on Android the plugin copies each pick into its cache
       // under the file's own name, which fails past 255 bytes (~85 Japanese
       // characters) and drops the whole selection.
-      if (e.code == 'file_picker_error' &&
-          (e.message?.contains('File name too long') ?? false)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.libraryFileNameTooLong)),
-          );
-        }
-        return const [];
+      final nameTooLong =
+          e.code == 'file_picker_error' &&
+          (e.message?.contains('File name too long') ?? false);
+      if (!noPicker && !nameTooLong) rethrow;
+      if (mounted) {
+        final l10n = context.l10n;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              noPicker ? l10n.commonNoFilePicker : l10n.libraryFileNameTooLong,
+            ),
+          ),
+        );
       }
-      rethrow;
+      return const [];
     }
 
     if (result == null) return const [];

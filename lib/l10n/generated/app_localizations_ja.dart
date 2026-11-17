@@ -138,6 +138,10 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get commonNoFilePicker =>
+      'この端末にはファイル選択画面がないため、Mekuruはストレージ内のファイルを開けません。';
+
+  @override
   String ankidroidAlreadyInDeck({required String deck}) {
     return '「$deck」に登録済み';
   }

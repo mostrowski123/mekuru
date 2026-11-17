@@ -1,6 +1,7 @@
 import 'dart:io' show FileSystemException;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/user_font_store.dart';
@@ -139,17 +140,21 @@ class _ReaderFontPickerSheet extends ConsumerWidget {
     // copied the file, and the sheet is closed by then.
     final container = ProviderScope.containerOf(context, listen: false);
     final l10n = context.l10n;
-    final path = await container.read(userFontFilePickerProvider)();
-    if (path == null) return;
-
     String? error;
     try {
+      final path = await container.read(userFontFilePickerProvider)();
+      if (path == null) return;
       final font = await container.read(userFontStoreProvider).import(path);
       container.invalidate(userFontsProvider);
       container
           .read(readerSettingsProvider.notifier)
           .setCustomFont(font.fileName);
       onSettingChanged?.call('font_family', ReaderFontFamily.custom.name);
+    } on PlatformException catch (e) {
+      // MEKURU-2Z: no app on the device answers the system file picker (an
+      // e-reader without one).
+      if (e.code != 'explorer_not_found') rethrow;
+      error = l10n.commonNoFilePicker;
     } on UserFontImportException catch (e) {
       error = switch (e.error) {
         UserFontImportError.notAFont => l10n.settingsFontAddNotAFont,

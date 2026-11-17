@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
@@ -15,6 +16,7 @@ void main() {
   late FakeUserFontStore store;
   late ProviderContainer container;
   String? pickedPath;
+  PlatformException? pickFailure;
 
   Future<void> openPicker(
     WidgetTester tester, {
@@ -23,7 +25,9 @@ void main() {
     container = ProviderContainer(
       overrides: [
         userFontStoreProvider.overrideWithValue(store),
-        userFontFilePickerProvider.overrideWithValue(() async => pickedPath),
+        userFontFilePickerProvider.overrideWithValue(
+          () async => pickFailure == null ? pickedPath : throw pickFailure!,
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -58,6 +62,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     store = FakeUserFontStore(['Kaisei.ttf']);
     pickedPath = '/picked/New.ttf';
+    pickFailure = null;
   });
 
   testWidgets('lists the built-in fonts, the added ones and Add font…', (
@@ -210,6 +215,23 @@ void main() {
     await tester.tap(find.text('Add font…'));
     await tester.pumpAndSettle();
     expect(store.fileNames, ['Kaisei.ttf']);
+  });
+
+  // MEKURU-2Z: an e-reader with no system file picker.
+  testWidgets('a device with no file picker says so', (tester) async {
+    pickFailure = PlatformException(code: 'explorer_not_found');
+    await openPicker(tester);
+    await tester.tap(find.text('Add font…'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find
+          .text(
+            "This device has no file picker, so Mekuru can't open files from storage here.",
+          )
+          .hitTestable(),
+      findsOneWidget,
+    );
   });
 
   testWidgets(

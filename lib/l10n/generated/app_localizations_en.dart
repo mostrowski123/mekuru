@@ -139,6 +139,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get commonNoFilePicker =>
+      'This device has no file picker, so Mekuru can\'t open files from storage here.';
+
+  @override
   String ankidroidAlreadyInDeck({required String deck}) {
     return 'Already in “$deck”';
   }

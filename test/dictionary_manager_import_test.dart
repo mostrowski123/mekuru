@@ -124,4 +124,22 @@ void main() {
       expect(find.byType(DictionaryManagerScreen), findsOneWidget);
     });
   }
+
+  // MEKURU-2Z: an e-reader with no system file picker.
+  testWidgets('a device with no file picker says so', (tester) async {
+    picker.next = () async =>
+        throw PlatformException(code: 'explorer_not_found');
+    await openDictionaryManager(tester);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text(
+        "This device has no file picker, so Mekuru can't open files from storage here.",
+      ),
+      findsOneWidget,
+    );
+  });
 }

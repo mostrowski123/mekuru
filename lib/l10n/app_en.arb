@@ -166,6 +166,10 @@
       }
     }
   },
+  "commonNoFilePicker": "This device has no file picker, so Mekuru can't open files from storage here.",
+  "@commonNoFilePicker": {
+    "description": "Shown when the user tries to import a book, dictionary or font from a file on an Android device that has no system file picker (some e-readers)."
+  },
   "ankidroidAlreadyInDeck": "Already in “{deck}”",
   "@ankidroidAlreadyInDeck": {
     "description": "Warning banner when a note with the same first field already exists in the selected deck.",
