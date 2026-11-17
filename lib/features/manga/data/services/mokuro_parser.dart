@@ -12,13 +12,13 @@ import 'package:path/path.dart' as p;
 
 import '../models/mokuro_models.dart';
 
-/// A mokuro HTML file's page images are not in the folder it names: the
-/// folder beside it was renamed or left behind (MEKURU-30). The user's files,
-/// not a bug, so it files no issue.
+/// A manga's page images are not in the folder its .mokuro or .html file
+/// names: the folder beside it was renamed or left behind (MEKURU-30). The
+/// user's files, not a bug, so it files no issue.
 class MangaImagesMissingException implements UserSideFailure {
   const MangaImagesMissingException(this.folderName);
 
-  /// The folder the images must be in, next to the HTML file.
+  /// The folder the images must be in, next to the .mokuro or .html file.
   final String folderName;
 
   // Without the folder's name: it is the book's title.
@@ -62,22 +62,30 @@ class MokuroParser {
         : relative;
   }
 
-  /// The first of [candidates] that holds [firstImage]; otherwise the first
-  /// that exists (a volume missing its first page), else the last.
-  static Future<String> _localImageDir(
-    String? firstImage,
-    List<String> candidates,
-  ) async {
-    if (firstImage != null) {
-      for (final dir in candidates) {
-        if (await File(p.join(dir, firstImage)).exists()) return dir;
-      }
-    }
+  /// The folder a .mokuro volume's pages are in: the first of [candidates]
+  /// that [holdsFirstPage]; otherwise the first that [exists] (a volume
+  /// missing its first page). The last candidate is the .mokuro's own folder,
+  /// which always exists, so it counts only when it holds the first page.
+  /// Null when the pages are in none of them.
+  static Future<T?> _imageDir<T>(
+    List<T> candidates, {
+    required Future<bool> Function(T) holdsFirstPage,
+    required Future<bool> Function(T) exists,
+  }) async {
     for (final dir in candidates) {
-      if (await Directory(dir).exists()) return dir;
+      if (await holdsFirstPage(dir)) return dir;
     }
-    return candidates.last;
+    for (final dir in candidates.take(candidates.length - 1)) {
+      if (await exists(dir)) return dir;
+    }
+    return null;
   }
+
+  /// Whether the folder the user picked on Android holds the folder
+  /// [relativeDir], found the way its pages later are.
+  static Future<bool> _safDirExists(String treeUri, String relativeDir) async =>
+      await AndroidSafService.getDocumentUriInTree(treeUri, relativeDir) !=
+      null;
 
   /// Discover all mokuro books in a directory.
   ///
@@ -344,11 +352,10 @@ class MokuroParser {
     // Directory.exists() check — on Android 13+ without MANAGE_EXTERNAL_STORAGE,
     // directory metadata isn't accessible even though the image files inside
     // ARE readable via READ_MEDIA_IMAGES.
-    if (originalDirPath == null &&
-        safTreeUri == null &&
-        !await Directory(imageDirPath).exists()) {
-      throw MangaImagesMissingException(stem);
-    }
+    final imageDirExists = safImageDirRel != null
+        ? await _safDirExists(safTreeUri!, safImageDirRel)
+        : originalDirPath != null || await Directory(imageDirPath).exists();
+    if (!imageDirExists) throw MangaImagesMissingException(stem);
 
     // Resolve OCR directory
     final ocrDirPath = p.join(parentDir, '_ocr', stem);
@@ -457,16 +464,16 @@ class MokuroParser {
     final content = await file.readAsString();
     final json = jsonDecode(content) as Map<String, dynamic>;
 
+    // On Android [mokuroFilePath] is a temporary copy; the file the user
+    // picked is [safSelectedFileRelativePath].
+    final fileStem = p.basenameWithoutExtension(
+      safSelectedFileRelativePath ?? mokuroFilePath,
+    );
     final title =
-        (json['title'] as String?) ??
-        (json['volume'] as String?) ??
-        p.basenameWithoutExtension(mokuroFilePath);
-    final volume =
-        (json['volume'] as String?) ??
-        p.basenameWithoutExtension(mokuroFilePath);
+        (json['title'] as String?) ?? (json['volume'] as String?) ?? fileStem;
+    final volume = (json['volume'] as String?) ?? fileStem;
 
     final parentDir = originalDirPath ?? p.dirname(mokuroFilePath);
-    final fileStem = p.basenameWithoutExtension(mokuroFilePath);
     final safParentDirRel = safTreeUri != null
         ? _normalizeSafRelativeDir(
             p.posix.dirname(
@@ -551,33 +558,35 @@ class MokuroParser {
       final parentRel = safParentDirRel ?? '';
       final candidates = <(String rel, String abs)>[
         (volumeRel, volumeDirPath),
-        (stemRel, stemDirPath),
+        if (volume != fileStem) (stemRel, stemDirPath),
         (parentRel, parentDir),
       ];
 
       safImageDirRel = volumeRel;
       if (firstImage != null) {
-        for (final candidate in candidates) {
-          final exists = await AndroidSafService.existsInTreePath(
+        final found = await _imageDir(
+          candidates,
+          holdsFirstPage: (dir) => AndroidSafService.existsInTreePath(
             safTreeUri,
-            _joinSafRelative([candidate.$1, firstImage]),
-          );
-          if (exists) {
-            safImageDirRel = candidate.$1;
-            imageDirPath = candidate.$2;
-            break;
-          }
-        }
+            _joinSafRelative([dir.$1, firstImage]),
+          ),
+          exists: (dir) => _safDirExists(safTreeUri, dir.$1),
+        );
+        if (found == null) throw MangaImagesMissingException(volume);
+        (safImageDirRel, imageDirPath) = found;
       }
-    } else if (originalDirPath == null) {
-      imageDirPath = await _localImageDir(firstImage, [
-        volumeDirPath,
-        if (volume != fileStem) stemDirPath,
-        parentDir,
-      ]);
+    } else if (originalDirPath == null && firstImage != null) {
+      final found = await _imageDir(
+        [volumeDirPath, if (volume != fileStem) stemDirPath, parentDir],
+        holdsFirstPage: (dir) => File(p.join(dir, firstImage)).exists(),
+        exists: (dir) => Directory(dir).exists(),
+      );
+      if (found == null) throw MangaImagesMissingException(volume);
+      imageDirPath = found;
     }
     // With originalDirPath (a cached copy of the file), folder metadata may
-    // not be readable, so the volume folder is trusted.
+    // not be readable, so the volume folder is trusted. A volume with no
+    // pages is refused later, as having none.
     debugPrint('[MokuroParser] Image dir resolved to: $imageDirPath');
 
     final manifest = MokuroBookManifest(

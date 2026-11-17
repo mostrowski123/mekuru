@@ -10,6 +10,8 @@ void main() {
 
   setUp(() async {
     root = await Directory.systemTemp.createTemp('mokuro_parser_malformed_');
+    // The parser refuses a volume with no image folder.
+    await Directory(p.join(root.path, 'Volume')).create();
   });
 
   tearDown(() async {
