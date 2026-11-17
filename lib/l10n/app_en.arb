@@ -236,6 +236,15 @@
   "@libraryImportReasonNoPages": {
     "description": "Why an import failed: a manga file contained no page images."
   },
+  "libraryImportReasonImagesMissing": "The page images weren't found. Put them in a folder named \"{folder}\" next to this file.",
+  "@libraryImportReasonImagesMissing": {
+    "description": "Why an import failed: the folder a Mokuro .html file loads its page images from is missing. It must sit beside the file and have the given name.",
+    "placeholders": {
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
   "libraryImportReasonUnsupported": "This file type isn't supported.",
   "@libraryImportReasonUnsupported": {
     "description": "Why an import failed: Mekuru cannot import this type of file."

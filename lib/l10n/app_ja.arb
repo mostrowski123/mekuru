@@ -48,6 +48,7 @@
   "libraryImportReasonSolidRar": "このRARファイルは古いバージョンのRARのソリッド圧縮を使っているため、Mekuruでは開けません。ページをCBZ（ZIP）ファイルにまとめ直してからインポートしてください。",
   "libraryImportReasonDamaged": "ファイルが破損しているか、想定された形式ではありません。",
   "libraryImportReasonNoPages": "ページや画像が見つかりませんでした。",
+  "libraryImportReasonImagesMissing": "ページの画像が見つかりませんでした。このファイルと同じ場所の「{folder}」という名前のフォルダに入れてください。",
   "libraryImportReasonUnsupported": "このファイル形式には対応していません。",
   "libraryImportReasonUnreadable": "ファイルを読み込めませんでした。",
   "libraryImportReasonUnknown": "問題が発生しました。",

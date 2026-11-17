@@ -141,6 +141,7 @@
   "libraryImportReasonSolidRar": "Este archivo RAR usa la compresión sólida de una versión antigua de RAR, que Mekuru no puede abrir. Vuelve a empaquetar las páginas en un archivo CBZ (ZIP) e impórtalo.",
   "libraryImportReasonDamaged": "El archivo está dañado o no tiene el formato esperado.",
   "libraryImportReasonNoPages": "No se encontraron páginas ni imágenes.",
+  "libraryImportReasonImagesMissing": "No se encontraron las imágenes de las páginas. Ponlas en una carpeta llamada “{folder}” junto a este archivo.",
   "libraryImportReasonUnsupported": "Este tipo de archivo no es compatible.",
   "libraryImportReasonUnreadable": "No se pudo leer el archivo.",
   "libraryImportReasonUnknown": "Algo salió mal.",

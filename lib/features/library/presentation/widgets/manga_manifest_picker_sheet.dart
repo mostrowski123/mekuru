@@ -24,22 +24,34 @@ bool isMangaManifestName(String name) =>
     (_isMokuro(name) || p.extension(name).toLowerCase() == '.html');
 
 /// The manifests ticked when the sheet opens: one per volume. mokuro can
-/// write both `vol.mokuro` and `vol.html` for one volume; the `.mokuro`
-/// wins, and an `.html` is ticked only when its volume has no `.mokuro`.
+/// write `vol.mokuro`, `vol.html` and `vol.mobile.html` for one volume; the
+/// `.mokuro` wins, then the `.html`.
 Set<String> defaultManifestSelection(List<String> files) {
-  final mokuroStems = {
-    for (final name in files.where(_isMokuro))
-      p.basenameWithoutExtension(name).toLowerCase(),
-  };
-  return {
-    for (final name in files)
-      if (_isMokuro(name) ||
-          !mokuroStems.contains(p.basenameWithoutExtension(name).toLowerCase()))
-        name,
-  };
+  final best = <String, String>{};
+  for (final name in files) {
+    final volume = _volume(name);
+    final current = best[volume];
+    if (current == null || _rank(name) < _rank(current)) best[volume] = name;
+  }
+  return best.values.toSet();
 }
 
 bool _isMokuro(String name) => p.extension(name).toLowerCase() == '.mokuro';
+
+bool _isMobileHtml(String name) => name.toLowerCase().endsWith('.mobile.html');
+
+/// What [name] is a manifest of: its name without `.mokuro`, `.html` or
+/// `.mobile.html`.
+String _volume(String name) {
+  final stem = p.basenameWithoutExtension(name.toLowerCase());
+  return _isMobileHtml(name) ? p.withoutExtension(stem) : stem;
+}
+
+int _rank(String name) => _isMokuro(name)
+    ? 0
+    : _isMobileHtml(name)
+    ? 2
+    : 1;
 
 class MangaManifestPickerSheet extends StatefulWidget {
   const MangaManifestPickerSheet({

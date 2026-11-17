@@ -6,10 +6,25 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/platform/image_convert.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:path/path.dart' as p;
 
 import '../models/mokuro_models.dart';
+
+/// A mokuro HTML file's page images are not in the folder it names: the
+/// folder beside it was renamed or left behind (MEKURU-30). The user's files,
+/// not a bug, so it files no issue.
+class MangaImagesMissingException implements UserSideFailure {
+  const MangaImagesMissingException(this.folderName);
+
+  /// The folder the images must be in, next to the HTML file.
+  final String folderName;
+
+  // Without the folder's name: it is the book's title.
+  @override
+  String toString() => 'MangaImagesMissingException: image folder not found';
+}
 
 /// Parses mokuro HTML files and OCR JSON to produce [MokuroBookManifest]s
 /// and [MokuroPage]s.
@@ -332,10 +347,7 @@ class MokuroParser {
     if (originalDirPath == null &&
         safTreeUri == null &&
         !await Directory(imageDirPath).exists()) {
-      throw Exception(
-        'Image folder not found: $imageDirPath\n'
-        'Expected a folder named "$stem" next to the HTML file.',
-      );
+      throw MangaImagesMissingException(stem);
     }
 
     // Resolve OCR directory

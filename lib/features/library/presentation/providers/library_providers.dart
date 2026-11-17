@@ -8,6 +8,7 @@ import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
+import 'package:mekuru/features/manga/data/services/mokuro_parser.dart';
 import 'package:mekuru/features/manga/presentation/widgets/scanned_pdf_notice.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
@@ -173,6 +174,8 @@ String importFailureReason(AppLocalizations l10n, Object error) =>
       PdfException(errorCode: 2) => l10n.libraryImportReasonUnreadable,
       PdfException() || FormatException() => l10n.libraryImportReasonDamaged,
       NoPagesException() => l10n.libraryImportReasonNoPages,
+      MangaImagesMissingException(:final folderName) =>
+        l10n.libraryImportReasonImagesMissing(folder: folderName),
       UnsupportedError() => l10n.libraryImportReasonUnsupported,
       // ENOSPC: the copy or the extraction filled the device.
       FileSystemException(osError: OSError(errorCode: 28)) =>

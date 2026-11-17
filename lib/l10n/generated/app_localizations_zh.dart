@@ -187,6 +187,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryImportReasonNoPages => '未找到任何页面或图片。';
 
   @override
+  String libraryImportReasonImagesMissing({required String folder}) {
+    return '未找到页面图片。请将图片放在此文件旁名为“$folder”的文件夹中。';
+  }
+
+  @override
   String get libraryImportReasonUnsupported => '不支持此文件类型。';
 
   @override
@@ -4681,6 +4686,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryImportReasonNoPages => '未找到任何页面或图片。';
+
+  @override
+  String libraryImportReasonImagesMissing({required String folder}) {
+    return '未找到页面图片。请将图片放在此文件旁名为“$folder”的文件夹中。';
+  }
 
   @override
   String get libraryImportReasonUnsupported => '不支持此文件类型。';

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_parser.dart';
 import 'package:path/path.dart' as p;
 
@@ -93,5 +94,23 @@ void main() {
       '%FF.jpg',
       '0004.jpg',
     ]);
+  });
+
+  test('parseSingleHtmlFile names the image folder it cannot find', () async {
+    final root = await Directory.systemTemp.createTemp('mokuro_parser_test_');
+    addTearDown(() => root.delete(recursive: true));
+    final htmlPath = p.join(root.path, 'Vol 1.mobile.html');
+    await File(htmlPath).writeAsString('<html></html>');
+
+    await expectLater(
+      MokuroParser.parseSingleHtmlFile(htmlPath),
+      throwsA(
+        isA<MangaImagesMissingException>()
+            .having((e) => e.folderName, 'folderName', 'Vol 1')
+            // The folder's name is a book title: it stays out of telemetry.
+            .having((e) => '$e', 'text', isNot(contains('Vol 1')))
+            .having(isUserSideFailure, 'user side', isTrue),
+      ),
+    );
   });
 }

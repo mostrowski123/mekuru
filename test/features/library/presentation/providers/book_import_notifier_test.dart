@@ -12,6 +12,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
+import 'package:mekuru/features/manga/data/services/mokuro_parser.dart';
 import 'package:mekuru/l10n/generated/app_localizations_en.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
@@ -291,6 +292,10 @@ void main() {
       en.libraryImportReasonDamaged,
     );
     expect(reason(const NoPagesException()), en.libraryImportReasonNoPages);
+    expect(
+      reason(const MangaImagesMissingException('Vol 1')),
+      en.libraryImportReasonImagesMissing(folder: 'Vol 1'),
+    );
     expect(
       reason(UnsupportedError('Unsupported file type: .txt')),
       en.libraryImportReasonUnsupported,

@@ -26,6 +26,19 @@ void main() {
     );
   });
 
+  test('defaultManifestSelection takes vol.mobile.html as the same volume', () {
+    expect(
+      defaultManifestSelection([
+        'vol1.html',
+        'vol1.mobile.html',
+        'vol2.mobile.html',
+        'vol3.mokuro',
+        'Vol3.Mobile.HTML',
+      ]),
+      {'vol1.html', 'vol2.mobile.html', 'vol3.mokuro'},
+    );
+  });
+
   group('showMangaManifestPickerSheet', () {
     /// Opens the sheet for [files]; the returned list is filled once it
     /// closes.

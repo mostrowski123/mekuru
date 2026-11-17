@@ -191,6 +191,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryImportReasonNoPages => 'No pages or images were found.';
 
   @override
+  String libraryImportReasonImagesMissing({required String folder}) {
+    return 'The page images weren\'t found. Put them in a folder named \"$folder\" next to this file.';
+  }
+
+  @override
   String get libraryImportReasonUnsupported =>
       'This file type isn\'t supported.';
 

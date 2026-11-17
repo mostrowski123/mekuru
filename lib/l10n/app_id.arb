@@ -141,6 +141,7 @@
   "libraryImportReasonSolidRar": "File RAR ini memakai kompresi solid dari versi RAR lama, yang tidak dapat dibuka Mekuru. Kemas ulang halamannya sebagai file CBZ (ZIP), lalu impor file tersebut.",
   "libraryImportReasonDamaged": "File rusak atau formatnya tidak sesuai.",
   "libraryImportReasonNoPages": "Tidak ada halaman atau gambar yang ditemukan.",
+  "libraryImportReasonImagesMissing": "Gambar halaman tidak ditemukan. Letakkan di folder bernama “{folder}” di samping file ini.",
   "libraryImportReasonUnsupported": "Jenis file ini tidak didukung.",
   "libraryImportReasonUnreadable": "File tidak dapat dibaca.",
   "libraryImportReasonUnknown": "Terjadi kesalahan.",

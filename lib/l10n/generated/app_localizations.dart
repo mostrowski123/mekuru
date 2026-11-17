@@ -396,6 +396,12 @@ abstract class AppLocalizations {
   /// **'No pages or images were found.'**
   String get libraryImportReasonNoPages;
 
+  /// Why an import failed: the folder a Mokuro .html file loads its page images from is missing. It must sit beside the file and have the given name.
+  ///
+  /// In en, this message translates to:
+  /// **'The page images weren\'t found. Put them in a folder named \"{folder}\" next to this file.'**
+  String libraryImportReasonImagesMissing({required String folder});
+
   /// Why an import failed: Mekuru cannot import this type of file.
   ///
   /// In en, this message translates to:

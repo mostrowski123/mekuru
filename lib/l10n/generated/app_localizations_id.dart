@@ -192,6 +192,11 @@ class AppLocalizationsId extends AppLocalizations {
       'Tidak ada halaman atau gambar yang ditemukan.';
 
   @override
+  String libraryImportReasonImagesMissing({required String folder}) {
+    return 'Gambar halaman tidak ditemukan. Letakkan di folder bernama “$folder” di samping file ini.';
+  }
+
+  @override
   String get libraryImportReasonUnsupported => 'Jenis file ini tidak didukung.';
 
   @override

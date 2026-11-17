@@ -141,6 +141,7 @@
   "libraryImportReasonSolidRar": "此 RAR 文件使用旧版 RAR 的固实压缩，Mekuru 无法打开。请将页面重新打包为 CBZ（ZIP）文件后再导入。",
   "libraryImportReasonDamaged": "文件已损坏或格式不正确。",
   "libraryImportReasonNoPages": "未找到任何页面或图片。",
+  "libraryImportReasonImagesMissing": "未找到页面图片。请将图片放在此文件旁名为“{folder}”的文件夹中。",
   "libraryImportReasonUnsupported": "不支持此文件类型。",
   "libraryImportReasonUnreadable": "无法读取该文件。",
   "libraryImportReasonUnknown": "出了点问题。",
