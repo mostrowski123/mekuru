@@ -4039,6 +4039,11 @@ class default_DefaultViewManager {
     this._bounds = this.bounds();
     this._stageSize = this.stage.size();
 
+    // [MEKURU PATCH] The first size is one too (see resize()). WKWebView
+    // runs loadBook() before the web view has a size (innerWidth 0), and its
+    // resize comes before the stage listens for one.
+    if (typeof syncTwoPage === "function") syncTwoPage();
+
     // Set the dimensions for views
     this.viewSettings.width = this._stageSize.width;
     this.viewSettings.height = this._stageSize.height;

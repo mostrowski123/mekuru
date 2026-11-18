@@ -1685,12 +1685,12 @@ function twoPageAt(width) {
 }
 
 // epub.js calls this for each size it is about to lay the book out at
-// (DefaultViewManager.resize()): a rotation, a fold, split view, and
-// relayoutInPlace(). The web view's own width is the page area's, whatever
-// shares the screen with it. Deciding here, and not from a message of
-// Dart's, gives one lay-out per size: a message can arrive before the web
-// view has its new size or after it, and each guess laid the book out twice
-// one way round, first with the wrong spread.
+// (DefaultViewManager.render() and resize()): the first size, a rotation,
+// a fold, split view, and relayoutInPlace(). The web view's own width is
+// the page area's, whatever shares the screen with it. Deciding here, and
+// not from a message of Dart's, gives one lay-out per size: a message can
+// arrive before the web view has its new size or after it, and each guess
+// laid the book out twice one way round, first with the wrong spread.
 function syncTwoPage() {
   var on = twoPageAt(window.innerWidth);
   if (on === window._twoPage) return;
