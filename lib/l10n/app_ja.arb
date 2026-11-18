@@ -455,6 +455,7 @@
   "readerVerticalTextTitle": "縦書き",
   "readerSplitVerticalTextTitle": "縦書きを分割",
   "readerSplitVerticalTextSubtitle": "1ページを上下2段に分けて表示",
+  "readerTwoPageTitle": "広い画面で2ページ表示",
   "readerScrollViewTitle": "スクロール表示",
   "readerScrollViewSubtitle": "ページをめくらず、章をスクロールして読む",
   "readerThisBook": "この本",

@@ -1685,6 +1685,9 @@ class AppLocalizationsId extends AppLocalizations {
       'Tampilkan dua blok teks bertumpuk per halaman';
 
   @override
+  String get readerTwoPageTitle => 'Dua halaman di layar lebar';
+
+  @override
   String get readerScrollViewTitle => 'Tampilan Gulir';
 
   @override

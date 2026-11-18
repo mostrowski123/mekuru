@@ -237,6 +237,18 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
               : null,
         ),
         SettingsSwitchRow(
+          icon: Icons.chrome_reader_mode_outlined,
+          title: l10n.readerTwoPageTitle,
+          value: settings.epubTwoPage,
+          // Two pages side by side are pages; scroll view has none.
+          onChanged: settings.scrollView
+              ? null
+              : (value) {
+                  notifier.setEpubTwoPage(value);
+                  onSettingChanged('epub_two_page', value);
+                },
+        ),
+        SettingsSwitchRow(
           icon: Icons.link_off,
           title: l10n.readerDisableLinksTitle,
           subtitle: l10n.readerDisableLinksSubtitle,

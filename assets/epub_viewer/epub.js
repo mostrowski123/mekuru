@@ -4219,6 +4219,10 @@ class default_DefaultViewManager {
       // size is the chapter's page count, and against the size from before
       // the reflow, moveTo() clamped a target on the chapter's last pages
       // and the bridge's snapToLastPage() found the last page pages early.
+      // [MEKURU PATCH] The same for a section laid out two pages wide: its
+      // pair is found from where the target character sits, and the theme's
+      // font size can move it a pair on without changing the view's width,
+      // so no resize would put it right (seen turning the screen sideways).
       if (!view.hooked) return view;
       return view.hooked.catch(() => {}).then(() => {
         view.expand();
@@ -4302,7 +4306,7 @@ class default_DefaultViewManager {
   // there by pinScroll().
   moveToTarget(view, target) {
     if (this.isPaginated) {
-      if (this.layout.divisor > 1 && this.layout.name === "reflowable" && this.settings.axis === "horizontal") {
+      if (this.isTwoUp()) {
         this.pinScroll(view, this.twoUpTarget(view, target));
         return;
       }
@@ -4310,6 +4314,12 @@ class default_DefaultViewManager {
       return;
     }
     this.pinScroll(view, () => this.alignTarget(view, target));
+  }
+
+  // [MEKURU PATCH] Whether the section on screen is laid out two pages wide
+  // (reader_bridge.js loadBook()).
+  isTwoUp() {
+    return this.isPaginated && this.layout.divisor > 1 && this.layout.name === "reflowable" && this.settings.axis === "horizontal";
   }
 
   // [MEKURU PATCH] moveToTarget() for a section laid out two pages wide. The

@@ -112,11 +112,21 @@ void main() {
       expect((await charShown(controller, cfi))['shown'], isTrue);
     }
 
-    // (f) Switched off: the same window shows one page, at the same place.
+    // (f) Switched off: the same window shows one page, at the same place,
+    // even when the switch comes while the book is still opening (no view
+    // manager yet).
     final firstCfi = (await pairState(controller))['cfi'] as String;
-    controller.setTwoPage(false);
+    await controller.debugEvaluateJavascript(
+      '(function () {'
+      '  var m = rendition.manager;'
+      '  rendition.manager = null;'
+      '  setTwoPage(false);'
+      '  rendition.manager = m;'
+      '  return true;'
+      '})()',
+    );
     await tester.pump(const Duration(seconds: 2));
-    final single = await pairState(controller);
+    final single = await settledPairState(tester, controller);
     expect(single['divisor'], 1, reason: '$single');
     expect((await charShown(controller, firstCfi))['shown'], isTrue);
   });

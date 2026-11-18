@@ -1832,6 +1832,10 @@
   "@readerSplitVerticalTextSubtitle": {
     "description": "Subtitle for the split vertical text setting."
   },
+  "readerTwoPageTitle": "Dua halaman di layar lebar",
+  "@readerTwoPageTitle": {
+    "description": "Switch in the EPUB reader settings: show two pages side by side where the screen is wide enough (tablets, unfolded foldables, phones held sideways)."
+  },
   "readerThisBook": "Buku ini",
   "@readerThisBook": {
     "description": "Label indicating a reader setting applies to the current book."

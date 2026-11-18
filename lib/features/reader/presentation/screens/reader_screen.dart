@@ -563,6 +563,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                   settings,
                                   pageWidth: constraints.maxWidth,
                                 ),
+                                pageWidth: constraints.maxWidth,
                                 furiganaMode: settings.furiganaMode,
                                 furiganaJlptLevel: settings.furiganaJlptLevel,
                                 furiganaKnownKanji: wanikaniKnownKanji,

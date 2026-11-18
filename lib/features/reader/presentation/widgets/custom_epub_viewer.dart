@@ -81,6 +81,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.verticalTextBlocks = 1,
     this.scrollView = false,
     this.twoPage = false,
+    this.pageWidth,
     required this.furiganaMode,
     this.furiganaJlptLevel = 3,
     this.furiganaKnownKanji = const {},
@@ -138,6 +139,10 @@ class CustomEpubViewer extends StatefulWidget {
   /// Two pages side by side (see `epubShowsTwoPages`). A change lays the book
   /// out again at the place on screen; no new viewer is needed.
   final bool twoPage;
+
+  /// The page area's width [twoPage] was decided for. A rotation or fold
+  /// changes both together, and the page lays itself out once for the two.
+  final double? pageWidth;
 
   /// Initial furigana mode. Passed to the JS viewer so the first rendered
   /// section applies the mode immediately.
@@ -247,7 +252,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     super.didUpdateWidget(oldWidget);
     if (_sentTwoPage != null && widget.twoPage != _sentTwoPage) {
       _sentTwoPage = widget.twoPage;
-      widget.controller.setTwoPage(widget.twoPage);
+      widget.controller.setTwoPage(widget.twoPage, pageWidth: widget.pageWidth);
     }
   }
 

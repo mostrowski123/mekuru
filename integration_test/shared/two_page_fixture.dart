@@ -21,10 +21,11 @@ Future<Map<String, dynamic>> pairState(CustomEpubController controller) =>
     evalJson(controller, '''
 (function () {
   var m = rendition.manager, c = m.container, C = c.getBoundingClientRect();
-  var v = m.views.last(), doc = v.contents.document;
+  var v = m.views.last(), l = rendition.location;
+  if (!v || !v.contents || !l || !l.start) return JSON.stringify({pending: true});
+  var doc = v.contents.document;
   var F = v.iframe.getBoundingClientRect();
-  var l = rendition.location;
-  var mid = (C.left + C.right) / 2, left = 0, right = 0, bad = 0, sides = '';
+  var mid =(C.left + C.right) / 2, left = 0, right = 0, bad = 0, sides = '';
   var first = null, last = null, r = doc.createRange();
   var walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT), node;
   while ((node = walker.nextNode())) {
@@ -78,6 +79,28 @@ Future<Map<String, dynamic>> pairState(CustomEpubController controller) =>
 })()
 ''');
 
+/// [pairState] once the reader has settled after a re-layout: a section is
+/// on screen, and two reads a moment apart agree.
+Future<Map<String, dynamic>> settledPairState(
+  WidgetTester tester,
+  CustomEpubController controller,
+) async {
+  Map<String, dynamic>? last;
+  for (var tick = 0; tick < 40; tick++) {
+    await tester.pump(const Duration(milliseconds: 500));
+    final state = await pairState(controller);
+    if (state['pending'] == true) continue;
+    if (last != null &&
+        last['pos'] == state['pos'] &&
+        last['divisor'] == state['divisor'] &&
+        last['cfi'] == state['cfi']) {
+      return state;
+    }
+    last = state;
+  }
+  throw TestFailure('The reader never settled: $last');
+}
+
 /// The CFI of the character at a point of the screen: [x] and [y] are
 /// fractions of the screen's width and height.
 Future<String> cfiAt(
@@ -115,7 +138,8 @@ Future<Map<String, dynamic>> charShown(
   var x0 = F.left + b.left, x1 = F.left + b.right;
   return JSON.stringify({
     shown: x1 > C.left && x0 < C.right && b.width > 0,
-    side: x0 + x1 < C.left + C.right ? 'L' : 'R'
+    side: x0 + x1 < C.left + C.right ? 'L' : 'R',
+    x: Math.round(x0 - C.left)
   });
 })()
 ''');

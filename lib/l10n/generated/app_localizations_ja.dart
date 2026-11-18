@@ -1630,6 +1630,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get readerSplitVerticalTextSubtitle => '1ページを上下2段に分けて表示';
 
   @override
+  String get readerTwoPageTitle => '広い画面で2ページ表示';
+
+  @override
   String get readerScrollViewTitle => 'スクロール表示';
 
   @override

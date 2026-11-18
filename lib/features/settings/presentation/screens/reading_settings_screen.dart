@@ -221,6 +221,13 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
                 : notifier.setSplitVerticalText,
           ),
           SettingsSwitchRow(
+            icon: Icons.chrome_reader_mode_outlined,
+            title: l10n.readerTwoPageTitle,
+            value: settings.epubTwoPage,
+            // Two pages side by side are pages; scroll view has none.
+            onChanged: settings.scrollView ? null : notifier.setEpubTwoPage,
+          ),
+          SettingsSwitchRow(
             icon: Icons.link_off,
             title: l10n.readerDisableLinksTitle,
             subtitle: l10n.readerDisableLinksSubtitle,

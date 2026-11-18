@@ -1677,6 +1677,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Show two stacked text blocks per page';
 
   @override
+  String get readerTwoPageTitle => 'Two pages on wide screens';
+
+  @override
   String get readerScrollViewTitle => 'Scroll View';
 
   @override

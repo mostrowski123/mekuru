@@ -226,11 +226,14 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     options.gap = twoPageGap();
   }
   rendition = book.renderTo('viewer', options);
+  rendition.relayoutAnchor = relayoutAnchor;
   // A fixed-layout book keeps its own page handling.
   rendition.on('started', function () {
     if (window._twoPage && rendition.settings.layout === 'pre-paginated') {
       window._twoPage = false;
+      window._twoPageVertical = false;
       applyTwoPageSpread(false);
+      if (rendition.manager.isRendered()) rendition.manager.updateLayout();
     }
   });
 
@@ -1655,33 +1658,76 @@ function twoPageGap() {
   return Math.max(24, 2 * currentMargins.horizontal);
 }
 
-// Switches epub.js's two-up layout. updateAxis() puts the spread back to
-// rendition._layout.settings.spread on every axis change, so that one is
-// set too.
+// Switches epub.js's two-up layout for the next lay-out. updateAxis() puts
+// the spread back to rendition._layout.settings.spread on every axis change,
+// so that one is set too. Not rendition.spread(): its updateLayout() would
+// take in a new stage size before epub.js's own resize sees it, and that
+// resize would then do nothing.
 function applyTwoPageSpread(on) {
   var spread = on ? 'auto' : 'none';
+  rendition.settings.spread = spread;
   rendition._layout.settings.spread = spread;
+  rendition._layout.spread(spread, 0);
   rendition.manager.settings.gap = on ? twoPageGap() : undefined;
-  rendition.spread(spread, 0);
 }
 
 // Two pages side by side or one (Dart's switch and width rule), laid out
-// again at the place on screen.
-function setTwoPage(on) {
+// again at the place on screen. [pageWidth] is the page area's width Dart
+// decided for: when the page has not reached it yet, a rotation or fold is
+// under way, and epub.js's own re-layout for it (stage resize) takes the new
+// spread. A second lay-out here would run at the old size, and each one
+// moves the place back to the start of its page.
+function setTwoPage(on, pageWidth) {
   on = !!on && !_scrollView;
-  if (!rendition || !rendition.manager) {
-    window._twoPage = on;
+  // Before loadBook() there is nothing to switch: it brings its own value.
+  if (!rendition) return;
+  // The book is still opening, and its rendition was made with the old
+  // value: switch once it has started.
+  if (!rendition.manager) {
+    rendition.started.then(function () { setTwoPage(on, pageWidth); });
     return;
   }
   if (rendition.settings.layout === 'pre-paginated') on = false;
   if (on === window._twoPage) return;
+  holdRelayoutPlace();
   window._twoPage = on;
   window._twoPageVertical = on && twoPageVerticalSupported();
   applyTwoPageSpread(on);
+  var manager = rendition.manager;
+  // Not laid out yet: its first lay-out takes the new spread.
+  if (!manager.isRendered()) return;
+  var cached = manager._stageSize;
+  var size = manager.stage.size();
+  var resizing = (typeof pageWidth === 'number' && Math.abs(window.innerWidth - pageWidth) > 1) ||
+    (cached && (cached.width !== size.width || cached.height !== size.height));
+  console.log('[EPUB_BRIDGE] setTwoPage(' + on + ', ' + pageWidth + ') innerWidth=' +
+    window.innerWidth + (resizing ? ', the resize lays it out' : ''));
+  if (resizing) return;
   // resize() does nothing while the stage keeps its size.
-  rendition.manager._stageSize = undefined;
+  manager._stageSize = undefined;
   _pendingNavChars = false; // the same place laid out again, not a turn
   rendition.resize();
+}
+
+// The first character on screen when the reader last turned, jumped or
+// touched the page, kept while two pages switch to one and back (rotation,
+// folding, the switch) or a two-page layout is laid out again (font size,
+// margins): each lay-out shows the page or pair that holds it. Taking every
+// new layout's own first character instead walked the place back, a page or
+// a pair at a time. Null: none held (cleared by unpinScroll()).
+var _relayoutPlace = null;
+
+function holdRelayoutPlace() {
+  if (!_relayoutPlace && rendition.location && rendition.location.start) {
+    _relayoutPlace = rendition.location.start.cfi;
+  }
+}
+
+// epub.js Rendition.onResized() asks this where to lay the book out again;
+// null keeps its own choice, as with two pages never in play.
+function relayoutAnchor() {
+  if (window._twoPage) holdRelayoutPlace();
+  return _relayoutPlace;
 }
 
 // Whether this web view can run vertical text's pages leftwards, which two
@@ -2140,6 +2186,7 @@ function pinScrollEnd() {
 // position in place (epub.js pinScroll()), and the place (keepPlace()).
 function unpinScroll() {
   _holdPlace = false;
+  _relayoutPlace = null;
   if (rendition && rendition.manager) rendition.manager.unpinScroll();
 }
 

@@ -231,6 +231,33 @@ void main() {
     expect(tester.widget<SettingsSwitchRow>(splitFinder).onChanged, isNull);
   });
 
+  testWidgets('two pages on wide screens is off and toggles the setting', (
+    tester,
+  ) async {
+    final changes = <String>[];
+    final container = await _pumpSheet(
+      tester,
+      onSettingChanged: (setting, value) => changes.add(setting),
+    );
+
+    final row = find.widgetWithText(
+      SettingsSwitchRow,
+      'Two pages on wide screens',
+    );
+    await scrollSettingsTo(tester, row);
+    expect(tester.widget<SettingsSwitchRow>(row).value, isFalse);
+    await tester.tap(find.descendant(of: row, matching: find.byType(Switch)));
+    await tester.pumpAndSettle();
+
+    expect(container.read(readerSettingsProvider).epubTwoPage, isTrue);
+    expect(changes, contains('epub_two_page'));
+
+    // Scroll view has no pages to put side by side.
+    container.read(readerSettingsProvider.notifier).setScrollView(true);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SettingsSwitchRow>(row).onChanged, isNull);
+  });
+
   testWidgets('changing font size reports telemetry with the setting name', (
     tester,
   ) async {

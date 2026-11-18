@@ -1697,6 +1697,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Mostrar dos bloques de texto apilados por página';
 
   @override
+  String get readerTwoPageTitle => 'Dos páginas en pantallas anchas';
+
+  @override
   String get readerScrollViewTitle => 'Vista de desplazamiento';
 
   @override

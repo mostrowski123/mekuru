@@ -85,6 +85,23 @@ void main() {
     expect(tester.widget<SettingsSwitchRow>(splitFinder).onChanged, isNull);
   });
 
+  testWidgets('two pages on wide screens is off and writes through', (
+    tester,
+  ) async {
+    final container = await _pumpScreen(tester);
+    final row = find.widgetWithText(
+      SettingsSwitchRow,
+      'Two pages on wide screens',
+    );
+    await scrollSettingsTo(tester, row);
+    expect(tester.widget<SettingsSwitchRow>(row).value, isFalse);
+
+    await tester.tap(find.descendant(of: row, matching: find.byType(Switch)));
+    await tester.pumpAndSettle();
+
+    expect(container.read(readerSettingsProvider).epubTwoPage, isTrue);
+  });
+
   testWidgets('the manga background row shows and sets the choice', (
     tester,
   ) async {

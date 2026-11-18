@@ -2877,6 +2877,12 @@ abstract class AppLocalizations {
   /// **'Show two stacked text blocks per page'**
   String get readerSplitVerticalTextSubtitle;
 
+  /// Switch in the EPUB reader settings: show two pages side by side where the screen is wide enough (tablets, unfolded foldables, phones held sideways).
+  ///
+  /// In en, this message translates to:
+  /// **'Two pages on wide screens'**
+  String get readerTwoPageTitle;
+
   /// Title for the EPUB setting that shows each chapter as one strip the reader slides through (sideways for vertical text, up and down for horizontal text) instead of pages.
   ///
   /// In en, this message translates to:

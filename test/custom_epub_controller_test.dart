@@ -101,12 +101,12 @@ void main() {
         );
 
       controller.setTwoPage(true);
-      controller.setTwoPage(false);
+      controller.setTwoPage(false, pageWidth: 411.5);
       await _flushMicrotasks();
 
       expect(platformController.evaluatedSources, [
         'setTwoPage(true)',
-        'setTwoPage(false)',
+        'setTwoPage(false, 411.5)',
       ]);
     });
 

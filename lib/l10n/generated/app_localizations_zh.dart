@@ -1603,6 +1603,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerSplitVerticalTextSubtitle => '每页显示上下两栏文本';
 
   @override
+  String get readerTwoPageTitle => '宽屏双页显示';
+
+  @override
   String get readerScrollViewTitle => '滚动视图';
 
   @override
@@ -6206,6 +6209,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerSplitVerticalTextSubtitle => '每页显示上下两栏文本';
+
+  @override
+  String get readerTwoPageTitle => '宽屏双页显示';
 
   @override
   String get readerScrollViewTitle => '滚动视图';
