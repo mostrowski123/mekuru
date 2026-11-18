@@ -63,16 +63,19 @@ void main() {
       return page['wide'] == true && page['able'] == true ? 2 : 1;
     }
 
-    // Upright: one page on a phone. Read on a few pages.
-    expect(
-      (await settledPairState(tester, controller))['divisor'],
-      await pagesWanted(),
-    );
-    for (var turns = 0; turns < 3; turns++) {
+    // Upright: one page on a phone. Read on a few pages, staying in the
+    // chapter: a tablet shows all of it in a few.
+    var upright = await settledPairState(tester, controller);
+    expect(upright['divisor'], await pagesWanted());
+    for (
+      var turns = 0;
+      turns < 3 && (upright['endPage'] as int) < (upright['total'] as int) - 1;
+      turns++
+    ) {
       controller.next();
       await tester.pump(const Duration(milliseconds: 900));
+      upright = await settledPairState(tester, controller);
     }
-    final upright = await settledPairState(tester, controller);
     expect(upright['index'], 0, reason: '$upright');
     final first = upright['cfi'] as String;
 
