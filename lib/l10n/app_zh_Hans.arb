@@ -3313,5 +3313,11 @@
   "wordAudioPackWarning": "此下载大小为 {size}，会保存在你的设备上。没有它也能使用单词音频：点按扬声器时才下载对应单词的音频。",
   "wordAudioPackMobileBody": "离线包大小为 {size}。你正在使用移动数据或热点，下载可能会消耗你的流量。",
   "wordAudioPackFailedTitle": "单词音频下载失败",
-  "backgroundWorkWordAudio": "正在下载单词音频"
+  "backgroundWorkWordAudio": "正在下载单词音频",
+  "mangaBackgroundTitle": "背景",
+  "mangaBackgroundBlack": "黑色",
+  "mangaBackgroundGray": "灰色",
+  "mangaBackgroundWhite": "白色",
+  "mangaBackgroundAuto": "自动",
+  "mangaBackgroundBlur": "模糊"
 }

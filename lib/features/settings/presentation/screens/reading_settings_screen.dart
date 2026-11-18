@@ -216,6 +216,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
             child: MangaViewModeRow(),
           ),
           const MangaDetectSpreadsRow(),
+          const MangaBackgroundRow(),
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Column(

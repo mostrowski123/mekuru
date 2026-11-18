@@ -7550,6 +7550,42 @@ abstract class AppLocalizations {
   /// **'For books whose pages pair up wrongly'**
   String get mangaShiftSpreadsSubtitle;
 
+  /// Label of the manga setting that chooses what is shown around the page.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get mangaBackgroundTitle;
+
+  /// Manga background choice: plain black.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get mangaBackgroundBlack;
+
+  /// Manga background choice: plain dark gray.
+  ///
+  /// In en, this message translates to:
+  /// **'Gray'**
+  String get mangaBackgroundGray;
+
+  /// Manga background choice: plain white.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get mangaBackgroundWhite;
+
+  /// Manga background choice: the colour of the edge of the page on screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get mangaBackgroundAuto;
+
+  /// Manga background choice: the page itself, enlarged and blurred.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur'**
+  String get mangaBackgroundBlur;
+
   /// Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight held on the page.
   ///
   /// In en, this message translates to:

@@ -4690,6 +4690,24 @@ class AppLocalizationsId extends AppLocalizations {
       'Untuk buku yang pasangan halamannya salah';
 
   @override
+  String get mangaBackgroundTitle => 'Latar belakang';
+
+  @override
+  String get mangaBackgroundBlack => 'Hitam';
+
+  @override
+  String get mangaBackgroundGray => 'Abu-abu';
+
+  @override
+  String get mangaBackgroundWhite => 'Putih';
+
+  @override
+  String get mangaBackgroundAuto => 'Otomatis';
+
+  @override
+  String get mangaBackgroundBlur => 'Buram';
+
+  @override
   String get readerAddNote => 'Tambah catatan';
 
   @override

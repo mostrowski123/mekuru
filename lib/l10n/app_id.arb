@@ -3313,5 +3313,11 @@
   "wordAudioPackWarning": "Unduhan ini berukuran {size} dan disimpan di perangkat Anda. Audio kata tetap berfungsi tanpanya: tiap kata diunduh saat Anda mengetuk ikon speakernya.",
   "wordAudioPackMobileBody": "Ukuran paket offline {size}. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda.",
   "wordAudioPackFailedTitle": "Unduhan audio kata gagal",
-  "backgroundWorkWordAudio": "Mengunduh audio kata"
+  "backgroundWorkWordAudio": "Mengunduh audio kata",
+  "mangaBackgroundTitle": "Latar belakang",
+  "mangaBackgroundBlack": "Hitam",
+  "mangaBackgroundGray": "Abu-abu",
+  "mangaBackgroundWhite": "Putih",
+  "mangaBackgroundAuto": "Otomatis",
+  "mangaBackgroundBlur": "Buram"
 }

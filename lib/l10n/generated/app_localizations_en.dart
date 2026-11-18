@@ -4665,6 +4665,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'For books whose pages pair up wrongly';
 
   @override
+  String get mangaBackgroundTitle => 'Background';
+
+  @override
+  String get mangaBackgroundBlack => 'Black';
+
+  @override
+  String get mangaBackgroundGray => 'Gray';
+
+  @override
+  String get mangaBackgroundWhite => 'White';
+
+  @override
+  String get mangaBackgroundAuto => 'Auto';
+
+  @override
+  String get mangaBackgroundBlur => 'Blur';
+
+  @override
   String get readerAddNote => 'Add note';
 
   @override

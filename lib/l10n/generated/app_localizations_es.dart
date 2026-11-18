@@ -4723,6 +4723,24 @@ class AppLocalizationsEs extends AppLocalizations {
       'Para libros cuyas páginas se emparejan mal';
 
   @override
+  String get mangaBackgroundTitle => 'Fondo';
+
+  @override
+  String get mangaBackgroundBlack => 'Negro';
+
+  @override
+  String get mangaBackgroundGray => 'Gris';
+
+  @override
+  String get mangaBackgroundWhite => 'Blanco';
+
+  @override
+  String get mangaBackgroundAuto => 'Automático';
+
+  @override
+  String get mangaBackgroundBlur => 'Desenfoque';
+
+  @override
   String get readerAddNote => 'Añadir nota';
 
   @override

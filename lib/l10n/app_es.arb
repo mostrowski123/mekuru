@@ -3313,5 +3313,11 @@
   "wordAudioPackWarning": "Esta descarga ocupa {size} y se queda en tu dispositivo. El audio de palabras funciona sin ella: cada palabra se descarga entonces al tocar su altavoz.",
   "wordAudioPackMobileBody": "El paquete sin conexión ocupa {size}. Estás usando datos móviles o un punto de acceso, así que descargarlo puede consumir tu plan de datos.",
   "wordAudioPackFailedTitle": "Falló la descarga del audio de palabras",
-  "backgroundWorkWordAudio": "Descargando audio de palabras"
+  "backgroundWorkWordAudio": "Descargando audio de palabras",
+  "mangaBackgroundTitle": "Fondo",
+  "mangaBackgroundBlack": "Negro",
+  "mangaBackgroundGray": "Gris",
+  "mangaBackgroundWhite": "Blanco",
+  "mangaBackgroundAuto": "Automático",
+  "mangaBackgroundBlur": "Desenfoque"
 }

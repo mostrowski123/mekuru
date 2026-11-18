@@ -48,6 +48,18 @@ List<ButtonSegment<int>> furiganaJlptLevelSegments() {
   ];
 }
 
+// Five choices: a picker row like furigana, see above.
+String mangaBackgroundLabel(
+  AppLocalizations l10n,
+  MangaBackground background,
+) => switch (background) {
+  MangaBackground.black => l10n.mangaBackgroundBlack,
+  MangaBackground.gray => l10n.mangaBackgroundGray,
+  MangaBackground.white => l10n.mangaBackgroundWhite,
+  MangaBackground.auto => l10n.mangaBackgroundAuto,
+  MangaBackground.blur => l10n.mangaBackgroundBlur,
+};
+
 List<ButtonSegment<MangaViewMode>> mangaViewModeSegments(
   AppLocalizations l10n,
 ) {

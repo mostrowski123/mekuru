@@ -24,6 +24,7 @@ import 'package:mekuru/features/manga/presentation/providers/pro_access_provider
 import 'package:mekuru/features/manga/data/services/page_char_counter.dart';
 import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_backdrop.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_reader_settings_sheet.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_scroll_view.dart';
@@ -342,36 +343,42 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     final offsets = ref.read(lowRamModeProvider)
         ? const [1]
         : const [1, 2, 3, -1];
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final dpr = MediaQuery.devicePixelRatioOf(context);
-    final cacheWidth = (screenWidth * dpr).toInt();
+    final cacheWidth = _pageCacheWidth;
 
     for (final offset in offsets) {
       final idx = _currentPage + offset;
       if (idx < 0 || idx >= mokuroBook.pages.length) continue;
 
-      final page = mokuroBook.pages[idx];
-      final safImagePath = mokuroBook.safImagePathFor(page);
-      // Same keys as the page views build, so a precached page is a hit.
-      final provider = safImagePath != null
-          ? ResizeImage(
-              AndroidSafImageProvider(
-                treeUri: mokuroBook.safTreeUri,
-                relativePath: safImagePath,
-              ),
-              width: cacheWidth,
-            )
-          : fileImage(
-              File('${mokuroBook.imageDirPath}/${page.imageFileName}'),
-              cacheWidth: cacheWidth,
-            );
-
       precacheImage(
-        provider,
+        _pageImage(mokuroBook, mokuroBook.pages[idx], cacheWidth),
         context,
         onError: (_, _) {}, // missing/unreadable page images fail on display
       );
     }
+  }
+
+  /// The width single-page view decodes its pages at: an image asked for at
+  /// this width is the one already on screen or precached.
+  int get _pageCacheWidth =>
+      (MediaQuery.sizeOf(context).width *
+              MediaQuery.devicePixelRatioOf(context))
+          .toInt();
+
+  /// A page's image decoded [cacheWidth] wide.
+  ImageProvider _pageImage(MokuroBook book, MokuroPage page, int cacheWidth) {
+    final safImagePath = book.safImagePathFor(page);
+    return safImagePath != null
+        ? ResizeImage(
+            AndroidSafImageProvider(
+              treeUri: book.safTreeUri,
+              relativePath: safImagePath,
+            ),
+            width: cacheWidth,
+          )
+        : fileImage(
+            File('${book.imageDirPath}/${page.imageFileName}'),
+            cacheWidth: cacheWidth,
+          );
   }
 
   Future<void> _acknowledgeCompletedOcrOverlay() async {
@@ -1151,6 +1158,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       _, // readerAnimations, read through _animatePageTurns
       volumeKeys,
       detectSpreads,
+      background,
     ) = ref.watch(
       readerSettingsProvider.select(
         (s) => (
@@ -1160,6 +1168,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           s.readerAnimations,
           s.volumeKeyPageTurn,
           s.mangaDetectSpreads,
+          s.mangaBackground,
         ),
       ),
     );
@@ -1308,6 +1317,29 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               onIntent: onIntent,
               child: Stack(
                 children: [
+                  Positioned.fill(
+                    child: MangaBackdrop(
+                      mode: background,
+                      pageImage: switch (viewMode) {
+                        // The decode the page view already holds.
+                        MangaViewMode.singlePage => _pageImage(
+                          mokuroBook,
+                          mokuroBook.pages[_currentPage],
+                          _pageCacheWidth,
+                        ),
+                        // Spread pages decode at widths only the spread
+                        // view knows, so a small decode of its own.
+                        MangaViewMode.twoPageSpread => _pageImage(
+                          mokuroBook,
+                          mokuroBook.pages[_currentPage],
+                          32,
+                        ),
+                        // Pages fill the width: the backdrop never shows.
+                        MangaViewMode.scroll => null,
+                      },
+                    ),
+                  ),
+
                   // Page content with tap zones. In e-reader mode unzoomed
                   // swipes are detected from raw pointer events here (no
                   // gesture-arena entry that could fight pinch-zoom) and turn

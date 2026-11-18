@@ -34,6 +34,42 @@ class MangaViewModeRow extends ConsumerWidget {
   }
 }
 
+class MangaBackgroundRow extends ConsumerWidget {
+  const MangaBackgroundRow({super.key, this.onSettingChanged});
+
+  final void Function(String setting, Object value)? onSettingChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final background = ref.watch(
+      readerSettingsProvider.select((s) => s.mangaBackground),
+    );
+    return ListTile(
+      leading: const Icon(Icons.format_color_fill),
+      title: Text(l10n.mangaBackgroundTitle),
+      trailing: Text(
+        mangaBackgroundLabel(l10n, background),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.primary,
+        ),
+      ),
+      onTap: () => showSettingsOptionPickerSheet<MangaBackground>(
+        context: context,
+        title: l10n.mangaBackgroundTitle,
+        values: MangaBackground.values,
+        selected: background,
+        labelOf: (value) => mangaBackgroundLabel(l10n, value),
+        onSelected: (chosen) {
+          ref.read(readerSettingsProvider.notifier).setMangaBackground(chosen);
+          onSettingChanged?.call('background', chosen.name);
+        },
+      ),
+    );
+  }
+}
+
 class MangaDetectSpreadsRow extends ConsumerWidget {
   const MangaDetectSpreadsRow({super.key, this.onSettingChanged});
 

@@ -92,6 +92,26 @@ void main() {
     expect(changes, ['book_direction']);
   });
 
+  testWidgets('the background row sets the global background', (tester) async {
+    final changes = <String>[];
+    final container = await _pumpSheet(
+      tester,
+      onSettingChanged: (setting, value) => changes.add('$setting=$value'),
+    );
+    final row = find.widgetWithText(ListTile, 'Background');
+    await scrollSettingsTo(tester, row);
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Blur'));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(readerSettingsProvider).mangaBackground,
+      MangaBackground.blur,
+    );
+    expect(changes, ['background=blur']);
+  });
+
   testWidgets('toggling the debug overlay does not close the sheet', (
     tester,
   ) async {

@@ -5985,6 +5985,30 @@
   "@mangaShiftSpreadsSubtitle": {
     "description": "Subtitle of the per-book setting that moves every page pair in Spread view by one page."
   },
+  "mangaBackgroundTitle": "Background",
+  "@mangaBackgroundTitle": {
+    "description": "Label of the manga setting that chooses what is shown around the page."
+  },
+  "mangaBackgroundBlack": "Black",
+  "@mangaBackgroundBlack": {
+    "description": "Manga background choice: plain black."
+  },
+  "mangaBackgroundGray": "Gray",
+  "@mangaBackgroundGray": {
+    "description": "Manga background choice: plain dark gray."
+  },
+  "mangaBackgroundWhite": "White",
+  "@mangaBackgroundWhite": {
+    "description": "Manga background choice: plain white."
+  },
+  "mangaBackgroundAuto": "Auto",
+  "@mangaBackgroundAuto": {
+    "description": "Manga background choice: the colour of the edge of the page on screen."
+  },
+  "mangaBackgroundBlur": "Blur",
+  "@mangaBackgroundBlur": {
+    "description": "Manga background choice: the page itself, enlarged and blurred."
+  },
   "readerAddNote": "Add note",
   "@readerAddNote": {
     "description": "Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight held on the page."

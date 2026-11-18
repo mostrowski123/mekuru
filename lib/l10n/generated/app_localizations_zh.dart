@@ -4443,6 +4443,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mangaShiftSpreadsSubtitle => '适用于页面配对错误的书';
 
   @override
+  String get mangaBackgroundTitle => '背景';
+
+  @override
+  String get mangaBackgroundBlack => '黑色';
+
+  @override
+  String get mangaBackgroundGray => '灰色';
+
+  @override
+  String get mangaBackgroundWhite => '白色';
+
+  @override
+  String get mangaBackgroundAuto => '自动';
+
+  @override
+  String get mangaBackgroundBlur => '模糊';
+
+  @override
   String get readerAddNote => '添加笔记';
 
   @override
@@ -9013,6 +9031,24 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get mangaShiftSpreadsSubtitle => '适用于页面配对错误的书';
+
+  @override
+  String get mangaBackgroundTitle => '背景';
+
+  @override
+  String get mangaBackgroundBlack => '黑色';
+
+  @override
+  String get mangaBackgroundGray => '灰色';
+
+  @override
+  String get mangaBackgroundWhite => '白色';
+
+  @override
+  String get mangaBackgroundAuto => '自动';
+
+  @override
+  String get mangaBackgroundBlur => '模糊';
 
   @override
   String get readerAddNote => '添加笔记';

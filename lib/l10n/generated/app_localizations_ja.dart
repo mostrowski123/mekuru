@@ -4540,6 +4540,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mangaShiftSpreadsSubtitle => 'ページの組み合わせがずれている本向け';
 
   @override
+  String get mangaBackgroundTitle => '背景';
+
+  @override
+  String get mangaBackgroundBlack => '黒';
+
+  @override
+  String get mangaBackgroundGray => 'グレー';
+
+  @override
+  String get mangaBackgroundWhite => '白';
+
+  @override
+  String get mangaBackgroundAuto => '自動';
+
+  @override
+  String get mangaBackgroundBlur => 'ぼかし';
+
+  @override
   String get readerAddNote => 'メモを追加';
 
   @override

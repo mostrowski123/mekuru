@@ -81,6 +81,32 @@ void main() {
     expect(tester.widget<SettingsSwitchRow>(splitFinder).onChanged, isNull);
   });
 
+  testWidgets('the manga background row shows and sets the choice', (
+    tester,
+  ) async {
+    final container = await _pumpScreen(tester);
+    final row = find.widgetWithText(ListTile, 'Background');
+    await scrollSettingsTo(tester, row);
+    expect(
+      find.descendant(of: row, matching: find.text('Black')),
+      findsOneWidget,
+    );
+
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('White'));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(readerSettingsProvider).mangaBackground,
+      MangaBackground.white,
+    );
+    expect(
+      find.descendant(of: row, matching: find.text('White')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('spread detection writes through', (tester) async {
     final container = await _pumpScreen(tester);
     final row = find.widgetWithText(
