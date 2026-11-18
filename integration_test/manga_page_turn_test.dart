@@ -57,8 +57,19 @@ void main() {
       img.ColorRgb8(30, 160, 30),
       img.ColorRgb8(30, 30, 200),
     ].indexed) {
+      // A coloured band across the top: a picture drawn upside down shows.
       final page = img.encodePng(
-        img.fill(img.Image(width: 200, height: 300), color: color),
+        img.fillRect(
+          img.fill(
+            img.Image(width: 200, height: 300),
+            color: img.ColorRgb8(240, 240, 235),
+          ),
+          x1: 0,
+          y1: 0,
+          x2: 199,
+          y2: 79,
+          color: color,
+        ),
       );
       archive.addFile(ArchiveFile('${index + 1}.png', page.length, page));
     }
