@@ -181,6 +181,20 @@ void main() {
       reason: '$linked',
     );
 
+    // (n) A link to an id the chapter does not have opens the chapter's
+    // start, as on one page, not its end.
+    await turn();
+    await turn();
+    await controller.debugEvaluateJavascript(
+      "rendition.display(book.spine.get(1).href + '#nowhere'); true",
+    );
+    final nowhere = await settledPairState(tester, controller);
+    expect(
+      [nowhere['index'], nowhere['page'], nowhere['pos']],
+      [1, 1, 0],
+      reason: '$nowhere',
+    );
+
     // (l) A book whose pages run left to right (it says so, or says nothing
     // and the reader's page order is left to right): vertical text still
     // shows its pairs right page first.
@@ -222,6 +236,17 @@ void main() {
       92,
     );
 
+    // (o) A link followed without a touch (a keyboard, a screen reader): the
+    // next re-layout stays where the link led, not where the reader was.
+    await controller.debugEvaluateJavascript(
+      "rendition.manager.views.last().contents.emit('linkClicked', "
+      'book.path.resolve(book.spine.get(1).href)); true',
+    );
+    await waitForSection(tester, controller, 1);
+    controller.setMargins(46, 24);
+    final followed = await settledPairState(tester, controller);
+    expect(followed['index'], 1, reason: '$followed');
+
     // (i) Generated furigana: still whole pairs, nothing across the fold.
     await controller.debugEvaluateJavascript(
       'rendition.display(book.spine.get(0).href); true',
@@ -256,6 +281,25 @@ void main() {
       closeTo(single['height'] as int, 1),
       reason: 'before $single, after $down',
     );
+
+    // The switch can arrive before the turned screen does: until the page
+    // is laid out again, a re-format of the one-page section (furigana or a
+    // font arriving) leaves it as it is.
+    final reformatted = await evalJson(controller, '''
+(function () {
+  var m = rendition.manager, contents = m.views.last().contents;
+  // The text's own extent: the frame around it only changes later.
+  function size() { return contents.textWidth() + 'x' + contents.textHeight(); }
+  var before = size();
+  window._twoPageVertical = true;
+  m.layout.format(contents);
+  var after = size();
+  window._twoPageVertical = false;
+  m.layout.format(contents);
+  return JSON.stringify({before: before, after: after});
+})()
+''');
+    expect(reformatted['after'], reformatted['before'], reason: '$reformatted');
   });
 }
 

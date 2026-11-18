@@ -4349,6 +4349,12 @@ class default_DefaultViewManager {
         } else if (box) {
           rect = box.rect;
         }
+        // Nothing to show (no such id, an element with no box): the
+        // section's start, as on one page. locationOf() answers 0, 0, and
+        // right to left that is the section's end.
+        if (!rect || !rect.width && !rect.height) {
+          rect = { right: view.width() };
+        }
       }
       let offset = rect ? { left: rect.right - 1, top: 0 } : view.locationOf(target);
       let before = this.container.scrollLeft;
@@ -6511,7 +6517,7 @@ class Contents {
    * @param {number} columnWidth
    * @param {number} gap
    */
-  columns(width, height, columnWidth, gap, dir) {
+  columns(width, height, columnWidth, gap, dir, divisor) {
     let COLUMN_AXIS = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-axis");
     let COLUMN_GAP = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-gap");
     let COLUMN_WIDTH = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-width");
@@ -6553,7 +6559,10 @@ class Contents {
     // that run leftwards (column-wrap, Chromium 145+). WebKit turns its
     // column axis sideways, which makes each column as wide as the box, so
     // there the box is one page wide. Split text has no place in this.
-    if (axis === "vertical" && window._twoPage && window._twoPageVertical) {
+    // Only while the layout is two-up: the switch can arrive before the
+    // screen has turned, and until that lay-out the section on screen
+    // is still one page, paged downwards.
+    if (axis === "vertical" && divisor > 1 && window._twoPage && window._twoPageVertical) {
       this.css("padding-top", "20px");
       this.css("padding-bottom", "20px");
       this.css("padding-left", gap / 2 + "px", true);
@@ -7491,7 +7500,8 @@ class layout_Layout {
     if (this.name === "pre-paginated") {
       formating = contents.fit(this.columnWidth, this.height, section);
     } else if (this._flow === "paginated") {
-      formating = contents.columns(this.width, this.height, this.columnWidth, this.gap, this.settings.direction);
+      // [MEKURU PATCH] the divisor: see Contents.columns().
+      formating = contents.columns(this.width, this.height, this.columnWidth, this.gap, this.settings.direction, this.divisor);
     } else if (axis && axis === "horizontal") {
       formating = contents.size(null, this.height);
     } else {

@@ -448,6 +448,10 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     _registerUserFont(contents.window, doc);
 
     doc.addEventListener('keydown', forwardPageTurnKey);
+    // epub.js follows a link itself (Rendition.handleLinks()). A tap has
+    // already let go through its touch; a keyboard or a screen reader sends
+    // none, and a place still held would take the next re-layout back.
+    contents.on('linkClicked', unpinScroll);
 
     // Furigana: inject visibility style and (lazily) generate ruby for kanji.
     applyFuriganaStyleToDoc(doc);
