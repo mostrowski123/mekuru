@@ -80,8 +80,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.forceHorizontalAxis = false,
     this.verticalTextBlocks = 1,
     this.scrollView = false,
-    this.twoPage = false,
-    this.pageWidth,
+    this.twoPageMinWidth,
     required this.furiganaMode,
     this.furiganaJlptLevel = 3,
     this.furiganaKnownKanji = const {},
@@ -136,13 +135,10 @@ class CustomEpubViewer extends StatefulWidget {
   /// changing it needs a new viewer.
   final bool scrollView;
 
-  /// Two pages side by side (see `epubShowsTwoPages`). A change lays the book
-  /// out again at the place on screen; no new viewer is needed.
-  final bool twoPage;
-
-  /// The page area's width [twoPage] was decided for. A rotation or fold
-  /// changes both together, and the page lays itself out once for the two.
-  final double? pageWidth;
+  /// The narrowest page area that shows two pages side by side, null for one
+  /// page always (see `epubTwoPageMinWidth`). A change lays the book out
+  /// again at the place on screen; no new viewer is needed.
+  final double? twoPageMinWidth;
 
   /// Initial furigana mode. Passed to the JS viewer so the first rendered
   /// section applies the mode immediately.
@@ -248,8 +244,9 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
   void didUpdateWidget(CustomEpubViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Before `loadBook` there is nothing to tell: it brings the value itself.
-    if (_loadBookInvoked && widget.twoPage != oldWidget.twoPage) {
-      widget.controller.setTwoPage(widget.twoPage, pageWidth: widget.pageWidth);
+    if (_loadBookInvoked &&
+        widget.twoPageMinWidth != oldWidget.twoPageMinWidth) {
+      widget.controller.setTwoPage(widget.twoPageMinWidth);
     }
   }
 
@@ -806,7 +803,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       '$furiganaParam, '
       '${widget.verticalTextBlocks}, '
       '${cachedLocations ?? 'null'}, '
-      '${widget.twoPage}'
+      '${widget.twoPageMinWidth}'
       ')',
     );
 

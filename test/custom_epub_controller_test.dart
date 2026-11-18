@@ -100,13 +100,13 @@ void main() {
           InAppWebViewController.fromPlatform(platform: platformController),
         );
 
-      controller.setTwoPage(true);
-      controller.setTwoPage(false, pageWidth: 411.5);
+      controller.setTwoPage(600);
+      controller.setTwoPage(null);
       await _flushMicrotasks();
 
       expect(platformController.evaluatedSources, [
-        'setTwoPage(true)',
-        'setTwoPage(false, 411.5)',
+        'setTwoPage(600.0)',
+        'setTwoPage(null)',
       ]);
     });
 

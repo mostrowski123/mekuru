@@ -151,13 +151,11 @@ class CustomEpubController {
     _eval('setMargins($horizontal, $vertical)');
   }
 
-  /// Two pages side by side ([on]) or one, laid out again at the place on
-  /// screen. The page can still show one: a fixed-layout book, or vertical
-  /// text in a web view that cannot page it sideways. [pageWidth] is the
-  /// page area's width this was decided for: a page that has not reached it
-  /// yet is being rotated or folded, and lays itself out once for both.
-  void setTwoPage(bool on, {double? pageWidth}) =>
-      _eval('setTwoPage($on${pageWidth == null ? '' : ', $pageWidth'})');
+  /// Two pages side by side wherever the page area is at least [minWidth]
+  /// wide, or one page always (null), laid out again at the place on screen
+  /// if that changes what shows. The page can still show one: a fixed-layout
+  /// book, or vertical text in a web view that cannot page it sideways.
+  void setTwoPage(double? minWidth) => _eval('setTwoPage($minWidth)');
 
   void setBodyBackground(Color color) {
     final hex = _colorToHex(color);

@@ -267,9 +267,9 @@ void main() {
     await controller.debugEvaluateJavascript(
       'window._twoPageVertical = false; true',
     );
-    controller.setTwoPage(false);
+    controller.setTwoPage(null);
     await tester.pump(const Duration(seconds: 2));
-    controller.setTwoPage(true);
+    controller.setTwoPage(kEpubTwoPageMinWidth);
     await tester.pump(const Duration(seconds: 2));
     final single = await evalJson(controller, _verticalState);
     expect([single['axis'], single['divisor']], ['vertical', 1]);

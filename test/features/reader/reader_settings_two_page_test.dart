@@ -23,17 +23,15 @@ void main() {
     },
   );
 
-  test('two pages show only when switched on, paginated and wide enough', () {
+  test('two pages are offered only when switched on and paginated', () {
     const on = ReaderSettings(epubTwoPage: true);
-    // Tablets, unfolded foldables and phones held sideways.
-    expect(epubShowsTwoPages(on, pageWidth: 600), isTrue);
-    expect(epubShowsTwoPages(on, pageWidth: 1180), isTrue);
-    // A phone held upright, a folded foldable's cover screen.
-    expect(epubShowsTwoPages(on, pageWidth: 599), isFalse);
-    expect(epubShowsTwoPages(const ReaderSettings(), pageWidth: 1180), isFalse);
+    // Tablets, unfolded foldables and phones held sideways are this wide; a
+    // phone held upright is not. The page applies it to its own width.
+    expect(epubTwoPageMinWidth(on), 600);
+    expect(epubTwoPageMinWidth(const ReaderSettings()), isNull);
     expect(
-      epubShowsTwoPages(on.copyWith(scrollView: true), pageWidth: 1180),
-      isFalse,
+      epubTwoPageMinWidth(on.copyWith(scrollView: true)),
+      isNull,
       reason: 'scroll view has no pages',
     );
   });

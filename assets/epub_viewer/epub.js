@@ -4142,6 +4142,10 @@ class default_DefaultViewManager {
     this._stageSize = stageSize;
     this._bounds = this.bounds();
 
+    // [MEKURU PATCH] reader_bridge.js decides here, for the size about to be
+    // laid out, whether two pages show side by side.
+    if (typeof syncTwoPage === "function") syncTwoPage();
+
     // Clear current views
     this.clear();
 

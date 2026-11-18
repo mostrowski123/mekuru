@@ -121,7 +121,7 @@ void main() {
       '(function () {'
       '  var m = rendition.manager;'
       '  rendition.manager = null;'
-      '  setTwoPage(false);'
+      '  setTwoPage(null);'
       '  rendition.manager = m;'
       '  return true;'
       '})()',

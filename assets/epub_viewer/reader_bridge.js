@@ -185,10 +185,11 @@ function applyUserFont() {
   for (var i = 0; i < docs.length; i++) _registerUserFont(docs[i].defaultView, docs[i]);
 }
 
-function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks, cachedLocations, twoPage) {
+function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks, cachedLocations, twoPageMinWidth) {
   if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
   _scrollView = (flow === 'scrolled');
-  window._twoPage = !!twoPage && !_scrollView;
+  _twoPageMinWidth = typeof twoPageMinWidth === 'number' ? twoPageMinWidth : null;
+  window._twoPage = twoPageAt(window.innerWidth);
   window._twoPageVertical = twoPageVerticalSupported();
   var uint8 = _epubBuf;
   _epubBuf = null;
@@ -1671,37 +1672,52 @@ function applyTwoPageSpread(on) {
   rendition.manager.settings.gap = on ? twoPageGap() : undefined;
 }
 
-// Two pages side by side or one (Dart's switch and width rule), laid out
-// again at the place on screen. [pageWidth] is the page area's width Dart
-// decided for: when the page has not reached it yet, a rotation or fold is
-// under way, and epub.js's own re-layout for it (stage resize) takes the new
-// spread. A second lay-out here would run at the old size, and each one
-// moves the place back to the start of its page.
-function setTwoPage(on, pageWidth) {
-  on = !!on && !_scrollView;
+// The two-page switch: the narrowest page area, in CSS pixels, that shows
+// two pages side by side (Dart's kEpubTwoPageMinWidth), or null with the
+// switch off.
+var _twoPageMinWidth = null;
+
+// Whether a page area [width] wide shows two pages. (A section can still
+// show one: vertical text in a web view that cannot page it sideways.)
+function twoPageAt(width) {
+  return _twoPageMinWidth != null && !_scrollView && width >= _twoPageMinWidth &&
+    !(rendition && rendition.settings.layout === 'pre-paginated');
+}
+
+// epub.js calls this for each size it is about to lay the book out at
+// (DefaultViewManager.resize()): a rotation, a fold, split view, and
+// relayoutInPlace(). The web view's own width is the page area's, whatever
+// shares the screen with it. Deciding here, and not from a message of
+// Dart's, gives one lay-out per size: a message can arrive before the web
+// view has its new size or after it, and each guess laid the book out twice
+// one way round, first with the wrong spread.
+function syncTwoPage() {
+  var on = twoPageAt(window.innerWidth);
+  if (on === window._twoPage) return;
+  holdRelayoutPlace();
+  window._twoPage = on;
+  applyTwoPageSpread(on);
+}
+
+// The switch changed: [minWidth] as _twoPageMinWidth.
+function setTwoPage(minWidth) {
+  _twoPageMinWidth = typeof minWidth === 'number' ? minWidth : null;
+  console.log('[EPUB_BRIDGE] setTwoPage(' + _twoPageMinWidth + ') innerWidth=' + window.innerWidth);
   // Before loadBook() there is nothing to switch: it brings its own value.
   if (!rendition) return;
   // The book is still opening, and its rendition was made with the old
   // value: switch once it has started.
   if (!rendition.manager) {
-    rendition.started.then(function () { setTwoPage(on, pageWidth); });
+    rendition.started.then(function () { setTwoPage(minWidth); });
     return;
   }
-  if (rendition.settings.layout === 'pre-paginated') on = false;
-  if (on === window._twoPage) return;
-  holdRelayoutPlace();
-  window._twoPage = on;
-  applyTwoPageSpread(on);
-  var manager = rendition.manager;
-  // Not laid out yet: its first lay-out takes the new spread.
-  if (!manager.isRendered()) return;
-  var cached = manager._stageSize;
-  var size = manager.stage.size();
-  var resizing = (typeof pageWidth === 'number' && Math.abs(window.innerWidth - pageWidth) > 1) ||
-    (cached && (cached.width !== size.width || cached.height !== size.height));
-  console.log('[EPUB_BRIDGE] setTwoPage(' + on + ', ' + pageWidth + ') innerWidth=' +
-    window.innerWidth + (resizing ? ', the resize lays it out' : ''));
-  if (!resizing) relayoutInPlace();
+  if (!rendition.manager.isRendered()) {
+    // Not laid out yet: its first lay-out takes the new spread.
+    syncTwoPage();
+  } else if (twoPageAt(window.innerWidth) !== window._twoPage) {
+    // Laid out again at the place on screen; that lay-out asks syncTwoPage().
+    relayoutInPlace();
+  }
 }
 
 // The first character on screen when the reader last turned, jumped or

@@ -120,13 +120,13 @@ PageTurnStyle effectivePageTurnStyle(
 /// that wide, a phone held upright is not.
 const kEpubTwoPageMinWidth = 600.0;
 
-/// Whether the EPUB reader lays out two pages side by side in a page area
-/// [pageWidth] logical pixels wide. (The page itself can still say no: a
-/// fixed-layout book, or vertical text in a web view that cannot do it.)
-bool epubShowsTwoPages(ReaderSettings settings, {required double pageWidth}) =>
-    settings.epubTwoPage &&
-    !settings.scrollView &&
-    pageWidth >= kEpubTwoPageMinWidth;
+/// [kEpubTwoPageMinWidth] while the EPUB reader may lay out two pages side
+/// by side, else null: the switch is off, or scroll view has no pages. The
+/// page applies the width itself, to each size it lays out at
+/// (`syncTwoPage()` in reader_bridge.js), and can still say no: a
+/// fixed-layout book, or vertical text in a web view that cannot do it.
+double? epubTwoPageMinWidth(ReaderSettings settings) =>
+    settings.epubTwoPage && !settings.scrollView ? kEpubTwoPageMinWidth : null;
 
 /// What the volume buttons do while a reader is open. Android only: iOS
 /// doesn't let apps take over the volume buttons.
@@ -287,7 +287,7 @@ class ReaderSettings {
   final PageTurnStyle pageTurnStyle;
 
   /// Two EPUB pages side by side where the screen is wide enough, see
-  /// [epubShowsTwoPages]. Off unless the reader switches it on.
+  /// [epubTwoPageMinWidth]. Off unless the reader switches it on.
   final bool epubTwoPage;
 
   /// Whether and which way the volume buttons turn pages in both readers.
