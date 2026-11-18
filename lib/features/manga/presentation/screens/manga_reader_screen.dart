@@ -1740,6 +1740,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               onWordTapped: _onWordTapped,
               pageController: _pageController,
               animatePageTurns: _slidePages,
+              onEdgeTurn: (step) => _navigate(step, totalPages, spreads),
               onZoomChanged: (zoomed) {
                 if (zoomed != _isZoomed) {
                   setState(() => _isZoomed = zoomed);
@@ -1757,6 +1758,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           initialSpreadIndex: spreadIndexForPage(spreads, _currentPage),
           isRtl: isRtl,
           animatePageTurns: _slidePages,
+          onEdgeTurn: (step) => _navigate(step, totalPages, spreads),
           debugOverlay: debugOverlay,
           autoCrop: autoCrop,
           highlightedRects: _highlight?.rects ?? const [],

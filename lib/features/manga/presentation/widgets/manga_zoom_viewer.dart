@@ -25,6 +25,11 @@ class MangaZoomViewer extends StatefulWidget {
   /// past a zoomed page's edge jumps on release; unzoomed swipes are left to
   /// the reader screen.
   final bool animatePageTurns;
+
+  /// While pages don't slide: asks the reader for the turn after a swipe
+  /// past a zoomed page's edge, by +1 or -1 in the [PageView], so the reader
+  /// can turn the page its own way. Null jumps [pageController] here.
+  final ValueChanged<int>? onEdgeTurn;
   final ValueChanged<bool>? onZoomChanged;
   final Widget child;
 
@@ -33,6 +38,7 @@ class MangaZoomViewer extends StatefulWidget {
     required this.pageIndex,
     this.pageController,
     this.animatePageTurns = true,
+    this.onEdgeTurn,
     this.onZoomChanged,
     required this.child,
   });
@@ -208,7 +214,9 @@ class _MangaZoomViewerState extends State<MangaZoomViewer> {
     final lastPage = (position.maxScrollExtent / position.viewportDimension)
         .round();
     final target = (widget.pageIndex + step).clamp(0, lastPage);
-    if (target != widget.pageIndex) controller.jumpToPage(target);
+    if (target == widget.pageIndex) return;
+    final ask = widget.onEdgeTurn;
+    ask != null ? ask(step) : controller.jumpToPage(target);
   }
 
   @override

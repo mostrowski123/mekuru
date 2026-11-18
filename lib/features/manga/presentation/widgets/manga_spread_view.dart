@@ -29,6 +29,9 @@ class MangaSpreadView extends StatefulWidget {
   /// When false (e-reader mode, or a page turn other than Slide) swipes
   /// don't drag the spreads, and programmatic turns jump instantly.
   final bool animatePageTurns;
+
+  /// See [MangaZoomViewer.onEdgeTurn].
+  final ValueChanged<int>? onEdgeTurn;
   final bool debugOverlay;
   final bool autoCrop;
   final bool enableWordOverlays;
@@ -45,6 +48,7 @@ class MangaSpreadView extends StatefulWidget {
     this.initialSpreadIndex = 0,
     this.isRtl = true,
     this.animatePageTurns = true,
+    this.onEdgeTurn,
     this.debugOverlay = false,
     this.autoCrop = false,
     this.enableWordOverlays = true,
@@ -122,6 +126,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
           pageIndex: spreadIdx,
           pageController: _pageController,
           animatePageTurns: widget.animatePageTurns,
+          onEdgeTurn: widget.onEdgeTurn,
           onZoomChanged: widget.onZoomChanged,
           child: _buildSpread(context, spread),
         );

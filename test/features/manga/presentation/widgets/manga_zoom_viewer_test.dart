@@ -9,6 +9,7 @@ Future<PageController> _pumpPages(
   WidgetTester tester, {
   bool animatePageTurns = true,
   bool reverse = false,
+  ValueChanged<int>? onEdgeTurn,
 }) async {
   final controller = PageController(initialPage: 1);
   addTearDown(controller.dispose);
@@ -30,6 +31,7 @@ Future<PageController> _pumpPages(
             pageIndex: index,
             pageController: controller,
             animatePageTurns: animatePageTurns,
+            onEdgeTurn: onEdgeTurn,
             child: const ColoredBox(color: Colors.white),
           ),
         ),
@@ -197,6 +199,24 @@ void main() {
     await tester.pump();
 
     expect(controller.page, 0);
+  });
+
+  testWidgets('a reader that turns pages itself is asked for the turn', (
+    tester,
+  ) async {
+    final asked = <int>[];
+    final controller = await _pumpPages(
+      tester,
+      animatePageTurns: false,
+      onEdgeTurn: asked.add,
+    );
+    await _zoomIn(tester);
+
+    await _drag(tester, const Offset(25, 0), 40);
+    await tester.pump();
+
+    expect(asked, [-1]);
+    expect(controller.page, 1, reason: 'the reader turns, not the viewer');
   });
 
   testWidgets('e-reader mode leaves unzoomed swipes to the screen', (
