@@ -6,9 +6,11 @@ import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' show max;
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
@@ -30,6 +32,7 @@ import 'package:mekuru/features/manga/presentation/widgets/manga_reader_settings
 import 'package:mekuru/features/manga/presentation/widgets/manga_scroll_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_spread_view.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/presentation/widgets/page_turn_overlay.dart';
 import 'package:mekuru/features/reader/data/reader_session_tracker.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
@@ -111,6 +114,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   // View mode keys for cross-widget navigation
   final _scrollViewKey = GlobalKey<MangaScrollViewState>();
   final _spreadViewKey = GlobalKey<MangaSpreadViewState>();
+  final _pageTurn = PageTurnController();
+  final _pageBoundaryKey = GlobalKey();
 
   // Word highlight state — shown while a lookup sheet is active
   _WordHighlight? _highlight;
@@ -409,9 +414,20 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       ref.read(readerSettingsProvider).readerAnimations &&
       !MediaQuery.disableAnimationsOf(context);
 
-  // E-reader mode swipe tracking. Raw pointer events instead of a gesture
-  // recognizer: the page views' physics are disabled in this mode, and a
-  // Listener can never steal pinch-zoom or word taps from the arena.
+  /// How single pages and spreads turn: at once, with the views' own slide,
+  /// or behind a curl ([PageTurnOverlay]).
+  PageTurnStyle get _pageTurnStyle => effectivePageTurnStyle(
+    ref.read(readerSettingsProvider),
+    disableAnimations: MediaQuery.disableAnimationsOf(context),
+  );
+
+  /// Whether single pages and spreads slide, on a turn and under the finger.
+  bool get _slidePages => _pageTurnStyle == PageTurnStyle.slide;
+
+  // Swipe tracking while pages don't slide (e-reader mode, or a page turn
+  // other than Slide). Raw pointer events instead of a gesture recognizer:
+  // the page views' physics are disabled then, and a Listener can never
+  // steal pinch-zoom or word taps from the arena.
   Offset? _ereaderSwipeDownPosition;
   int _ereaderActivePointers = 0;
   bool _ereaderMultiTouch = false;
@@ -501,7 +517,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
 
   void _goToPage(int page, int totalPages) {
     final clamped = page.clamp(0, totalPages - 1);
-    if (!_animatePageTurns) {
+    if (!_slidePages) {
       _pageController.jumpToPage(clamped);
       return;
     }
@@ -512,8 +528,42 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     );
   }
 
-  /// Navigate forward or backward by [delta] pages/spreads depending on mode.
+  /// Navigate forward or backward by [delta] pages/spreads depending on mode,
+  /// behind a curl when that is the page turn.
   void _navigate(int delta, int totalPages, List<PageSpread> spreads) {
+    final settings = ref.read(readerSettingsProvider);
+    final viewMode = settings.mangaViewMode;
+    // A curl needs another page to uncover, and scroll view has no pages.
+    if (_pageTurnStyle != PageTurnStyle.curl ||
+        viewMode == MangaViewMode.scroll ||
+        _visiblePageIndexes(
+          viewMode,
+          spreads,
+        ).contains(delta > 0 ? totalPages - 1 : 0)) {
+      return _turn(delta, totalPages, spreads);
+    }
+    final direction = _bookDirection.value ?? settings.mangaReadingDirection;
+    unawaited(
+      _pageTurn.run(
+        style: PageTurnStyle.curl,
+        leavesRight: (direction == ReaderDirection.rtl) == (delta > 0),
+        capture: _pagePicture,
+        turnPage: () => _turn(delta, totalPages, spreads),
+      ),
+    );
+  }
+
+  /// A picture of the page area, background included, for the curl.
+  Future<ui.Image?> _pagePicture() async {
+    final boundary = _pageBoundaryKey.currentContext?.findRenderObject();
+    return boundary is RenderRepaintBoundary
+        ? boundary.toImageSync(
+            pixelRatio: MediaQuery.devicePixelRatioOf(context),
+          )
+        : null;
+  }
+
+  void _turn(int delta, int totalPages, List<PageSpread> spreads) {
     final viewMode = ref.read(readerSettingsProvider).mangaViewMode;
     switch (viewMode) {
       case MangaViewMode.singlePage:
@@ -523,7 +573,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           final si = spreadIndexForPage(spreads, _currentPage);
           _spreadViewKey.currentState?.goToSpread(
             si + delta,
-            animate: _animatePageTurns,
+            animate: _slidePages,
           );
         }
       case MangaViewMode.scroll:
@@ -1156,6 +1206,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       globalDirection,
       mangaAutoCropEnabled,
       _, // readerAnimations, read through _animatePageTurns
+      _, // pageTurnStyle, read through _pageTurnStyle
       volumeKeys,
       detectSpreads,
       background,
@@ -1166,13 +1217,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           s.mangaReadingDirection,
           s.mangaAutoCrop,
           s.readerAnimations,
+          s.pageTurnStyle,
           s.volumeKeyPageTurn,
           s.mangaDetectSpreads,
           s.mangaBackground,
         ),
       ),
     );
-    final animatePageTurns = _animatePageTurns;
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final autoCrop = isProUnlocked && mangaAutoCropEnabled;
     ref.listen(
@@ -1311,39 +1362,35 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               );
             }
 
+            final backdropImage = switch (viewMode) {
+              // The decode the page view already holds.
+              MangaViewMode.singlePage => _pageImage(
+                mokuroBook,
+                mokuroBook.pages[_currentPage],
+                _pageCacheWidth,
+              ),
+              // Spread pages decode at widths only the spread
+              // view knows, so a small decode of its own.
+              MangaViewMode.twoPageSpread => _pageImage(
+                mokuroBook,
+                mokuroBook.pages[_currentPage],
+                32,
+              ),
+              // Pages fill the width: the backdrop never shows.
+              MangaViewMode.scroll => null,
+            };
+
             return ReaderKeyNavigation(
               direction: direction,
               volumeKeys: volumeKeys,
               onIntent: onIntent,
               child: Stack(
                 children: [
-                  Positioned.fill(
-                    child: MangaBackdrop(
-                      mode: background,
-                      pageImage: switch (viewMode) {
-                        // The decode the page view already holds.
-                        MangaViewMode.singlePage => _pageImage(
-                          mokuroBook,
-                          mokuroBook.pages[_currentPage],
-                          _pageCacheWidth,
-                        ),
-                        // Spread pages decode at widths only the spread
-                        // view knows, so a small decode of its own.
-                        MangaViewMode.twoPageSpread => _pageImage(
-                          mokuroBook,
-                          mokuroBook.pages[_currentPage],
-                          32,
-                        ),
-                        // Pages fill the width: the backdrop never shows.
-                        MangaViewMode.scroll => null,
-                      },
-                    ),
-                  ),
-
-                  // Page content with tap zones. In e-reader mode unzoomed
-                  // swipes are detected from raw pointer events here (no
-                  // gesture-arena entry that could fight pinch-zoom) and turn
-                  // pages instantly; MangaZoomViewer handles every other swipe.
+                  // Page content with tap zones. While pages don't slide,
+                  // unzoomed swipes are detected from raw pointer events here
+                  // (no gesture-arena entry that could fight pinch-zoom) and
+                  // turn pages on release; MangaZoomViewer handles every
+                  // other swipe.
                   ReaderPageSemantics(
                     label: context.l10n.readerPageOf(
                       page: _currentPage + 1,
@@ -1351,13 +1398,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                     ),
                     onIntent: onIntent,
                     child: Listener(
-                      onPointerDown: animatePageTurns
-                          ? null
-                          : _onEreaderPointerDown,
-                      onPointerCancel: animatePageTurns
+                      onPointerDown: _slidePages ? null : _onEreaderPointerDown,
+                      onPointerCancel: _slidePages
                           ? null
                           : _onEreaderPointerCancel,
-                      onPointerUp: animatePageTurns
+                      onPointerUp: _slidePages
                           ? null
                           : (event) => _onEreaderPointerUp(
                               event,
@@ -1373,14 +1418,30 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                         excludeFromSemantics: true,
                         onTapUp: (details) =>
                             _handleTap(details, totalPages, direction, spreads),
-                        child: _buildViewContent(
-                          mokuroBook,
-                          viewMode,
-                          spreads,
-                          totalPages,
-                          isRtl,
-                          autoCrop,
-                          animatePageTurns,
+                        child: PageTurnOverlay(
+                          controller: _pageTurn,
+                          // One sheet for the curl: the background and the
+                          // pages on it.
+                          child: RepaintBoundary(
+                            key: _pageBoundaryKey,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                MangaBackdrop(
+                                  mode: background,
+                                  pageImage: backdropImage,
+                                ),
+                                _buildViewContent(
+                                  mokuroBook,
+                                  viewMode,
+                                  spreads,
+                                  totalPages,
+                                  isRtl,
+                                  autoCrop,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1478,7 +1539,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                               final si = spreadIndexForPage(spreads, page);
                               _spreadViewKey.currentState?.goToSpread(
                                 si,
-                                animate: _animatePageTurns,
+                                animate: _slidePages,
                               );
                             case MangaViewMode.scroll:
                               _scrollViewKey.currentState?.scrollToPage(
@@ -1507,7 +1568,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     int totalPages,
     bool isRtl,
     bool autoCrop,
-    bool animatePageTurns,
   ) {
     final debugOverlay = ref.watch(mangaDebugWordOverlayProvider);
     switch (viewMode) {
@@ -1550,7 +1610,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               highlightedPageIndex: _highlight?.pageIndex,
               onWordTapped: _onWordTapped,
               pageController: _pageController,
-              animatePageTurns: animatePageTurns,
+              animatePageTurns: _slidePages,
               onZoomChanged: (zoomed) {
                 if (zoomed != _isZoomed) {
                   setState(() => _isZoomed = zoomed);
@@ -1567,7 +1627,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           spreads: spreads,
           initialSpreadIndex: spreadIndexForPage(spreads, _currentPage),
           isRtl: isRtl,
-          animatePageTurns: animatePageTurns,
+          animatePageTurns: _slidePages,
           debugOverlay: debugOverlay,
           autoCrop: autoCrop,
           highlightedRects: _highlight?.rects ?? const [],

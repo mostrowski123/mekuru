@@ -26,8 +26,8 @@ class MangaSpreadView extends StatefulWidget {
   final int initialSpreadIndex;
   final bool isRtl;
 
-  /// When false (e-reader mode) swipes don't drag the spreads, and
-  /// programmatic turns jump instantly.
+  /// When false (e-reader mode, or a page turn other than Slide) swipes
+  /// don't drag the spreads, and programmatic turns jump instantly.
   final bool animatePageTurns;
   final bool debugOverlay;
   final bool autoCrop;
