@@ -189,6 +189,7 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
   _scrollView = (flow === 'scrolled');
   window._twoPage = !!twoPage && !_scrollView;
+  window._twoPageVertical = window._twoPage && twoPageVerticalSupported();
   var uint8 = _epubBuf;
   _epubBuf = null;
   book.open(uint8);
@@ -1477,6 +1478,15 @@ function fitImagePage(contents) {
 
   var W = rendition._layout.width;
   var H = rendition._layout.height;
+  // Two pages side by side: a picture of one page (taller than it is wide)
+  // fills the pair's first page; a wider one, a spread, goes across both.
+  var onePage = window._twoPage && rendition._layout.divisor > 1 &&
+    (!natural || natural.h >= natural.w);
+  var inset = 0;
+  if (onePage) {
+    W = rendition._layout.columnWidth;
+    inset = rendition._layout.gap / 2;
+  }
   // The box is always the whole page (that box is what sizes the section);
   // a small picture keeps its size in the middle of it: object-fit none, or
   // for an svg a viewBox the page's size around the picture.
@@ -1500,7 +1510,10 @@ function fitImagePage(contents) {
     'object-fit': small ? 'none' : 'contain',
     'object-position': '50% 50%'
   };
-  style[mode === 'vertical-rl' ? 'right' : 'left'] = '0';
+  // The first page of a right-to-left pair is the right one.
+  var fromRight = mode === 'vertical-rl' ||
+    (onePage && rendition.manager.settings.direction === 'rtl');
+  style[fromRight ? 'right' : 'left'] = inset + 'px';
   for (var prop in style) target.style.setProperty(prop, style[prop], 'important');
   // Positioned against the page itself, whatever wraps the image.
   var outer = target;
@@ -1663,11 +1676,22 @@ function setTwoPage(on) {
   if (rendition.settings.layout === 'pre-paginated') on = false;
   if (on === window._twoPage) return;
   window._twoPage = on;
+  window._twoPageVertical = on && twoPageVerticalSupported();
   applyTwoPageSpread(on);
   // resize() does nothing while the stage keeps its size.
   rendition.manager._stageSize = undefined;
   _pendingNavChars = false; // the same place laid out again, not a turn
   rendition.resize();
+}
+
+// Whether this web view can run vertical text's pages leftwards, which two
+// pages side by side need (epub.js Contents.columns()): Chromium 145 and
+// later, or WebKit. Without it vertical text stays on one page. Tests set
+// window._twoPageVerticalForcedOff to stand in for an older web view.
+function twoPageVerticalSupported() {
+  if (window._twoPageVerticalForcedOff) return false;
+  return (CSS.supports('column-wrap', 'wrap') && CSS.supports('column-height', '1px')) ||
+    CSS.supports('-webkit-column-axis', 'horizontal');
 }
 
 // Whether the section on screen is laid out two pages wide.

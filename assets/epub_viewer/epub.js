@@ -4302,10 +4302,41 @@ class default_DefaultViewManager {
   // there by pinScroll().
   moveToTarget(view, target) {
     if (this.isPaginated) {
+      if (this.layout.divisor > 1 && this.layout.name === "reflowable" && this.settings.axis === "horizontal") {
+        this.pinScroll(view, this.twoUpTarget(view, target));
+        return;
+      }
       this.moveTo(view.locationOf(target), view.width());
       return;
     }
     this.pinScroll(view, () => this.alignTarget(view, target));
+  }
+
+  // [MEKURU PATCH] moveToTarget() for a section laid out two pages wide. The
+  // pair is found from the target character's own box: locationOf() boxes a
+  // collapsed CFI up to the next space, for Japanese the rest of the text
+  // node, and right-to-left pages took that box's left edge, often a later
+  // pair. The content hooks (theme, font size) reflow the text after
+  // display() has placed it, so the place is pinned (pinScroll()), and each
+  // re-apply that moves reports the location again.
+  twoUpTarget(view, target) {
+    let placed = false;
+    return () => {
+      let offset = view.locationOf(target);
+      let box = this.settings.direction === "rtl" && view.contents && view.contents.charBox(target, view.settings.ignoreClass);
+      if (box) {
+        offset = { left: box.rect.right - 1, top: offset.top };
+      }
+      let before = this.container.scrollLeft;
+      this.moveTo(offset, view.width());
+      if (placed && this.container.scrollLeft !== before) {
+        this.emit(constants["c" /* EVENTS */].MANAGERS.SCROLLED, {
+          top: this.container.scrollTop,
+          left: this.container.scrollLeft
+        });
+      }
+      placed = true;
+    };
   }
 
   // [MEKURU PATCH] Keeps a position in place while a new view settles: in
@@ -4876,6 +4907,18 @@ class default_DefaultViewManager {
   }
   updateWritingMode(mode) {
     this.writingMode = mode;
+    // [MEKURU PATCH] Vertical text laid out two pages wide always runs its
+    // pages right to left (neither engine can lay them out left to right),
+    // whatever page order the book or reader chose; other sections keep the
+    // book's direction. The reader's page order still decides taps, swipes
+    // and the page turn's direction, in Dart.
+    let dir = this.optsSettings.direction || "ltr";
+    if (this.isPaginated && this.layout.divisor > 1 && this.settings.axis === "horizontal" && mode && mode.indexOf("vertical") === 0) {
+      dir = "rtl";
+    }
+    if (dir !== this.settings.direction) {
+      this.direction(dir);
+    }
   }
   updateAxis(axis, forceUpdate) {
     if (!forceUpdate && axis === this.settings.axis) {
@@ -6444,7 +6487,7 @@ class Contents {
    * @param {number} columnWidth
    * @param {number} gap
    */
-  columns(width, height, columnWidth, gap, dir) {
+  columns(width, height, columnWidth, gap, dir, divisor) {
     let COLUMN_AXIS = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-axis");
     let COLUMN_GAP = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-gap");
     let COLUMN_WIDTH = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-width");
@@ -6479,6 +6522,35 @@ class Contents {
 
     this.css("overflow-y", "hidden");
     this.css("margin", "0", true);
+    // [MEKURU PATCH] Two pages side by side (reader_bridge.js loadBook()):
+    // vertical text's pages must run leftwards, not down, so that two fit
+    // side by side; IframeView.render() then pages the section sideways.
+    // Each page is one full-height column. Chromium wraps columns into rows
+    // that run leftwards (column-wrap, Chromium 145+). WebKit turns its
+    // column axis sideways, which makes each column as wide as the box, so
+    // there the box is one page wide. Split text has no place in this.
+    if (axis === "vertical" && divisor > 1 && window._twoPage && window._twoPageVertical) {
+      this.css("padding-top", "20px");
+      this.css("padding-bottom", "20px");
+      this.css("padding-left", gap / 2 + "px", true);
+      this.css("padding-right", gap / 2 + "px", true);
+      this.css("box-sizing", "border-box");
+      this.css("max-width", "inherit");
+      this.css(COLUMN_FILL, "auto");
+      this.css(COLUMN_WIDTH, height - 40 + "px");
+      if (this.window.CSS.supports("column-wrap", "wrap")) {
+        this.css(COLUMN_GAP, "0px");
+        this.css("column-height", columnWidth + "px");
+        this.css("column-wrap", "wrap");
+        this.css("row-gap", gap + "px");
+      } else {
+        this.width(columnWidth + gap);
+        this.css(COLUMN_GAP, gap + "px");
+        this.css(COLUMN_AXIS, "horizontal");
+      }
+      this.css("-webkit-line-box-contain", "block glyphs replaced");
+      return;
+    }
     if (axis === "vertical") {
       this.css("padding-top", gap / 2 + "px", true);
       this.css("padding-bottom", gap / 2 + "px", true);
@@ -7395,7 +7467,9 @@ class layout_Layout {
     if (this.name === "pre-paginated") {
       formating = contents.fit(this.columnWidth, this.height, section);
     } else if (this._flow === "paginated") {
-      formating = contents.columns(this.width, this.height, this.columnWidth, this.gap, this.settings.direction);
+      // [MEKURU PATCH] columns() lays vertical text out two pages wide only
+      // while the layout is two-up.
+      formating = contents.columns(this.width, this.height, this.columnWidth, this.gap, this.settings.direction, this.divisor);
     } else if (axis && axis === "horizontal") {
       formating = contents.size(null, this.height);
     } else {
@@ -9264,7 +9338,27 @@ class IframeView {
       } else {
         axis = writingMode.indexOf("vertical") === 0 ? "vertical" : "horizontal";
       }
-      if (writingMode.indexOf("vertical") === 0 && this.settings.flow === "paginated") {
+      // [MEKURU PATCH] Two pages side by side (reader_bridge.js loadBook()):
+      // vertical text runs its pages leftwards (Contents.columns()), so it is
+      // paged sideways like horizontal text, a pair per turn. The layout was
+      // calculated before this section's writing mode was known, and
+      // updateAxis() only switches the spread when the axis changes: after a
+      // one-page vertical section it is still off, and a vertical section
+      // the web view cannot page sideways can find it still on.
+      let paginated = this.settings.flow === "paginated";
+      let twoUp = paginated && this.layout.name === "reflowable" &&
+        window._twoPage && (axis === "horizontal" || window._twoPageVertical);
+      if (twoUp) {
+        axis = "horizontal";
+        if (this.layout.divisor < 2) {
+          this.layout.spread(this.layout.settings.spread);
+          this.layout.calculate(this.layout.width, this.layout.height, this.layout.gap);
+        }
+      } else if (writingMode.indexOf("vertical") === 0 && paginated) {
+        if (window._twoPage && this.layout.divisor > 1) {
+          this.layout.spread("none");
+          this.layout.calculate(this.layout.width, this.layout.height, this.layout.gap);
+        }
         this.layout.delta = this.layout.height;
       }
       this.setAxis(axis);
@@ -9389,6 +9483,12 @@ class IframeView {
       // writing the root element is exactly as wide as its content.
       if (this.settings.flow === "scrolled") {
         width = Math.max(width, Math.ceil(this.contents.documentElement.getBoundingClientRect().width));
+      }
+      // [MEKURU PATCH] A section laid out two pages wide is at least one page,
+      // as on the vertical axis below: a section measured 0 wide (WebKit
+      // leaves zero-width boxes out of the text's range) is never shown.
+      if (this.settings.flow === "paginated" && this.layout.divisor > 1) {
+        width = Math.max(width, this.layout.pageWidth);
       }
       if (this.settings.forceEvenPages) {
         columns = width / this.layout.pageWidth;
