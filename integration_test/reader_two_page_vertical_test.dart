@@ -1,9 +1,12 @@
 // Two pages side by side for vertical text, with the screen sideways and the
 // two-page switch on. The pages run leftwards, right page first; a turn moves
 // a whole pair; no line is cut by the fold; the location names the first and
-// last characters on screen; a saved place, a font change and generated
-// furigana keep the pair; a picture of one page fills one page; and a web
-// view that cannot page vertical text sideways keeps it on one page.
+// last characters on screen; a saved place, a font change, a margin change
+// and generated furigana keep the pair; a link to a long element opens where
+// it starts; a book whose pages run left to right is laid out the same; a
+// picture of one page fills one page; the book's last pair refuses a turn;
+// and a web view that cannot page vertical text sideways keeps it on one
+// page.
 // One reader per file: see integration_test/shared/scroll_view_fixture.dart.
 
 import 'dart:convert';
@@ -140,6 +143,83 @@ void main() {
       image['left'],
       greaterThanOrEqualTo(image['half']),
       reason: '$image',
+    );
+
+    // (j) The book's last pair: a turn forward is refused at once. (The page
+    // turn animation holds its picture of the page until it hears.)
+    final refused = controller.turnPage(forward: true);
+    expect(
+      await refused.timeout(const Duration(seconds: 3), onTimeout: () => true),
+      isFalse,
+      reason: 'the turn past the last pair was not refused',
+    );
+
+    // (k) A link to an element that runs over several pairs, like the
+    // wrapper many books put around a chapter (and name in their table of
+    // contents): it opens where the element starts, not where it ends.
+    await controller.debugEvaluateJavascript(
+      'rendition.display(book.spine.get(1).href); true',
+    );
+    await waitForSection(tester, controller, 1);
+    await turn();
+    await turn();
+    await controller.debugEvaluateJavascript('''
+(function () {
+  var doc = rendition.manager.views.last().contents.document;
+  var wrap = doc.createElement('div');
+  wrap.id = 'chapter';
+  while (doc.body.firstChild) wrap.appendChild(doc.body.firstChild);
+  doc.body.appendChild(wrap);
+  rendition.display(book.spine.get(1).href + '#chapter');
+  return true;
+})()
+''');
+    final linked = await settledPairState(tester, controller);
+    expect(
+      [linked['index'], linked['page'], linked['pos']],
+      [1, 1, 0],
+      reason: '$linked',
+    );
+
+    // (l) A book whose pages run left to right (it says so, or says nothing
+    // and the reader's page order is left to right): vertical text still
+    // shows its pairs right page first.
+    await controller.debugEvaluateJavascript(
+      'rendition.direction("ltr");'
+      'rendition.display(book.spine.get(0).href); true',
+    );
+    await waitForSection(tester, controller, 0);
+    final leftToRight = await settledPairState(tester, controller);
+    expectWholePair(leftToRight);
+    expect(
+      [leftToRight['firstSide'], leftToRight['pos'], leftToRight['firstShown']],
+      ['R', 0, true],
+      reason: '$leftToRight',
+    );
+    final onward = await turn();
+    expectWholePair(onward);
+    expect(onward['page'], 3, reason: '$onward');
+    await controller.debugEvaluateJavascript(
+      'rendition.direction("rtl"); true',
+    );
+
+    // (m) Wider side margins: the gutter between the pages follows them, and
+    // the pair that held the first character on screen stays.
+    final held = onward['cfi'] as String;
+    controller.setMargins(46, 20);
+    final wider = await settledPairState(tester, controller);
+    expectWholePair(wider);
+    expect(
+      (await charShown(controller, held))['shown'],
+      isTrue,
+      reason: 'first $held, after $wider',
+    );
+    expect(
+      (await evalJson(
+        controller,
+        'JSON.stringify({gap: rendition.manager.layout.gap})',
+      ))['gap'],
+      92,
     );
 
     // (i) Generated furigana: still whole pairs, nothing across the fold.

@@ -4326,17 +4326,31 @@ class default_DefaultViewManager {
   // pair is found from the target character's own box: locationOf() boxes a
   // collapsed CFI up to the next space, for Japanese the rest of the text
   // node, and right-to-left pages took that box's left edge, often a later
-  // pair. The content hooks (theme, font size) reflow the text after
-  // display() has placed it, so the place is pinned (pinScroll()), and each
-  // re-apply that moves reports the location again.
+  // pair. A "#id" target is boxed whole, and an element that runs over
+  // several pairs (a chapter's wrapper) has its left edge on its last one.
+  // Right-to-left, both start at their right edge. The content hooks (theme,
+  // font size) reflow the text after display() has placed it, so the place
+  // is pinned (pinScroll()), and each re-apply that moves reports the
+  // location again.
   twoUpTarget(view, target) {
     let placed = false;
     return () => {
-      let offset = view.locationOf(target);
-      let box = this.settings.direction === "rtl" && view.contents && view.contents.charBox(target, view.settings.ignoreClass);
-      if (box) {
-        offset = { left: box.rect.right - 1, top: offset.top };
+      let rect = null;
+      let doc = this.settings.direction === "rtl" && view.contents && view.contents.document;
+      if (doc) {
+        let box = view.contents.charBox(target, view.settings.ignoreClass);
+        let id = !box && typeof target === "string" && target.split("#")[1];
+        let el = id && doc.getElementById(id);
+        if (el) {
+          // A range's box, as Contents.locationOf() takes for WebKit.
+          let range = doc.createRange();
+          range.selectNode(el);
+          rect = range.getBoundingClientRect();
+        } else if (box) {
+          rect = box.rect;
+        }
       }
+      let offset = rect ? { left: rect.right - 1, top: 0 } : view.locationOf(target);
       let before = this.container.scrollLeft;
       this.moveTo(offset, view.width());
       if (placed && this.container.scrollLeft !== before) {
