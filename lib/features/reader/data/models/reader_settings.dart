@@ -96,6 +96,25 @@ extension MangaBackgroundStorage on MangaBackground {
   String get storageValue => name;
 }
 
+/// How a page turn animates in both readers.
+enum PageTurnStyle { none, slide, curl }
+
+PageTurnStyle pageTurnStyleFromString(String? value) =>
+    PageTurnStyle.values.asNameMap()[value] ?? PageTurnStyle.slide;
+
+extension PageTurnStyleStorage on PageTurnStyle {
+  String get storageValue => name;
+}
+
+/// The style the readers act on: none whenever animations are off, in the
+/// app or for the device (reduce motion, Low RAM mode).
+PageTurnStyle effectivePageTurnStyle(
+  ReaderSettings settings, {
+  required bool disableAnimations,
+}) => settings.readerAnimations && !disableAnimations
+    ? settings.pageTurnStyle
+    : PageTurnStyle.none;
+
 /// What the volume buttons do while a reader is open. Android only: iOS
 /// doesn't let apps take over the volume buttons.
 enum VolumeKeyPageTurn {
@@ -251,6 +270,9 @@ class ReaderSettings {
   /// transitions ghost.
   final bool readerAnimations;
 
+  /// How pages turn while [readerAnimations] is on.
+  final PageTurnStyle pageTurnStyle;
+
   /// Whether and which way the volume buttons turn pages in both readers.
   final VolumeKeyPageTurn volumeKeyPageTurn;
 
@@ -282,6 +304,7 @@ class ReaderSettings {
     this.mangaDetectSpreads = true,
     this.mangaBackground = MangaBackground.black,
     this.readerAnimations = true,
+    this.pageTurnStyle = PageTurnStyle.slide,
     this.volumeKeyPageTurn = VolumeKeyPageTurn.downNext,
   });
 
@@ -314,6 +337,7 @@ class ReaderSettings {
     bool? mangaDetectSpreads,
     MangaBackground? mangaBackground,
     bool? readerAnimations,
+    PageTurnStyle? pageTurnStyle,
     VolumeKeyPageTurn? volumeKeyPageTurn,
   }) {
     return ReaderSettings(
@@ -350,6 +374,7 @@ class ReaderSettings {
       mangaDetectSpreads: mangaDetectSpreads ?? this.mangaDetectSpreads,
       mangaBackground: mangaBackground ?? this.mangaBackground,
       readerAnimations: readerAnimations ?? this.readerAnimations,
+      pageTurnStyle: pageTurnStyle ?? this.pageTurnStyle,
       volumeKeyPageTurn: volumeKeyPageTurn ?? this.volumeKeyPageTurn,
     );
   }

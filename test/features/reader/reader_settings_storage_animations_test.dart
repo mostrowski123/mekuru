@@ -32,6 +32,60 @@ void main() {
     });
   });
 
+  group('page turn style', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    test('round-trips every value and falls back to slide', () {
+      for (final style in PageTurnStyle.values) {
+        expect(pageTurnStyleFromString(style.storageValue), style);
+      }
+      expect(pageTurnStyleFromString(null), PageTurnStyle.slide);
+      expect(pageTurnStyleFromString('flip'), PageTurnStyle.slide);
+    });
+
+    test('is saved, reloaded and backed up', () async {
+      final storage = SharedPreferencesReaderSettingsStorage();
+      await storage.save(
+        const ReaderSettings(pageTurnStyle: PageTurnStyle.curl),
+      );
+      expect((await storage.load())!.pageTurnStyle, PageTurnStyle.curl);
+      expect(
+        SharedPreferencesReaderSettingsStorage.allKeys,
+        contains('reader.page_turn_style'),
+      );
+    });
+
+    test('is slide for installs that predate it', () async {
+      SharedPreferences.setMockInitialValues({'reader.font_size': 24.0});
+      final loaded = await SharedPreferencesReaderSettingsStorage().load();
+      expect(loaded!.pageTurnStyle, PageTurnStyle.slide);
+      expect(const ReaderSettings().pageTurnStyle, PageTurnStyle.slide);
+    });
+
+    test('is none in effect whenever animations are off', () {
+      PageTurnStyle effective(
+        PageTurnStyle style, {
+        bool animations = true,
+        bool reduceMotion = false,
+      }) => effectivePageTurnStyle(
+        ReaderSettings(pageTurnStyle: style, readerAnimations: animations),
+        disableAnimations: reduceMotion,
+      );
+
+      expect(effective(PageTurnStyle.curl), PageTurnStyle.curl);
+      expect(effective(PageTurnStyle.slide), PageTurnStyle.slide);
+      expect(effective(PageTurnStyle.none), PageTurnStyle.none);
+      expect(
+        effective(PageTurnStyle.curl, animations: false),
+        PageTurnStyle.none,
+      );
+      expect(
+        effective(PageTurnStyle.slide, reduceMotion: true),
+        PageTurnStyle.none,
+      );
+    });
+  });
+
   group('SharedPreferencesReaderSettingsStorage - volume buttons', () {
     setUp(() => SharedPreferences.setMockInitialValues({}));
 
