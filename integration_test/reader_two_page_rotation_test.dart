@@ -1,6 +1,7 @@
-// Turning the screen with "Two pages on wide screens" on: upright shows one
-// page, sideways two, and the first character on screen stays on screen
-// through every switch. A rotation lays the book out once, as it does with
+// Turning the screen with "Two pages on wide screens" on: a phone shows one
+// page upright and two sideways (a tablet is wide enough both ways, and a web
+// view that cannot page vertical text sideways keeps one), and the first
+// character on screen stays on screen through every switch. A rotation lays the book out once, as it does with
 // the switch off: the switch to two pages rides on that pass. Switching it
 // off while sideways goes back to one page at the same place.
 // One reader per file: see integration_test/shared/scroll_view_fixture.dart.
@@ -51,8 +52,22 @@ void main() {
       settings: const ReaderSettings(epubTwoPage: true),
     );
 
-    // Upright: one page. Read on a few pages.
-    expect((await settledPairState(tester, controller))['divisor'], 1);
+    // One page or two, by the rule: two where the page area is wide enough
+    // and the web view can page vertical text sideways.
+    Future<int> pagesWanted() async {
+      final page = await evalJson(
+        controller,
+        'JSON.stringify({wide: window.innerWidth >= $kEpubTwoPageMinWidth, '
+        'able: window._twoPageVertical === true})',
+      );
+      return page['wide'] == true && page['able'] == true ? 2 : 1;
+    }
+
+    // Upright: one page on a phone. Read on a few pages.
+    expect(
+      (await settledPairState(tester, controller))['divisor'],
+      await pagesWanted(),
+    );
     for (var turns = 0; turns < 3; turns++) {
       controller.next();
       await tester.pump(const Duration(milliseconds: 900));
@@ -72,25 +87,28 @@ void main() {
         'shown': shown['shown'],
         'x': shown['x'],
         'first': first,
+        'wanted': await pagesWanted(),
         'layouts': await _layouts(controller),
       };
     }
 
-    // Sideways: two pages, the character still on screen.
-    final sideways = await turnScreen(DeviceOrientation.landscapeLeft);
-    expect(
-      [sideways['divisor'], sideways['shown']],
-      [2, true],
-      reason: '$sideways',
+    void expectTurned(Map<String, dynamic> turned) => expect(
+      [turned['divisor'], turned['shown']],
+      [turned['wanted'], true],
+      reason: '$turned',
     );
 
-    // Upright again: one page, same character.
+    // Sideways: two pages, the character still on screen.
+    final sideways = await turnScreen(DeviceOrientation.landscapeLeft);
+    expectTurned(sideways);
+
+    // Upright again: one page on a phone, same character.
     final back = await turnScreen(DeviceOrientation.portraitUp);
-    expect([back['divisor'], back['shown']], [1, true], reason: '$back');
+    expectTurned(back);
 
     // Sideways, then the switch off: one page, same character.
     final again = await turnScreen(DeviceOrientation.landscapeLeft);
-    expect([again['divisor'], again['shown']], [2, true], reason: '$again');
+    expectTurned(again);
     await _countLayouts(controller);
     ProviderScope.containerOf(
       tester.element(find.byType(ReaderScreen)),

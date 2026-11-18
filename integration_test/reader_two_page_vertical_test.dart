@@ -63,6 +63,32 @@ void main() {
       return pairState(controller);
     }
 
+    // One page of vertical text, paged downwards, as with the switch off.
+    Future<void> expectOnePage() async {
+      final single = await evalJson(controller, _verticalState);
+      expect([single['axis'], single['divisor']], ['vertical', 1]);
+      controller.next();
+      await tester.pump(const Duration(milliseconds: 900));
+      final down = await evalJson(controller, _verticalState);
+      expect(
+        (down['top'] as int) - (single['top'] as int),
+        closeTo(single['height'] as int, 1),
+        reason: 'before $single, after $down',
+      );
+    }
+
+    // An older web view (Chromium before 145, as on CI's Android image)
+    // cannot page vertical text sideways and keeps one page. Step (h) makes
+    // a newer one stand in for it.
+    final page = await evalJson(
+      controller,
+      'JSON.stringify({able: window._twoPageVertical === true})',
+    );
+    if (page['able'] != true) {
+      await expectOnePage();
+      return;
+    }
+
     void expectWholePair(Map<String, dynamic> pair) => expect(
       [pair['divisor'], pair['sides'], pair['bad']],
       [2, 'RL', 0],
@@ -84,7 +110,17 @@ void main() {
     for (var turns = 0; turns < 40 && here['index'] == 0; turns++) {
       here = await turn();
       if (here['index'] != 0) break;
-      expectWholePair(here);
+      // A chapter of an odd number of pages ends on a lone right page; the
+      // count depends on the platform's font (27 on iOS).
+      if (here['endPage'] == here['total'] && here['left'] == 0) {
+        expect(
+          [here['divisor'], here['sides'], here['bad']],
+          [2, 'R', 0],
+          reason: '$here',
+        );
+      } else {
+        expectWholePair(here);
+      }
       expect([here['firstShown'], here['lastShown']], [true, true]);
       pages.add(here['page'] as int);
     }
@@ -271,16 +307,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     controller.setTwoPage(kEpubTwoPageMinWidth);
     await tester.pump(const Duration(seconds: 2));
-    final single = await evalJson(controller, _verticalState);
-    expect([single['axis'], single['divisor']], ['vertical', 1]);
-    controller.next();
-    await tester.pump(const Duration(milliseconds: 900));
-    final down = await evalJson(controller, _verticalState);
-    expect(
-      (down['top'] as int) - (single['top'] as int),
-      closeTo(single['height'] as int, 1),
-      reason: 'before $single, after $down',
-    );
+    await expectOnePage();
 
     // The switch can arrive before the turned screen does: until the page
     // is laid out again, a re-format of the one-page section (furigana or a

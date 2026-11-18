@@ -131,9 +131,13 @@ Future<Map<String, dynamic>> charShown(
   var v = m.views.last(), doc = v.contents.document;
   var F = v.iframe.getBoundingClientRect();
   var range = new ePub.CFI(${jsonEncode(cfi)}).toRange(doc);
+  var n = range.startContainer, o = range.startOffset;
+  // WebKit's caretRangeFromPoint (cfiAt) can put the caret after a text
+  // node's last character: check that character.
+  if (n.nodeType === 3 && o >= n.length) o = n.length - 1;
   var r = doc.createRange();
-  r.setStart(range.startContainer, range.startOffset);
-  r.setEnd(range.startContainer, range.startOffset + 1);
+  r.setStart(n, o);
+  r.setEnd(n, o + 1);
   var b = r.getBoundingClientRect();
   var x0 = F.left + b.left, x1 = F.left + b.right;
   return JSON.stringify({
