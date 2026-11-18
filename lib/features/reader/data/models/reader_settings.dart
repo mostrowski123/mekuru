@@ -85,6 +85,17 @@ extension MangaViewModeStorage on MangaViewMode {
   String get storageValue => name;
 }
 
+/// What the manga reader shows around the page: a flat colour, the page's
+/// own edge colour ([auto]), or the page stretched and blurred ([blur]).
+enum MangaBackground { black, gray, white, auto, blur }
+
+MangaBackground mangaBackgroundFromString(String? value) =>
+    MangaBackground.values.asNameMap()[value] ?? MangaBackground.black;
+
+extension MangaBackgroundStorage on MangaBackground {
+  String get storageValue => name;
+}
+
 /// What the volume buttons do while a reader is open. Android only: iOS
 /// doesn't let apps take over the volume buttons.
 enum VolumeKeyPageTurn {
@@ -232,6 +243,9 @@ class ReaderSettings {
   /// pages declared as double pages stand alone.
   final bool mangaDetectSpreads;
 
+  /// Manga: what is shown around the page.
+  final MangaBackground mangaBackground;
+
   /// Whether reader transitions animate: manga page turns and the lookup
   /// sheet in both readers. Disable for e-reader (e-ink) displays, where
   /// transitions ghost.
@@ -266,6 +280,7 @@ class ReaderSettings {
     this.mangaAutoCrop = false,
     this.mangaTransparentLookup = true,
     this.mangaDetectSpreads = true,
+    this.mangaBackground = MangaBackground.black,
     this.readerAnimations = true,
     this.volumeKeyPageTurn = VolumeKeyPageTurn.downNext,
   });
@@ -297,6 +312,7 @@ class ReaderSettings {
     bool? mangaAutoCrop,
     bool? mangaTransparentLookup,
     bool? mangaDetectSpreads,
+    MangaBackground? mangaBackground,
     bool? readerAnimations,
     VolumeKeyPageTurn? volumeKeyPageTurn,
   }) {
@@ -332,6 +348,7 @@ class ReaderSettings {
       mangaTransparentLookup:
           mangaTransparentLookup ?? this.mangaTransparentLookup,
       mangaDetectSpreads: mangaDetectSpreads ?? this.mangaDetectSpreads,
+      mangaBackground: mangaBackground ?? this.mangaBackground,
       readerAnimations: readerAnimations ?? this.readerAnimations,
       volumeKeyPageTurn: volumeKeyPageTurn ?? this.volumeKeyPageTurn,
     );

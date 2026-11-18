@@ -27,6 +27,16 @@ void main() {
     });
   });
 
+  group('mangaBackgroundFromString', () {
+    test('round-trips every value and falls back to black', () {
+      for (final background in MangaBackground.values) {
+        expect(mangaBackgroundFromString(background.storageValue), background);
+      }
+      expect(mangaBackgroundFromString(null), MangaBackground.black);
+      expect(mangaBackgroundFromString('purple'), MangaBackground.black);
+    });
+  });
+
   group('mangaBookDirection', () {
     test('the picked direction wins over the declared one', () {
       expect(mangaBookDirection('ltr', 'rtl'), ReaderDirection.ltr);
@@ -58,6 +68,7 @@ void main() {
           mangaAutoCrop: true,
           mangaTransparentLookup: false,
           mangaDetectSpreads: false,
+          mangaBackground: MangaBackground.blur,
         ),
       );
 
@@ -68,6 +79,11 @@ void main() {
       expect(loaded.mangaAutoCrop, isTrue);
       expect(loaded.mangaTransparentLookup, isFalse);
       expect(loaded.mangaDetectSpreads, isFalse);
+      expect(loaded.mangaBackground, MangaBackground.blur);
+      expect(
+        SharedPreferencesReaderSettingsStorage.allKeys,
+        contains('reader.manga_background'),
+      );
     });
 
     test('spread detection is on unless turned off, and backed up', () async {
@@ -94,6 +110,9 @@ void main() {
         expect(loaded.mangaReadingDirection, ReaderDirection.rtl);
         expect(loaded.mangaAutoCrop, isFalse);
         expect(loaded.mangaTransparentLookup, isTrue);
+        // Added later: black is what the reader always showed.
+        expect(loaded.mangaBackground, MangaBackground.black);
+        expect(const ReaderSettings().mangaBackground, MangaBackground.black);
       },
     );
   });

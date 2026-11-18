@@ -32,6 +32,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _mangaAutoCropKey = 'reader.manga_auto_crop';
   static const _mangaTransparentLookupKey = 'reader.manga_transparent_lookup';
   static const _mangaDetectSpreadsKey = 'reader.manga_detect_spreads';
+  static const _mangaBackgroundKey = 'reader.manga_background';
   // Historical key: the toggle started as manga-only. Kept so users who
   // already turned it off stay off.
   static const _readerAnimationsKey = 'reader.manga_page_turn_animation';
@@ -63,6 +64,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     _mangaAutoCropKey,
     _mangaTransparentLookupKey,
     _mangaDetectSpreadsKey,
+    _mangaBackgroundKey,
     _readerAnimationsKey,
     _volumeKeyPageTurnKey,
   ];
@@ -110,6 +112,9 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       mangaAutoCrop: prefs.getBool(_mangaAutoCropKey) ?? false,
       mangaTransparentLookup: prefs.getBool(_mangaTransparentLookupKey) ?? true,
       mangaDetectSpreads: prefs.getBool(_mangaDetectSpreadsKey) ?? true,
+      mangaBackground: mangaBackgroundFromString(
+        prefs.getString(_mangaBackgroundKey),
+      ),
       readerAnimations: prefs.getBool(_readerAnimationsKey) ?? true,
       volumeKeyPageTurn: volumeKeyPageTurnFromString(
         prefs.getString(_volumeKeyPageTurnKey),
@@ -162,6 +167,10 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       settings.mangaTransparentLookup,
     );
     await prefs.setBool(_mangaDetectSpreadsKey, settings.mangaDetectSpreads);
+    await prefs.setString(
+      _mangaBackgroundKey,
+      settings.mangaBackground.storageValue,
+    );
     await prefs.setBool(_readerAnimationsKey, settings.readerAnimations);
     await prefs.setString(
       _volumeKeyPageTurnKey,

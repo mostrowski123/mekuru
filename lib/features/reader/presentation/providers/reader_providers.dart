@@ -131,6 +131,10 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(mangaViewMode: mode));
   }
 
+  void setMangaBackground(MangaBackground background) {
+    _update(state.copyWith(mangaBackground: background));
+  }
+
   void setMangaReadingDirection(ReaderDirection direction) {
     _update(state.copyWith(mangaReadingDirection: direction));
   }

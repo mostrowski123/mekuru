@@ -136,10 +136,11 @@ void main() {
       notifier.setMangaAutoCrop(true);
       notifier.setMangaTransparentLookup(false);
       notifier.setMangaDetectSpreads(false);
+      notifier.setMangaBackground(MangaBackground.auto);
 
       await Future<void>.delayed(Duration.zero);
 
-      expect(fakeStorage.saveCalls, greaterThanOrEqualTo(7));
+      expect(fakeStorage.saveCalls, greaterThanOrEqualTo(8));
       expect(fakeStorage.savedSettings, isNotNull);
       expect(fakeStorage.savedSettings!.fontSize, 20);
       expect(fakeStorage.savedSettings!.mangaViewMode, MangaViewMode.scroll);
@@ -150,6 +151,7 @@ void main() {
       expect(fakeStorage.savedSettings!.mangaAutoCrop, isTrue);
       expect(fakeStorage.savedSettings!.mangaTransparentLookup, isFalse);
       expect(fakeStorage.savedSettings!.mangaDetectSpreads, isFalse);
+      expect(fakeStorage.savedSettings!.mangaBackground, MangaBackground.auto);
       expect(
         fakeStorage.savedSettings!.mangaPageTurnEdgeZoneWidthFraction,
         0.12,
