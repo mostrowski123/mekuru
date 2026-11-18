@@ -214,6 +214,7 @@ ReaderNavigationIntent resolveEreaderSwipeIntent({
   required double screenWidth,
   required double screenHeight,
   required ReaderDirection readingDirection,
+  double swipeThreshold = kSwipeDistanceThreshold,
 }) {
   if (screenWidth <= 0 || screenHeight <= 0) {
     return ReaderNavigationIntent.none;
@@ -224,6 +225,7 @@ ReaderNavigationIntent resolveEreaderSwipeIntent({
     upX: upX / screenWidth,
     downY: downY / screenHeight,
     upY: upY / screenHeight,
+    swipeThreshold: swipeThreshold,
   );
   if (gesture != GestureType.horizontalSwipe) {
     return ReaderNavigationIntent.none;

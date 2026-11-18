@@ -50,22 +50,32 @@ class CustomEpubController {
   // The page turn animation's turn: its id, and what the bridge's answer
   // (`pageTurned`) completes.
   var _turnId = 0;
-  Completer<void>? _turnShown;
+  Completer<bool>? _turnShown;
 
   /// [next] or [prev] for the page turn animation. The future completes
-  /// once the page the turn went to is on screen. It never does when a
-  /// newer turn replaces this one, or no page comes (the end of the book).
-  Future<void> turnPage({required bool forward}) {
-    final shown = _turnShown = Completer<void>();
-    _eval('${forward ? 'next' : 'previous'}(${++_turnId})');
+  /// with true once the page the turn went to is on screen, and with false
+  /// when there was no page to turn to (the first or last page of the
+  /// book). It never completes when a newer turn replaces this one.
+  ///
+  /// A [quiet] turn does not count its page as read: the page is only
+  /// peeked at under a finger still dragging it ([countTurnedPage] counts
+  /// it once the turn is finished), or is the way back from such a peek.
+  Future<bool> turnPage({required bool forward, bool quiet = false}) {
+    final shown = _turnShown = Completer<bool>();
+    _eval(
+      '${forward ? 'next' : 'previous'}(${++_turnId}${quiet ? ', true' : ''})',
+    );
     return shown.future;
   }
 
+  /// Counts the page a quiet [turnPage] went to as read after all.
+  void countTurnedPage() => _eval('countTurnedPage()');
+
   /// The bridge's answer to [turnPage]. An older turn's answer can arrive
   /// after a newer turn has started: the id tells them apart.
-  void completePageTurn(int id) {
+  void completePageTurn(int id, {required bool turned}) {
     if (id != _turnId) return;
-    _turnShown?.complete();
+    _turnShown?.complete(turned);
     _turnShown = null;
   }
 

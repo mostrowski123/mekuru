@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
@@ -32,6 +34,24 @@ class _NoWakelock extends WakelockPlusPlatformInterface {
   Future<void> toggle({required bool enable}) async {}
 }
 
+/// Records the places the reader saves.
+class _Progress extends BookRepository {
+  _Progress(super.db);
+
+  final saved = <String>[];
+
+  @override
+  Future<void> updateProgress(
+    int bookId,
+    String cfi, {
+    double? progress,
+    String? href,
+    double? hrefProgression,
+  }) async {
+    saved.add(cfi);
+  }
+}
+
 const _picture = Key('page-turn-picture');
 const _pageCount = 4;
 final _en = AppLocalizationsEn();
@@ -47,7 +67,7 @@ final _book = Book(
   dateAdded: DateTime(2026, 11, 18),
 );
 
-Future<void> _openReader(
+Future<_Progress> _openReader(
   WidgetTester tester, {
   required PageTurnStyle style,
   MangaViewMode viewMode = MangaViewMode.singlePage,
@@ -58,9 +78,11 @@ Future<void> _openReader(
   });
   final db = createTestDatabase();
   addTearDown(db.close);
+  final progress = _Progress(db);
   final container = ProviderContainer(
     overrides: [
       databaseProvider.overrideWithValue(db),
+      bookRepositoryProvider.overrideWithValue(progress),
       mangaPagesProvider(_book.id).overrideWith(
         (ref) async => MokuroBook(
           title: 'Manga',
@@ -91,6 +113,7 @@ Future<void> _openReader(
     ),
   );
   await tester.pumpAndSettle();
+  return progress;
 }
 
 /// Closes the reader and lets the progress sync's debounce run out.
@@ -142,6 +165,69 @@ void main() {
     expect(find.byKey(_picture), findsOneWidget);
     await tester.pumpAndSettle();
     expect(find.byKey(_picture), findsNothing);
+    expect(_page(tester), 1);
+    await _closeReader(tester);
+  });
+
+  testWidgets('a curl follows a finger dragged across the page', (
+    tester,
+  ) async {
+    final progress = await _openReader(tester, style: PageTurnStyle.curl);
+    final width = tester.getSize(find.byType(MangaReaderScreen)).width;
+
+    // Manga reads right to left: dragging rightwards turns forward.
+    final finger = await tester.startGesture(Offset(width * 0.3, 300));
+    await finger.moveBy(const Offset(30, 0));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(_picture), findsOneWidget);
+    expect(_page(tester), 2, reason: 'the next page is underneath');
+    expect(progress.saved, isEmpty, reason: 'only peeked at so far');
+
+    // Held still, the picture stays under the finger.
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.byKey(_picture), findsOneWidget);
+
+    await finger.moveBy(Offset(width * 0.3, 0));
+    await finger.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(_picture), findsNothing);
+    expect(_page(tester), 2);
+    expect(progress.saved, ['1'], reason: 'the turn is saved once, at its end');
+    await _closeReader(tester);
+  });
+
+  testWidgets('a short drag puts the page back', (tester) async {
+    final progress = await _openReader(tester, style: PageTurnStyle.curl);
+    final width = tester.getSize(find.byType(MangaReaderScreen)).width;
+
+    final finger = await tester.startGesture(Offset(width * 0.3, 300));
+    await finger.moveBy(Offset(width * 0.05, 0));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(_picture), findsOneWidget);
+    expect(_page(tester), 2);
+
+    await finger.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(_picture), findsNothing);
+    expect(_page(tester), 1);
+    expect(progress.saved, isEmpty, reason: 'nothing was read or saved');
+    await _closeReader(tester);
+  });
+
+  testWidgets('a drag off the first page does nothing', (tester) async {
+    await _openReader(tester, style: PageTurnStyle.curl);
+    final width = tester.getSize(find.byType(MangaReaderScreen)).width;
+
+    // Leftwards is backwards in a right-to-left book.
+    final finger = await tester.startGesture(Offset(width * 0.7, 300));
+    await finger.moveBy(Offset(-width * 0.3, 0));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byKey(_picture), findsNothing);
+    await finger.up();
+    await tester.pumpAndSettle();
     expect(_page(tester), 1);
     await _closeReader(tester);
   });

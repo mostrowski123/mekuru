@@ -4,12 +4,14 @@
 
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
+import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 
 import 'shared/scroll_view_fixture.dart';
 import 'test_helpers.dart';
@@ -83,7 +85,7 @@ void main() {
 
     final start = await _place(controller);
     expect((start.$1, start.$2), (0, 1));
-    expect(start.$3, greaterThan(4), reason: 'the chapter needs five pages');
+    expect(start.$3, greaterThan(5), reason: 'the chapter needs six pages');
 
     // Inside a chapter.
     expect(await turn(forward: true), isTrue, reason: 'no animation played');
@@ -96,8 +98,56 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(await _place(controller), (0, 4, start.$3));
 
+    // A finger dragged across the page takes the page with it. Android
+    // only: a test's touches do not reach WKWebView.
+    var page = 4;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final viewer = tester.getRect(find.byType(CustomEpubViewer));
+      Future<TestGesture> dragRight(double from, double by) async {
+        final finger = await tester.startGesture(
+          Offset(viewer.left + viewer.width * from, viewer.center.dy),
+        );
+        for (var i = 0; i < 6; i++) {
+          await finger.moveBy(Offset(viewer.width * by / 6, 0));
+          await tester.pump(const Duration(milliseconds: 40));
+        }
+        return finger;
+      }
+
+      // Vertical text reads right to left: rightwards is forwards.
+      final finger = await dragRight(0.3, 0.3);
+      await pumpUntilVisible(tester, find.byKey(_picture));
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        find.byKey(_picture),
+        findsOneWidget,
+        reason: 'the page waits under the finger',
+      );
+      expect(await _place(controller), (
+        0,
+        5,
+        start.$3,
+      ), reason: 'the next page is underneath');
+      await finger.up();
+      await pumpUntilGone(tester, find.byKey(_picture));
+      expect(await _place(controller), (0, 5, start.$3));
+      page = 5;
+
+      // Dragged out and back again, the page stays where it was.
+      final back = await dragRight(0.3, 0.3);
+      await pumpUntilVisible(tester, find.byKey(_picture));
+      for (var i = 0; i < 6; i++) {
+        await back.moveBy(Offset(-viewer.width * 0.28 / 6, 0));
+        await tester.pump(const Duration(milliseconds: 40));
+      }
+      await back.up();
+      await pumpUntilGone(tester, find.byKey(_picture));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(await _place(controller), (0, 5, start.$3));
+    }
+
     // On to the next chapter, one page at a time.
-    for (var page = 5; page <= start.$3; page++) {
+    for (page++; page <= start.$3; page++) {
       await turn(forward: true);
       expect((await _place(controller)).$2, page);
     }

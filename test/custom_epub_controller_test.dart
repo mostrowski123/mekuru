@@ -50,12 +50,12 @@ void main() {
 
       controller.next();
       controller.prev();
-      var firstShown = false, secondShown = false;
+      bool? firstShown, secondShown;
       unawaited(
-        controller.turnPage(forward: true).then((_) => firstShown = true),
+        controller.turnPage(forward: true).then((came) => firstShown = came),
       );
       unawaited(
-        controller.turnPage(forward: false).then((_) => secondShown = true),
+        controller.turnPage(forward: false).then((came) => secondShown = came),
       );
       await _flushMicrotasks();
       expect(platformController.evaluatedSources, [
@@ -66,14 +66,29 @@ void main() {
       ]);
 
       // The first turn's answer arrives late: it is not the second's.
-      controller.completePageTurn(1);
+      controller.completePageTurn(1, turned: true);
       await _flushMicrotasks();
-      expect([firstShown, secondShown], [false, false]);
+      expect([firstShown, secondShown], [null, null]);
 
-      controller.completePageTurn(2);
-      controller.completePageTurn(2);
+      controller.completePageTurn(2, turned: true);
+      controller.completePageTurn(2, turned: false);
       await _flushMicrotasks();
-      expect([firstShown, secondShown], [false, true]);
+      expect([firstShown, secondShown], [null, true]);
+
+      // The last page of the book: the bridge says there was no page.
+      final last = controller.turnPage(forward: true);
+      controller.completePageTurn(3, turned: false);
+      expect(await last, isFalse);
+
+      // Under a finger still dragging, a turn is not yet a page read.
+      platformController.evaluatedSources.clear();
+      unawaited(controller.turnPage(forward: false, quiet: true));
+      controller.countTurnedPage();
+      await _flushMicrotasks();
+      expect(platformController.evaluatedSources, [
+        'previous(4, true)',
+        'countTurnedPage()',
+      ]);
     });
 
     test('there is no page picture without a web view', () async {

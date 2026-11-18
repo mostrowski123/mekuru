@@ -202,6 +202,32 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// natively".
   ({double x, double y, ScrollEdges? edges})? _touchDown;
 
+  // A finger dragged sideways across the page, for a page turn that follows
+  // it. Found among Flutter's pointer events ([_onPointer]): the bridge only
+  // says where a touch began and ended.
+  ({int pointer, Offset position, Duration time, DateTime at})? _dragDown;
+  var _pointersDown = 0;
+  PageTurnDrag? _pageDrag;
+  var _pageDragIntent = ReaderNavigationIntent.none;
+
+  /// The drag turned the page underneath while the finger was still down:
+  /// a peek, which counts as a page read only once the turn is finished.
+  var _pageDragPeeked = false;
+
+  /// The touch on the page became a page drag: what the bridge reports of
+  /// its end (a swipe, a tapped word) is not acted on.
+  var _touchWasPageDrag = false;
+
+  /// When the bridge last reported a touch coming down on the page.
+  DateTime? _touchDownAt;
+
+  /// A finger still for longer than this before it moves is selecting text.
+  static const _selectionHold = Duration(milliseconds: 300);
+
+  /// How long before Flutter routes a pointer down the bridge may already
+  /// have reported the same touch.
+  static const _touchReportLead = Duration(milliseconds: 500);
+
   @override
   void initState() {
     super.initState();
@@ -567,6 +593,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                               },
                               onSelection: (selection) {
                                 _hasActiveSelection = true;
+                                // The finger was selecting text after all.
+                                _endPageDrag(null);
                                 if (selection.text.isNotEmpty &&
                                     selection.cfi.isNotEmpty) {
                                   setState(() {
@@ -581,6 +609,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                 });
                               },
                               onTouchDown: (x, y, edges) {
+                                // A report that comes after its touch has
+                                // become a page drag belongs to the drag.
+                                if (_pageDrag == null) {
+                                  _touchWasPageDrag = false;
+                                }
+                                _touchDownAt = DateTime.now();
                                 _touchDown = (
                                   x: x.clamp(0.0, 1.0),
                                   y: y.clamp(0.0, 1.0),
@@ -1092,6 +1126,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// Flutter routes its pointer down, so the held tap's own down is only
   /// told apart from a second tap by the time since the previous lift.
   void _onPointer(PointerEvent event) {
+    _trackPageDrag(event);
     if (event is PointerDownEvent) {
       final last = _lastPointerUp;
       final second =
@@ -1114,6 +1149,125 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     } else if (event is PointerCancelEvent) {
       _secondTapDown = null;
     }
+  }
+
+  /// Follows a finger dragged sideways across the page with the page turn.
+  void _trackPageDrag(PointerEvent event) {
+    if (event is PointerDownEvent) {
+      _pointersDown++;
+      // A second finger is a pinch or a stray touch, never a page turn.
+      if (_pointersDown > 1) _endPageDrag(null);
+      _dragDown = _pointersDown == 1
+          ? (
+              pointer: event.pointer,
+              position: event.position,
+              time: event.timeStamp,
+              at: DateTime.now(),
+            )
+          : null;
+    } else if (event is PointerMoveEvent) {
+      final down = _dragDown;
+      if (down == null || event.pointer != down.pointer) return;
+      final moved = event.position - down.position;
+      _pageDrag ??= _startPageDrag(
+        moved,
+        held: event.timeStamp - down.time,
+        downAt: down.at,
+      );
+      _pageDrag?.update(moved.dx / MediaQuery.sizeOf(context).width);
+    } else if (event is PointerUpEvent || event is PointerCancelEvent) {
+      if (_pointersDown > 0) _pointersDown--;
+      final down = _dragDown;
+      if (down == null || event.pointer != down.pointer) return;
+      _dragDown = null;
+      _endPageDrag(
+        event is PointerUpEvent ? event.position - down.position : null,
+      );
+    }
+  }
+
+  /// Starts a page turn under a finger that came down at [downAt] and has
+  /// [moved] since, [held] later, if this is the moment for one.
+  PageTurnDrag? _startPageDrag(
+    Offset moved, {
+    required Duration held,
+    required DateTime downAt,
+  }) {
+    final reportedAt = _touchDownAt;
+    if (moved.dx.abs() < kTouchSlop ||
+        moved.dx.abs() < moved.dy.abs() ||
+        // The page must have seen this very touch come down: not a touch on
+        // a sheet or a control, nor an earlier touch whose end was never
+        // reported (its page was replaced under the finger, it hit a link).
+        _touchDown == null ||
+        reportedAt == null ||
+        reportedAt.isBefore(downAt.subtract(_touchReportLead)) ||
+        !_bookShown ||
+        _hasActiveSelection ||
+        _openingImage ||
+        held > _selectionHold) {
+      return null;
+    }
+    final settings = ref.read(readerSettingsProvider);
+    final style = _pageTurnStyle(settings);
+    if (style == PageTurnStyle.none) return null;
+    // The drag is this touch from here on.
+    _touchDown = null;
+    _touchWasPageDrag = true;
+    _pageDragPeeked = false;
+    final intent = _pageDragIntent = intentForHorizontalSwipe(
+      towardRight: moved.dx > 0,
+      readingDirection: settings.readingDirection,
+    );
+    final forward = intent == ReaderNavigationIntent.goForward;
+    final shown = Completer<bool>();
+    return _pageTurn.drag(
+      style: style,
+      // The page goes the way the finger does.
+      leavesRight: moved.dx > 0,
+      capture: _epubController.takePagePicture,
+      turnPage: () {
+        // With the finger still down this is a peek.
+        _pageDragPeeked = _pageDrag != null;
+        shown.complete(
+          _epubController.turnPage(forward: forward, quiet: _pageDragPeeked),
+        );
+      },
+      pageShown: shown.future,
+      turnBack: () => _epubController.turnPage(forward: !forward, quiet: true),
+    );
+  }
+
+  /// The finger of a page drag lifted, having [moved] that far (null: the
+  /// touch was cancelled). A swipe the drag's way finishes the turn; less
+  /// puts the page back.
+  void _endPageDrag(Offset? moved) {
+    final drag = _pageDrag;
+    if (drag == null) return;
+    _pageDrag = null;
+    final size = MediaQuery.sizeOf(context);
+    final settings = ref.read(readerSettingsProvider);
+    final complete =
+        moved != null &&
+        resolveEreaderSwipeIntent(
+              downX: 0,
+              upX: moved.dx,
+              downY: 0,
+              upY: moved.dy,
+              screenWidth: size.width,
+              screenHeight: size.height,
+              readingDirection: settings.readingDirection,
+              swipeThreshold: settings.swipeSensitivity,
+            ) ==
+            _pageDragIntent;
+    if (complete) {
+      _countPageTurn(
+        forward: _pageDragIntent == ReaderNavigationIntent.goForward,
+      );
+      // The page peeked at has been turned to after all.
+      if (_pageDragPeeked) _epubController.countTurnedPage();
+    }
+    drag.end(complete: complete);
   }
 
   void _handleTouchUp(
@@ -1186,6 +1340,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   ) {
     final down = _touchDown;
     _touchDown = null;
+    // The touch was a page drag, which has turned the page or put it back.
+    if (_touchWasPageDrag) return true;
     if (down == null) return false;
     final dx = x.clamp(0.0, 1.0) - down.x;
     final gesture = classifyGesture(
@@ -1252,6 +1408,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       debugPrint('[READER] wordTapped was actually a swipe');
       return;
     }
+    // The word is on the page under a turn still playing: show that page.
+    _pageTurn.finish();
 
     // It's a tap on text — identify the word via MeCab and show lookup
     final mecab = ref.read(mecabServiceProvider);
@@ -1426,14 +1584,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       return;
     }
     debugPrint('[READER] goForward executing');
-    // Scroll view counts pages by screens scrolled (onPageCharacters).
-    if (!ref.read(readerSettingsProvider).scrollView) {
-      _sessionTracker.recordPageTurn();
-    }
-    countUsage(
-      'reader.page_turn',
-      attrs: {'direction': 'forward', 'format': 'epub'},
-    );
+    _countPageTurn(forward: true);
     _turnPage(forward: true);
   }
 
@@ -1446,32 +1597,38 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       return;
     }
     debugPrint('[READER] goBackward executing');
+    _countPageTurn(forward: false);
+    _turnPage(forward: false);
+  }
+
+  void _countPageTurn({required bool forward}) {
     // Scroll view counts pages by screens scrolled (onPageCharacters).
     if (!ref.read(readerSettingsProvider).scrollView) {
       _sessionTracker.recordPageTurn();
     }
     countUsage(
       'reader.page_turn',
-      attrs: {'direction': 'backward', 'format': 'epub'},
+      attrs: {'direction': forward ? 'forward' : 'backward', 'format': 'epub'},
     );
-    _turnPage(forward: false);
   }
+
+  /// How pages turn right now. Scroll view has no pages to turn.
+  PageTurnStyle _pageTurnStyle(ReaderSettings settings) => settings.scrollView
+      ? PageTurnStyle.none
+      : effectivePageTurnStyle(
+          settings,
+          disableAnimations: MediaQuery.disableAnimationsOf(context),
+        );
 
   /// Turns one page, behind the page turn animation when one is set.
   void _turnPage({required bool forward}) {
     final settings = ref.read(readerSettingsProvider);
-    // Scroll view has no pages to turn.
-    final style = settings.scrollView
-        ? PageTurnStyle.none
-        : effectivePageTurnStyle(
-            settings,
-            disableAnimations: MediaQuery.disableAnimationsOf(context),
-          );
+    final style = _pageTurnStyle(settings);
     if (style == PageTurnStyle.none) {
       forward ? _epubController.next() : _epubController.prev();
       return;
     }
-    final shown = Completer<void>();
+    final shown = Completer<bool>();
     unawaited(
       _pageTurn.run(
         style: style,

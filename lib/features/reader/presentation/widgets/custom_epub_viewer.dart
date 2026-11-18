@@ -671,7 +671,10 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       handlerName: 'pageTurned',
       callback: (data) {
         if (data.isNotEmpty && data[0] is num) {
-          widget.controller.completePageTurn((data[0] as num).toInt());
+          widget.controller.completePageTurn(
+            (data[0] as num).toInt(),
+            turned: data.length < 2 || data[1] != false,
+          );
         }
       },
     );

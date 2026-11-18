@@ -9,6 +9,7 @@ import 'dart:math' show max;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -303,25 +304,37 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     MokuroBook book, {
     List<int>? displayedPages,
   }) {
-    if (page != _currentPage) {
-      // Page-turn telemetry deliberately still counts seek sweeps; the
-      // characters report is keyed, so the tracker's dwell gate drops them.
-      _recordPageTurn(forward: page > _currentPage);
-      _recordPageCharacters(book, displayedPages ?? [page]);
-    }
+    final from = _currentPage;
     setState(() => _currentPage = page);
 
-    // Save progress: the position is the lower page on screen, the progress
-    // the furthest one, so ending on the last two pages finishes the book.
-    ref
-        .read(bookRepositoryProvider)
-        .updateProgress(
-          widget.book.id,
-          page.toString(),
-          progress: readProgressFor(displayedPages ?? [page], totalPages),
-        );
+    void record() {
+      if (page != from) {
+        // Page-turn telemetry deliberately still counts seek sweeps; the
+        // characters report is keyed, so the tracker's dwell gate drops them.
+        _recordPageTurn(forward: page > from);
+        _recordPageCharacters(book, displayedPages ?? [page]);
+      }
 
-    _precacheAdjacentPages();
+      // Save progress: the position is the lower page on screen, the
+      // progress the furthest one, so ending on the last two pages finishes
+      // the book.
+      ref
+          .read(bookRepositoryProvider)
+          .updateProgress(
+            widget.book.id,
+            page.toString(),
+            progress: readProgressFor(displayedPages ?? [page], totalPages),
+          );
+
+      _precacheAdjacentPages();
+    }
+
+    // Under a finger still dragging it, the page is only peeked at.
+    if (_quietTurn) {
+      _recordPeek = record;
+      return;
+    }
+    record();
   }
 
   /// Precache the next few pages so they display instantly when swiped to.
@@ -432,11 +445,23 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   int _ereaderActivePointers = 0;
   bool _ereaderMultiTouch = false;
 
+  // A curl under the finger, and the turn the finger began.
+  PageTurnDrag? _pageDrag;
+  var _pageDragIntent = ReaderNavigationIntent.none;
+
+  /// Set around a jump made under a finger still dragging, or back from
+  /// one: the page is shown but nothing is recorded or saved for it.
+  var _quietTurn = false;
+
+  /// Records the page a quiet jump went to, should the turn be finished.
+  VoidCallback? _recordPeek;
+
   void _onEreaderPointerDown(PointerDownEvent event) {
     _ereaderActivePointers += 1;
     if (_ereaderActivePointers > 1) {
       _ereaderMultiTouch = true;
       _ereaderSwipeDownPosition = null;
+      _endPageDrag(complete: false);
     } else {
       _ereaderMultiTouch = false;
       _ereaderSwipeDownPosition = event.position;
@@ -446,6 +471,81 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   void _onEreaderPointerCancel(PointerCancelEvent event) {
     if (_ereaderActivePointers > 0) _ereaderActivePointers -= 1;
     _ereaderSwipeDownPosition = null;
+    _endPageDrag(complete: false);
+  }
+
+  void _endPageDrag({required bool complete}) {
+    final drag = _pageDrag;
+    if (drag == null) return;
+    _pageDrag = null;
+    if (complete) {
+      // The page peeked at has been turned to after all.
+      _recordPeek?.call();
+      _recordPeek = null;
+    }
+    drag.end(complete: complete);
+  }
+
+  /// With the Curl page turn, the page follows a finger dragged sideways.
+  void _onEreaderPointerMove(
+    PointerMoveEvent event,
+    MangaViewMode viewMode,
+    ReaderDirection direction,
+    int totalPages,
+    List<PageSpread> spreads,
+  ) {
+    final down = _ereaderSwipeDownPosition;
+    if (down == null || _ereaderMultiTouch || _isZoomed) return;
+    final moved = event.position - down;
+    _pageDrag ??= _startPageDrag(
+      moved,
+      viewMode,
+      direction,
+      totalPages,
+      spreads,
+    );
+    _pageDrag?.update(moved.dx / MediaQuery.sizeOf(context).width);
+  }
+
+  PageTurnDrag? _startPageDrag(
+    Offset moved,
+    MangaViewMode viewMode,
+    ReaderDirection direction,
+    int totalPages,
+    List<PageSpread> spreads,
+  ) {
+    if (moved.dx.abs() < kTouchSlop ||
+        moved.dx.abs() < moved.dy.abs() ||
+        _pageTurnStyle != PageTurnStyle.curl) {
+      return null;
+    }
+    final intent = intentForHorizontalSwipe(
+      towardRight: moved.dx > 0,
+      readingDirection: direction,
+    );
+    final delta = intent == ReaderNavigationIntent.goForward ? 1 : -1;
+    if (!_hasPage(delta, viewMode, totalPages, spreads)) return null;
+    _pageDragIntent = intent;
+    return _pageTurn.drag(
+      style: PageTurnStyle.curl,
+      // The page goes the way the finger does.
+      leavesRight: moved.dx > 0,
+      capture: _pagePicture,
+      turnPage: () {
+        // With the finger still down this is a peek: recorded if the turn
+        // is finished, forgotten if it is given up.
+        _quietTurn = _pageDrag != null;
+        _turn(delta, totalPages, spreads);
+        _quietTurn = false;
+      },
+      turnBack: () {
+        _quietTurn = true;
+        _turn(-delta, totalPages, spreads);
+        _quietTurn = false;
+        _recordPeek = null;
+        return null;
+      },
+    );
   }
 
   void _onEreaderPointerUp(
@@ -464,6 +564,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         _isZoomed ||
         // Scroll mode keeps its native (direct-manipulation) scrolling.
         viewMode == MangaViewMode.scroll) {
+      _endPageDrag(complete: false);
       return;
     }
 
@@ -477,6 +578,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       screenHeight: screenSize.height,
       readingDirection: direction,
     );
+    if (_pageDrag != null) {
+      // The page is already under the finger: a swipe its way finishes the
+      // turn, anything less puts the page back.
+      _endPageDrag(complete: intent == _pageDragIntent);
+      return;
+    }
     switch (intent) {
       case ReaderNavigationIntent.goForward:
         _navigate(1, totalPages, spreads);
@@ -532,14 +639,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   /// behind a curl when that is the page turn.
   void _navigate(int delta, int totalPages, List<PageSpread> spreads) {
     final settings = ref.read(readerSettingsProvider);
-    final viewMode = settings.mangaViewMode;
-    // A curl needs another page to uncover, and scroll view has no pages.
+    // A curl needs another page to uncover.
     if (_pageTurnStyle != PageTurnStyle.curl ||
-        viewMode == MangaViewMode.scroll ||
-        _visiblePageIndexes(
-          viewMode,
-          spreads,
-        ).contains(delta > 0 ? totalPages - 1 : 0)) {
+        !_hasPage(delta, settings.mangaViewMode, totalPages, spreads)) {
       return _turn(delta, totalPages, spreads);
     }
     final direction = _bookDirection.value ?? settings.mangaReadingDirection;
@@ -553,6 +655,20 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     );
   }
 
+  /// Whether a page or spread lies [delta] (one forward or back) from the
+  /// one on screen. Scroll view has no pages.
+  bool _hasPage(
+    int delta,
+    MangaViewMode viewMode,
+    int totalPages,
+    List<PageSpread> spreads,
+  ) =>
+      viewMode != MangaViewMode.scroll &&
+      !_visiblePageIndexes(
+        viewMode,
+        spreads,
+      ).contains(delta > 0 ? totalPages - 1 : 0);
+
   /// A picture of the page area, background included, for the curl.
   Future<ui.Image?> _pagePicture() async {
     final boundary = _pageBoundaryKey.currentContext?.findRenderObject();
@@ -564,6 +680,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   }
 
   void _turn(int delta, int totalPages, List<PageSpread> spreads) {
+    // A curl still owes its turn when the reader closes under it.
+    if (!mounted) return;
     final viewMode = ref.read(readerSettingsProvider).mangaViewMode;
     switch (viewMode) {
       case MangaViewMode.singlePage:
@@ -597,6 +715,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     MokuroTextBlock block,
     Offset globalPosition,
   ) {
+    // The word is on the page under a turn still playing: show that page.
+    _pageTurn.finish();
     // Determine top vs bottom positioning — if the word is in the bottom
     // half of the screen, show the sheet at the top to avoid covering it.
     final screenHeight = MediaQuery.of(context).size.height;
@@ -1399,6 +1519,15 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                     onIntent: onIntent,
                     child: Listener(
                       onPointerDown: _slidePages ? null : _onEreaderPointerDown,
+                      onPointerMove: _slidePages
+                          ? null
+                          : (event) => _onEreaderPointerMove(
+                              event,
+                              viewMode,
+                              direction,
+                              totalPages,
+                              spreads,
+                            ),
                       onPointerCancel: _slidePages
                           ? null
                           : _onEreaderPointerCancel,
