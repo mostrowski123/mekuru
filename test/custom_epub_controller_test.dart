@@ -91,6 +91,25 @@ void main() {
       ]);
     });
 
+    test('setTwoPage asks the bridge for two pages or one', () async {
+      final platformController = _FakePlatformInAppWebViewController(
+        onEvaluateJavascript: (source) async => null,
+      );
+      final controller = CustomEpubController()
+        ..attach(
+          InAppWebViewController.fromPlatform(platform: platformController),
+        );
+
+      controller.setTwoPage(true);
+      controller.setTwoPage(false);
+      await _flushMicrotasks();
+
+      expect(platformController.evaluatedSources, [
+        'setTwoPage(true)',
+        'setTwoPage(false)',
+      ]);
+    });
+
     test('there is no page picture without a web view', () async {
       expect(await CustomEpubController().takePagePicture(), isNull);
     });

@@ -151,6 +151,11 @@ class CustomEpubController {
     _eval('setMargins($horizontal, $vertical)');
   }
 
+  /// Two pages side by side ([on]) or one, laid out again at the place on
+  /// screen. The page can still show one: a fixed-layout book, or vertical
+  /// text in a web view that cannot page it sideways.
+  void setTwoPage(bool on) => _eval('setTwoPage($on)');
+
   void setBodyBackground(Color color) {
     final hex = _colorToHex(color);
     _eval('setBodyBackground("$hex")');

@@ -520,178 +520,188 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                           onIntent: _executeNavigationIntent,
                           child: PageTurnOverlay(
                             controller: _pageTurn,
-                            child: CustomEpubViewer(
-                              key: ObjectKey(viewer),
-                              controller: _epubController,
-                              epubPath: _epubPath!,
-                              initialCfi: _initialCfi,
-                              // The layout is the session's, so the session
-                              // knows what the page shows.
-                              // epub.js uses direction to determine its pagination axis:
-                              // 'rtl' → vertical axis (for vertical Japanese text),
-                              // 'ltr' → horizontal axis.
-                              // When vertical text is disabled, we MUST pass 'ltr' so
-                              // epub.js paginates horizontally, regardless of the
-                              // user's reading direction (which only affects tap zones
-                              // and swipe interpretation in Dart).
-                              direction:
-                                  viewer.layout.verticalText &&
-                                      viewer.layout.readingDirection ==
-                                          ReaderDirection.rtl
-                                  ? 'rtl'
-                                  : 'ltr',
-                              fontSize: settings.fontSize.round(),
-                              foregroundColor: readerTheme.foregroundColor,
-                              backgroundColor: readerTheme.backgroundColor,
-                              customCss: readerTheme.customCss,
-                              horizontalMargin: settings.horizontalPadding,
-                              verticalMargin: settings.verticalPadding,
-                              // When vertical text is disabled, epub.js still reads
-                              // the section's original writing-mode CSS and sets axis
-                              // to vertical. This flag tells the JS bridge to force
-                              // the axis back to horizontal after each section loads.
-                              forceHorizontalAxis: !viewer.layout.verticalText,
-                              verticalTextBlocks:
-                                  viewer.layout.splitVerticalText ? 2 : 1,
-                              scrollView: viewer.layout.scrollView,
-                              furiganaMode: settings.furiganaMode,
-                              furiganaJlptLevel: settings.furiganaJlptLevel,
-                              furiganaKnownKanji: wanikaniKnownKanji,
-                              userFont: _userFont,
-                              onUserFontFailed: _onUserFontFailed,
-                              onLoaded: viewer.loaded,
-                              onChaptersLoaded: (chapters) {
-                                if (!mounted) return;
-                                debugPrint(
-                                  '[READER] onChaptersLoaded: ${chapters.length} '
-                                  'chapters received',
-                                );
-                                setState(() {
-                                  _chapters = _flattenChapters(chapters);
-                                });
-                                debugPrint(
-                                  '[READER] TOC flattened to ${_chapters.length} '
-                                  'entries',
-                                );
-                              },
-                              onLocationsReady: viewer.locationsArrived,
-                              // An old bookmark only matches once the section's
-                              // furigana is in (see _bookmarkAtCfi).
-                              onFuriganaApplied: () {
-                                if (mounted) _checkBookmarkState();
-                              },
-                              onRelocated: viewer.relocated,
-                              onPageKey: _onPageKey,
-                              onSearchProgress: _search.onProgress,
-                              onPageCharacters: (count, pageKey, screens) {
-                                _sessionTracker
-                                  ..recordCharactersRead(
-                                    count,
-                                    pageKey: pageKey,
-                                  )
-                                  ..recordScreensScrolled(screens);
-                              },
-                              onSelection: (selection) {
-                                _hasActiveSelection = true;
-                                // The finger was selecting text after all.
-                                _endPageDrag(null);
-                                if (selection.text.isNotEmpty &&
-                                    selection.cfi.isNotEmpty) {
+                            // The page area's own width, not the screen's:
+                            // split view and the iPhone Duo's strip make it
+                            // narrower.
+                            child: LayoutBuilder(
+                              builder: (context, constraints) => CustomEpubViewer(
+                                key: ObjectKey(viewer),
+                                controller: _epubController,
+                                epubPath: _epubPath!,
+                                initialCfi: _initialCfi,
+                                // The layout is the session's, so the session
+                                // knows what the page shows.
+                                // epub.js uses direction to determine its pagination axis:
+                                // 'rtl' → vertical axis (for vertical Japanese text),
+                                // 'ltr' → horizontal axis.
+                                // When vertical text is disabled, we MUST pass 'ltr' so
+                                // epub.js paginates horizontally, regardless of the
+                                // user's reading direction (which only affects tap zones
+                                // and swipe interpretation in Dart).
+                                direction:
+                                    viewer.layout.verticalText &&
+                                        viewer.layout.readingDirection ==
+                                            ReaderDirection.rtl
+                                    ? 'rtl'
+                                    : 'ltr',
+                                fontSize: settings.fontSize.round(),
+                                foregroundColor: readerTheme.foregroundColor,
+                                backgroundColor: readerTheme.backgroundColor,
+                                customCss: readerTheme.customCss,
+                                horizontalMargin: settings.horizontalPadding,
+                                verticalMargin: settings.verticalPadding,
+                                // When vertical text is disabled, epub.js still reads
+                                // the section's original writing-mode CSS and sets axis
+                                // to vertical. This flag tells the JS bridge to force
+                                // the axis back to horizontal after each section loads.
+                                forceHorizontalAxis:
+                                    !viewer.layout.verticalText,
+                                verticalTextBlocks:
+                                    viewer.layout.splitVerticalText ? 2 : 1,
+                                scrollView: viewer.layout.scrollView,
+                                twoPage: epubShowsTwoPages(
+                                  settings,
+                                  pageWidth: constraints.maxWidth,
+                                ),
+                                furiganaMode: settings.furiganaMode,
+                                furiganaJlptLevel: settings.furiganaJlptLevel,
+                                furiganaKnownKanji: wanikaniKnownKanji,
+                                userFont: _userFont,
+                                onUserFontFailed: _onUserFontFailed,
+                                onLoaded: viewer.loaded,
+                                onChaptersLoaded: (chapters) {
+                                  if (!mounted) return;
+                                  debugPrint(
+                                    '[READER] onChaptersLoaded: ${chapters.length} '
+                                    'chapters received',
+                                  );
                                   setState(() {
-                                    _selectionData = selection;
+                                    _chapters = _flattenChapters(chapters);
                                   });
-                                }
-                              },
-                              onSelectionCleared: () {
-                                _hasActiveSelection = false;
-                                setState(() {
-                                  _selectionData = null;
-                                });
-                              },
-                              onTouchDown: (x, y, edges) {
-                                // A report that comes after its touch has
-                                // become a page drag belongs to the drag.
-                                if (_pageDrag == null) {
-                                  _touchWasPageDrag = false;
-                                }
-                                _touchDownAt = DateTime.now();
-                                _touchDown = (
-                                  x: x.clamp(0.0, 1.0),
-                                  y: y.clamp(0.0, 1.0),
-                                  edges: edges,
-                                );
-                                debugPrint(
-                                  '[READER] touchDown stored '
-                                  'x=${x.toStringAsFixed(3)} '
-                                  'y=${y.toStringAsFixed(3)}',
-                                );
-                              },
-                              onTouchUp:
-                                  (
-                                    x,
-                                    y,
-                                    inTopOrBottomMargin,
-                                    scrolledStrip,
-                                    image,
-                                  ) {
-                                    _handleTouchUp(
+                                  debugPrint(
+                                    '[READER] TOC flattened to ${_chapters.length} '
+                                    'entries',
+                                  );
+                                },
+                                onLocationsReady: viewer.locationsArrived,
+                                // An old bookmark only matches once the section's
+                                // furigana is in (see _bookmarkAtCfi).
+                                onFuriganaApplied: () {
+                                  if (mounted) _checkBookmarkState();
+                                },
+                                onRelocated: viewer.relocated,
+                                onPageKey: _onPageKey,
+                                onSearchProgress: _search.onProgress,
+                                onPageCharacters: (count, pageKey, screens) {
+                                  _sessionTracker
+                                    ..recordCharactersRead(
+                                      count,
+                                      pageKey: pageKey,
+                                    )
+                                    ..recordScreensScrolled(screens);
+                                },
+                                onSelection: (selection) {
+                                  _hasActiveSelection = true;
+                                  // The finger was selecting text after all.
+                                  _endPageDrag(null);
+                                  if (selection.text.isNotEmpty &&
+                                      selection.cfi.isNotEmpty) {
+                                    setState(() {
+                                      _selectionData = selection;
+                                    });
+                                  }
+                                },
+                                onSelectionCleared: () {
+                                  _hasActiveSelection = false;
+                                  setState(() {
+                                    _selectionData = null;
+                                  });
+                                },
+                                onTouchDown: (x, y, edges) {
+                                  // A report that comes after its touch has
+                                  // become a page drag belongs to the drag.
+                                  if (_pageDrag == null) {
+                                    _touchWasPageDrag = false;
+                                  }
+                                  _touchDownAt = DateTime.now();
+                                  _touchDown = (
+                                    x: x.clamp(0.0, 1.0),
+                                    y: y.clamp(0.0, 1.0),
+                                    edges: edges,
+                                  );
+                                  debugPrint(
+                                    '[READER] touchDown stored '
+                                    'x=${x.toStringAsFixed(3)} '
+                                    'y=${y.toStringAsFixed(3)}',
+                                  );
+                                },
+                                onTouchUp:
+                                    (
                                       x,
                                       y,
                                       inTopOrBottomMargin,
                                       scrolledStrip,
                                       image,
-                                      settings.scrollView,
-                                      settings.readingDirection,
-                                      settings.swipeSensitivity,
-                                    );
-                                  },
-                              onImageLongPressed: (image) {
-                                // The bridge swallows the press's lift: drop
-                                // its touchDown too.
-                                _touchDown = null;
-                                unawaited(_openImageZoom(image));
-                              },
-                              onSentenceSelected: (selection) {
-                                if (!mounted) return;
-                                _hasActiveSelection = true;
-                                setState(() {
-                                  _selectionData = selection;
-                                });
-                                AppHaptics.medium();
-                              },
-                              onWordTapped:
-                                  (
-                                    surroundingText,
-                                    charOffset,
-                                    blockCharOffset,
-                                    tappedChar,
-                                    x,
-                                    y,
-                                  ) {
-                                    _handleWordTapped(
+                                    ) {
+                                      _handleTouchUp(
+                                        x,
+                                        y,
+                                        inTopOrBottomMargin,
+                                        scrolledStrip,
+                                        image,
+                                        settings.scrollView,
+                                        settings.readingDirection,
+                                        settings.swipeSensitivity,
+                                      );
+                                    },
+                                onImageLongPressed: (image) {
+                                  // The bridge swallows the press's lift: drop
+                                  // its touchDown too.
+                                  _touchDown = null;
+                                  unawaited(_openImageZoom(image));
+                                },
+                                onSentenceSelected: (selection) {
+                                  if (!mounted) return;
+                                  _hasActiveSelection = true;
+                                  setState(() {
+                                    _selectionData = selection;
+                                  });
+                                  AppHaptics.medium();
+                                },
+                                onWordTapped:
+                                    (
                                       surroundingText,
                                       charOffset,
                                       blockCharOffset,
                                       tappedChar,
                                       x,
                                       y,
-                                      settings.readingDirection,
-                                      settings.swipeSensitivity,
-                                    );
-                                  },
-                              onHighlightPressed: (cfiRange, x, y) {
-                                if (_consumeSwipe(
-                                  x,
-                                  y,
-                                  settings.readingDirection,
-                                  settings.swipeSensitivity,
-                                )) {
-                                  return;
-                                }
-                                _showHighlightDetails(cfiRange);
-                              },
-                              onLoadError: viewer.loadFailed,
-                              onRendererGone: viewer.rendererDied,
+                                    ) {
+                                      _handleWordTapped(
+                                        surroundingText,
+                                        charOffset,
+                                        blockCharOffset,
+                                        tappedChar,
+                                        x,
+                                        y,
+                                        settings.readingDirection,
+                                        settings.swipeSensitivity,
+                                      );
+                                    },
+                                onHighlightPressed: (cfiRange, x, y) {
+                                  if (_consumeSwipe(
+                                    x,
+                                    y,
+                                    settings.readingDirection,
+                                    settings.swipeSensitivity,
+                                  )) {
+                                    return;
+                                  }
+                                  _showHighlightDetails(cfiRange);
+                                },
+                                onLoadError: viewer.loadFailed,
+                                onRendererGone: viewer.rendererDied,
+                              ),
                             ),
                           ),
                         ),

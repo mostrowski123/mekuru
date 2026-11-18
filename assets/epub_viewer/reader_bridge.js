@@ -185,9 +185,10 @@ function applyUserFont() {
   for (var i = 0; i < docs.length; i++) _registerUserFont(docs[i].defaultView, docs[i]);
 }
 
-function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks, cachedLocations) {
+function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks, cachedLocations, twoPage) {
   if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
   _scrollView = (flow === 'scrolled');
+  window._twoPage = !!twoPage && !_scrollView;
   var uint8 = _epubBuf;
   _epubBuf = null;
   book.open(uint8);
@@ -206,7 +207,7 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   if (typeof verticalMargin === 'number') currentMargins.vertical = verticalMargin;
   console.log('[EPUB_BRIDGE] initial margins h=' + currentMargins.horizontal + ' v=' + currentMargins.vertical);
 
-  rendition = book.renderTo('viewer', {
+  var options = {
     manager: 'default',
     flow: flow || 'paginated',
     spread: 'none',
@@ -215,9 +216,24 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     snap: false,
     allowScriptedContent: true,
     defaultDirection: direction || 'ltr'
+  };
+  if (window._twoPage) {
+    // epub.js's own two-up layout. Dart already decided the page area is
+    // wide enough, so epub.js's width test (800 px by default) must not.
+    options.spread = 'auto';
+    options.minSpreadWidth = 0;
+    options.gap = twoPageGap();
+  }
+  rendition = book.renderTo('viewer', options);
+  // A fixed-layout book keeps its own page handling.
+  rendition.on('started', function () {
+    if (window._twoPage && rendition.settings.layout === 'pre-paginated') {
+      window._twoPage = false;
+      applyTwoPageSpread(false);
+    }
   });
 
-  console.log('[EPUB_BRIDGE] rendition created with snap:false flow:' + (flow || 'paginated') + ' dir:' + (direction || 'ltr') + ' forceHorizontalAxis=' + window._forceHorizontalAxis + ' verticalBlocks=' + window._verticalBlockCount);
+  console.log('[EPUB_BRIDGE] rendition created with snap:false flow:' + (flow || 'paginated') + ' dir:' + (direction || 'ltr') + ' forceHorizontalAxis=' + window._forceHorizontalAxis + ' verticalBlocks=' + window._verticalBlockCount + ' twoPage=' + window._twoPage);
   console.log('[EPUB_BRIDGE] customCss: ' + JSON.stringify(customCss));
 
   // Apply initial theme
@@ -792,6 +808,12 @@ function next(turnId, quiet) {
   }
   var currentPage = start.displayed ? start.displayed.page : 1;
   var totalPages = start.displayed ? start.displayed.total : 1;
+  // Two pages on screen: more follow only while the pair's second page is
+  // not the section's last.
+  var end = rendition.location && rendition.location.end;
+  if (isTwoUp() && end && end.index === start.index && end.displayed) {
+    currentPage = end.displayed.page;
+  }
   var mgrAxis = rendition.manager ? rendition.manager.settings.axis : '?';
   var mgrDir = rendition.manager ? rendition.manager.settings.direction : '?';
   console.log('[EPUB_BRIDGE] next() page=' + currentPage + '/' + totalPages +
@@ -1598,6 +1620,9 @@ function setMargins(horizontal, vertical) {
 
   // Update the container CSS rule
   applyMargins();
+  if (window._twoPage && rendition && rendition.manager) {
+    rendition.manager.settings.gap = twoPageGap();
+  }
 
   // Trigger epub.js re-layout at current position: resize() clears the views
   // and re-displays the current location (Rendition.onResized).
@@ -1607,6 +1632,49 @@ function setMargins(horizontal, vertical) {
     _pendingNavChars = false; // re-layout of the same page, not a navigation
     rendition.resize();
   }
+}
+
+// ── Two pages ─────────────────────────────────────────────────────────
+
+// The gutter between the two pages: the side margins, so the pages look
+// like the screen's two halves.
+function twoPageGap() {
+  return Math.max(24, 2 * currentMargins.horizontal);
+}
+
+// Switches epub.js's two-up layout. updateAxis() puts the spread back to
+// rendition._layout.settings.spread on every axis change, so that one is
+// set too.
+function applyTwoPageSpread(on) {
+  var spread = on ? 'auto' : 'none';
+  rendition._layout.settings.spread = spread;
+  rendition.manager.settings.gap = on ? twoPageGap() : undefined;
+  rendition.spread(spread, 0);
+}
+
+// Two pages side by side or one (Dart's switch and width rule), laid out
+// again at the place on screen.
+function setTwoPage(on) {
+  on = !!on && !_scrollView;
+  if (!rendition || !rendition.manager) {
+    window._twoPage = on;
+    return;
+  }
+  if (rendition.settings.layout === 'pre-paginated') on = false;
+  if (on === window._twoPage) return;
+  window._twoPage = on;
+  applyTwoPageSpread(on);
+  // resize() does nothing while the stage keeps its size.
+  rendition.manager._stageSize = undefined;
+  _pendingNavChars = false; // the same place laid out again, not a turn
+  rendition.resize();
+}
+
+// Whether the section on screen is laid out two pages wide.
+function isTwoUp() {
+  var m = rendition && rendition.manager;
+  return !!(window._twoPage && m && m.layout && m.layout.divisor > 1 &&
+    m.settings.axis === 'horizontal');
 }
 
 // ── Search ────────────────────────────────────────────────────────────

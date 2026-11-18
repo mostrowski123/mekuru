@@ -80,6 +80,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.forceHorizontalAxis = false,
     this.verticalTextBlocks = 1,
     this.scrollView = false,
+    this.twoPage = false,
     required this.furiganaMode,
     this.furiganaJlptLevel = 3,
     this.furiganaKnownKanji = const {},
@@ -133,6 +134,10 @@ class CustomEpubViewer extends StatefulWidget {
   /// (epub.js `scrolled` flow) instead of pages. Only read at load, so
   /// changing it needs a new viewer.
   final bool scrollView;
+
+  /// Two pages side by side (see `epubShowsTwoPages`). A change lays the book
+  /// out again at the place on screen; no new viewer is needed.
+  final bool twoPage;
 
   /// Initial furigana mode. Passed to the JS viewer so the first rendered
   /// section applies the mode immediately.
@@ -233,6 +238,18 @@ class CustomEpubViewer extends StatefulWidget {
 class _CustomEpubViewerState extends State<CustomEpubViewer> {
   InAppWebViewController? _webViewController;
   bool _loadBookInvoked = false;
+
+  /// What the page was last told about two pages; null before `loadBook`.
+  bool? _sentTwoPage;
+
+  @override
+  void didUpdateWidget(CustomEpubViewer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_sentTwoPage != null && widget.twoPage != _sentTwoPage) {
+      _sentTwoPage = widget.twoPage;
+      widget.controller.setTwoPage(widget.twoPage);
+    }
+  }
 
   late final _settings = InAppWebViewSettings(
     isInspectable: kDebugMode,
@@ -772,6 +789,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     // Locations an earlier open saved spare epub.js generating them again.
     final cachedLocations = await EpubLocationsCache.read(widget.epubPath);
 
+    _sentTwoPage = widget.twoPage;
     await _runJavascript(
       'loadBook('
       '$cfiParam, '
@@ -786,7 +804,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       '${widget.forceHorizontalAxis}, '
       '$furiganaParam, '
       '${widget.verticalTextBlocks}, '
-      '${cachedLocations ?? 'null'}'
+      '${cachedLocations ?? 'null'}, '
+      '${widget.twoPage}'
       ')',
     );
 
