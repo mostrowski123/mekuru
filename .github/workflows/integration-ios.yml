@@ -162,4 +162,8 @@ jobs:
           integration_test/reader_image_pages_scroll_test.dart
           integration_test/reader_fixed_layout_test.dart
           integration_test/reader_bad_href_test.dart
+          integration_test/reader_page_turn_test.dart
+          integration_test/reader_landscape_last_page_test.dart
+          integration_test/manga_page_turn_test.dart
+          integration_test/manga_background_test.dart
           integration_test/manga_spread_flow_test.dart
