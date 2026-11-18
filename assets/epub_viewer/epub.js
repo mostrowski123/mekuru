@@ -4308,8 +4308,9 @@ class default_DefaultViewManager {
     this.pinScroll(view, () => this.alignTarget(view, target));
   }
 
-  // [MEKURU PATCH] Scroll view: keeps a position (a display() target, or the
-  // strip's end) in place while a new view settles. It can still grow after
+  // [MEKURU PATCH] Keeps a position in place while a new view settles: in
+  // scroll view a display() target or the strip's end, in paginated view
+  // the last page of a chapter gone back into. It can still grow after
   // display() resolves (fonts, ruby, furigana, images): text before the
   // target pushes it away, and a target near the end of a strip that was not
   // yet long enough could not even be reached. Every resize of the view

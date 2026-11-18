@@ -2490,7 +2490,14 @@ function snapToLastPage(caller) {
 
   // Helper: perform the actual snap using page-count-based offset.
   // This avoids the scrollHeight inaccuracy with unloaded images.
+  var snappedSize = null;
   function doSnap() {
+    // A resize that left the strip's length alone has not moved its last
+    // page.
+    var size = axis === 'vertical' ? container.scrollHeight : container.scrollWidth;
+    if (size === snappedSize) return;
+    snappedSize = size;
+
     // Re-read scroll dimensions after images may have loaded
     var scrollDim, offsetDim, totalPages, offset;
 
@@ -2542,6 +2549,14 @@ function snapToLastPage(caller) {
     rendition.reportLocation();
   }
 
+  // The view can still grow after the snap (epub.js lays a section out
+  // twice, and fonts or images arrive late), which moves its last page
+  // further on: snap again on every resize until the reader moves on
+  // (epub.js pinScroll()).
+  function snap() {
+    manager.pinScroll(view, doSnap);
+  }
+
   // Check if there are any images in the current view that haven't loaded yet.
   // If so, wait for them before snapping (their dimensions affect scroll size).
   var pendingImages = [];
@@ -2574,7 +2589,7 @@ function snapToLastPage(caller) {
         if (timeout) clearTimeout(timeout);
         // Give one more frame for layout to settle after image load
         requestAnimationFrame(function () {
-          setTimeout(doSnap, 0);
+          setTimeout(snap, 0);
         });
       }
     }
@@ -2587,12 +2602,12 @@ function snapToLastPage(caller) {
       if (!snapped) {
         snapped = true;
         console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage: image timeout, snapping anyway');
-        doSnap();
+        snap();
       }
     }, 500);
   } else {
     // No pending images — snap immediately
-    doSnap();
+    snap();
   }
 }
 
