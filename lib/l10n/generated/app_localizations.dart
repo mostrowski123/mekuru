@@ -2781,7 +2781,7 @@ abstract class AppLocalizations {
   /// **'View Mode'**
   String get mangaViewModeTitle;
 
-  /// Toggle for reader transitions: manga page turns and the dictionary lookup sheet in both readers.
+  /// Toggle for reader transitions: page turns and the dictionary lookup sheet in both readers.
   ///
   /// In en, this message translates to:
   /// **'Animations'**
@@ -2792,6 +2792,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turn off for e-reader displays'**
   String get readerAnimationsSubtitle;
+
+  /// Label for the control that picks how pages turn in both readers: None, Slide or Curl.
+  ///
+  /// In en, this message translates to:
+  /// **'Page turn'**
+  String get readerPageTurnTitle;
+
+  /// Page turn choice: the page changes at once, with no animation.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get readerPageTurnNone;
+
+  /// Page turn choice: the page slides away sideways.
+  ///
+  /// In en, this message translates to:
+  /// **'Slide'**
+  String get readerPageTurnSlide;
+
+  /// Page turn choice: the page curls away like a sheet of paper.
+  ///
+  /// In en, this message translates to:
+  /// **'Curl'**
+  String get readerPageTurnCurl;
+
+  /// Shown under the greyed-out Page turn control while the Animations switch above it is off. 'Animations' is that switch's label (readerAnimationsTitle).
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on Animations to choose a page turn'**
+  String get readerPageTurnNeedsAnimations;
 
   /// Title of the reader settings subpage and its entry tile on the main settings screen.
   ///

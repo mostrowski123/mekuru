@@ -1561,6 +1561,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerAnimationsSubtitle => '电子墨水屏建议关闭';
 
   @override
+  String get readerPageTurnTitle => 'Page turn';
+
+  @override
+  String get readerPageTurnNone => 'None';
+
+  @override
+  String get readerPageTurnSlide => 'Slide';
+
+  @override
+  String get readerPageTurnCurl => 'Curl';
+
+  @override
+  String get readerPageTurnNeedsAnimations =>
+      'Turn on Animations to choose a page turn';
+
+  @override
   String get settingsReadingTitle => '阅读器设置';
 
   @override

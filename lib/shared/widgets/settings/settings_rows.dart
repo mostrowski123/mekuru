@@ -154,11 +154,14 @@ class SettingsSegmentedRow<T> extends StatelessWidget {
   final String? helperText;
   final List<ButtonSegment<T>> segments;
   final T selected;
-  final ValueChanged<T> onSelected;
+
+  /// Null renders the row disabled.
+  final ValueChanged<T>? onSelected;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final callback = onSelected;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -173,10 +176,12 @@ class SettingsSegmentedRow<T> extends StatelessWidget {
             segments: segments,
             selected: {selected},
             showSelectedIcon: false,
-            onSelectionChanged: (selection) {
-              AppHaptics.medium();
-              onSelected(selection.first);
-            },
+            onSelectionChanged: callback == null
+                ? null
+                : (selection) {
+                    AppHaptics.medium();
+                    callback(selection.first);
+                  },
           ),
         ),
         if (helperText != null)
