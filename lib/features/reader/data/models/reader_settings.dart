@@ -115,6 +115,19 @@ PageTurnStyle effectivePageTurnStyle(
     ? settings.pageTurnStyle
     : PageTurnStyle.none;
 
+/// The narrowest page area, in logical pixels, that shows two EPUB pages
+/// side by side: tablets, unfolded foldables and phones held sideways are
+/// that wide, a phone held upright is not.
+const kEpubTwoPageMinWidth = 600.0;
+
+/// Whether the EPUB reader lays out two pages side by side in a page area
+/// [pageWidth] logical pixels wide. (The page itself can still say no: a
+/// fixed-layout book, or vertical text in a web view that cannot do it.)
+bool epubShowsTwoPages(ReaderSettings settings, {required double pageWidth}) =>
+    settings.epubTwoPage &&
+    !settings.scrollView &&
+    pageWidth >= kEpubTwoPageMinWidth;
+
 /// What the volume buttons do while a reader is open. Android only: iOS
 /// doesn't let apps take over the volume buttons.
 enum VolumeKeyPageTurn {
@@ -273,6 +286,10 @@ class ReaderSettings {
   /// How pages turn while [readerAnimations] is on.
   final PageTurnStyle pageTurnStyle;
 
+  /// Two EPUB pages side by side where the screen is wide enough, see
+  /// [epubShowsTwoPages]. Off unless the reader switches it on.
+  final bool epubTwoPage;
+
   /// Whether and which way the volume buttons turn pages in both readers.
   final VolumeKeyPageTurn volumeKeyPageTurn;
 
@@ -305,6 +322,7 @@ class ReaderSettings {
     this.mangaBackground = MangaBackground.black,
     this.readerAnimations = true,
     this.pageTurnStyle = PageTurnStyle.slide,
+    this.epubTwoPage = false,
     this.volumeKeyPageTurn = VolumeKeyPageTurn.downNext,
   });
 
@@ -338,6 +356,7 @@ class ReaderSettings {
     MangaBackground? mangaBackground,
     bool? readerAnimations,
     PageTurnStyle? pageTurnStyle,
+    bool? epubTwoPage,
     VolumeKeyPageTurn? volumeKeyPageTurn,
   }) {
     return ReaderSettings(
@@ -375,6 +394,7 @@ class ReaderSettings {
       mangaBackground: mangaBackground ?? this.mangaBackground,
       readerAnimations: readerAnimations ?? this.readerAnimations,
       pageTurnStyle: pageTurnStyle ?? this.pageTurnStyle,
+      epubTwoPage: epubTwoPage ?? this.epubTwoPage,
       volumeKeyPageTurn: volumeKeyPageTurn ?? this.volumeKeyPageTurn,
     );
   }

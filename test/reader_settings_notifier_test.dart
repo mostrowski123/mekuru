@@ -138,6 +138,7 @@ void main() {
       notifier.setMangaDetectSpreads(false);
       notifier.setMangaBackground(MangaBackground.auto);
       notifier.setPageTurnStyle(PageTurnStyle.curl);
+      notifier.setEpubTwoPage(true);
 
       await Future<void>.delayed(Duration.zero);
 
