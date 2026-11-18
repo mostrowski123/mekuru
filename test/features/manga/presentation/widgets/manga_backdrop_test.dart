@@ -164,6 +164,20 @@ void main() {
     }
   });
 
+  testWidgets('a page that cannot be read does not keep the one before it', (
+    tester,
+  ) async {
+    final first = _Page(), broken = _Page();
+    await tester.pumpWidget(_host(MangaBackground.auto, first));
+    first.loaded.complete(await _solid(tester, 0, 0, 255));
+    await pumpUntil(tester, () => _colour(tester) == const Color(0xFF0000FF));
+
+    await tester.pumpWidget(_host(MangaBackground.auto, broken));
+    broken.loaded.completeError(Exception('page file is gone'));
+    await pumpUntil(tester, () => _colour(tester) == Colors.black);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('blur fills the screen with the page, right up to the edge', (
     tester,
   ) async {

@@ -59,7 +59,8 @@ class MangaBackdrop extends StatefulWidget {
 class _MangaBackdropState extends State<MangaBackdrop> {
   late final _listener = ImageStreamListener(
     _onPageImage,
-    onError: (_, _) {}, // an unreadable page keeps what was shown
+    // An unreadable page has nothing of its own to show: plain black.
+    onError: (_, _) => _showBlack(),
   );
   ImageStream? _stream;
 
@@ -116,6 +117,14 @@ class _MangaBackdropState extends State<MangaBackdrop> {
     _blurred?.dispose();
     setState(() => _blurred = blurred);
     _readEdgeColor(thumbnail, blurred);
+  }
+
+  void _showBlack() {
+    _blurred?.dispose();
+    setState(() {
+      _blurred = null;
+      _edgeColor = Colors.black;
+    });
   }
 
   /// The edge colour comes from the unblurred [thumbnail], which this
