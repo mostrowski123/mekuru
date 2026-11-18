@@ -244,14 +244,11 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
   InAppWebViewController? _webViewController;
   bool _loadBookInvoked = false;
 
-  /// What the page was last told about two pages; null before `loadBook`.
-  bool? _sentTwoPage;
-
   @override
   void didUpdateWidget(CustomEpubViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_sentTwoPage != null && widget.twoPage != _sentTwoPage) {
-      _sentTwoPage = widget.twoPage;
+    // Before `loadBook` there is nothing to tell: it brings the value itself.
+    if (_loadBookInvoked && widget.twoPage != oldWidget.twoPage) {
       widget.controller.setTwoPage(widget.twoPage, pageWidth: widget.pageWidth);
     }
   }
@@ -794,7 +791,6 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     // Locations an earlier open saved spare epub.js generating them again.
     final cachedLocations = await EpubLocationsCache.read(widget.epubPath);
 
-    _sentTwoPage = widget.twoPage;
     await _runJavascript(
       'loadBook('
       '$cfiParam, '

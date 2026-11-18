@@ -3,6 +3,7 @@
 // their first and last pairs, and a saved place opens on the pair that holds
 // it. One reader per file: see integration_test/shared/scroll_view_fixture.dart.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -104,7 +105,7 @@ void main() {
       );
       await waitForSection(tester, controller, 1);
       await controller.debugEvaluateJavascript(
-        'rendition.display(${_quote(cfi)}); true',
+        'rendition.display(${jsonEncode(cfi)}); true',
       );
       await waitForSection(tester, controller, 0);
       final opened = await pairState(controller);
@@ -131,5 +132,3 @@ void main() {
     expect((await charShown(controller, firstCfi))['shown'], isTrue);
   });
 }
-
-String _quote(String s) => "'${s.replaceAll("'", "\\'")}'";

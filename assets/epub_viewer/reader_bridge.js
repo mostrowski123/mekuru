@@ -189,7 +189,7 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
   _scrollView = (flow === 'scrolled');
   window._twoPage = !!twoPage && !_scrollView;
-  window._twoPageVertical = window._twoPage && twoPageVerticalSupported();
+  window._twoPageVertical = twoPageVerticalSupported();
   var uint8 = _epubBuf;
   _epubBuf = null;
   book.open(uint8);
@@ -231,7 +231,6 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   rendition.on('started', function () {
     if (window._twoPage && rendition.settings.layout === 'pre-paginated') {
       window._twoPage = false;
-      window._twoPageVertical = false;
       applyTwoPageSpread(false);
       if (rendition.manager.isRendered()) rendition.manager.updateLayout();
     }
@@ -1041,13 +1040,17 @@ function setFontSize(size) {
   // Force epub.js to re-layout so annotation highlights (word highlight,
   // persistent highlights) update their visual position after the text
   // reflows. Same pattern as setMargins() — without this, SVG overlays stay
-  // at stale coordinates. resize() re-displays the current location itself
-  // (Rendition.onResized).
-  if (rendition.manager) {
-    rendition.manager._stageSize = undefined;
-    _pendingNavChars = false; // re-layout of the same page, not a navigation
-    rendition.resize();
-  }
+  // at stale coordinates.
+  if (rendition.manager) relayoutInPlace();
+}
+
+// Lays the book out again at the place on screen: resize() clears the views
+// and re-displays the current location (Rendition.onResized()).
+function relayoutInPlace() {
+  // resize() does nothing while the stage keeps its cached size.
+  rendition.manager._stageSize = undefined;
+  _pendingNavChars = false; // the same place laid out again, not a turn
+  rendition.resize();
 }
 
 function updateTheme(foregroundColor, customCss) {
@@ -1640,14 +1643,7 @@ function setMargins(horizontal, vertical) {
     rendition.manager.settings.gap = twoPageGap();
   }
 
-  // Trigger epub.js re-layout at current position: resize() clears the views
-  // and re-displays the current location (Rendition.onResized).
-  if (rendition && rendition.manager) {
-    // Invalidate cached stage size so resize() recalculates with new padding
-    rendition.manager._stageSize = undefined;
-    _pendingNavChars = false; // re-layout of the same page, not a navigation
-    rendition.resize();
-  }
+  if (rendition && rendition.manager) relayoutInPlace();
 }
 
 // ── Two pages ─────────────────────────────────────────────────────────
@@ -1691,7 +1687,6 @@ function setTwoPage(on, pageWidth) {
   if (on === window._twoPage) return;
   holdRelayoutPlace();
   window._twoPage = on;
-  window._twoPageVertical = on && twoPageVerticalSupported();
   applyTwoPageSpread(on);
   var manager = rendition.manager;
   // Not laid out yet: its first lay-out takes the new spread.
@@ -1702,11 +1697,7 @@ function setTwoPage(on, pageWidth) {
     (cached && (cached.width !== size.width || cached.height !== size.height));
   console.log('[EPUB_BRIDGE] setTwoPage(' + on + ', ' + pageWidth + ') innerWidth=' +
     window.innerWidth + (resizing ? ', the resize lays it out' : ''));
-  if (resizing) return;
-  // resize() does nothing while the stage keeps its size.
-  manager._stageSize = undefined;
-  _pendingNavChars = false; // the same place laid out again, not a turn
-  rendition.resize();
+  if (!resizing) relayoutInPlace();
 }
 
 // The first character on screen when the reader last turned, jumped or
@@ -1732,10 +1723,8 @@ function relayoutAnchor() {
 
 // Whether this web view can run vertical text's pages leftwards, which two
 // pages side by side need (epub.js Contents.columns()): Chromium 145 and
-// later, or WebKit. Without it vertical text stays on one page. Tests set
-// window._twoPageVerticalForcedOff to stand in for an older web view.
+// later, or WebKit. Without it vertical text stays on one page.
 function twoPageVerticalSupported() {
-  if (window._twoPageVerticalForcedOff) return false;
   return (CSS.supports('column-wrap', 'wrap') && CSS.supports('column-height', '1px')) ||
     CSS.supports('-webkit-column-axis', 'horizontal');
 }

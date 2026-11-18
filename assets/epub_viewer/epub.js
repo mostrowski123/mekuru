@@ -6497,7 +6497,7 @@ class Contents {
    * @param {number} columnWidth
    * @param {number} gap
    */
-  columns(width, height, columnWidth, gap, dir, divisor) {
+  columns(width, height, columnWidth, gap, dir) {
     let COLUMN_AXIS = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-axis");
     let COLUMN_GAP = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-gap");
     let COLUMN_WIDTH = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-width");
@@ -6539,7 +6539,7 @@ class Contents {
     // that run leftwards (column-wrap, Chromium 145+). WebKit turns its
     // column axis sideways, which makes each column as wide as the box, so
     // there the box is one page wide. Split text has no place in this.
-    if (axis === "vertical" && divisor > 1 && window._twoPage && window._twoPageVertical) {
+    if (axis === "vertical" && window._twoPage && window._twoPageVertical) {
       this.css("padding-top", "20px");
       this.css("padding-bottom", "20px");
       this.css("padding-left", gap / 2 + "px", true);
@@ -6548,7 +6548,7 @@ class Contents {
       this.css("max-width", "inherit");
       this.css(COLUMN_FILL, "auto");
       this.css(COLUMN_WIDTH, height - 40 + "px");
-      if (this.window.CSS.supports("column-wrap", "wrap")) {
+      if (this.window.CSS.supports("column-wrap", "wrap") && this.window.CSS.supports("column-height", "1px")) {
         this.css(COLUMN_GAP, "0px");
         this.css("column-height", columnWidth + "px");
         this.css("column-wrap", "wrap");
@@ -7477,9 +7477,7 @@ class layout_Layout {
     if (this.name === "pre-paginated") {
       formating = contents.fit(this.columnWidth, this.height, section);
     } else if (this._flow === "paginated") {
-      // [MEKURU PATCH] columns() lays vertical text out two pages wide only
-      // while the layout is two-up.
-      formating = contents.columns(this.width, this.height, this.columnWidth, this.gap, this.settings.direction, this.divisor);
+      formating = contents.columns(this.width, this.height, this.columnWidth, this.gap, this.settings.direction);
     } else if (axis && axis === "horizontal") {
       formating = contents.size(null, this.height);
     } else {

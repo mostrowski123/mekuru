@@ -14,7 +14,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
-import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 
 import 'shared/scroll_view_fixture.dart';
 import 'shared/two_page_fixture.dart';
@@ -149,7 +148,7 @@ void main() {
     );
     await waitForSection(tester, controller, 0);
     controller.setFuriganaMode(FuriganaMode.all.storageValue);
-    await _waitForRuby(tester, controller);
+    await waitForGeneratedRuby(tester, controller);
     await tester.pump(const Duration(seconds: 1));
     var ruby = await pairState(controller);
     for (var turns = 0; turns < 4; turns++) {
@@ -161,7 +160,7 @@ void main() {
     // (h) A web view that cannot page vertical text sideways: one page, as
     // today, while two pages are switched on.
     await controller.debugEvaluateJavascript(
-      'window._twoPageVerticalForcedOff = true; true',
+      'window._twoPageVertical = false; true',
     );
     controller.setTwoPage(false);
     await tester.pump(const Duration(seconds: 2));
@@ -228,19 +227,3 @@ const _verticalState = '''
     top: Math.round(c.scrollTop), height: c.offsetHeight });
 })()
 ''';
-
-Future<void> _waitForRuby(
-  WidgetTester tester,
-  CustomEpubController controller,
-) async {
-  for (var tick = 0; tick < 80; tick++) {
-    final state = await evalJson(
-      controller,
-      'JSON.stringify({ruby: !!rendition.manager.views.last().contents'
-      '.document.querySelector("ruby.mekuru-furigana")})',
-    );
-    if (state['ruby'] == true) return;
-    await tester.pump(const Duration(milliseconds: 250));
-  }
-  throw TestFailure('No generated furigana appeared.');
-}

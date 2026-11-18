@@ -234,7 +234,7 @@ void registerScrollViewResumeScenario() {
       return _scrollState(controller);
     }
 
-    await _waitForGeneratedRuby(tester, controller);
+    await waitForGeneratedRuby(tester, controller);
     await _scrollScreens(controller, 1.37);
     final left = await settle();
     expect(left['atStart'], isFalse, reason: '$left');
@@ -301,7 +301,7 @@ void registerScrollViewResumeScenario() {
 
     // The furigana arriving reflows the text; the position stays, and so
     // does the saved progress.
-    await _waitForGeneratedRuby(tester, controller);
+    await waitForGeneratedRuby(tester, controller);
     final furigana = await settle();
     expect(
       await _compareCfi(controller, furigana['cfi'], saved),
@@ -533,7 +533,7 @@ Future<void> _scrollScreens(CustomEpubController controller, num screens) =>
     );
 
 /// Waits until MeCab's furigana is in the displayed chapter.
-Future<void> _waitForGeneratedRuby(
+Future<void> waitForGeneratedRuby(
   WidgetTester tester,
   CustomEpubController controller,
 ) async {
