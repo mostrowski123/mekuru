@@ -2531,9 +2531,12 @@ function snapToLastPage(caller) {
     if (axis === 'vertical') {
       scrollDim = container.scrollHeight;
       offsetDim = container.offsetHeight;
-      totalPages = Math.ceil(scrollDim / delta);
+      // A vertical page is one container height. layout.delta is that only
+      // right after a section renders; epub.js then puts it back to the
+      // column width, which is more than a page when the screen is sideways.
+      totalPages = Math.ceil(scrollDim / offsetDim);
       // Use page-count-based offset: go to last page
-      offset = (totalPages - 1) * delta;
+      offset = (totalPages - 1) * offsetDim;
       // Sanity: clamp to maximum possible scroll
       var maxScroll = scrollDim - offsetDim;
       if (maxScroll < 0) maxScroll = 0;
@@ -2541,8 +2544,7 @@ function snapToLastPage(caller) {
       if (offset < 0) offset = 0;
       console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage vertical: ' +
         'scrollH=' + scrollDim + ' offsetH=' + offsetDim +
-        ' delta=' + delta + ' totalPages=' + totalPages +
-        ' offset=' + offset);
+        ' totalPages=' + totalPages + ' offset=' + offset);
       container.scrollTo({ top: offset, left: 0, behavior: 'instant' });
     } else {
       // Horizontal axis
