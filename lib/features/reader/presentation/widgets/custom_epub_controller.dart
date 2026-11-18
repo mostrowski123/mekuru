@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -44,6 +46,43 @@ class CustomEpubController {
 
   void next() => _eval('next()');
   void prev() => _eval('previous()');
+
+  // The page turn animation's turn: its id, and what the bridge's answer
+  // (`pageTurned`) completes.
+  var _turnId = 0;
+  Completer<void>? _turnShown;
+
+  /// [next] or [prev] for the page turn animation. The future completes
+  /// once the page the turn went to is on screen. It never does when a
+  /// newer turn replaces this one, or no page comes (the end of the book).
+  Future<void> turnPage({required bool forward}) {
+    final shown = _turnShown = Completer<void>();
+    _eval('${forward ? 'next' : 'previous'}(${++_turnId})');
+    return shown.future;
+  }
+
+  /// The bridge's answer to [turnPage]. An older turn's answer can arrive
+  /// after a newer turn has started: the id tells them apart.
+  void completePageTurn(int id) {
+    if (id != _turnId) return;
+    _turnShown?.complete();
+    _turnShown = null;
+  }
+
+  /// A picture of the page on screen, for the page turn animation (Flutter
+  /// cannot snapshot a platform view itself). Null without a web view.
+  Future<ui.Image?> takePagePicture() async {
+    final bytes = await _webView?.takeScreenshot(
+      // PNG is the faster format on iOS, JPEG on Android.
+      screenshotConfiguration: defaultTargetPlatform == TargetPlatform.iOS
+          ? null
+          : ScreenshotConfiguration(
+              compressFormat: CompressFormat.JPEG,
+              quality: 90,
+            ),
+    );
+    return bytes == null ? null : decodeImageFromList(bytes);
+  }
 
   void display({required String cfi}) {
     final escaped = cfi.replaceAll('"', '\\"');

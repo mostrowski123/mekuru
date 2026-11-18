@@ -1,4 +1,6 @@
 // ignore_for_file: unawaited_futures
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -35,6 +37,47 @@ void main() {
       expect(chapters.single.title, 'Chapter 1');
       expect(chapters.single.subitems, hasLength(1));
       expect(chapters.single.subitems.single.title, 'Section 1');
+    });
+
+    test('an animated page turn is answered by its own id only', () async {
+      final platformController = _FakePlatformInAppWebViewController(
+        onEvaluateJavascript: (source) async => null,
+      );
+      final controller = CustomEpubController()
+        ..attach(
+          InAppWebViewController.fromPlatform(platform: platformController),
+        );
+
+      controller.next();
+      controller.prev();
+      var firstShown = false, secondShown = false;
+      unawaited(
+        controller.turnPage(forward: true).then((_) => firstShown = true),
+      );
+      unawaited(
+        controller.turnPage(forward: false).then((_) => secondShown = true),
+      );
+      await _flushMicrotasks();
+      expect(platformController.evaluatedSources, [
+        'next()',
+        'previous()',
+        'next(1)',
+        'previous(2)',
+      ]);
+
+      // The first turn's answer arrives late: it is not the second's.
+      controller.completePageTurn(1);
+      await _flushMicrotasks();
+      expect([firstShown, secondShown], [false, false]);
+
+      controller.completePageTurn(2);
+      controller.completePageTurn(2);
+      await _flushMicrotasks();
+      expect([firstShown, secondShown], [false, true]);
+    });
+
+    test('there is no page picture without a web view', () async {
+      expect(await CustomEpubController().takePagePicture(), isNull);
     });
 
     test(
