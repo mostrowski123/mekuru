@@ -1588,20 +1588,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get readerAnimationsSubtitle => '電子ペーパー端末ではオフを推奨';
 
   @override
-  String get readerPageTurnTitle => 'Page turn';
+  String get readerPageTurnTitle => 'ページめくり';
 
   @override
-  String get readerPageTurnNone => 'None';
+  String get readerPageTurnNone => 'なし';
 
   @override
-  String get readerPageTurnSlide => 'Slide';
+  String get readerPageTurnSlide => 'スライド';
 
   @override
-  String get readerPageTurnCurl => 'Curl';
+  String get readerPageTurnCurl => 'カール';
 
   @override
-  String get readerPageTurnNeedsAnimations =>
-      'Turn on Animations to choose a page turn';
+  String get readerPageTurnNeedsAnimations => '「アニメーション」をオンにすると選べます';
 
   @override
   String get settingsReadingTitle => 'リーダー設定';

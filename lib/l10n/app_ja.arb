@@ -1276,5 +1276,10 @@
   "mangaBackgroundGray": "グレー",
   "mangaBackgroundWhite": "白",
   "mangaBackgroundAuto": "自動",
-  "mangaBackgroundBlur": "ぼかし"
+  "mangaBackgroundBlur": "ぼかし",
+  "readerPageTurnTitle": "ページめくり",
+  "readerPageTurnNone": "なし",
+  "readerPageTurnSlide": "スライド",
+  "readerPageTurnCurl": "カール",
+  "readerPageTurnNeedsAnimations": "「アニメーション」をオンにすると選べます"
 }

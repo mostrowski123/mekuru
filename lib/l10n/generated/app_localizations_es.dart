@@ -1652,20 +1652,20 @@ class AppLocalizationsEs extends AppLocalizations {
       'Desactívalas en pantallas de tinta electrónica';
 
   @override
-  String get readerPageTurnTitle => 'Page turn';
+  String get readerPageTurnTitle => 'Paso de página';
 
   @override
-  String get readerPageTurnNone => 'None';
+  String get readerPageTurnNone => 'Ninguno';
 
   @override
-  String get readerPageTurnSlide => 'Slide';
+  String get readerPageTurnSlide => 'Deslizar';
 
   @override
-  String get readerPageTurnCurl => 'Curl';
+  String get readerPageTurnCurl => 'Curvar';
 
   @override
   String get readerPageTurnNeedsAnimations =>
-      'Turn on Animations to choose a page turn';
+      'Activa Animaciones para elegir el paso de página';
 
   @override
   String get settingsReadingTitle => 'Ajustes del lector';
