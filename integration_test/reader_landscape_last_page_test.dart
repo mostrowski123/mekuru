@@ -1,8 +1,10 @@
 // Going back a chapter jumps to the chapter's last page. With the screen
 // sideways a vertical page is shorter than it is wide, and once the chapter
 // had settled the jump stepped by the width instead of the page height: it
-// stopped part-way down a page, short of the last one. One reader per file:
-// see integration_test/shared/scroll_view_fixture.dart.
+// stopped part-way down a page, short of the last one. The same screen
+// showed a page counter that rounded up, so that turning forward skipped a
+// chapter's last page. One reader per file: see
+// integration_test/shared/scroll_view_fixture.dart.
 
 import 'dart:io';
 
@@ -65,5 +67,36 @@ void main() {
     expect(at['wide'], isTrue, reason: 'needs a page wider than it is tall');
     expect(at['pages'], greaterThan(2), reason: 'needs a few pages: $at');
     expect(at['top'], at['end'], reason: '$at');
+
+    // Turning forward shows every page of a chapter. The page counter ran
+    // one ahead whenever a scroll position landed a fraction of a pixel past
+    // a page boundary, and the chapter's last page was skipped. (At this
+    // font size the emulators' sideways screen does that.)
+    await controller.debugEvaluateJavascript('setFontSize(20); true');
+    await tester.pump(const Duration(seconds: 2));
+    await controller.debugEvaluateJavascript(
+      'rendition.display(book.spine.get(0).href); true',
+    );
+    await tester.pump(const Duration(seconds: 2));
+    final shown = <int>[];
+    var pages = 0;
+    for (var turn = 0; turn < 60; turn++) {
+      final here = await evalJson(
+        controller,
+        '(function () {'
+        '  var c = rendition.manager.container;'
+        '  return JSON.stringify({'
+        '    index: rendition.currentLocation().start.index,'
+        '    page: Math.round(c.scrollTop / c.offsetHeight) + 1,'
+        '    pages: Math.round(c.scrollHeight / c.offsetHeight)});'
+        '})()',
+      );
+      if (here['index'] != 0) break;
+      shown.add(here['page'] as int);
+      pages = here['pages'] as int;
+      controller.next();
+      await tester.pump(const Duration(milliseconds: 700));
+    }
+    expect(shown, [for (var page = 1; page <= pages; page++) page]);
   });
 }
