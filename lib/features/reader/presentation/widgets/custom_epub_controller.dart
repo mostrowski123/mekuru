@@ -221,25 +221,6 @@ class CustomEpubController {
   /// Expand the current word selection to the full sentence.
   void expandToSentence() => _eval('expandToSentence()');
 
-  // ── Text extraction ─────────────────────────────────────────────────
-
-  Completer<String>? _pageTextCompleter;
-
-  Future<String> getCurrentPageText() {
-    _supersedeCompleter(_pageTextCompleter, 'getCurrentPageText');
-    final completer = Completer<String>();
-    _pageTextCompleter = completer;
-    unawaited(_requestCurrentPageText());
-    return completer.future;
-  }
-
-  void completePageText(String text) {
-    if (_pageTextCompleter != null && !_pageTextCompleter!.isCompleted) {
-      _pageTextCompleter!.complete(text);
-    }
-    _pageTextCompleter = null;
-  }
-
   // ── Helpers ─────────────────────────────────────────────────────────
 
   void _eval(String source) {
@@ -252,18 +233,6 @@ class CustomEpubController {
     } catch (error, stackTrace) {
       final completer = _locationCompleter;
       _locationCompleter = null;
-      if (completer != null && !completer.isCompleted) {
-        completer.completeError(error, stackTrace);
-      }
-    }
-  }
-
-  Future<void> _requestCurrentPageText() async {
-    try {
-      await _evaluateJavascript('getCurrentPageText()');
-    } catch (error, stackTrace) {
-      final completer = _pageTextCompleter;
-      _pageTextCompleter = null;
       if (completer != null && !completer.isCompleted) {
         completer.completeError(error, stackTrace);
       }
@@ -304,12 +273,6 @@ class CustomEpubController {
     _locationCompleter = null;
     if (locationCompleter != null && !locationCompleter.isCompleted) {
       locationCompleter.completeError(error, stackTrace);
-    }
-
-    final pageTextCompleter = _pageTextCompleter;
-    _pageTextCompleter = null;
-    if (pageTextCompleter != null && !pageTextCompleter.isCompleted) {
-      pageTextCompleter.completeError(error, stackTrace);
     }
   }
 

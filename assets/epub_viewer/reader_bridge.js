@@ -1818,25 +1818,6 @@ function expandToSentence() {
   }
 }
 
-// ── Text extraction ───────────────────────────────────────────────────
-
-function getCurrentPageText() {
-  if (!rendition || !rendition.location) return;
-  var startCfi = rendition.location.start.cfi;
-  var endCfi = rendition.location.end ? rendition.location.end.cfi : startCfi;
-  getTextFromCfi(startCfi, endCfi);
-}
-
-function getTextFromCfi(startCfi, endCfi) {
-  if (!book) return;
-  book.getRange(startCfi + ',' + endCfi).then(function (range) {
-    var text = range ? range.toString() : '';
-    callDart('pageText', { text: text, startCfi: startCfi, endCfi: endCfi });
-  }).catch(function () {
-    callDart('pageText', { text: '', startCfi: startCfi, endCfi: endCfi });
-  });
-}
-
 // Reports the approximate visible-character count of the current page for
 // reading stats. Failures report nothing (Dart treats a missing count as 0
 // for the session).

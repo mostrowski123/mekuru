@@ -469,11 +469,6 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     );
 
     controller.addJavaScriptHandler(
-      handlerName: 'hapticFeedback',
-      callback: (_) => HapticFeedback.heavyImpact(),
-    );
-
-    controller.addJavaScriptHandler(
       handlerName: 'currentLocation',
       callback: (data) {
         if (data.isEmpty) return;
@@ -488,15 +483,6 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         if (data.isNotEmpty && data[0] is Map) {
           widget.onSearchProgress?.call(data[0] as Map);
         }
-      },
-    );
-
-    controller.addJavaScriptHandler(
-      handlerName: 'pageText',
-      callback: (data) {
-        if (data.isEmpty) return;
-        final map = Map<String, dynamic>.from(data[0] as Map);
-        widget.controller.completePageText(map['text'] as String? ?? '');
       },
     );
 
