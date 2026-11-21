@@ -39,6 +39,11 @@ class _FakeWorkmanager extends WorkmanagerPlatform {
   /// When set, an enqueue waits for it after it is recorded.
   Completer<void>? holdEnqueue;
 
+  /// When set, a check whether the job is scheduled waits for it, and
+  /// completes [checking] first.
+  Completer<void>? holdCheck;
+  final checking = Completer<void>();
+
   @override
   Future<void> registerOneOffTask(
     String uniqueName,
@@ -77,6 +82,11 @@ class _FakeWorkmanager extends WorkmanagerPlatform {
   @override
   Future<bool> isScheduledByUniqueName(String uniqueName) async {
     scheduledChecks++;
+    final hold = holdCheck;
+    if (hold != null) {
+      if (!checking.isCompleted) checking.complete();
+      await hold.future;
+    }
     return scheduled;
   }
 }
@@ -492,12 +502,14 @@ void main() {
       );
       mockWifiConnected(false);
       final seenFrom = waiting.length;
-      // About 20 polls.
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      final last = waiting.skip(seenFrom).lastOrNull;
+      // Two reports: the first can come from a poll that asked before.
+      while (waiting.length < seenFrom + 2) {
+        await Future<void>.delayed(every);
+      }
+      final last = waiting.last;
       gemma.cancelDownload();
       await expectLater(done, throwsA(isA<HttpException>()));
-      return last ?? fail('no progress reported');
+      return last;
     }
 
     test('queued for Wi-Fi only, it says it waits once Wi-Fi goes', () async {
@@ -541,6 +553,21 @@ void main() {
       workmanager.holdEnqueue!.complete();
       await expectLater(done, throwsA(isA<HttpException>()));
       expect(workmanager.scheduled, isFalse);
+    });
+
+    test('a cancel while WorkManager is asked about the job is a cancel, '
+        'not an interruption', () async {
+      final done = gemma.downloadModel(
+        network: NetworkConsent.wifiOnly,
+        every: every,
+      );
+      await workmanager.enqueued.future;
+      workmanager.holdCheck = Completer<void>();
+      await workmanager.checking.future;
+      // The cancel removes the job, so the pending check answers no.
+      gemma.cancelDownload();
+      workmanager.holdCheck!.complete();
+      await expectLater(done, throwsA(isA<HttpException>()));
     });
 
     test('a job already queued is only followed', () async {

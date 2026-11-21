@@ -144,6 +144,9 @@ class ModelDownloadJob {
         // that finished unseen ([pending]).
         return work.deleteStatus();
       }
+      // A cancel while these were read removed the job and marked its
+      // status stopped: report the cancel, not what it did.
+      await stopIfCancelled();
       if (status?.state == ServerDownloadWorkState.failed) {
         throw status?.error == modelJobVerificationError
             ? const ModelVerificationException()
