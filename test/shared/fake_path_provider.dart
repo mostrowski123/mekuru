@@ -21,3 +21,7 @@ class FakePathProviderPlatform extends PathProviderPlatform {
   @override
   Future<String?> getApplicationCachePath() async => root;
 }
+
+/// Installs a [FakePathProviderPlatform] at [root].
+void useFakePathProvider(String root) =>
+    PathProviderPlatform.instance = FakePathProviderPlatform(root);

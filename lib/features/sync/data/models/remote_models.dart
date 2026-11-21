@@ -66,12 +66,16 @@ class RemoteBook {
   final RemoteBookFormat format;
   final int pageCount;
 
+  /// The file's size as the server lists it; null when it doesn't say.
+  final int? sizeBytes;
+
   const RemoteBook({
     required this.ids,
     required this.title,
     required this.seriesTitle,
     required this.format,
     required this.pageCount,
+    this.sizeBytes,
   });
 
   /// Extension the downloaded file should get so the right importer runs.

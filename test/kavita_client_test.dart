@@ -139,14 +139,31 @@ void main() {
           'id': 11,
           'name': 'Volume 1',
           'chapters': [
-            {'id': 101, 'format': 3, 'pages': 210, 'titleName': ''},
+            {
+              'id': 101,
+              'format': 3,
+              'pages': 210,
+              'titleName': '',
+              'files': [
+                {'id': 1, 'bytes': 3000000},
+              ],
+            },
           ],
         },
         {
           'id': 12,
           'name': 'Extras',
           'chapters': [
-            {'id': 102, 'format': 4, 'pages': 5, 'titleName': 'PDF Extra'},
+            {
+              'id': 102,
+              'format': 4,
+              'pages': 5,
+              'titleName': 'PDF Extra',
+              'files': [
+                {'id': 2, 'bytes': 1000},
+                {'id': 3, 'bytes': 2000},
+              ],
+            },
             {'id': 103, 'format': 1, 'pages': 42, 'titleName': 'Omake'},
           ],
         },
@@ -173,6 +190,8 @@ void main() {
     expect(books[2].ids['chapterId'], '103');
     expect(books[2].title, 'Omake');
     expect(books[2].format, RemoteBookFormat.imageArchive);
+    // What a download checks the free space against: a chapter's files.
+    expect([for (final book in books) book.sizeBytes], [3000000, 3000, null]);
   });
 
   test('pullProgress maps pageNum and completion', () async {

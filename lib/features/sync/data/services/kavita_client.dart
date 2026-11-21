@@ -195,11 +195,25 @@ class KavitaClient extends HttpServerClient {
               _ => RemoteBookFormat.imageArchive,
             },
             pageCount: pages,
+            sizeBytes: _filesBytes(chapter['files']),
           ),
         );
       }
     }
     return result;
+  }
+
+  /// What a chapter's files add up to, which its download sends (zipped
+  /// when there are several); null when the server doesn't list them all.
+  static int? _filesBytes(Object? files) {
+    if (files is! List || files.isEmpty) return null;
+    var total = 0;
+    for (final file in files) {
+      final bytes = file is Map ? (file['bytes'] as num?)?.toInt() : null;
+      if (bytes == null || bytes <= 0) return null;
+      total += bytes;
+    }
+    return total;
   }
 
   @override

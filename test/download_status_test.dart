@@ -73,6 +73,14 @@ void main() {
       ),
       es.downloadInterrupted,
     );
+    // A background model download that filled the disk.
+    expect(
+      dictionaryDownloadError(
+        es,
+        const ServerDownloadFailedException(serverDownloadStorageFullError),
+      ),
+      es.localOcrStorageFull,
+    );
   });
 
   testWidgets('a finishing dictionary import shows a moving bar', (

@@ -228,6 +228,28 @@ void main() {
             '"error":"server_status:0"}',
       ]);
     });
+
+    test('a disk that fills mid-download frees the part, then records the '
+        'end', () async {
+      // Room for half the book. Then nothing fits, not even a status,
+      // until something is deleted.
+      final disk = _Disk([], free: half);
+      final over = await IOOverrides.runWithIOOverrides(
+        () => runServerDownloadWork(input()),
+        disk,
+      );
+      // The total is unknown when the disk filled within the first chunk.
+      final full = matches(
+        '^\\{"state":"failed","received":0,"total":(-1|$n),'
+        '"failedAttempts":0,"error":"storage_full"\\}\$',
+      );
+      expect(over, isTrue);
+      expect(disk.writes.last, full);
+      expect(status(), full);
+      expect(files(), {'status.json'});
+      expect(disk.free, half);
+      expect(seen, [(range: null, ifRange: null, key: 'k')]);
+    });
   });
 
   group('model job', () {
@@ -408,21 +430,115 @@ final class _StatusWrites extends IOOverrides {
 
   final List<String> writes;
 
+  /// Whether a status of this many bytes can be written; always, unless a
+  /// [_Disk] says otherwise.
+  bool fits(int bytes) => true;
+
   @override
   File createFile(String path) {
     final file = super.createFile(path);
     return p.basename(path) == 'status.json.tmp'
-        ? _RecordedFile(file, writes)
+        ? _RecordedFile(file, writes, fits)
         : file;
   }
 }
 
+/// No space left, as Android reports it.
+const _noSpace = OSError('No space left on device', 28);
+
+/// A disk with [free] bytes left, as the download's part file sees it: the
+/// part takes them as it grows and gives them back when it is deleted. A
+/// write that doesn't fit writes what does, then fails; a status, which
+/// replaces the last, needs its bytes free.
+final class _Disk extends _StatusWrites {
+  _Disk(super.writes, {required this.free});
+
+  int free;
+
+  @override
+  bool fits(int bytes) => bytes <= free;
+
+  @override
+  File createFile(String path) {
+    final file = super.createFile(path);
+    return path.endsWith('.part') ? _PartOnDisk(file, this) : file;
+  }
+}
+
+class _PartOnDisk implements File {
+  _PartOnDisk(this._file, this._disk);
+
+  final File _file;
+  final _Disk _disk;
+
+  @override
+  String get path => _file.path;
+
+  @override
+  Future<bool> exists() => _file.exists();
+
+  @override
+  Future<int> length() => _file.length();
+
+  @override
+  Future<RandomAccessFile> open({FileMode mode = FileMode.read}) async =>
+      _PartWrites(await _file.open(mode: mode), _disk, path);
+
+  @override
+  Future<File> rename(String newPath) => _file.rename(newPath);
+
+  @override
+  Future<FileSystemEntity> delete({bool recursive = false}) async {
+    final length = await _file.length();
+    await _file.delete();
+    _disk.free += length;
+    return this;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _PartWrites implements RandomAccessFile {
+  _PartWrites(this._raf, this._disk, this._path);
+
+  final RandomAccessFile _raf;
+  final _Disk _disk;
+  final String _path;
+
+  @override
+  Future<RandomAccessFile> writeFrom(
+    List<int> buffer, [
+    int start = 0,
+    int? end,
+  ]) async {
+    end ??= buffer.length;
+    final fit = (end - start).clamp(0, _disk.free);
+    await _raf.writeFrom(buffer, start, start + fit);
+    _disk.free -= fit;
+    if (start + fit < end) {
+      throw const FileSystemException('writeFrom failed', null, _noSpace);
+    }
+    return this;
+  }
+
+  @override
+  Future<void> close() => _raf.close();
+
+  @override
+  String get path => _path;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// The calls `writeBytesAtomic` makes on its temporary file.
 class _RecordedFile implements File {
-  _RecordedFile(this._file, this._writes);
+  _RecordedFile(this._file, this._writes, this._fits);
 
   final File _file;
   final List<String> _writes;
+  final bool Function(int bytes) _fits;
 
   @override
   String get path => _file.path;
@@ -433,6 +549,9 @@ class _RecordedFile implements File {
     FileMode mode = FileMode.write,
     bool flush = false,
   }) {
+    if (!_fits(bytes.length)) {
+      throw FileSystemException('writeFrom failed', path, _noSpace);
+    }
     _writes.add(utf8.decode(bytes));
     return _file.writeAsBytes(bytes, mode: mode, flush: flush);
   }

@@ -105,6 +105,7 @@ void main() {
           {
             'id': 'b1',
             'name': 'vol1',
+            'sizeBytes': 52428800,
             'media': {'mediaProfile': 'DIVINA', 'pagesCount': 180},
           },
           {
@@ -129,6 +130,9 @@ void main() {
     expect(books[0].format, RemoteBookFormat.imageArchive);
     expect(books[0].fileExtension, '.cbz');
     expect(books[0].pageCount, 180);
+    // What a download checks the free space against.
+    expect(books[0].sizeBytes, 52428800);
+    expect(books[1].sizeBytes, isNull);
     expect(books[1].ids['epub'], 'true');
     expect(books[1].format, RemoteBookFormat.epub);
     expect(books[1].fileExtension, '.epub');

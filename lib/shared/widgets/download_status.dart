@@ -222,6 +222,7 @@ String _recordedDownloadFailure(AppLocalizations l10n, String error) =>
       (serverDownloadStoppedError, _) => l10n.serverBrowseDownloadStopped,
       (serverDownloadUntrustedCertificateError, _) =>
         l10n.serverCertificateUntrusted,
+      (serverDownloadStorageFullError, _) => l10n.localOcrStorageFull,
       (_, 0) => l10n.localOcrDownloadNetwork,
       (_, final int status) => l10n.serverBrowseDownloadFailed(
         error: l10n.serverErrorStatus(status: status),

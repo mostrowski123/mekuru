@@ -39,6 +39,10 @@ const serverDownloadInterruptedError = 'interrupted';
 /// restarted because its server connection was deleted or turned off.
 const serverDownloadConnectionGoneError = 'connection_gone';
 
+/// [ServerDownloadWorkStatus.error] of a download that filled the disk. Its
+/// partial file is deleted, so the space it took is free again.
+const serverDownloadStorageFullError = 'storage_full';
+
 /// Prefix of the [ServerDownloadWorkStatus.error] of a download the server
 /// answered with an error status, e.g. `server_status:401`, or never
 /// answered (`server_status:0`). The app explains it in the user's language.
@@ -360,6 +364,23 @@ Future<bool> runWorkerDownload(
   } catch (e) {
     await writes;
     if (!Directory(work.path).existsSync()) return true;
+    if (e case FileSystemException(osError: OSError(errorCode: 28))) {
+      // ENOSPC: a retry can't fit either. The part goes first, or not even
+      // the status that says so could be written.
+      for (final path in [partPath, '$partPath.validator']) {
+        final file = File(path);
+        if (await file.exists()) await file.delete();
+      }
+      await work.writeStatus(
+        ServerDownloadWorkStatus(
+          state: ServerDownloadWorkState.failed,
+          total: total,
+          error: serverDownloadStorageFullError,
+        ),
+      );
+      await onGiveUp?.call(e);
+      return true;
+    }
     final failedAttempts = received > startBytes
         ? 1
         : (previous?.failedAttempts ?? 0) + 1;

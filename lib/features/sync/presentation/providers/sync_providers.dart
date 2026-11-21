@@ -8,6 +8,8 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/background_work.dart';
 import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/manga/presentation/widgets/scanned_pdf_notice.dart';
@@ -23,6 +25,9 @@ import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart';
+import 'package:mekuru/shared/downloads/download.dart' show requireRoom;
+import 'package:mekuru/shared/widgets/download_status.dart'
+    show dictionaryDownloadError;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
@@ -241,6 +246,14 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
     if (key == null || state.containsKey(key)) return;
     state = {...state, key: 0.0};
     try {
+      // Before the server is asked for anything. Until the download goes,
+      // the import writes the book again: its pages, or an EPUB's copy and
+      // what that unzips to.
+      if (book.sizeBytes case final size?) {
+        await requireRoom(
+          size * (book.format == RemoteBookFormat.epub ? 3 : 2),
+        );
+      }
       final request = await client.downloadRequest(book);
       final dir = ServerDownloadWorkDir(
         p.join(
@@ -599,11 +612,16 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
 }
 
 /// User-facing text for a failed server request: a hint to the self-signed
-/// switch when the certificate was rejected, else why it failed.
-String describeServerError(AppLocalizations l10n, Object error) =>
-    isUntrustedCertificateError(error)
-    ? l10n.serverCertificateUntrusted
-    : l10n.serverBrowseDownloadFailed(error: serverErrorReason(l10n, error));
+/// switch when the certificate was rejected, the room a download lacks,
+/// else why it failed.
+String describeServerError(
+  AppLocalizations l10n,
+  Object error,
+) => switch (error) {
+  _ when isUntrustedCertificateError(error) => l10n.serverCertificateUntrusted,
+  InsufficientSpaceException() => dictionaryDownloadError(l10n, error)!,
+  _ => l10n.serverBrowseDownloadFailed(error: serverErrorReason(l10n, error)),
+};
 
 /// User-facing text for a server download that failed with [error], as
 /// [runServerDownloadWork] or the app recorded it, in the user's language.
@@ -616,6 +634,9 @@ String describeServerDownloadError(AppLocalizations l10n, String error) {
     return l10n.serverBrowseDownloadFailed(
       error: l10n.serverErrorConnectionGone,
     );
+  }
+  if (error == serverDownloadStorageFullError) {
+    return l10n.serverBrowseDownloadFailed(error: l10n.localOcrStorageFull);
   }
   final status = serverDownloadErrorStatus(error);
   return l10n.serverBrowseDownloadFailed(

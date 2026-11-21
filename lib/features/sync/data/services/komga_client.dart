@@ -157,6 +157,7 @@ class KomgaClient extends HttpServerClient {
               _ => RemoteBookFormat.imageArchive,
             },
             pageCount: (media?['pagesCount'] as num?)?.toInt() ?? 0,
+            sizeBytes: (book['sizeBytes'] as num?)?.toInt(),
           ),
         );
       }

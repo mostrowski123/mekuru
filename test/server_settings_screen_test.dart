@@ -84,6 +84,11 @@ void main() {
       describeServerDownloadError(es, serverDownloadConnectionGoneError),
       'Error al descargar: ${es.serverErrorConnectionGone}',
     );
+    // The disk filled mid-download.
+    expect(
+      describeServerDownloadError(es, serverDownloadStorageFullError),
+      'Error al descargar: ${es.localOcrStorageFull}',
+    );
     // Anything else is shown as it is.
     expect(
       describe(const FormatException('bad zip')),
