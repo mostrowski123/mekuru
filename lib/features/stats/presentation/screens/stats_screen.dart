@@ -252,7 +252,7 @@ class _HeroStatsRow extends StatelessWidget {
     );
   }
 
-  /// One third of the row. The tile scales its own number down to fit.
+  /// One third of the row. The tile wraps its own number to fit.
   Widget _heroTile({
     required String label,
     required int value,

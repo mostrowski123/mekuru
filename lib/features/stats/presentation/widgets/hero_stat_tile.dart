@@ -30,17 +30,14 @@ class HeroStatTile extends StatelessWidget {
         final shown = (value * t).round();
         return Column(
           children: [
-            // Only the number scales: counts condense before they get long,
-            // but a long duration ("120h 45m") or a large text scale can
-            // still outgrow a third of a phone screen — the label, though,
-            // must keep the user's text scale rather than shrink with it.
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                formatter?.call(shown) ?? '$shown',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            // A long duration ("120h 45m") or a large text scale can outgrow
+            // a third of a phone screen. The number wraps then, at the size
+            // the user chose.
+            Text(
+              formatter?.call(shown) ?? '$shown',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
             ),
             Text(

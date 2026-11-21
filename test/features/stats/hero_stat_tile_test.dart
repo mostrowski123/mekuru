@@ -74,5 +74,38 @@ void main() {
 
       expect(find.text('500'), findsOneWidget);
     });
+
+    testWidgets('keeps the number at a large text size and wraps it', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(
+              textScaler: TextScaler.linear(2),
+              disableAnimations: true,
+            ),
+            child: Scaffold(
+              body: Center(
+                // A third of a 360-wide phone, past the row's padding.
+                child: SizedBox(
+                  width: 110,
+                  child: HeroStatTile(
+                    label: 'Reading time',
+                    value: 7245,
+                    formatter: (m) => '${m ~/ 60}h ${m % 60}m',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Painted at the size it was laid out at, so nothing scaled it down.
+      final number = find.text('120h 45m');
+      expect(tester.getRect(number).size, tester.getSize(number));
+      expect(tester.takeException(), isNull);
+    });
   });
 }
