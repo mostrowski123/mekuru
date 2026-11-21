@@ -247,63 +247,127 @@ Future<bool> runServerDownloadWork(
   final fileName = input['fileName'] as String;
   final previous = await dir.readStatus();
   if (previous?.state == ServerDownloadWorkState.done) return true;
-  final headers = (jsonDecode(input['headers'] as String) as Map)
-      .cast<String, String>();
-  client ??= serverIoClient(
-    input['baseUrl'] as String,
-    allowSelfSigned: input['allowSelfSigned'] as bool? ?? false,
+  return runWorkerDownload(
+    dir,
+    previous: previous,
+    name: fileName,
+    url: input['url'] as String,
+    headers: (jsonDecode(input['headers'] as String) as Map)
+        .cast<String, String>(),
+    client: () =>
+        client ??
+        serverIoClient(
+          input['baseUrl'] as String,
+          allowSelfSigned: input['allowSelfSigned'] as bool? ?? false,
+        ),
+    untrustedCertificateIsFinal: true,
   );
-  final partPath = '${dir.filePath(fileName)}.part';
+}
+
+/// One run of a worker download (one WorkManager run on Android, one try of
+/// the app's loop on iOS): [url] into `<name>.part` in [work]'s folder,
+/// resumed, then renamed to [name]. Progress goes into the status at most
+/// twice a second, then the outcome: done, else the failed attempts (1 again
+/// after a run that gained bytes), failed at [serverDownloadMaxFailedAttempts]
+/// or when a retry can't help. True when the download is over. Closes what
+/// [client] made.
+///
+/// A model passes [bytes] (its pinned size: the status counts against it, and
+/// a part or file that long is not fetched again), [verify] (the error of a
+/// part that fails its check, which is then deleted and fails the download),
+/// [marker] (written once the file is in place) and [onGiveUp]. A server book
+/// learns its size from the server, and only the user can trust a certificate
+/// it rejects ([untrustedCertificateIsFinal]).
+Future<bool> runWorkerDownload(
+  ServerDownloadWorkDir work, {
+  required ServerDownloadWorkStatus? previous,
+  required String name,
+  required String url,
+  required HttpClient Function() client,
+  Map<String, String>? headers,
+  int? bytes,
+  Future<String?> Function(String path)? verify,
+  String? marker,
+  bool untrustedCertificateIsFinal = false,
+  Future<void> Function(Object error)? onGiveUp,
+}) async {
+  final target = File(work.filePath(name));
+  Future<bool> install(int size) async {
+    if (marker != null) await File(work.filePath(marker)).writeAsString('ok');
+    await work.writeStatus(
+      ServerDownloadWorkStatus(
+        state: ServerDownloadWorkState.done,
+        received: size,
+        total: size,
+      ),
+    );
+    return true;
+  }
+
+  // Stopped between the rename and the marker; only a checked file is renamed.
+  if (bytes != null &&
+      await target.exists() &&
+      await target.length() == bytes) {
+    return install(bytes);
+  }
+  final partPath = '${target.path}.part';
   final startBytes = await _lengthOrZero(partPath);
   var received = startBytes;
-  var total = previous?.total ?? -1;
+  var total = bytes ?? previous?.total ?? -1;
+  ServerDownloadWorkStatus running() => ServerDownloadWorkStatus(
+    state: ServerDownloadWorkState.running,
+    received: received,
+    total: total,
+  );
   var lastWrite = DateTime.fromMillisecondsSinceEpoch(0);
   // Progress writes queue up here, so a late one can't land after (and
   // overwrite) the final status.
   var writes = Future<void>.value();
+  final connection = client();
   try {
-    await downloadResumable(
-      input['url'] as String,
-      partPath,
-      client: client,
-      headers: headers,
-      onProgress: (bytes, size) {
-        received = bytes;
-        total = size;
-        final now = DateTime.now();
-        if (now.difference(lastWrite) < const Duration(milliseconds: 500)) {
-          return;
-        }
-        lastWrite = now;
-        final status = ServerDownloadWorkStatus(
-          state: ServerDownloadWorkState.running,
-          received: bytes,
-          total: size,
-        );
-        writes = writes.then((_) => dir.writeStatus(status)).catchError((_) {});
-      },
-    );
-    await writes;
-    await File(partPath).rename(dir.filePath(fileName));
-    await dir.writeStatus(
-      ServerDownloadWorkStatus(
-        state: ServerDownloadWorkState.done,
-        received: received,
-        total: received,
-      ),
-    );
-    return true;
+    // A complete file whose check was cut short is only checked again.
+    if (startBytes != bytes) {
+      await downloadResumable(
+        url,
+        partPath,
+        client: connection,
+        headers: headers,
+        onProgress: (got, size) {
+          received = got;
+          total = bytes ?? size;
+          final now = DateTime.now();
+          if (now.difference(lastWrite) < const Duration(milliseconds: 500)) {
+            return;
+          }
+          lastWrite = now;
+          final status = running();
+          writes = writes
+              .then((_) => work.writeStatus(status))
+              .catchError((_) {});
+        },
+      );
+      await writes;
+      if (verify != null) await work.writeStatus(running());
+    }
+    if (await verify?.call(partPath) case final error?) {
+      await File(partPath).delete();
+      await work.writeStatus(running().failedWith(error));
+      await onGiveUp?.call(error);
+      return true;
+    }
+    await File(partPath).rename(target.path);
+    return await install(bytes ?? received);
   } catch (e) {
     await writes;
-    if (!Directory(dir.path).existsSync()) return true;
-    final gained = received > startBytes;
-    final failedAttempts = gained ? 1 : (previous?.failedAttempts ?? 0) + 1;
-    final permanent =
-        isUntrustedCertificateError(e) ||
-        (e is ServerDownloadHttpException && e.isPermanent);
+    if (!Directory(work.path).existsSync()) return true;
+    final failedAttempts = received > startBytes
+        ? 1
+        : (previous?.failedAttempts ?? 0) + 1;
     final giveUp =
-        permanent || failedAttempts >= serverDownloadMaxFailedAttempts;
-    await dir.writeStatus(
+        (untrustedCertificateIsFinal && isUntrustedCertificateError(e)) ||
+        (e is ServerDownloadHttpException && e.isPermanent) ||
+        failedAttempts >= serverDownloadMaxFailedAttempts;
+    await work.writeStatus(
       ServerDownloadWorkStatus(
         state: giveUp
             ? ServerDownloadWorkState.failed
@@ -314,9 +378,10 @@ Future<bool> runServerDownloadWork(
         error: serverDownloadErrorCode(e),
       ),
     );
+    if (giveUp) await onGiveUp?.call(e);
     return giveUp;
   } finally {
-    client.close(force: true);
+    connection.close(force: true);
   }
 }
 

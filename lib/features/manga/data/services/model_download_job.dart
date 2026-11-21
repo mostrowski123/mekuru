@@ -217,110 +217,32 @@ Future<bool> runModelDownloadWork(
   required String failedEvent,
   required Future<void> Function() notifyFailed,
 }) async {
-  const worker = {'route': 'worker'};
   final dir = input['dir'] as String;
   final work = ServerDownloadWorkDir(dir);
-  final marker = File(p.join(dir, modelInstalledMarker));
-  if (!Directory(dir).existsSync() || await marker.exists()) return true;
+  if (!Directory(dir).existsSync() ||
+      await File(p.join(dir, modelInstalledMarker)).exists()) {
+    return true;
+  }
   final previous = await work.readStatus();
-  if (previous == null || previous.state != ServerDownloadWorkState.running) {
-    return true;
-  }
-  Future<void> install() async {
-    await marker.writeAsString('ok');
-    await work.writeStatus(
-      ServerDownloadWorkStatus(
-        state: ServerDownloadWorkState.done,
-        received: file.bytes,
-        total: file.bytes,
-      ),
-    );
-  }
-
-  // Stopped between the rename and the marker. Only a file that passed its
-  // check is ever renamed, so it isn't checked again (gigabytes).
-  final model = File(p.join(dir, file.name));
-  if (await model.exists() && await model.length() == file.bytes) {
-    await install();
-    return true;
-  }
-  final partPath = p.join(dir, '${file.name}.part');
-  final part = File(partPath);
-  final startBytes = await part.exists() ? await part.length() : 0;
-  var received = startBytes;
-  ServerDownloadWorkStatus running() => ServerDownloadWorkStatus(
-    state: ServerDownloadWorkState.running,
-    received: received,
-    total: file.bytes,
-  );
-  var lastWrite = DateTime.fromMillisecondsSinceEpoch(0);
-  // Progress writes queue up here, so a late one can't land after (and
-  // overwrite) the final status.
-  var writes = Future<void>.value();
-  final client = HttpClient();
-  try {
-    // A complete file whose check was cut short is only checked again.
-    if (startBytes != file.bytes) {
-      await downloadResumable(
-        file.url,
-        partPath,
-        client: client,
-        onProgress: (bytes, _) {
-          received = bytes;
-          final now = DateTime.now();
-          if (now.difference(lastWrite) < const Duration(milliseconds: 500)) {
-            return;
-          }
-          lastWrite = now;
-          final status = running();
-          writes = writes
-              .then((_) => work.writeStatus(status))
-              .catchError((_) {});
-        },
-      );
-      await writes;
-      // All there: the app shows it being checked.
-      await work.writeStatus(running());
-    }
-    if (await fileSha256(partPath) != file.sha256) {
-      await part.delete();
-      await work.writeStatus(running().failedWith(modelJobVerificationError));
+  // Never queued, or ended: a stop ([ModelDownloadJob.cancel]) marks it failed.
+  if (previous?.state != ServerDownloadWorkState.running) return true;
+  return runWorkerDownload(
+    work,
+    previous: previous,
+    name: file.name,
+    url: file.url,
+    client: HttpClient.new,
+    bytes: file.bytes,
+    verify: (path) async => await fileSha256(path) == file.sha256
+        ? null
+        : modelJobVerificationError,
+    marker: modelInstalledMarker,
+    onGiveUp: (error) async {
       // Seen even when Mekuru is closed.
-      logFailure(failedEvent, modelJobVerificationError, attrs: worker);
+      logFailure(failedEvent, error, attrs: const {'route': 'worker'});
       await notifyFailed();
-      return true;
-    }
-    await part.rename(model.path);
-    await install();
-    return true;
-  } catch (e) {
-    await writes;
-    if (!Directory(dir).existsSync()) return true;
-    final failedAttempts = received > startBytes
-        ? 1
-        : previous.failedAttempts + 1;
-    final giveUp =
-        (e is ServerDownloadHttpException && e.isPermanent) ||
-        failedAttempts >= serverDownloadMaxFailedAttempts;
-    await work.writeStatus(
-      ServerDownloadWorkStatus(
-        state: giveUp
-            ? ServerDownloadWorkState.failed
-            : ServerDownloadWorkState.running,
-        received: received,
-        total: file.bytes,
-        failedAttempts: failedAttempts,
-        error: serverDownloadErrorCode(e),
-      ),
-    );
-    if (giveUp) {
-      logFailure(failedEvent, e, attrs: worker);
-      await notifyFailed();
-    }
-    return giveUp;
-  } finally {
-    client.close(force: true);
-  }
+    },
+  );
 }
 
 /// Tells the user a [ModelDownloadJob] gave up, when Mekuru is out of sight (on

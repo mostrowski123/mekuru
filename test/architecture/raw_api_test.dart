@@ -99,13 +99,12 @@ final _rows = [
       'lib/features/library/data/services/epub_parser.dart': 1,
       'lib/features/manga/data/services/cbz_parser.dart': 2,
       'lib/features/manga/data/services/model_download.dart': 1,
-      'lib/features/manga/data/services/model_download_job.dart': 1,
       'lib/features/manga/data/services/pdf_pages.dart': 1,
       'lib/features/reader/data/services/mecab_service.dart': 1,
       'lib/features/settings/data/services/enhanced_furigana_dict_download_service.dart':
           1,
       'lib/features/settings/data/services/kanjivg_download_service.dart': 2,
-      'lib/features/sync/data/services/server_download_work.dart': 1,
+      'lib/features/sync/data/services/server_download_work.dart': 2,
       'lib/features/vocabulary/data/repositories/vocabulary_repository.dart': 1,
     },
     allowed: {
