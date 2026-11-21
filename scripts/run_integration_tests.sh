@@ -47,8 +47,9 @@ run() {
     pid=$!
     (
       # Stood down (TERM's default action) when the run ends first.
-      # iOS prints "Xcode build done", Android "✓ Built build/app/outputs/...".
-      until grep -qE "Xcode build done|Built build/" "$log"; do sleep 5; done
+      # iOS prints "Xcode build done", Android "✓ Built build/app/outputs/..."
+      # (with backslashes on Windows).
+      until grep -qE 'Xcode build done|Built build[/\\]' "$log"; do sleep 5; done
       local last quiet=0 size
       last=$(wc -c < "$log" | tr -d ' ')
       while [ "$quiet" -lt "$quiet_limit" ]; do
