@@ -126,11 +126,15 @@ void main() {
       localOcrReason(context, 'download_http_503'),
       es.serverErrorStatus(status: 503),
     );
-    // Anything else in the general message.
-    expect(
-      localOcrReason(context, 'weird'),
-      es.localOcrError(details: 'weird'),
-    );
+    // Anything else, a native failure's message or a Dart error's text
+    // included, says only that OCR couldn't continue.
+    for (final code in [
+      'weird',
+      '/data/user/0/moe.matthew.mekuru/files/x.json (No such file)',
+      'Bad state: No element',
+    ]) {
+      expect(localOcrReason(context, code), es.localOcrCouldNotContinue);
+    }
   });
 
   test('a failed model download is worded in the app language', () {

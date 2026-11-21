@@ -645,8 +645,9 @@ String describeServerDownloadError(AppLocalizations l10n, String error) {
 }
 
 /// Why a Komga or Kavita request failed, in the user's language: a rejected
-/// sign-in, an unreachable server or the HTTP status. Any other error is
-/// shown as it is.
+/// sign-in, an unreachable server, the HTTP status, or an answer that isn't
+/// the server's JSON. Anything else says only that it didn't work, never the
+/// error's text.
 String serverErrorReason(AppLocalizations l10n, Object error) =>
     switch (error) {
       SyncException(isAuthFailure: true) => l10n.serverErrorSignInRejected,
@@ -654,7 +655,9 @@ String serverErrorReason(AppLocalizations l10n, Object error) =>
       SyncException(:final statusCode) => l10n.serverErrorStatus(
         status: statusCode,
       ),
-      _ => '$error',
+      // A login page, or another kind of server, answering 200.
+      FormatException() || TypeError() => l10n.serverErrorUnreadable,
+      _ => l10n.serverErrorUnknown,
     };
 
 final serverDownloadProvider =

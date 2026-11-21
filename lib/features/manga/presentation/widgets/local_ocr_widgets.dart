@@ -60,7 +60,9 @@ String localOcrReason(BuildContext context, String? code) {
     final http when http.startsWith('download_http_') => l.serverErrorStatus(
       status: int.tryParse(http.substring('download_http_'.length)) ?? 0,
     ),
-    _ => l.localOcrError(details: code),
+    // A code with no words of its own, or an exception's text (a native
+    // failure's message, a Dart error): never shown.
+    _ => l.localOcrCouldNotContinue,
   };
 }
 
@@ -153,6 +155,8 @@ Future<void> runLocalOcrAction(
   try {
     await action();
   } catch (error) {
+    // The snack bar may not show what failed.
+    logFailure('ocr.local_action_failed', error);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -47,11 +47,12 @@ void main() {
       reason(const SyncException(500, 'Kavita request failed: GET /api')),
       'El servidor devolvió el error 500.',
     );
-    // Anything else is shown as it is.
-    expect(
-      reason(const FormatException('bad JSON')),
-      'FormatException: bad JSON',
-    );
+    // A login page or another kind of server answering 200.
+    expect(reason(const FormatException('bad JSON')), es.serverErrorUnreadable);
+    // What a cast of JSON in another shape throws.
+    expect(reason(TypeError()), es.serverErrorUnreadable);
+    // Anything else says only that it didn't work, never its text.
+    expect(reason(StateError('Bad state: secret')), es.serverErrorUnknown);
   });
 
   test('a failed server download is worded once, in the app language', () {
@@ -136,6 +137,53 @@ void main() {
     );
 
     // Let the snackbar timers expire so the test ends with none pending.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets('in Japanese, linking that fails says why without the '
+      "error's text", (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    await db
+        .into(db.serverConnections)
+        .insert(
+          ServerConnectionsCompanion.insert(
+            serverType: 'komga',
+            name: 'Home',
+            baseUrl: 'http://127.0.0.1:9',
+          ),
+        );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          // A login page answering in place of the server.
+          serverClientFactoryProvider.overrideWithValue(
+            (_) async => throw const FormatException('<html>Sign in'),
+          ),
+        ],
+        child: buildLocalizedTestApp(
+          home: const ServerSettingsScreen(),
+          locale: const Locale('ja'),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.playlist_add_check));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+
+    expect(
+      find.text(ja.serverSettingsLinkFailed(error: ja.serverErrorUnreadable)),
+      findsOneWidget,
+    );
+    expect(find.textContaining(RegExp('Exception|<html>')), findsNothing);
+
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 5));
   });

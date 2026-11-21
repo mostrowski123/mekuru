@@ -405,4 +405,49 @@ void main() {
       expect(find.text('Test device speed'), findsOneWidget);
     });
   });
+
+  testWidgets('in Japanese, a failure with no words of its own never shows '
+      'its text', (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    Widget tile(Stream<OcrModelState> Function() model) => ProviderScope(
+      key: UniqueKey(),
+      overrides: [localOcrModelProvider.overrideWith((ref) => model())],
+      child: MaterialApp(
+        locale: const Locale('ja'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const Scaffold(body: LocalOcrDownloadTile()),
+      ),
+    );
+    void expectWorded() {
+      expect(find.text(ja.localOcrCouldNotContinue), findsOneWidget);
+      expect(
+        find.textContaining(RegExp('Exception|Bad state|/data/')),
+        findsNothing,
+      );
+    }
+
+    // A native failure whose code is its message.
+    await tester.pumpWidget(
+      tile(
+        () => Stream.value(
+          const OcrModelState({
+            'supported': true,
+            'installed': false,
+            'status': 'failed',
+            'totalBytes': 296173655,
+            'downloadedBytes': 0,
+            'error': 'java.io.FileNotFoundException: /data/user/0/x (EACCES)',
+          }),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expectWorded();
+
+    // The state could not be read at all.
+    await tester.pumpWidget(tile(() => Stream.error(StateError('closed'))));
+    await tester.pumpAndSettle();
+    expectWorded();
+  });
 }
