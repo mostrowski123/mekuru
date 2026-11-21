@@ -48,7 +48,7 @@ void main() {
     await cleanupAppBooksDir();
   });
 
-  testWidgets('a curl turns one page at a time and never stays up', (
+  testWidgets('a slide turns one page at a time and never stays up', (
     tester,
   ) async {
     // Test emulators run with system animations off, and that turns page
@@ -61,7 +61,7 @@ void main() {
       tester,
       await writeScrollViewEpub(tempDir, title: _title, vertical: true),
       _title,
-      settings: const ReaderSettings(pageTurnStyle: PageTurnStyle.curl),
+      settings: const ReaderSettings(pageTurnStyle: PageTurnStyle.slide),
     );
 
     /// Presses a page key and waits for the turn to finish. Returns
@@ -71,7 +71,7 @@ void main() {
         forward ? LogicalKeyboardKey.pageDown : LogicalKeyboardKey.pageUp,
       );
       var seen = false;
-      // Capture, the wait for the new page (at most 700 ms) and the curl.
+      // Capture, the wait for the new page (at most 700 ms) and the slide.
       for (var i = 0; i < 60; i++) {
         await tester.pump(const Duration(milliseconds: 50));
         final up = find.byKey(_picture).evaluate().isNotEmpty;

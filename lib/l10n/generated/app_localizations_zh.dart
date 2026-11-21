@@ -1570,9 +1570,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerPageTurnSlide => '滑动';
 
   @override
-  String get readerPageTurnCurl => '卷曲';
-
-  @override
   String get readerPageTurnNeedsAnimations => '开启“动画效果”后可选择翻页方式';
 
   @override
@@ -6176,9 +6173,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerPageTurnSlide => '滑动';
-
-  @override
-  String get readerPageTurnCurl => '卷曲';
 
   @override
   String get readerPageTurnNeedsAnimations => '开启“动画效果”后可选择翻页方式';

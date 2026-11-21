@@ -39,6 +39,11 @@ Future<ProviderContainer> _pumpScreen(
   return container;
 }
 
+Finder _pageTurnChoice(String label) => find.descendant(
+  of: find.byType(SettingsSegmentedRow<PageTurnStyle>),
+  matching: find.text(label),
+);
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -135,12 +140,12 @@ void main() {
       PageTurnStyle.slide,
     );
 
-    await tester.tap(find.text('Curl'));
+    await tester.tap(_pageTurnChoice('None'));
     await tester.pumpAndSettle();
 
     expect(
       container.read(readerSettingsProvider).pageTurnStyle,
-      PageTurnStyle.curl,
+      PageTurnStyle.none,
     );
   });
 
@@ -156,7 +161,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.text('Curl'));
+    await tester.tap(_pageTurnChoice('None'));
     await tester.pumpAndSettle();
 
     expect(
@@ -175,7 +180,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.text('Curl'));
+    await tester.tap(_pageTurnChoice('None'));
     await tester.pumpAndSettle();
 
     expect(

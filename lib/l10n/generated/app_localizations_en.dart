@@ -1641,9 +1641,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerPageTurnSlide => 'Slide';
 
   @override
-  String get readerPageTurnCurl => 'Curl';
-
-  @override
   String get readerPageTurnNeedsAnimations =>
       'Turn on Animations to choose a page turn';
 

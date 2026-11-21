@@ -1649,9 +1649,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerPageTurnSlide => 'Geser';
 
   @override
-  String get readerPageTurnCurl => 'Gulung';
-
-  @override
   String get readerPageTurnNeedsAnimations =>
       'Aktifkan Animasi untuk memilih pergantian halaman';
 

@@ -1661,9 +1661,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get readerPageTurnSlide => 'Deslizar';
 
   @override
-  String get readerPageTurnCurl => 'Curvar';
-
-  @override
   String get readerPageTurnNeedsAnimations =>
       'Activa Animaciones para elegir el paso de página';
 

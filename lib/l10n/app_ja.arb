@@ -1281,6 +1281,5 @@
   "readerPageTurnTitle": "ページめくり",
   "readerPageTurnNone": "なし",
   "readerPageTurnSlide": "スライド",
-  "readerPageTurnCurl": "カール",
   "readerPageTurnNeedsAnimations": "「アニメーション」をオンにすると選べます"
 }

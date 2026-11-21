@@ -96,7 +96,7 @@ void main() {
     unawaited(
       controller
           .run(
-            style: PageTurnStyle.curl,
+            style: PageTurnStyle.slide,
             leavesRight: true,
             capture: () async => image,
             turnPage: () => turns++,
@@ -126,7 +126,7 @@ void main() {
     unawaited(
       controller
           .run(
-            style: PageTurnStyle.curl,
+            style: PageTurnStyle.slide,
             leavesRight: true,
             capture: () async => image,
             turnPage: () => first++,
@@ -139,7 +139,7 @@ void main() {
 
     unawaited(
       controller.run(
-        style: PageTurnStyle.curl,
+        style: PageTurnStyle.slide,
         leavesRight: true,
         capture: () async {
           captures++;
@@ -191,13 +191,13 @@ void main() {
     final controller = await _pumpOverlay(tester);
     var turns = 0;
     await controller.run(
-      style: PageTurnStyle.curl,
+      style: PageTurnStyle.slide,
       leavesRight: true,
       capture: () async => null,
       turnPage: () => turns++,
     );
     await controller.run(
-      style: PageTurnStyle.curl,
+      style: PageTurnStyle.slide,
       leavesRight: true,
       capture: () => throw StateError('the web view is gone'),
       turnPage: () => turns++,
@@ -234,34 +234,6 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a curl shader that cannot load does not break the turn', (
-    tester,
-  ) async {
-    final load = PageTurnOverlay.debugLoadCurl;
-    addTearDown(() => PageTurnOverlay.debugLoadCurl = load);
-    PageTurnOverlay.debugLoadCurl = () => Future.error(Exception('no shader'));
-
-    final controller = await _pumpOverlay(tester);
-    final image = await _image(tester);
-    var done = false;
-    unawaited(
-      controller
-          .run(
-            style: PageTurnStyle.curl,
-            leavesRight: true,
-            capture: () async => image,
-            turnPage: () {},
-          )
-          .then((_) => done = true),
-    );
-    await tester.pump();
-    await tester.pump();
-    await _pumpThrough(tester, const Duration(milliseconds: 500));
-    expect(done, isTrue);
-    expect(find.byKey(_picture), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
-
   testWidgets('with no animation, or no overlay, the page just turns', (
     tester,
   ) async {
@@ -280,7 +252,7 @@ void main() {
 
     unawaited(
       PageTurnController().run(
-        style: PageTurnStyle.curl,
+        style: PageTurnStyle.slide,
         leavesRight: true,
         capture: noPicture,
         turnPage: () => turns++,
@@ -301,7 +273,7 @@ void main() {
     unawaited(
       controller
           .run(
-            style: PageTurnStyle.curl,
+            style: PageTurnStyle.slide,
             leavesRight: true,
             capture: () async => image,
             turnPage: () {},
@@ -360,7 +332,7 @@ void main() {
     var turns = 0;
     unawaited(
       controller.run(
-        style: PageTurnStyle.curl,
+        style: PageTurnStyle.slide,
         leavesRight: true,
         capture: () async => image,
         turnPage: () => turns++,
@@ -384,7 +356,7 @@ void main() {
       final image = await _image(tester);
       var turns = 0, backs = 0;
       final drag = controller.drag(
-        style: PageTurnStyle.curl,
+        style: PageTurnStyle.slide,
         leavesRight: true,
         capture: () async => image,
         turnPage: () => turns++,
@@ -458,7 +430,7 @@ void main() {
       final image = await _image(tester);
       var turns = 0, backs = 0;
       final drag = controller.drag(
-        style: PageTurnStyle.curl,
+        style: PageTurnStyle.slide,
         leavesRight: true,
         capture: () async => image,
         turnPage: () => turns++,
@@ -487,7 +459,7 @@ void main() {
       final image = await _image(tester);
       final shown = Completer<bool>();
       final drag = controller.drag(
-        style: PageTurnStyle.curl,
+        style: PageTurnStyle.slide,
         leavesRight: true,
         capture: () async => image,
         turnPage: () {},
@@ -515,7 +487,7 @@ void main() {
       final image = await _image(tester);
       var backs = 0;
       final drag = controller.drag(
-        style: PageTurnStyle.curl,
+        style: PageTurnStyle.slide,
         leavesRight: true,
         capture: () async => image,
         turnPage: () {},
@@ -621,7 +593,7 @@ void main() {
       final controller = await _pumpOverlay(tester);
       var turns = 0;
       final drag = controller.drag(
-        style: PageTurnStyle.curl,
+        style: PageTurnStyle.slide,
         leavesRight: true,
         capture: () async => null,
         turnPage: () => turns++,

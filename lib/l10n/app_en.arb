@@ -2111,7 +2111,7 @@
   },
   "readerPageTurnTitle": "Page turn",
   "@readerPageTurnTitle": {
-    "description": "Label for the control that picks how pages turn in both readers: None, Slide or Curl."
+    "description": "Label for the control that picks how pages turn in both readers: None or Slide."
   },
   "readerPageTurnNone": "None",
   "@readerPageTurnNone": {
@@ -2120,10 +2120,6 @@
   "readerPageTurnSlide": "Slide",
   "@readerPageTurnSlide": {
     "description": "Page turn choice: the page slides away sideways."
-  },
-  "readerPageTurnCurl": "Curl",
-  "@readerPageTurnCurl": {
-    "description": "Page turn choice: the page curls away like a sheet of paper."
   },
   "readerPageTurnNeedsAnimations": "Turn on Animations to choose a page turn",
   "@readerPageTurnNeedsAnimations": {

@@ -148,10 +148,6 @@ flutter:
   generate: true
   uses-material-design: true
 
-  # The Curl page turn (PageTurnOverlay in the reader feature).
-  shaders:
-    - shaders/page_curl.frag
-
   assets:
     - assets/epub_viewer/
     - assets/free_books/

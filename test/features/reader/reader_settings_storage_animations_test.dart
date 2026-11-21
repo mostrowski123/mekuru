@@ -46,13 +46,21 @@ void main() {
     test('is saved, reloaded and backed up', () async {
       final storage = SharedPreferencesReaderSettingsStorage();
       await storage.save(
-        const ReaderSettings(pageTurnStyle: PageTurnStyle.curl),
+        const ReaderSettings(pageTurnStyle: PageTurnStyle.none),
       );
-      expect((await storage.load())!.pageTurnStyle, PageTurnStyle.curl);
+      expect((await storage.load())!.pageTurnStyle, PageTurnStyle.none);
       expect(
         SharedPreferencesReaderSettingsStorage.allKeys,
         contains('reader.page_turn_style'),
       );
+    });
+
+    test('is slide on a device that saved a dropped style', () async {
+      SharedPreferences.setMockInitialValues({
+        'reader.page_turn_style': 'curl',
+      });
+      final loaded = await SharedPreferencesReaderSettingsStorage().load();
+      expect(loaded!.pageTurnStyle, PageTurnStyle.slide);
     });
 
     test('is slide for installs that predate it', () async {
@@ -72,11 +80,10 @@ void main() {
         disableAnimations: reduceMotion,
       );
 
-      expect(effective(PageTurnStyle.curl), PageTurnStyle.curl);
       expect(effective(PageTurnStyle.slide), PageTurnStyle.slide);
       expect(effective(PageTurnStyle.none), PageTurnStyle.none);
       expect(
-        effective(PageTurnStyle.curl, animations: false),
+        effective(PageTurnStyle.slide, animations: false),
         PageTurnStyle.none,
       );
       expect(

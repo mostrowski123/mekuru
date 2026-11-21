@@ -97,7 +97,7 @@ extension MangaBackgroundStorage on MangaBackground {
 }
 
 /// How a page turn animates in both readers.
-enum PageTurnStyle { none, slide, curl }
+enum PageTurnStyle { none, slide }
 
 PageTurnStyle pageTurnStyleFromString(String? value) =>
     PageTurnStyle.values.asNameMap()[value] ?? PageTurnStyle.slide;

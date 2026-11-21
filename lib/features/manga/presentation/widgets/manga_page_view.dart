@@ -43,9 +43,6 @@ class MangaPageView extends StatefulWidget {
   final PageController? pageController;
   final bool animatePageTurns;
 
-  /// See [MangaZoomViewer.onEdgeTurn].
-  final ValueChanged<int>? onEdgeTurn;
-
   const MangaPageView({
     super.key,
     required this.pageIndex,
@@ -62,7 +59,6 @@ class MangaPageView extends StatefulWidget {
     this.onZoomChanged,
     this.pageController,
     this.animatePageTurns = true,
-    this.onEdgeTurn,
   });
 
   @override
@@ -85,7 +81,6 @@ class _MangaPageViewState extends State<MangaPageView> {
       pageIndex: widget.pageIndex,
       pageController: widget.pageController,
       animatePageTurns: widget.animatePageTurns,
-      onEdgeTurn: widget.onEdgeTurn,
       onZoomChanged: widget.onZoomChanged,
       child: LayoutBuilder(
         builder: (context, constraints) {

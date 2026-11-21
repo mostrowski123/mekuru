@@ -6,8 +6,7 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 
 /// Plays page turns over a reader: a picture of the page on screen covers
 /// it, the reader jumps to the new page underneath as it always did, and
-/// the picture slides or curls away, by itself ([run]) or under the finger
-/// ([drag]).
+/// the picture slides away, by itself ([run]) or under the finger ([drag]).
 class PageTurnController {
   /// How long a turn waits for the picture of the page.
   static const _captureWait = Duration(milliseconds: 500);
@@ -43,7 +42,7 @@ class PageTurnController {
       turnPage();
       return;
     }
-    await overlay._run(_Turn(picture, style, leavesRight, turnPage), pageShown);
+    await overlay._run(_Turn(picture, leavesRight, turnPage), pageShown);
   }
 
   /// Starts a turn that follows the finger: feed it [PageTurnDrag.update]
@@ -78,7 +77,7 @@ class PageTurnController {
         // Given up before there was anything to move.
         picture.dispose();
       } else {
-        final turn = _Turn(picture, style, leavesRight, turnPage)..drag = drag;
+        final turn = _Turn(picture, leavesRight, turnPage)..drag = drag;
         drag._follow = () => overlay._follow(turn);
         await overlay._run(turn, pageShown);
       }
@@ -199,17 +198,12 @@ class PageTurnDrag {
 }
 
 class _Turn {
-  _Turn(this.picture, this.style, this.leavesRight, this._turnPage);
+  _Turn(this.picture, this.leavesRight, this._turnPage);
 
   final ui.Image picture;
-  final PageTurnStyle style;
   final bool leavesRight;
   VoidCallback? _turnPage;
   final done = Completer<void>();
-
-  /// The curl's own shader: it keeps hold of the picture, so it lives and
-  /// dies with the turn. Null paints a slide.
-  ui.FragmentShader? curl;
 
   /// Set for a turn under the finger.
   PageTurnDrag? drag;
@@ -246,11 +240,6 @@ class PageTurnOverlay extends StatefulWidget {
   final PageTurnController controller;
   final Widget child;
 
-  /// Loads the curl shader. Tests replace it to make loading fail.
-  @visibleForTesting
-  static Future<ui.FragmentProgram> Function() debugLoadCurl = () =>
-      ui.FragmentProgram.fromAsset('shaders/page_curl.frag');
-
   @override
   State<PageTurnOverlay> createState() => _PageTurnOverlayState();
 }
@@ -260,8 +249,10 @@ class _PageTurnOverlayState extends State<PageTurnOverlay>
   /// How long a turn waits for its page before giving the picture up.
   static const _pageWait = Duration(milliseconds: 700);
 
-  late final _animation = AnimationController(vsync: this);
-  ui.FragmentProgram? _curlProgram;
+  late final _animation = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+  );
   _Turn? _turn;
   Timer? _pageTimeout;
 
@@ -269,10 +260,6 @@ class _PageTurnOverlayState extends State<PageTurnOverlay>
   void initState() {
     super.initState();
     widget.controller._overlay = this;
-    // Until it has loaded, and if it cannot, a curl plays as a slide.
-    PageTurnOverlay.debugLoadCurl().then((program) {
-      _curlProgram = program;
-    }, onError: (_) {});
   }
 
   @override
@@ -282,14 +269,7 @@ class _PageTurnOverlayState extends State<PageTurnOverlay>
   }
 
   Future<void> _run(_Turn turn, Future<bool>? pageShown) {
-    if (turn.style == PageTurnStyle.curl) {
-      turn.curl = _curlProgram?.fragmentShader();
-    }
-    _animation
-      ..duration = Duration(
-        milliseconds: turn.style == PageTurnStyle.curl ? 450 : 250,
-      )
-      ..value = 0;
+    _animation.value = 0;
     setState(() => _turn = turn);
     // The page may only change once the picture covers it.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -372,7 +352,6 @@ class _PageTurnOverlayState extends State<PageTurnOverlay>
     }
     if (rebuild) setState(() {});
     turn.picture.dispose();
-    turn.curl?.dispose();
     turn.done.complete();
   }
 
@@ -426,18 +405,6 @@ class _TurnPainter extends CustomPainter {
         ? Curves.easeInOut.transform(progress.value)
         : progress.value;
     final picture = turn.picture;
-    final curl = turn.curl;
-    if (curl != null) {
-      // Uniform order is the shader's: uSize, uProgress, uRtl.
-      curl
-        ..setFloat(0, size.width)
-        ..setFloat(1, size.height)
-        ..setFloat(2, t)
-        ..setFloat(3, turn.leavesRight ? 1 : 0)
-        ..setImageSampler(0, picture);
-      canvas.drawRect(Offset.zero & size, Paint()..shader = curl);
-      return;
-    }
     final towards = turn.leavesRight ? 1.0 : -1.0;
     final page = Offset(towards * t * size.width, 0) & size;
     // The leaving page's shadow on the page it uncovers: a strip beside its

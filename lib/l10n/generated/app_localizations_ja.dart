@@ -1597,9 +1597,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get readerPageTurnSlide => 'スライド';
 
   @override
-  String get readerPageTurnCurl => 'カール';
-
-  @override
   String get readerPageTurnNeedsAnimations => '「アニメーション」をオンにすると選べます';
 
   @override

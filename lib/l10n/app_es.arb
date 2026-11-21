@@ -3327,6 +3327,5 @@
   "readerPageTurnTitle": "Paso de página",
   "readerPageTurnNone": "Ninguno",
   "readerPageTurnSlide": "Deslizar",
-  "readerPageTurnCurl": "Curvar",
   "readerPageTurnNeedsAnimations": "Activa Animaciones para elegir el paso de página"
 }

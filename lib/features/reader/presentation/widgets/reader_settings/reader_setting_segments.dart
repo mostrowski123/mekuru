@@ -134,10 +134,6 @@ List<ButtonSegment<PageTurnStyle>> pageTurnStyleSegments(
       value: PageTurnStyle.slide,
       label: Text(l10n.readerPageTurnSlide),
     ),
-    ButtonSegment(
-      value: PageTurnStyle.curl,
-      label: Text(l10n.readerPageTurnCurl),
-    ),
   ];
 }
 
