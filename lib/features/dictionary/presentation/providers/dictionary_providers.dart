@@ -8,7 +8,7 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dar
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
-import 'package:mekuru/main.dart';
+import 'package:mekuru/main.dart' show databaseProvider;
 
 // ──────────────── Repository & Services ────────────────
 
@@ -58,26 +58,47 @@ final noDictionariesProvider = Provider<bool>(
 
 // ──────────────── Import State ────────────────
 
-/// State for dictionary import progress.
+/// A stretch of an import with no entry count to show.
+enum DictionaryImportStep {
+  /// A collection's file is read, before its dictionaries import.
+  parsingCollection,
+
+  /// Every entry is stored; the search index is built and the import saved.
+  finishing,
+}
+
+/// What an import added: its entries, and for a collection its dictionaries
+/// (null for a single dictionary).
+typedef DictionaryImportResult = ({int entries, int? dictionaries});
+
+/// State for dictionary import progress. The screen words it.
 class DictionaryImportState {
   final bool isImporting;
   final int processedEntries;
   final int totalEntries;
+
+  /// The name of the collection's dictionary being imported.
   final String? currentDictionary;
+  final DictionaryImportStep? step;
   final int dictionariesProcessed;
   final int dictionariesTotal;
-  final String? error;
-  final String? successMessage;
+
+  /// Why the last import failed.
+  final Object? failure;
+
+  /// What the last import added, when it worked.
+  final DictionaryImportResult? imported;
 
   const DictionaryImportState({
     this.isImporting = false,
     this.processedEntries = 0,
     this.totalEntries = 0,
     this.currentDictionary,
+    this.step,
     this.dictionariesProcessed = 0,
     this.dictionariesTotal = 0,
-    this.error,
-    this.successMessage,
+    this.failure,
+    this.imported,
   });
 
   double get progress => totalEntries > 0 ? processedEntries / totalEntries : 0;
@@ -87,21 +108,21 @@ class DictionaryImportState {
     int? processedEntries,
     int? totalEntries,
     String? currentDictionary,
+    DictionaryImportStep? step,
     int? dictionariesProcessed,
     int? dictionariesTotal,
-    String? error,
-    String? successMessage,
   }) {
     return DictionaryImportState(
       isImporting: isImporting ?? this.isImporting,
       processedEntries: processedEntries ?? this.processedEntries,
       totalEntries: totalEntries ?? this.totalEntries,
       currentDictionary: currentDictionary ?? this.currentDictionary,
+      step: step ?? this.step,
       dictionariesProcessed:
           dictionariesProcessed ?? this.dictionariesProcessed,
       dictionariesTotal: dictionariesTotal ?? this.dictionariesTotal,
-      error: error ?? this.error,
-      successMessage: successMessage ?? this.successMessage,
+      failure: failure,
+      imported: imported,
     );
   }
 }
@@ -110,13 +131,6 @@ class DictionaryImportState {
 class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
   @override
   DictionaryImportState build() => const DictionaryImportState();
-
-  /// Clear success and error messages.
-  void clearMessages() {
-    if (state.successMessage != null || state.error != null) {
-      state = const DictionaryImportState();
-    }
-  }
 
   /// Import a dictionary file. Detects format by extension:
   /// - `.zip` → single Yomitan dictionary
@@ -144,18 +158,18 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
               totalEntries: total,
             );
           },
-          onFinishing: () => state = state.copyWith(
-            currentDictionary: appL10n().dictionaryImportFinishing,
-          ),
+          onFinishing: () =>
+              state = state.copyWith(step: DictionaryImportStep.finishing),
         ),
       );
       logUsage('dictionary.imported', attrs: {'entry_count': count});
       countUsage('dictionary.imported');
       state = DictionaryImportState(
-        successMessage: appL10n().dictionaryImportedEntries(count: count),
+        imported: (entries: count, dictionaries: null),
       );
     } catch (e) {
-      state = DictionaryImportState(error: e.toString());
+      // tracedOperation logged it.
+      state = DictionaryImportState(failure: e);
     }
   }
 
@@ -170,7 +184,7 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
           filePath,
           onParsing: () {
             state = state.copyWith(
-              currentDictionary: appL10n().dictionaryImportParsingCollection,
+              step: DictionaryImportStep.parsingCollection,
             );
           },
           onDictionaryStart: (name, entryCount, dictIndex, dictTotal) {
@@ -191,14 +205,6 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
         ),
       );
 
-      final l10n = appL10n();
-      final message = result.importedDictionaries.isNotEmpty
-          ? l10n.dictionaryImportedCollection(
-              dictionaries: result.importedDictionaries.length,
-              entries: result.totalEntriesImported,
-            )
-          : l10n.dictionaryImportNoneInCollection;
-
       logUsage(
         'dictionary.collection_imported',
         attrs: {
@@ -207,9 +213,15 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
         },
       );
       countUsage('dictionary.collection_imported');
-      state = DictionaryImportState(successMessage: message);
+      state = DictionaryImportState(
+        imported: (
+          entries: result.totalEntriesImported,
+          dictionaries: result.importedDictionaries.length,
+        ),
+      );
     } catch (e) {
-      state = DictionaryImportState(error: e.toString());
+      // tracedOperation logged it.
+      state = DictionaryImportState(failure: e);
     }
   }
 }

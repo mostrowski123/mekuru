@@ -167,9 +167,6 @@ final _rows = [
         '(lib/shared/widgets/download_status.dart)',
     within: '/providers/',
     counts: {
-      // The dictionary import's messages, built with appL10n().
-      'lib/features/dictionary/presentation/providers/dictionary_providers.dart':
-          2,
       // A native job's error code, or an exception's text.
       'lib/features/manga/presentation/providers/local_ocr_providers.dart': 1,
     },

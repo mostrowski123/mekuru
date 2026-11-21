@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -8,7 +11,9 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/test_database.dart';
@@ -120,6 +125,70 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
+  testWidgets('in Japanese, an import says what happened, never an '
+      "error's text", (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    final dir = Directory.systemTemp.createTempSync('dictionary_import_');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        dictionariesProvider.overrideWith((ref) => Stream.value(const [])),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: buildLocalizedTestApp(
+          home: const DictionaryManagerScreen(),
+          locale: const Locale('ja'),
+        ),
+      ),
+    );
+    await tester.pump();
+    Future<void> import(String name, List<int> bytes) async {
+      final file = File(p.join(dir.path, name))..writeAsBytesSync(bytes);
+      await tester.runAsync(
+        () => container
+            .read(dictionaryImportProvider.notifier)
+            .importDictionary(file.path),
+      );
+      await tester.pump();
+    }
+
+    // A collection export cut off midway.
+    await import('broken.json', utf8.encode('{"data": [{"tableName": '));
+    expect(find.text(ja.dictionaryImportUnreadable), findsOneWidget);
+    expect(find.textContaining(RegExp('Exception|Error|data')), findsNothing);
+
+    final index = utf8.encode(jsonEncode({'title': 'Mine', 'format': 3}));
+    final bank = utf8.encode(
+      jsonEncode([
+        [
+          '山',
+          'やま',
+          '',
+          '',
+          0,
+          ['mountain'],
+          1,
+          '',
+        ],
+      ]),
+    );
+    await import(
+      'mine.zip',
+      ZipEncoder().encode(
+        Archive()
+          ..addFile(ArchiveFile('index.json', index.length, index))
+          ..addFile(ArchiveFile('term_bank_1.json', bank.length, bank)),
+      ),
+    );
+    expect(find.text(ja.dictionaryImportedEntries(count: 1)), findsOneWidget);
+    expect(find.text(ja.dictionaryImportUnreadable), findsNothing);
+  });
+
   testWidgets('a collection being read shows its banner text once', (
     tester,
   ) async {
@@ -150,6 +219,6 @@ class _ParsingImportNotifier extends DictionaryImportNotifier {
   @override
   DictionaryImportState build() => const DictionaryImportState(
     isImporting: true,
-    currentDictionary: 'Parsing collection…',
+    step: DictionaryImportStep.parsingCollection,
   );
 }

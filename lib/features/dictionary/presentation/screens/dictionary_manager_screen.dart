@@ -15,17 +15,21 @@ import 'package:mekuru/features/backup/presentation/providers/backup_providers.d
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_meta.dart'
     show userDictionaryId;
+import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart'
+    show DictionaryParseException;
 import 'package:mekuru/features/dictionary/data/services/lookup_benchmark.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/delete_dictionary_dialog.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
+import 'package:mekuru/shared/widgets/download_status.dart' show isStorageFull;
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen for managing imported Yomitan dictionaries.
@@ -104,10 +108,10 @@ class _DictionaryManagerScreenState
       body: Column(
         children: [
           if (importState.isImporting) _buildProgressBanner(importState),
-          if (importState.error != null)
-            _buildErrorBanner(context, importState),
-          if (importState.successMessage != null)
-            _buildSuccessBanner(context, importState),
+          if (importState.failure case final failure?)
+            _buildErrorBanner(context, _importFailure(l10n, failure)),
+          if (importState.imported case final imported?)
+            _buildSuccessBanner(context, _imported(l10n, imported)),
           _buildPendingRestoreCard(pendingRestoreAsync),
           Expanded(
             child: dictionariesAsync.when(
@@ -166,19 +170,22 @@ class _DictionaryManagerScreenState
   Widget _buildProgressBanner(DictionaryImportState state) {
     final l10n = context.l10n;
     // Otherwise the label is the running entry count, too chatty to announce.
-    final namesDictionary =
-        state.dictionariesTotal > 0 || state.currentDictionary != null;
+    final namesDictionary = state.dictionariesTotal > 0 || state.step != null;
     final label = state.dictionariesTotal > 0
         ? l10n.dictionaryImportImportingCollection(
             name: state.currentDictionary ?? '',
             current: state.dictionariesProcessed + 1,
             total: state.dictionariesTotal,
           )
-        : state.currentDictionary ??
-              l10n.dictionaryImportImportingEntries(
-                processed: state.processedEntries,
-                total: state.totalEntries,
-              );
+        : switch (state.step) {
+            DictionaryImportStep.parsingCollection =>
+              l10n.dictionaryImportParsingCollection,
+            DictionaryImportStep.finishing => l10n.dictionaryImportFinishing,
+            null => l10n.dictionaryImportImportingEntries(
+              processed: state.processedEntries,
+              total: state.totalEntries,
+            ),
+          };
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -228,7 +235,7 @@ class _DictionaryManagerScreenState
     );
   }
 
-  Widget _buildErrorBanner(BuildContext context, DictionaryImportState state) {
+  Widget _buildErrorBanner(BuildContext context, String text) {
     return Container(
       padding: const EdgeInsets.all(12),
       color: Theme.of(context).colorScheme.errorContainer,
@@ -244,7 +251,7 @@ class _DictionaryManagerScreenState
               container: true,
               liveRegion: true,
               child: Text(
-                state.error!,
+                text,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onErrorContainer,
                 ),
@@ -256,10 +263,7 @@ class _DictionaryManagerScreenState
     );
   }
 
-  Widget _buildSuccessBanner(
-    BuildContext context,
-    DictionaryImportState state,
-  ) {
+  Widget _buildSuccessBanner(BuildContext context, String text) {
     return Container(
       padding: const EdgeInsets.all(12),
       color: Colors.green.withValues(alpha: 0.1),
@@ -274,13 +278,38 @@ class _DictionaryManagerScreenState
             child: Semantics(
               container: true,
               liveRegion: true,
-              child: Text(state.successMessage!),
+              child: Text(text),
             ),
           ),
         ],
       ),
     );
   }
+
+  /// What the last import added.
+  static String _imported(
+    AppLocalizations l10n,
+    DictionaryImportResult imported,
+  ) => switch (imported) {
+    (:final entries, dictionaries: null) => l10n.dictionaryImportedEntries(
+      count: entries,
+    ),
+    (entries: _, dictionaries: 0) => l10n.dictionaryImportNoneInCollection,
+    (:final entries, :final dictionaries?) => l10n.dictionaryImportedCollection(
+      dictionaries: dictionaries,
+      entries: entries,
+    ),
+  };
+
+  /// Why the last import failed; never the error's own text.
+  static String _importFailure(AppLocalizations l10n, Object failure) =>
+      switch (failure) {
+        _ when isStorageFull(failure) => l10n.localOcrStorageFull,
+        // A file that isn't a zip, or a zip or JSON that doesn't parse.
+        FormatException() ||
+        DictionaryParseException() => l10n.dictionaryImportUnreadable,
+        _ => l10n.dictionaryImportFailed,
+      };
 
   Widget _buildPendingRestoreCard(
     AsyncValue<PendingDictionaryRestorePreview?> pendingRestoreAsync,
