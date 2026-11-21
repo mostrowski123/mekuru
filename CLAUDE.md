@@ -77,6 +77,7 @@ In-memory test databases skip migrations entirely (they start at the latest sche
 - `assets/epub_viewer/reader_bridge.js` — hand-written bridge that talks to Dart via `window.flutter_inappwebview.callHandler(...)`. Owns vertical text, margins, furigana injection, word tapping.
 - `assets/epub_viewer/epub.js` — **vendored** epub.js, locally modified. Before editing it, search for `[MEKURU PATCH]` — those markers flag every place upstream behavior is overridden (vertical-axis forcing, queue error handling, missing-manifest-entry skipping, etc.). Don't re-vendor without porting the patches.
 - Don't change the bridge's message protocol without updating the matching Dart handlers in the reader feature.
+- After changing `reader_bridge.js` or `epub.js`, run `node tool/bridge_test/run.mjs` (`npm ci` in that folder first); it runs them in desktop Chrome only, so it says nothing about WKWebView.
 
 ## Android / native
 

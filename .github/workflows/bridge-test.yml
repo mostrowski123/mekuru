@@ -1,0 +1,57 @@
+name: Bridge Test
+
+# Runs the EPUB reader's JavaScript in headless Chrome with the Dart side
+# stubbed (tool/bridge_test/run.mjs). The test reads the handler names and
+# the bridge calls from the three Dart files below, so they trigger it too.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/epub_viewer/**'
+      - 'tool/bridge_test/**'
+      - 'lib/features/reader/presentation/widgets/custom_epub_viewer.dart'
+      - 'lib/features/reader/presentation/widgets/custom_epub_controller.dart'
+      - 'lib/features/reader/presentation/widgets/bridge_transfer.dart'
+      - '.github/workflows/bridge-test.yml'
+  pull_request:
+    paths:
+      - 'assets/epub_viewer/**'
+      - 'tool/bridge_test/**'
+      - 'lib/features/reader/presentation/widgets/custom_epub_viewer.dart'
+      - 'lib/features/reader/presentation/widgets/custom_epub_controller.dart'
+      - 'lib/features/reader/presentation/widgets/bridge_transfer.dart'
+      - '.github/workflows/bridge-test.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bridge-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # No other workflow here uses setup-node, so there is no pinned SHA to
+      # copy yet.
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.13.0
+
+      - name: Install playwright-core
+        working-directory: tool/bridge_test
+        run: npm ci
+
+      # Uses the runner's installed Google Chrome; nothing is downloaded.
+      - name: Run the bridge test
+        working-directory: tool/bridge_test
+        run: node run.mjs

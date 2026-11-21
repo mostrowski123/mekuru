@@ -1,0 +1,8 @@
+{
+  "name": "bridge-test",
+  "private": true,
+  "description": "Runs the EPUB reader's JavaScript in desktop Chrome and checks what it sends Dart. node run.mjs",
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  }
+}
