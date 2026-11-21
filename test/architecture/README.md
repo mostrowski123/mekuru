@@ -10,7 +10,7 @@ Each rule in `CLAUDE.md`, and what fails when it is broken. "nothing" marks wher
 | An Android-only feature gets an iOS equivalent or is hidden on iOS | partly: some screen tests under the iOS override |
 | `defaultTargetPlatform`, not `Platform.isIOS` | `test/architecture/raw_api_test.dart` |
 | A new stored absolute path is re-anchored at boot | partly: `test/features/backup/prepare_staged_restore_test.dart` (existing columns) |
-| Copy that names Android things gets an `…Ios` key | nothing |
+| Copy that names Android things gets an `…Ios` key | partly: `test/architecture/raw_api_test.dart` fails on a raw platform check that picks such a key; nothing checks that the key exists |
 | Every `app_en.arb` key is in every `app_*.arb` | `scripts/check_release_ready.py` in `build-release.yml`, `release-ios.yml`, `build-pr.yml` |
 | Reader JavaScript works in WKWebView and Chromium | partly: reader tests in `integration-android.yml` and `integration-ios.yml` |
 | A new plugin supports iOS 26 | partly: `build-ios-pr.yml` |
@@ -28,7 +28,7 @@ Each rule in `CLAUDE.md`, and what fails when it is broken. "nothing" marks wher
 | Conventional commit prefix; feat, fix, perf and l10n subjects written for users | nothing |
 | Feature-first layout | nothing |
 | `AppDatabase` built only in `lib/main.dart` | nothing |
-| Tests use `createTestDatabase()` | nothing |
+| Tests use `createTestDatabase()` | `test/architecture/raw_api_test.dart` |
 | Pure-logic files import no Flutter above `foundation.dart` | nothing |
 | No personal data in telemetry; book titles in breadcrumbs only | partly: `test/core/usage_telemetry_test.dart` (paths in error text) |
 | Append-only schema, a `schemaVersion` bump, an `if (from < N)` block | partly: `test/database_migration_test.dart` |
@@ -87,3 +87,13 @@ Each rule in `CLAUDE.md`, and what fails when it is broken. "nothing" marks wher
 | Integration tests run in a workflow | partly: `test/architecture/ci_coverage_test.dart` (or its exclusion table) |
 | Integration tests stay out of `test/` | nothing |
 | Serena symbol tools for code | nothing |
+| A system file dialog is opened only in `lib/core/platform/file_pick.dart` | `test/architecture/raw_api_test.dart` |
+| A save passes a file's path, never its bytes | `test/architecture/raw_api_test.dart` (no other file can reach a save dialog), `test/core/platform/file_pick_test.dart` |
+| A download goes through `runDownload` with a `NetworkConsent` | partly: `test/architecture/raw_api_test.dart` (raw HTTP clients and mobile-data consent are counted), `test/shared/downloads/download_kinds_test.dart` |
+| A provider's state holds what happened, never user-facing text | `test/architecture/raw_api_test.dart` (a String error or message field in a provider file) |
+| An exception's own text never reaches the user | partly: screen tests in Japanese for downloads, deletes, imports and server errors; nothing for a new screen |
+| Long work and platform wording are read from `lib/core/platform/capabilities.dart` | partly: `test/core/platform/capabilities_test.dart`; a new inline platform check is caught only when it picks an Ios key |
+| A library write from the UI is awaited and its failure shown | partly: `test/features/library/presentation/library_write_failure_test.dart` (existing actions) |
+| An EPUB href is decoded with `decodeHref` | `test/architecture/raw_api_test.dart` |
+| The reader scripts are checked in a browser | `tool/bridge_test/run.mjs` in `bridge-test.yml` |
+| The EPUB viewer is replaced only through `ViewerSession.beginReplacement` | partly: `test/features/reader/presentation/viewer_session_test.dart` |
