@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -18,6 +17,7 @@ import 'package:mekuru/shared/widgets/structured_glossary_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart';
+import 'shared/test_database.dart';
 import 'test_app.dart';
 
 DictionaryEntry _buildEntry({
@@ -130,7 +130,7 @@ void main() {
   testWidgets('definitions far below the screen are built only once scrolled '
       'near', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
     final service = _FakeDictionaryQueryService(
       db,
@@ -166,7 +166,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
     final service = _FakeDictionaryQueryService(db, resultsByTerm: const {});
 
@@ -272,7 +272,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     final entry = _buildEntry(
@@ -329,7 +329,7 @@ void main() {
       tester,
     ) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       await _pumpSearchScreen(
         tester,
@@ -351,7 +351,7 @@ void main() {
 
     testWidgets('is offered when nothing is found', (tester) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       await _pumpSearchScreen(
         tester,
@@ -370,7 +370,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     final firstGroup = [
@@ -481,7 +481,7 @@ void main() {
     'refetches batched pitch accents when the visible result changes',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
 
       final service = _FakeDictionaryQueryService(
@@ -570,7 +570,7 @@ void main() {
       'typing characters does not save partial keystrokes to history',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = createTestDatabase();
         addTearDown(db.close);
         final container = ProviderContainer(
           overrides: [
@@ -605,7 +605,7 @@ void main() {
       tester,
     ) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       final container = ProviderContainer(
         overrides: [
@@ -648,7 +648,7 @@ void main() {
       'reader-initiated initialQuery auto-saves once results come back',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = createTestDatabase();
         addTearDown(db.close);
         final container = ProviderContainer(
           overrides: [
@@ -684,7 +684,7 @@ void main() {
       tester,
     ) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       final container = ProviderContainer(
         overrides: [
@@ -721,7 +721,7 @@ void main() {
       tester,
     ) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       final container = ProviderContainer(
         overrides: [
@@ -756,7 +756,7 @@ void main() {
       tester,
     ) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       final container = ProviderContainer(
         overrides: [
@@ -796,7 +796,7 @@ void main() {
       tester,
     ) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       final container = ProviderContainer(
         overrides: [
@@ -833,7 +833,7 @@ void main() {
 
   testWidgets('a new query starts at the top of the results', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     List<DictionaryEntryWithSource> manyWords(String prefix, int firstId) => [
@@ -890,7 +890,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     final service = _FakeDictionaryQueryService(
@@ -957,7 +957,7 @@ void main() {
 
     Future<_FakeDictionaryQueryService> pumpScreen(WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       final service = _buildService(db);
       await _pumpSearchScreen(tester, db, service);
@@ -1008,7 +1008,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
     final service = _buildService(db);
 

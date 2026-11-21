@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' show Value;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +10,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:mekuru/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'shared/test_database.dart';
 import 'test_app.dart';
 
 void main() {
@@ -19,7 +19,7 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
-    db = AppDatabase(NativeDatabase.memory());
+    db = createTestDatabase();
     repo = CollectionRepository(db);
   });
 

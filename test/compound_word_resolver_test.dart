@@ -1,13 +1,14 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/reader/data/services/compound_word_resolver.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
+
+import 'shared/test_database.dart';
 
 /// Build a [WordIdentification] from hand-crafted tokens for testing.
 WordIdentification buildIdentification({
@@ -60,7 +61,7 @@ void main() {
   late int enabledDictId;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
+    db = createTestDatabase();
     repo = DictionaryRepository(db);
     queryService = DictionaryQueryService(db);
     resolver = CompoundWordResolver(queryService);

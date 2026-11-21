@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' show Value;
-import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -7,6 +6,8 @@ import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+
+import 'shared/test_database.dart';
 
 class _FakeReaderSettingsStorage implements ReaderSettingsStorage {
   _FakeReaderSettingsStorage({this.initialSettings});
@@ -68,7 +69,7 @@ _ReaderSettingsTestHarness _createHarness({
   _SpyBookRepository? bookRepo,
 }) {
   final fakeStorage = storage ?? _FakeReaderSettingsStorage();
-  final db = bookRepo == null ? AppDatabase(NativeDatabase.memory()) : null;
+  final db = bookRepo == null ? createTestDatabase() : null;
   final repo = bookRepo ?? _SpyBookRepository(db!);
 
   final container = ProviderContainer(
@@ -182,7 +183,7 @@ void main() {
       'setSplitVerticalText persists globally without per-book writes',
       () async {
         final fakeStorage = _FakeReaderSettingsStorage();
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = createTestDatabase();
         final spyRepo = _SpyBookRepository(db);
         final harness = _createHarness(storage: fakeStorage, bookRepo: spyRepo);
         addTearDown(() async {
@@ -210,7 +211,7 @@ void main() {
 
     test('setScrollView persists globally without per-book writes', () async {
       final fakeStorage = _FakeReaderSettingsStorage();
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final harness = _createHarness(storage: fakeStorage, bookRepo: spyRepo);
       addTearDown(() async {
@@ -440,7 +441,7 @@ void main() {
     });
 
     test('persists per-book override when verticalText is changed', () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final harness = _createHarness(bookRepo: spyRepo);
       addTearDown(() async {
@@ -462,7 +463,7 @@ void main() {
     test(
       'persists per-book override when readingDirection is changed',
       () async {
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = createTestDatabase();
         final spyRepo = _SpyBookRepository(db);
         final harness = _createHarness(bookRepo: spyRepo);
         addTearDown(() async {
@@ -485,7 +486,7 @@ void main() {
     );
 
     test('does not persist per-book override when no book is open', () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final harness = _createHarness(bookRepo: spyRepo);
       addTearDown(() async {
@@ -502,7 +503,7 @@ void main() {
     });
 
     test('persists per-book furigana override when mode is changed', () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final harness = _createHarness(bookRepo: spyRepo);
       addTearDown(() async {
@@ -529,7 +530,7 @@ void main() {
     });
 
     test('wanikani mode persists as a per-book override string', () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final harness = _createHarness(bookRepo: spyRepo);
       addTearDown(() async {
@@ -548,7 +549,7 @@ void main() {
 
     test('the WaniKani stage is global: it clamps, persists, and never '
         'writes a per-book override', () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final fakeStorage = _FakeReaderSettingsStorage();
       final harness = _createHarness(storage: fakeStorage, bookRepo: spyRepo);
@@ -581,7 +582,7 @@ void main() {
     });
 
     test('re-selecting the default book mode writes no override', () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final harness = _createHarness(bookRepo: spyRepo);
       addTearDown(() async {
@@ -599,7 +600,7 @@ void main() {
     });
 
     test('clearCurrentBook stops later per-book override writes', () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final harness = _createHarness(bookRepo: spyRepo);
       addTearDown(harness.dispose);
@@ -621,7 +622,7 @@ void main() {
     });
 
     test('manga setters never write per-book overrides', () async {
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final harness = _createHarness(bookRepo: spyRepo);
       addTearDown(harness.dispose);
@@ -661,7 +662,7 @@ void main() {
       final fakeStorage = _FakeReaderSettingsStorage(
         initialSettings: const ReaderSettings(furiganaMode: FuriganaMode.hide),
       );
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       final spyRepo = _SpyBookRepository(db);
       final harness = _createHarness(storage: fakeStorage, bookRepo: spyRepo);
       addTearDown(() async {

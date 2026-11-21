@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -24,6 +23,7 @@ import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart' show mockWifiConnected;
+import 'shared/test_database.dart';
 import 'test_app.dart';
 
 DictionaryEntry _buildEntry({
@@ -194,7 +194,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     final entry = _buildEntry(
@@ -239,7 +239,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     final service = _FakeDictionaryQueryService(
@@ -292,7 +292,7 @@ void main() {
   testWidgets('offers a definition after the results too, and puts it '
       'first in the word\'s card', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
     final jmdictId = await DictionaryRepository(db).insertDictionary('JMdict');
     await db
@@ -347,7 +347,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     final service = _FakeDictionaryQueryService(
@@ -415,7 +415,7 @@ void main() {
     testWidgets('keeps the word header pinned while its definitions scroll '
         '(showAtTop: $showAtTop)', (tester) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
 
       // Enough senses that the definitions scroll in either sheet.
@@ -488,7 +488,7 @@ void main() {
       required List<DictionaryMeta> dictionaries,
     }) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       await tester.pumpWidget(
         ProviderScope(
@@ -532,7 +532,7 @@ void main() {
 
     testWidgets('adds the user\'s own definition and shows it', (tester) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
       await tester.pumpWidget(
         ProviderScope(
@@ -577,7 +577,7 @@ void main() {
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
-      db = AppDatabase(NativeDatabase.memory());
+      db = createTestDatabase();
       final entry = _buildEntry(
         id: 1,
         expression: '食べる',

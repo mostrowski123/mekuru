@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// A raw API that has a helper in this repo, and the files under `lib/` that
+/// A raw API that has a helper in this repo, and the files under [dir] that
 /// use it today. A file that gains a use fails with the helper to call
 /// instead. A file that loses one fails until its number here is lowered, so
 /// the numbers only go down.
@@ -13,13 +13,17 @@ class _Row {
     this.use, {
     this.counts = const {},
     this.allowed = const {},
-    this.within = 'lib/',
+    this.within = '',
+    this.dir = 'lib',
   });
 
   final String what;
 
-  /// Only files whose path contains this are scanned.
+  /// Only files in [dir] whose path contains this are scanned.
   final String within;
+
+  /// The folder the row scans: `lib` or `test`.
+  final String dir;
 
   /// The line of each use in a file's source, comment lines blanked.
   final List<int> Function(String source) uses;
@@ -289,6 +293,32 @@ final _rows = [
           2,
     },
   ),
+  _Row(
+    'A test that builds its own AppDatabase',
+    _matching(r'\bAppDatabase\('),
+    'createTestDatabase(), an in-memory database '
+        '(test/shared/test_database.dart)',
+    dir: 'test',
+    allowed: {
+      'test/shared/test_database.dart': (1, 'createTestDatabase() itself'),
+      'test/database_migration_test.dart': (
+        28,
+        'migrates a database file and reopens it',
+      ),
+      'test/database_busy_timeout_test.dart': (
+        1,
+        "the default constructor's on-disk connection",
+      ),
+      'test/features/backup/full_backup_plan_test.dart': (
+        1,
+        'writes the snapshot file the plan reads',
+      ),
+      'test/features/backup/prepare_staged_restore_test.dart': (
+        1,
+        'writes the staged database file the restore reads',
+      ),
+    },
+  ),
 ];
 
 /// The scan for the pattern rows: the line of every match.
@@ -347,14 +377,17 @@ int _lineOf(String source, int offset) {
 void main() {
   // Comment lines are blanked, not dropped, so line numbers stay true.
   final sources = <String, String>{
-    for (final f in Directory('lib').listSync(recursive: true))
-      if (f is File && f.path.endsWith('.dart') && !f.path.endsWith('.g.dart'))
-        if (f.path.replaceAll(r'\', '/') case final path
-            when !path.startsWith('lib/l10n/generated/'))
-          path: [
-            for (final line in f.readAsLinesSync())
-              line.trimLeft().startsWith('//') ? '' : line,
-          ].join('\n'),
+    for (final dir in ['lib', 'test'])
+      for (final f in Directory(dir).listSync(recursive: true))
+        if (f is File &&
+            f.path.endsWith('.dart') &&
+            !f.path.endsWith('.g.dart'))
+          if (f.path.replaceAll(r'\', '/') case final path
+              when !path.startsWith('lib/l10n/generated/'))
+            path: [
+              for (final line in f.readAsLinesSync())
+                line.trimLeft().startsWith('//') ? '' : line,
+            ].join('\n'),
   };
 
   test('scans the hand-written Dart files under lib', () {
@@ -365,7 +398,9 @@ void main() {
     test(row.what, () {
       final found = <String, List<int>>{};
       sources.forEach((path, source) {
-        if (!path.contains(row.within)) return;
+        if (!path.startsWith('${row.dir}/') || !path.contains(row.within)) {
+          return;
+        }
         final lines = row.uses(source);
         if (lines.isNotEmpty) found[path] = lines;
       });

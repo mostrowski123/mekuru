@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +28,7 @@ import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 
 import 'features/ankidroid/ankidroid_test_doubles.dart';
 import 'shared/fake_download_notifiers.dart';
+import 'shared/test_database.dart';
 import 'shared/yomitan_glossary_fixtures.dart';
 import 'test_app.dart';
 
@@ -91,7 +91,7 @@ void main() {
   late AppDatabase db;
 
   setUp(() {
-    db = AppDatabase(NativeDatabase.memory());
+    db = createTestDatabase();
   });
 
   tearDown(() async {

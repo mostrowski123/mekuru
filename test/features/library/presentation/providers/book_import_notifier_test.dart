@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +24,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import '../../../../shared/epub_fixtures.dart';
 import '../../../../shared/fake_path_provider.dart';
 import '../../../../shared/rar_fixtures.dart';
+import '../../../../shared/test_database.dart';
 import '../../../../test_app.dart';
 
 void main() {
@@ -39,7 +39,7 @@ void main() {
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('book_import_test_');
     PathProviderPlatform.instance = FakePathProviderPlatform(tempDir.path);
-    db = AppDatabase(NativeDatabase.memory());
+    db = createTestDatabase();
     container = ProviderContainer(
       overrides: [databaseProvider.overrideWithValue(db)],
     );

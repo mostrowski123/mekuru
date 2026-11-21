@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +18,7 @@ import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 
 import '../ankidroid/ankidroid_test_doubles.dart';
 import '../../shared/fake_download_notifiers.dart';
+import '../../shared/test_database.dart';
 import '../../test_app.dart';
 
 class _FakeWordAudio extends WordAudio {
@@ -75,7 +75,7 @@ void main() {
   final speaker = find.byIcon(Icons.volume_up_outlined);
 
   setUp(() {
-    db = AppDatabase(NativeDatabase.memory());
+    db = createTestDatabase();
     mockWifiConnected(true);
   });
 

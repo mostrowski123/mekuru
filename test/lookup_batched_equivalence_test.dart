@@ -1,19 +1,18 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+
+import 'shared/test_database.dart';
 
 /// Exercises the hard invariant in the perf plan: the batched lookup path
 /// (`kUseBatchedDictionaryLookup = true`) must return byte-identical results
 /// and ordering to the legacy per-tier / per-candidate path.
 ///
 /// Any diff here is a regression and blocks the optimization from shipping.
-
-AppDatabase _createDb() => AppDatabase(NativeDatabase.memory());
 
 Future<void> _seedDictionaries(DictionaryRepository repo) async {
   final dictA = await repo.insertDictionary('DictA', sortOrder: 0);
@@ -140,7 +139,7 @@ void main() {
   late DictionaryQueryService service;
 
   setUp(() async {
-    db = _createDb();
+    db = createTestDatabase();
     repo = DictionaryRepository(db);
     service = DictionaryQueryService(db);
     await _seedDictionaries(repo);

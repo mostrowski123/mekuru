@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +16,7 @@ import 'package:mekuru/main.dart';
 import 'package:wakelock_plus_platform_interface/wakelock_plus_platform_interface.dart';
 
 import 'shared/reader_settings_test_helpers.dart';
+import 'shared/test_database.dart';
 import 'test_app.dart';
 
 class _PendingReaderSettingsStorage implements ReaderSettingsStorage {
@@ -124,7 +124,7 @@ void main() {
   testWidgets('ReaderScreen disposes without reading providers after unmount', (
     tester,
   ) async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     final storage = _PendingReaderSettingsStorage();

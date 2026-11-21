@@ -1,4 +1,3 @@
-import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -12,6 +11,7 @@ import 'package:mekuru/features/dictionary/presentation/screens/dictionary_searc
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'shared/test_database.dart';
 import 'test_app.dart';
 
 class _FakePendingDictionaryRestoreService
@@ -22,7 +22,7 @@ void main() {
     'shows pending backup card on Dictionary Manager and warning modal before apply',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
-      final db = AppDatabase(NativeDatabase.memory());
+      final db = createTestDatabase();
       addTearDown(db.close);
 
       await tester.pumpWidget(

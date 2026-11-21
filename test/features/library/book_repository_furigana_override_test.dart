@@ -1,10 +1,9 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 
-AppDatabase _createDb() => AppDatabase(NativeDatabase.memory());
+import '../../shared/test_database.dart';
 
 Future<int> _insertBook(AppDatabase db, {String title = 'Test'}) async {
   return db
@@ -17,7 +16,7 @@ void main() {
   late BookRepository repo;
 
   setUp(() {
-    db = _createDb();
+    db = createTestDatabase();
     repo = BookRepository(db);
   });
 

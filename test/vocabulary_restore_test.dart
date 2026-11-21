@@ -1,14 +1,15 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/vocabulary/data/repositories/vocabulary_repository.dart';
 
+import 'shared/test_database.dart';
+
 void main() {
   test('restoreWord re-inserts a deleted word for undo flows', () async {
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
     final repo = VocabularyRepository(db);
 
