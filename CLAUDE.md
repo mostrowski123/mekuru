@@ -128,3 +128,9 @@ iOS: `build-ios-pr.yml` (release build without signing, plus a check that the Me
 ## Tools
 
 Prefer Serena MCP tools (`get_symbols_overview`, `find_symbol`, `find_referencing_symbols`, `search_for_pattern`, `replace_symbol_body`) over Read/Grep/Edit for code work — much cheaper in context.
+
+## Rules and what enforces them
+
+`test/architecture/README.md` lists each rule in this file with what fails when it is broken. It is not loaded with this file, so open it when you add or change a rule.
+
+When Matt corrects you, fix the mistake and add the rule to that table. If the rule is already there with "nothing" beside it, add a check in the same change. Drop a row once its mistake cannot happen.
