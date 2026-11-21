@@ -39,17 +39,20 @@ jobs:
     timeout-minutes: 45
     # Each shard pays about eight minutes before its first test (setup, the AVD
     # cache, a cold Gradle build), then 40 to 60 seconds per later build; the
-    # tests themselves take seconds per file. A shard took 15 to 23 minutes
-    # (2026-10-15). Linux runners are free for this
-    # public repo and GitHub Free runs 20 jobs at once (macOS: five).
+    # tests themselves take seconds per file. With 34 files after "--" in four
+    # shards the test step took 14 to 22 minutes of its 35 (2026-11-17). The
+    # list reached 49 on 2026-11-22, so there are five shards: about ten of
+    # those files each. Add a shard before a step nears 30 minutes. Linux
+    # runners are free for this public repo and GitHub Free runs 20 jobs at
+    # once (macOS: five).
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5]
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      IT_SHARD: ${{ matrix.shard }}/4
+      IT_SHARD: ${{ matrix.shard }}/5
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -230,7 +233,14 @@ jobs:
             integration_test/pdf_import_flow_test.dart
             integration_test/word_audio_test.dart
             integration_test/comic_archive_import_test.dart
+            integration_test/avif_manga_test.dart
             integration_test/word_tap_lookup_anchor_ruby_test.dart
+            integration_test/word_tap_lookup_test.dart
+            integration_test/word_tap_lookup_vertical_test.dart
+            integration_test/word_tap_lookup_furigana_on_test.dart
+            integration_test/word_tap_lookup_furigana_book_test.dart
+            integration_test/word_tap_lookup_furigana_above_level_test.dart
+            integration_test/word_tap_lookup_furigana_wanikani_test.dart
             integration_test/reader_bridge_regression_test.dart
             integration_test/reader_renderer_gone_test.dart
             integration_test/reader_ready_signal_lost_test.dart
@@ -244,6 +254,7 @@ jobs:
             integration_test/reader_chapter_end_horizontal_rtl_test.dart
             integration_test/reader_custom_font_test.dart
             integration_test/reader_custom_font_missing_test.dart
+            integration_test/reader_font_family_test.dart
             integration_test/reader_image_pages_test.dart
             integration_test/reader_image_pages_scroll_test.dart
             integration_test/reader_fixed_layout_test.dart
