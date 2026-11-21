@@ -33,7 +33,7 @@ iOS: never run two iOS builds at once in this checkout (an integration-test run 
 
 Run codegen after editing `@DriftDatabase` or `environment_config.yaml`.
 
-**Sentry**: local builds work without it. To enable, run `flutter pub run environment_config:generate --sentryDsn=<dsn> --sentryEnvironment=development` once. This writes `lib/config/environment_config.dart`.
+**Sentry**: a fresh clone does not compile until `lib/config/environment_config.dart` exists (git-ignored). Run `dart run environment_config:generate` once; with no DSN, Sentry stays off. To enable it, add `--sentryDsn=<dsn> --sentryEnvironment=development`.
 
 ## Before committing
 

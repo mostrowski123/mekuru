@@ -61,7 +61,8 @@ abstract class ServerClient {
   Future<List<RemoteBook>> listBooks(RemoteSeries series);
 
   /// URL and headers that fetch the book's original file. The transfer
-  /// itself runs in the platform's background downloader.
+  /// itself is [runServerDownloadWork]: a WorkManager job on Android, in the
+  /// app on iOS.
   Future<({String url, Map<String, String> headers})> downloadRequest(
     RemoteBook book,
   );
