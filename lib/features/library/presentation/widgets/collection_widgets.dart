@@ -1,17 +1,63 @@
-// ignore_for_file: discarded_futures
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+
+/// Awaits [write], a change to the library's database. When it fails,
+/// [messenger] shows [failure] and telemetry gets [event]. The library draws
+/// what the database holds, so a failed write leaves nothing to put back.
+/// True when the write went through.
+///
+/// Take the messenger before the sheet or dialog that asked for the change
+/// closes: the write can outlive it.
+Future<bool> saveLibraryChange(
+  ScaffoldMessengerState messenger,
+  Future<void> Function() write, {
+  required String failure,
+  required String event,
+}) async {
+  try {
+    await write();
+    return true;
+  } catch (e) {
+    // No stack trace, so no Sentry issue: an issue carries the error's whole
+    // text, and a rename's SQL parameters hold the new name.
+    logFailure(event, e);
+    // A sheet's own messenger is gone once the sheet is.
+    if (messenger.mounted) {
+      messenger.showSnackBar(SnackBar(content: Text(failure)));
+    }
+    return false;
+  }
+}
+
+/// [sheet] with a messenger of its own, so its messages show on it rather
+/// than on the page underneath. A Scaffold fills the height it is given, so
+/// it lies over the sheet instead of holding it, as in showOcrActionSheet.
+Widget _withOwnMessenger(Widget sheet) => ScaffoldMessenger(
+  child: Stack(
+    children: [
+      sheet,
+      const Positioned.fill(
+        child: IgnorePointer(
+          child: Scaffold(backgroundColor: Colors.transparent),
+        ),
+      ),
+    ],
+  ),
+);
 
 /// Opens the membership sheet for [book].
 Future<void> showCollectionAssignSheet(BuildContext context, Book book) {
   return showModalBottomSheet(
     context: context,
     showDragHandle: true,
-    builder: (_) => CollectionAssignSheet(book: book),
+    builder: (_) => _withOwnMessenger(CollectionAssignSheet(book: book)),
   );
 }
 
@@ -54,7 +100,7 @@ class CollectionAssignSheet extends ConsumerWidget {
                   CheckboxListTile(
                     value: memberIds.contains(collection.id),
                     title: Text(collection.name),
-                    onChanged: (checked) {
+                    onChanged: (checked) async {
                       AppHaptics.light();
                       final next = {...memberIds};
                       if (checked ?? false) {
@@ -62,9 +108,13 @@ class CollectionAssignSheet extends ConsumerWidget {
                       } else {
                         next.remove(collection.id);
                       }
-                      ref
-                          .read(collectionRepositoryProvider)
-                          .setBookCollections(book.id, next);
+                      final repo = ref.read(collectionRepositoryProvider);
+                      await saveLibraryChange(
+                        ScaffoldMessenger.of(context),
+                        () => repo.setBookCollections(book.id, next),
+                        failure: context.l10n.libraryCollectionChangeFailed,
+                        event: 'library.collection_change_failed',
+                      );
                     },
                   ),
                 ListTile(
@@ -82,12 +132,32 @@ class CollectionAssignSheet extends ConsumerWidget {
                       context,
                       title: context.l10n.libraryNewCollectionAction,
                     );
-                    if (name == null || name.isEmpty) return;
+                    if (name == null || name.isEmpty || !context.mounted) {
+                      return;
+                    }
+                    final messenger = ScaffoldMessenger.of(context);
+                    final l10n = context.l10n;
                     final repo = container.read(collectionRepositoryProvider);
-                    final id = await repo.createCollection(name);
+                    int? id;
+                    await saveLibraryChange(
+                      messenger,
+                      () async => id = await repo.createCollection(name),
+                      failure: l10n.libraryCreateCollectionFailed,
+                      event: 'library.collection_create_failed',
+                    );
+                    final created = id;
+                    if (created == null) return;
                     // The new collection also gets this book — that is what
                     // the user came here to do.
-                    await repo.setBookCollections(book.id, {...memberIds, id});
+                    await saveLibraryChange(
+                      messenger,
+                      () => repo.setBookCollections(book.id, {
+                        ...memberIds,
+                        created,
+                      }),
+                      failure: l10n.libraryCollectionChangeFailed,
+                      event: 'library.collection_change_failed',
+                    );
                   },
                 ),
               ],
@@ -106,7 +176,7 @@ Future<void> showCollectionPickSheet(BuildContext context, Set<int> bookIds) {
   return showModalBottomSheet(
     context: context,
     showDragHandle: true,
-    builder: (_) => CollectionPickSheet(bookIds: bookIds),
+    builder: (_) => _withOwnMessenger(CollectionPickSheet(bookIds: bookIds)),
   );
 }
 
@@ -127,10 +197,18 @@ class _CollectionPickSheetState extends ConsumerState<CollectionPickSheet> {
 
   Future<void> _confirm() async {
     final repo = ref.read(collectionRepositoryProvider);
-    for (final id in _chosen) {
-      await repo.addBooksToCollection(id, widget.bookIds);
-    }
-    if (mounted) Navigator.of(context).pop();
+    final saved = await saveLibraryChange(
+      ScaffoldMessenger.of(context),
+      () async {
+        for (final id in _chosen) {
+          await repo.addBooksToCollection(id, widget.bookIds);
+        }
+      },
+      failure: context.l10n.libraryCollectionChangeFailed,
+      event: 'library.collection_change_failed',
+    );
+    // Not saved: the sheet stays up with its message, to try again.
+    if (saved && mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -173,11 +251,21 @@ class _CollectionPickSheetState extends ConsumerState<CollectionPickSheet> {
                       context,
                       title: context.l10n.libraryNewCollectionAction,
                     );
-                    if (name == null || name.isEmpty) return;
-                    final id = await container
-                        .read(collectionRepositoryProvider)
-                        .createCollection(name);
-                    if (mounted) setState(() => _chosen.add(id));
+                    if (name == null || name.isEmpty || !context.mounted) {
+                      return;
+                    }
+                    final repo = container.read(collectionRepositoryProvider);
+                    int? id;
+                    await saveLibraryChange(
+                      ScaffoldMessenger.of(context),
+                      () async => id = await repo.createCollection(name),
+                      failure: context.l10n.libraryCreateCollectionFailed,
+                      event: 'library.collection_create_failed',
+                    );
+                    final created = id;
+                    if (created != null && mounted) {
+                      setState(() => _chosen.add(created));
+                    }
                   },
                 ),
               ],
@@ -274,7 +362,8 @@ class FavoriteToggleTile extends StatelessWidget {
   }
 }
 
-/// Favorite/rename/delete actions for one collection.
+/// Favorite/rename/delete actions for one collection. Each closes the sheet,
+/// so a failure shows on the page underneath.
 class CollectionManageSheet extends ConsumerWidget {
   const CollectionManageSheet({super.key, required this.collection});
 
@@ -294,18 +383,25 @@ class CollectionManageSheet extends ConsumerWidget {
           FavoriteToggleTile(
             isFavorite: collection.isFavorite,
             onToggle: () {
-              ref
-                  .read(collectionRepositoryProvider)
-                  .setFavorite(collection.id, !collection.isFavorite);
-              Navigator.of(context).maybePop();
+              unawaited(
+                saveLibraryChange(
+                  ScaffoldMessenger.of(context),
+                  () => ref
+                      .read(collectionRepositoryProvider)
+                      .setFavorite(collection.id, !collection.isFavorite),
+                  failure: context.l10n.libraryFavoriteChangeFailed,
+                  event: 'library.favorite_change_failed',
+                ),
+              );
+              unawaited(Navigator.of(context).maybePop());
             },
           ),
           ListTile(
             leading: const Icon(Icons.edit_outlined),
             title: Text(context.l10n.commonRename),
-            onTap: () {
+            onTap: () async {
               AppHaptics.light();
-              _rename(context);
+              await _rename(context);
             },
           ),
           ListTile(
@@ -313,9 +409,9 @@ class CollectionManageSheet extends ConsumerWidget {
             textColor: Theme.of(context).colorScheme.error,
             leading: const Icon(Icons.delete_outline),
             title: Text(context.l10n.commonDelete),
-            onTap: () {
+            onTap: () async {
               AppHaptics.light();
-              _confirmDelete(context);
+              await _confirmDelete(context);
             },
           ),
         ],
@@ -331,19 +427,26 @@ class CollectionManageSheet extends ConsumerWidget {
       title: context.l10n.libraryRenameCollectionTitle,
       initial: collection.name,
     );
-    if (name == null) return; // Cancelled: keep the sheet open.
+    // Cancelled: keep the sheet open.
+    if (name == null || !context.mounted) return;
     if (name.isNotEmpty && name != collection.name) {
-      await container
-          .read(collectionRepositoryProvider)
-          .renameCollection(collection.id, name);
+      final repo = container.read(collectionRepositoryProvider);
+      unawaited(
+        saveLibraryChange(
+          ScaffoldMessenger.of(context),
+          () => repo.renameCollection(collection.id, name),
+          failure: context.l10n.libraryRenameCollectionFailed,
+          event: 'library.collection_rename_failed',
+        ),
+      );
     }
-    if (context.mounted) Navigator.of(context).maybePop();
+    unawaited(Navigator.of(context).maybePop());
   }
 
-  void _confirmDelete(BuildContext context) {
+  Future<void> _confirmDelete(BuildContext context) {
     // Resolved before the dialog opens: the sheet can unmount while it's up.
     final container = ProviderScope.containerOf(context, listen: false);
-    showDialog(
+    return showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.l10n.libraryDeleteCollectionConfirmTitle),
@@ -357,11 +460,18 @@ class CollectionManageSheet extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              container
-                  .read(collectionRepositoryProvider)
-                  .deleteCollection(collection.id);
+              unawaited(
+                saveLibraryChange(
+                  ScaffoldMessenger.of(ctx),
+                  () => container
+                      .read(collectionRepositoryProvider)
+                      .deleteCollection(collection.id),
+                  failure: ctx.l10n.libraryDeleteCollectionFailed,
+                  event: 'library.collection_delete_failed',
+                ),
+              );
               Navigator.of(ctx).pop();
-              if (context.mounted) Navigator.of(context).maybePop();
+              if (context.mounted) unawaited(Navigator.of(context).maybePop());
             },
             child: Text(
               ctx.l10n.commonDelete,

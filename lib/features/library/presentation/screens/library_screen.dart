@@ -1555,10 +1555,17 @@ class _BookTileState extends ConsumerState<_BookTile>
                 FavoriteToggleTile(
                   isFavorite: book.isFavorite,
                   onToggle: () {
+                    unawaited(
+                      saveLibraryChange(
+                        ScaffoldMessenger.of(sheetContext),
+                        () => container
+                            .read(bookRepositoryProvider)
+                            .setFavorite(book.id, !book.isFavorite),
+                        failure: sheetContext.l10n.libraryFavoriteChangeFailed,
+                        event: 'library.favorite_change_failed',
+                      ),
+                    );
                     Navigator.of(sheetContext).pop();
-                    container
-                        .read(bookRepositoryProvider)
-                        .setFavorite(book.id, !book.isFavorite);
                   },
                 ),
               ListTile(
@@ -1657,9 +1664,16 @@ class _BookTileState extends ConsumerState<_BookTile>
             onPressed: () {
               final newTitle = controller.text.trim();
               if (newTitle.isNotEmpty && newTitle != book.title) {
-                container
-                    .read(bookRepositoryProvider)
-                    .updateTitle(book.id, newTitle);
+                unawaited(
+                  saveLibraryChange(
+                    ScaffoldMessenger.of(ctx),
+                    () => container
+                        .read(bookRepositoryProvider)
+                        .updateTitle(book.id, newTitle),
+                    failure: ctx.l10n.libraryRenameBookFailed,
+                    event: 'library.book_rename_failed',
+                  ),
+                );
               }
               Navigator.of(ctx).pop();
             },
@@ -2217,15 +2231,20 @@ class _CollectionFolderScreenState
     final next = reorder(current);
     setState(() => _localOrder = next);
     // _localOrder retires in build once the stream echoes this order.
+    final repo = ref.read(collectionRepositoryProvider);
     unawaited(
-      ref
-          .read(collectionRepositoryProvider)
-          .reorderCollectionBooks(collectionId, [for (final b in next) b.id])
-          .catchError((Object _) {
-            // Write failed: the stream will never echo this order, so drop the
-            // optimistic one and let the grid fall back to the DB order.
-            if (mounted) setState(() => _localOrder = null);
-          }),
+      saveLibraryChange(
+        ScaffoldMessenger.of(context),
+        () => repo.reorderCollectionBooks(collectionId, [
+          for (final b in next) b.id,
+        ]),
+        failure: context.l10n.libraryCollectionChangeFailed,
+        event: 'library.collection_change_failed',
+      ).then((saved) {
+        // Write failed: the stream will never echo this order, so drop the
+        // optimistic one and let the grid fall back to the DB order.
+        if (!saved && mounted) setState(() => _localOrder = null);
+      }),
     );
   }
 
@@ -2256,10 +2275,17 @@ class _CollectionFolderScreenState
       );
       if (confirmed != true) return;
     }
-    await container
-        .read(collectionRepositoryProvider)
-        .removeBooksFromCollection(collectionId, {..._selectedIds});
-    if (mounted) _exitSelectionMode();
+    if (!mounted) return;
+    final removed = await saveLibraryChange(
+      ScaffoldMessenger.of(context),
+      () => container
+          .read(collectionRepositoryProvider)
+          .removeBooksFromCollection(collectionId, {..._selectedIds}),
+      failure: context.l10n.libraryCollectionChangeFailed,
+      event: 'library.collection_change_failed',
+    );
+    // Not removed: the selection stays, to try again.
+    if (removed && mounted) _exitSelectionMode();
   }
 
   Widget _tile(List<Book> members, int index, Animation<double> route) {
