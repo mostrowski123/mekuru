@@ -1,10 +1,7 @@
 // A reading mode chosen while a rebuilt viewer still loads is not lost: once
 // that viewer is done loading, a viewer for the mode now chosen takes its
-// place. The page's `loaded` calls arrive late, as a slow book's would.
-//
-// It checks the viewer built, not that its page shows: a viewer opened at a
-// page sometimes never shows it (a script error in the page, older than this
-// test), and the reader's load timeout then offers Retry.
+// place and shows the page it was opened at. The page's `loaded` calls
+// arrive late, as a slow book's would.
 
 import 'dart:io';
 
@@ -16,7 +13,8 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 
-import 'shared/scroll_view_fixture.dart' show openReader, writeScrollViewEpub;
+import 'shared/scroll_view_fixture.dart'
+    show expectPageShown, openReader, writeScrollViewEpub;
 import 'test_helpers.dart';
 
 const _title = '再構築中の設定変更';
@@ -39,7 +37,7 @@ void main() {
 
   testWidgets('a mode chosen while a new viewer loads is applied once it '
       'loads', (tester) async {
-    await openReader(
+    final controller = await openReader(
       tester,
       await writeScrollViewEpub(tempDir, title: _title, vertical: true),
       _title,
@@ -74,5 +72,9 @@ void main() {
     final next = shown();
     expect(next?.key, isNot(loading.key), reason: 'replaced');
     expect(next?.scrollView, isFalse, reason: 'for pages');
+    await pumpUntilGone(tester, overlay, timeout: const Duration(seconds: 30));
+    // The reported location arrives a frame after the page shows.
+    await tester.pump(const Duration(milliseconds: 1500));
+    await expectPageShown(controller, cfi: next!.initialCfi, reason: 'pages');
   });
 }

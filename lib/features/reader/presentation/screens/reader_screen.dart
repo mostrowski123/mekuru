@@ -1009,8 +1009,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _search.markInterrupted();
     setState(() {
       // The viewer's own last report, not a question to the page: one that
-      // never showed the book, or a scroll view opened at a page, has no
-      // position to give and never answers.
+      // never showed the book has no position to give and never answers.
       if (_isEpubCfi(_currentCfi)) _initialCfi = _currentCfi;
       _isLoading = true;
       _errorMessage = null;

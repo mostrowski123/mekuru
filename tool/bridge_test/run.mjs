@@ -304,6 +304,98 @@ const checks = [
     }
   }],
 
+  ['a book reopened at its page in another mode shows that page, also when the window grows while it opens', async () => {
+    // Each reading-mode change rebuilds the viewer at the page the last one
+    // reported. Android lays a new WebView out at 0 x 0 and gives it its size
+    // a moment later, and that resize cleared the page being opened: it
+    // never showed (a blank page, or a script error and no `loaded`). Here
+    // the page is hidden (0 x 0) until a chosen moment of the opening: before
+    // the chapter is in its frame (serialize), while it is themed (content),
+    // or as it is reported shown (loaded).
+    const bytes = fs.readFileSync(path.join(here, 'book.epub'));
+    const horizontal = JSON.stringify({ html: { 'writing-mode': 'horizontal-tb !important' } });
+    // loadBook's arguments after the CFI, as Dart sends them for each mode.
+    const modes = {
+      pages: `"rtl", "paginated", false, "18", "#000000", null, 28, 28, false, "book", 1, null`,
+      scroll: `"rtl", "scrolled", false, "18", "#000000", null, 0, 28, false, "book", 1, null`,
+      horizontal: `"ltr", "paginated", false, "18", "#000000", ${horizontal}, 28, 28, true, "book", 1, null`,
+    };
+    function grow(moment) {
+      if (!moment) return;
+      document.body.style.display = 'none';
+      let grown = false;
+      const show = () => {
+        if (grown) return;
+        grown = true;
+        document.body.style.display = '';
+        window.dispatchEvent(new Event('resize'));
+      };
+      if (moment === 'loaded') {
+        const call = window.flutter_inappwebview.callHandler;
+        window.flutter_inappwebview.callHandler = function (name) {
+          if (name === 'loaded') show();
+          return call.apply(this, arguments);
+        };
+      } else {
+        (moment === 'serialize' ? book.spine : rendition).hooks[moment].register(show);
+      }
+    }
+    const count = (p) => p.evaluate(() => window.__calls.length);
+    const open = async (mode, cfi, moment) => {
+      const p = await browser.newPage({ viewport: { width: 412, height: 800 }, deviceScaleFactor: 2.625 });
+      const thrown = [];
+      p.on('pageerror', (e) => thrown.push(e.message));
+      await p.route('http://viewer.localhost/**', (route) => {
+        const file = path.join(viewer, new URL(route.request().url()).pathname);
+        return fs.existsSync(file) ? route.fulfill({ path: file }) : route.fulfill({ status: 404 });
+      });
+      await p.addInitScript({ path: path.join(here, 'stub.js') });
+      await p.goto('http://viewer.localhost/reader.html');
+      await p.waitForFunction(`window.__calls.some((c) => c.name === 'readyToLoad')`);
+      await p.evaluate(`beginEpubTransfer(${bytes.length}); appendEpubChunk('${bytes.toString('base64')}')`);
+      // One script, so the hooks are in before the book has opened.
+      await p.evaluate(`loadBook(${JSON.stringify(cfi)}, ${modes[mode]}); (${grow})(${JSON.stringify(moment ?? null)})`);
+      try {
+        await p.waitForFunction(`window.__calls.some((c) => c.name === 'relocated')`, null, { timeout: 8000 }).catch(() => {});
+        // Until no call for 500 ms: a resize can show the page a second time.
+        for (let n = -1, m = await count(p); n !== m; n = m, m = await count(p)) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+        const label = `${mode} view at ${cfi}${moment ? `, grown at ${moment}` : ''}`;
+        expect(thrown.length === 0, `${label}: the page threw ${thrown.join(' | ')}`);
+        const shown = await p.evaluate((asked) => {
+          const loc = rendition.location;
+          const cfi = new ePub.CFI();
+          return {
+            loaded: window.__calls.some((c) => c.name === 'loaded'),
+            views: rendition.manager.views.all().filter((v) => v.contents && v.element.style.visibility === 'visible').length,
+            start: loc?.start?.cfi,
+            holds: !!(loc?.start && loc.end && cfi.compare(loc.start.cfi, asked) <= 0 && cfi.compare(asked, loc.end.cfi) <= 0),
+          };
+        }, cfi);
+        expect(shown.loaded && shown.views === 1, `${label}: no page on screen: ${JSON.stringify(shown)}`);
+        expect(shown.holds, `${label}: shows ${shown.start}, not the page with ${cfi}`);
+        return shown.start;
+      } finally {
+        await p.close();
+      }
+    };
+    // Two pages back from where the last check left the reader (chapter 2's
+    // first page), then page view to scroll view and back, and vertical text
+    // off and on again, each viewer opened where the last one was.
+    let start;
+    for (let turn = 0; turn < 2; turn++) {
+      const at = await mark();
+      await page.evaluate('previous()');
+      await until(at, `c.name === 'pageChars'`);
+      start = argOf(await calls(at), 'relocated').startCfi;
+    }
+    for (const moment of [null, 'serialize', 'content', 'loaded']) {
+      let at = start;
+      for (const mode of ['scroll', 'pages', 'horizontal', 'pages']) at = await open(mode, at, moment);
+    }
+  }],
+
   ['every handler the page calls is registered in Dart', async () => {
     // The calls seen so far, and every name written in reader_bridge.js.
     const source = fs.readFileSync(path.join(viewer, 'reader_bridge.js'), 'utf8');

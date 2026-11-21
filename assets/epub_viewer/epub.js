@@ -4225,6 +4225,13 @@ class default_DefaultViewManager {
         return view;
       });
     }.bind(this)).then(function (view) {
+      // [MEKURU PATCH] Something cleared the views while this one loaded: a
+      // resize (Rendition.onResized() then displays this target again) or
+      // the next display(). This display() is over and ends here, never
+      // settling: the destroyed view has no frame to place the target in
+      // (upstream threw there), and showing or reporting now would show and
+      // report the views that replace it.
+      if (!view.displayed) return new Promise(() => {});
       // Move to correct place within the section, if needed
       if (target) {
         // [MEKURU PATCH] see moveToTarget()
@@ -8321,6 +8328,8 @@ class rendition_Rendition {
     var section;
     var moveTo;
     this.displaying = displaying;
+    // [MEKURU PATCH] see onResized()
+    this.lastDisplay = { target: target, location: this.location };
 
     // Check if this is a book percentage
     if (this.book.locations.length() && Object(core["isFloat"])(target)) {
@@ -8457,7 +8466,16 @@ class rendition_Rendition {
       width: size.width,
       height: size.height
     }, epubcfi);
-    if (this.location && this.location.start) {
+    // [MEKURU PATCH] A resize clears every view (DefaultViewManager.resize()),
+    // the one a display() in progress is building too. Show the last
+    // display()'s target again until that display() has reported its
+    // location, and the location after. Upstream always showed the last
+    // location again, which a book still opening has none of (it stayed
+    // blank), and which a display() on its way elsewhere was taken back to.
+    let last = this.lastDisplay;
+    if (last && (this.displaying || this.location === last.location)) {
+      this.display(epubcfi || last.target);
+    } else if (this.location && this.location.start) {
       this.display(epubcfi || this.location.start.cfi);
     }
   }

@@ -488,6 +488,36 @@ Future<CustomEpubController> openReader(
       .controller;
 }
 
+/// Expects the viewer to show a page of the book, and, when [cfi] is given,
+/// the page that holds it: a view with content on screen, and epub.js's
+/// reported location running from at or before [cfi] to at or after it.
+Future<void> expectPageShown(
+  CustomEpubController controller, {
+  String? cfi,
+  String reason = '',
+}) async {
+  final shown = await evalJson(
+    controller,
+    '(function (asked) {'
+    '  var loc = rendition.location, c = new ePub.CFI();'
+    '  var views = rendition.manager.views.all().filter(function (v) {'
+    '    return v.contents && v.element.style.visibility === "visible";'
+    '  });'
+    '  return JSON.stringify({views: views.length,'
+    '    start: loc && loc.start ? loc.start.cfi : null,'
+    '    holds: !asked || !!(loc && loc.start && loc.end &&'
+    '      c.compare(loc.start.cfi, asked) <= 0 &&'
+    '      c.compare(asked, loc.end.cfi) <= 0)});'
+    '})(${jsonEncode(cfi)})',
+  );
+  expect(shown['views'], 1, reason: '$reason: no page on screen ($shown)');
+  expect(
+    shown['holds'],
+    isTrue,
+    reason: '$reason: not the page with $cfi ($shown)',
+  );
+}
+
 // Moves the strip with epub.js's own scrollBy, which flips the sign for
 // right-to-left text. Browsers clamp, so 100 screens reach an end.
 Future<void> _scrollScreens(CustomEpubController controller, num screens) =>
