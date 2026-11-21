@@ -556,17 +556,30 @@ class _DictionaryManagerScreenState
           child: const Icon(Icons.drag_handle),
         ),
         title: Text(name),
-        subtitle: Text(
-          isUserDictionary
-              ? l10n.userDictionarySubtitle
-              : version == null
-              ? l10n.dictionaryManagerImportedOn(date: date)
-              : l10n.dictionaryManagerImportedOnVersion(
-                  date: date,
-                  version: version,
+        subtitle: isUserDictionary
+            ? Text(
+                l10n.userDictionarySubtitle,
+                style: Theme.of(context).textTheme.bodySmall,
+              )
+            : Consumer(
+                builder: (context, ref, _) => Text(
+                  [
+                    // A row with no words to look up says what it holds.
+                    if (ref
+                            .watch(frequencyOnlyDictionaryProvider(dict.id))
+                            .value ??
+                        false)
+                      l10n.downloadsStarterPackWordFrequency,
+                    version == null
+                        ? l10n.dictionaryManagerImportedOn(date: date)
+                        : l10n.dictionaryManagerImportedOnVersion(
+                            date: date,
+                            version: version,
+                          ),
+                  ].join('\n'),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+              ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

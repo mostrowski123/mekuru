@@ -97,6 +97,43 @@ void main() {
     expect(find.textContaining('Delete "Jitendex"'), findsOneWidget);
   });
 
+  testWidgets('a dictionary of only word frequencies says so under its name', (
+    tester,
+  ) async {
+    final repo = DictionaryRepository(db);
+    await repo.batchInsertEntries([
+      for (final id in [1, 3])
+        DictionaryEntriesCompanion.insert(
+          expression: '猫',
+          glossaries: '["cat"]',
+          dictionaryId: id,
+        ),
+    ]);
+    await repo.batchInsertFrequencies([
+      for (final id in [2, 3])
+        FrequenciesCompanion.insert(
+          expression: '猫',
+          frequencyRank: 2000,
+          dictionaryId: id,
+        ),
+    ]);
+
+    await pumpManager(tester, [
+      meta(1, 'Words'),
+      meta(2, 'Ranks'),
+      meta(3, 'Both'),
+    ]);
+
+    Finder row(String name, String text) => find.descendant(
+      of: find.widgetWithText(Card, name),
+      matching: find.textContaining(text),
+    );
+    expect(row('Ranks', 'Word Frequency'), findsOneWidget);
+    expect(row('Ranks', 'Imported 2026-10-04'), findsOneWidget);
+    expect(row('Words', 'Word Frequency'), findsNothing);
+    expect(row('Both', 'Word Frequency'), findsNothing);
+  });
+
   testWidgets('a deleted dictionary leaves while later deletes still run', (
     tester,
   ) async {
