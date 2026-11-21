@@ -415,6 +415,21 @@ class AndroidSafService {
     }
   }
 
+  /// Lets the user choose where a copy of the file at [path] goes, offering
+  /// [name], and streams it there natively: the bytes never cross the
+  /// channel. False when they cancel.
+  static Future<bool> saveDocument(
+    String path, {
+    required String name,
+    required String mimeType,
+  }) async =>
+      await _channel.invokeMethod<bool>('saveDocument', {
+        'path': path,
+        'name': name,
+        'mimeType': mimeType,
+      }) ??
+      false;
+
   /// Usable bytes on the volume holding [path]; null when unknown.
   static Future<int?> getFreeBytes(String path) => _read<int>(
     operation: 'getFreeBytes',

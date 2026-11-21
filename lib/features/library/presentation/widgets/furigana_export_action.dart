@@ -1,10 +1,13 @@
 // ignore_for_file: unawaited_futures
-import 'dart:typed_data';
+import 'dart:convert';
+import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/data/services/epub_furigana_export.dart';
@@ -16,11 +19,13 @@ import 'package:mekuru/features/reader/presentation/widgets/reader_settings/read
 import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/blocking_progress_dialog.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-/// Coverage dialog → progress dialog → off-isolate rebuild → SAF save-as.
-/// Everything user-facing (cancel, MeCab down, failure) ends in a SnackBar;
-/// cancel is silent.
+/// Coverage dialog → progress dialog → off-isolate rebuild into a temp file
+/// → system save dialog. Everything user-facing (MeCab down, failure) ends
+/// in a SnackBar; cancel is silent. The temp file never outlives the call.
 Future<void> runFuriganaExport(
   BuildContext context,
   WidgetRef ref,
@@ -37,6 +42,12 @@ Future<void> runFuriganaExport(
   if (choice == null || !context.mounted) return;
   final (exportMode, exportLevel) = choice;
   final knownKanji = ref.read(wanikaniKnownKanjiProvider);
+  // Named as the user will see it: on iOS the save dialog moves this file.
+  final outPath = p.join(
+    (await getTemporaryDirectory()).path,
+    exportFileName(book.title),
+  );
+  if (!context.mounted) return;
 
   showBlockingProgressDialog(context, l10n.libraryExportFuriganaProgress);
 
@@ -44,66 +55,96 @@ Future<void> runFuriganaExport(
     'mode': exportMode.name,
     'jlpt_level': exportLevel,
   };
-  Object? failure;
-  Uint8List? bytes;
   try {
-    bytes = await tracedOperation(
-      'furigana_export.build_duration_ms',
-      attributes: exportAttrs,
-      action: () async {
-        final epubPath = await EpubFileResolver().resolveLocalEpubPath(
-          book.filePath,
-        );
-        return MecabService.instance.runOffIsolate(
-          () => buildFuriganaEpubForMode(
-            epubPath,
-            mode: exportMode,
-            jlptLevel: exportLevel,
-            knownKanji: knownKanji,
+    Object? failure;
+    var written = false;
+    try {
+      written = await tracedOperation(
+        'furigana_export.build_duration_ms',
+        attributes: exportAttrs,
+        action: () async {
+          final epubPath = await EpubFileResolver().resolveLocalEpubPath(
+            book.filePath,
+          );
+          return MecabService.instance.runOffIsolate(
+            () => writeFuriganaEpubForMode(
+              epubPath,
+              outPath,
+              mode: exportMode,
+              jlptLevel: exportLevel,
+              knownKanji: knownKanji,
+            ),
+          );
+        },
+      );
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
+      failure = e;
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context).pop(); // spinner
+
+    if (failure != null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.commonErrorWithDetails(details: failure.toString()),
           ),
+        ),
+      );
+      return;
+    }
+    if (!written) {
+      // False is the load-bearing "MeCab could not come up" signal — never
+      // silently save an unannotated book.
+      logUsage('furigana_export.unavailable');
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.libraryExportFuriganaUnavailable)),
+      );
+      return;
+    }
+
+    try {
+      if (await saveEpubElsewhere(outPath)) {
+        logUsage('furigana_export.completed', attrs: exportAttrs);
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.libraryExportFuriganaDone)),
         );
-      },
-    );
-  } catch (e, st) {
-    Sentry.captureException(e, stackTrace: st);
-    failure = e;
-  }
-
-  if (!context.mounted) return;
-  Navigator.of(context).pop(); // spinner
-
-  if (failure != null) {
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(l10n.commonErrorWithDetails(details: failure.toString())),
-      ),
-    );
-    return;
-  }
-  if (bytes == null) {
-    // Null is the load-bearing "MeCab could not come up" signal — never
-    // silently save an unannotated book.
-    logUsage('furigana_export.unavailable');
-    messenger.showSnackBar(
-      SnackBar(content: Text(l10n.libraryExportFuriganaUnavailable)),
-    );
-    return;
-  }
-
-  // No type/allowedExtensions: OEM pickers choke on custom extension
-  // filtering (see BackupFileManager); the .epub suffix is what matters.
-  final savedPath = await FilePicker.saveFile(
-    dialogTitle: l10n.libraryExportFuriganaSaveTitle,
-    fileName: exportFileName(book.title),
-    bytes: bytes,
-  );
-  if (savedPath != null) {
-    logUsage('furigana_export.completed', attrs: exportAttrs);
-    messenger.showSnackBar(
-      SnackBar(content: Text(l10n.libraryExportFuriganaDone)),
-    );
+      }
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.commonErrorWithDetails(details: e.toString())),
+        ),
+      );
+    }
+  } finally {
+    try {
+      await File(outPath).delete();
+    } on FileSystemException {
+      // Never written, or moved out by the iOS save dialog.
+    }
   }
 }
+
+/// Lets the user choose where the finished export at [path] goes: on iOS the
+/// document picker moves the file there, on Android the system save dialog
+/// gets a streamed copy. Only the path crosses the channel, never the book.
+/// False when they cancel.
+@visibleForTesting
+Future<bool> saveEpubElsewhere(String path) async =>
+    defaultTargetPlatform == TargetPlatform.iOS
+    ? await const MethodChannel(
+            'mekuru/ios_files',
+          ).invokeMethod<bool>('exportFile', path) ??
+          false
+    : await AndroidSafService.saveDocument(
+        path,
+        name: p.basename(path),
+        mimeType: 'application/epub+zip',
+      );
 
 /// Picks the export coverage: the returned tuple is the mode plus the JLPT
 /// level (meaningful for aboveLevel only). [offerWanikani] adds the WaniKani
@@ -181,13 +222,21 @@ Future<(FuriganaMode, int)?> showFuriganaCoverageDialog(
   );
 }
 
-/// A book title with filesystem-hostile characters replaced, truncated to a
-/// sane length — the base name for any exported file.
+/// A book title with filesystem-hostile characters replaced, cut to 80
+/// characters and 200 bytes — the base name for any exported file. A file
+/// name holds 255 bytes and a kana or kanji takes three, so 80 of them plus
+/// " (furigana).epub" did not fit.
 String sanitizedExportBaseName(String title) {
-  var sanitized = title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
-  if (sanitized.length > 80) sanitized = sanitized.substring(0, 80).trim();
-  if (sanitized.isEmpty) sanitized = 'book';
-  return sanitized;
+  final cleaned = title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
+  final kept = StringBuffer();
+  var bytes = 0;
+  for (final rune in cleaned.runes.take(80)) {
+    bytes += utf8.encode(String.fromCharCode(rune)).length;
+    if (bytes > 200) break;
+    kept.writeCharCode(rune);
+  }
+  final sanitized = kept.toString().trim();
+  return sanitized.isEmpty ? 'book' : sanitized;
 }
 
 /// Suggested save-dialog name for the furigana EPUB export.

@@ -2,6 +2,7 @@ package moe.matthew.mekuru
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -38,6 +39,7 @@ class MainActivity : FlutterActivity() {
         private const val IMAGE_CONVERT_CHANNEL_NAME = "mekuru/image_convert"
         private const val REQUEST_OPEN_DOCUMENT_TREE = 7312
         private const val REQUEST_OPEN_DOCUMENT = 7313
+        private const val REQUEST_CREATE_DOCUMENT = 7315
 
         /**
          * True between onResume and onPause. The full-backup service posts a
@@ -69,6 +71,7 @@ class MainActivity : FlutterActivity() {
     private var pendingTreePickerResult: MethodChannel.Result? = null
     private var pendingPickedDocumentUri: Uri? = null
     private var pendingDocumentPickerResult: MethodChannel.Result? = null
+    private var pendingSave: Pair<File, MethodChannel.Result>? = null
 
     private val fullBackupBridge = FullBackupJobBridge(this)
     private var fullBackupRecovered = false
@@ -215,6 +218,10 @@ class MainActivity : FlutterActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_OPEN_DOCUMENT) {
             handleDocumentPicked(resultCode, data)
+            return
+        }
+        if (requestCode == REQUEST_CREATE_DOCUMENT) {
+            handleDocumentCreated(resultCode, data)
             return
         }
         if (requestCode != REQUEST_OPEN_DOCUMENT_TREE) return
@@ -390,7 +397,68 @@ class MainActivity : FlutterActivity() {
                 }
                 runIo(result) { File(path).usableSpace }
             }
+            "saveDocument" -> {
+                val path = call.argument<String>("path")
+                val name = call.argument<String>("name")
+                val mimeType = call.argument<String>("mimeType")
+                if (path.isNullOrBlank() || name.isNullOrBlank() || mimeType.isNullOrBlank()) {
+                    result.error("bad_args", "path, name and mimeType are required", null)
+                    return
+                }
+                saveDocument(File(path), name, mimeType, result)
+            }
             else -> result.notImplemented()
+        }
+    }
+
+    // ──────────────── Exports: save a finished file ────────────────
+
+    /**
+     * Lets the user choose where a copy of [source] goes, offering [name], and
+     * streams it there. True when saved, false when cancelled. The file goes
+     * by path so a book-sized export never crosses the method channel.
+     */
+    private fun saveDocument(source: File, name: String, mimeType: String, result: MethodChannel.Result) {
+        if (pendingSave != null) {
+            result.error("busy", "A save dialog is already open", null)
+            return
+        }
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = mimeType
+            putExtra(Intent.EXTRA_TITLE, name)
+        }
+        try {
+            startActivityForResult(intent, REQUEST_CREATE_DOCUMENT)
+        } catch (e: ActivityNotFoundException) {
+            // Same code as file_picker's saveFile on a device without one.
+            result.error("explorer_not_found", e.message, null)
+            return
+        }
+        pendingSave = source to result
+    }
+
+    private fun handleDocumentCreated(resultCode: Int, data: Intent?) {
+        val (source, callback) = pendingSave ?: return
+        pendingSave = null
+        val uri = data?.data
+        if (resultCode != Activity.RESULT_OK || uri == null) {
+            callback.success(false)
+            return
+        }
+        runIo(callback) {
+            try {
+                val output = contentResolver.openOutputStream(uri) ?: throw IllegalStateException("open_failed")
+                output.use { out -> source.inputStream().use { it.copyTo(out) } }
+            } catch (e: Exception) {
+                // No half-written book left where the user asked for one.
+                try {
+                    DocumentsContract.deleteDocument(contentResolver, uri)
+                } catch (_: Exception) {
+                }
+                throw e
+            }
+            true
         }
     }
 

@@ -1932,7 +1932,6 @@
   "libraryExportFuriganaNone": "Tidak ada (hapus yang sudah ada)",
   "libraryExportFuriganaAction": "Ekspor",
   "libraryExportFuriganaProgress": "Menyiapkan EPUB…",
-  "libraryExportFuriganaSaveTitle": "Simpan EPUB",
   "libraryExportFuriganaDone": "EPUB diekspor",
   "libraryExportFuriganaUnavailable": "Mesin furigana tidak tersedia — coba lagi sebentar",
   "libraryConvertToMangaTitle": "Konversi ke manga",

@@ -1932,7 +1932,6 @@
   "libraryExportFuriganaNone": "Ninguno (eliminar el existente)",
   "libraryExportFuriganaAction": "Exportar",
   "libraryExportFuriganaProgress": "Preparando EPUB…",
-  "libraryExportFuriganaSaveTitle": "Guardar EPUB",
   "libraryExportFuriganaDone": "EPUB exportado",
   "libraryExportFuriganaUnavailable": "El motor de furigana no está disponible: inténtalo de nuevo en un momento",
   "libraryConvertToMangaTitle": "Convertir a manga",

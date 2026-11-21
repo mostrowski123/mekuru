@@ -1671,9 +1671,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryExportFuriganaProgress => '正在准备 EPUB…';
 
   @override
-  String get libraryExportFuriganaSaveTitle => '保存 EPUB';
-
-  @override
   String get libraryExportFuriganaDone => '已导出 EPUB';
 
   @override
@@ -6241,9 +6238,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryExportFuriganaProgress => '正在准备 EPUB…';
-
-  @override
-  String get libraryExportFuriganaSaveTitle => '保存 EPUB';
 
   @override
   String get libraryExportFuriganaDone => '已导出 EPUB';

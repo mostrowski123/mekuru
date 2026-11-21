@@ -14,7 +14,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:archive/archive.dart';
+import 'package:archive/archive_io.dart';
 import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/core/utils/xhtml.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
@@ -196,18 +196,24 @@ Future<String?> annotateXhtml(
   return doc.toXmlString();
 }
 
+/// [entry] decompressed without caching it on the entry. A cached entry
+/// must not pass through to the encoder: it deflates the raw stream a second
+/// time while keeping the original sizes, which corrupts it.
+String _peekText(ArchiveFile entry) =>
+    utf8.decode(entry.rawContent!.getStream().toUint8List());
+
 /// Zip entry names of the OPF manifest's XHTML content documents.
 Set<String> _contentDocumentNames(Archive archive) {
   final container = archive.findFile('META-INF/container.xml');
   if (container == null) return const {};
-  final containerXml = parseXhtml(utf8.decode(container.readBytes()!));
+  final containerXml = parseXhtml(_peekText(container));
   if (containerXml == null) return const {};
   final opfPath = EpubParser.extractOpfPathFromXml(containerXml);
   if (opfPath == null) return const {};
 
   final opfEntry = archive.findFile(opfPath);
   if (opfEntry == null) return const {};
-  final opfXml = parseXhtml(utf8.decode(opfEntry.readBytes()!));
+  final opfXml = parseXhtml(_peekText(opfEntry));
   if (opfXml == null) return const {};
 
   final opfDir = p.posix.dirname(opfPath);
@@ -222,93 +228,129 @@ Set<String> _contentDocumentNames(Archive archive) {
   return names;
 }
 
-/// The EPUB at [epubPath] rebuilt according to [mode]. [generator] is
-/// required for the annotating modes; [stripRubyWhere] carries aboveLevel's
-/// authored-ruby policy (see [authoredRubyStripFor]) and must be derived
-/// from the same mode/level as [generator]. Returns null iff MeCab cannot
-/// come up; throws on unreadable/corrupt input.
+/// Writes the EPUB at [epubPath], rebuilt according to [mode], to [outPath].
+/// [generator] is required for the annotating modes; [stripRubyWhere]
+/// carries aboveLevel's authored-ruby policy (see [authoredRubyStripFor])
+/// and must be derived from the same mode/level as [generator]. Returns
+/// false, having written nothing, iff MeCab cannot come up; throws on
+/// unreadable/corrupt input.
+///
+/// Works entry by entry, file to file: memory holds one chapter at a time,
+/// whatever the size of the book.
+Future<bool> writeFuriganaEpub(
+  String epubPath,
+  String outPath, {
+  required FuriganaMode mode,
+  FuriganaGenerator? generator,
+  bool Function(String baseText)? stripRubyWhere,
+}) async {
+  if (mode == FuriganaMode.book) {
+    await File(epubPath).copy(outPath);
+    return true;
+  }
+
+  // One upfront availability probe; after it succeeds the per-chapter code
+  // can treat the generator as infallible. False is the load-bearing "MeCab
+  // could not come up" signal — never silently export unannotated.
+  if (mode != FuriganaMode.hide &&
+      await generator!.generate(const []) == null) {
+    return false;
+  }
+
+  final input = InputFileStream(epubPath);
+  OutputFileStream? output;
+  try {
+    final archive = ZipDecoder().decodeStream(input);
+    final contentDocs = _contentDocumentNames(archive);
+    // autoClose would close each entry's window, and they all share the
+    // input's one file handle.
+    final zip = ZipEncoder()..startEncode(output = OutputFileStream(outPath));
+    // A valid EPUB has `mimetype` first and uncompressed. Always rebuild it:
+    // one code path, and no reliance on the source entry's STORED flag.
+    const mimetype = 'application/epub+zip';
+    zip.add(
+      ArchiveFile.noCompress(
+        'mimetype',
+        mimetype.length,
+        utf8.encode(mimetype),
+      ),
+      autoClose: false,
+    );
+    for (final entry in archive.files) {
+      if (entry.name == 'mimetype') continue;
+      // Everything but the chapters passes through as stored in the
+      // source, streamed from the input file: deflated entries keep their
+      // raw stream, STORED ones stay stored. Nothing here has cached its
+      // content (see _peekText), so none is deflated twice.
+      if (!entry.isFile || !contentDocs.contains(entry.name)) {
+        zip.add(entry, autoClose: false);
+        continue;
+      }
+      final originalBytes = entry.content;
+      entry.clear();
+      final xhtml = utf8.decode(originalBytes, allowMalformed: true);
+      final rewritten = mode == FuriganaMode.hide
+          ? stripRubyXhtml(xhtml)
+          : await annotateXhtml(
+              xhtml,
+              generator!,
+              stripRubyWhere: stripRubyWhere,
+            );
+      zip.add(
+        ArchiveFile.bytes(
+          entry.name,
+          rewritten == null ? originalBytes : utf8.encode(rewritten),
+        ),
+        autoClose: false,
+      );
+    }
+    zip.endEncode();
+  } finally {
+    await output?.close();
+    await input.close();
+  }
+  return true;
+}
+
+/// [writeFuriganaEpub]'s output as bytes, for tests. The app never calls
+/// this: it holds the whole book in memory.
 Future<Uint8List?> buildFuriganaEpub(
   String epubPath, {
   required FuriganaMode mode,
   FuriganaGenerator? generator,
   bool Function(String baseText)? stripRubyWhere,
 }) async {
-  final original = await File(epubPath).readAsBytes();
-  if (mode == FuriganaMode.book) return original;
-
-  final archive = ZipDecoder().decodeBytes(original);
-
-  // One upfront availability probe; after it succeeds the per-chapter code
-  // can treat the generator as infallible. Null is the load-bearing "MeCab
-  // could not come up" signal — never silently export unannotated.
-  if (mode != FuriganaMode.hide &&
-      await generator!.generate(const []) == null) {
-    return null;
-  }
-
-  final contentDocs = _contentDocumentNames(archive);
-  final out = Archive();
-  // A valid EPUB has `mimetype` first and uncompressed. Always rebuild it:
-  // one code path, and no reliance on the encoder's pass-through keeping
-  // the source entry's STORED flag.
-  const mimetype = 'application/epub+zip';
-  out.addFile(
-    ArchiveFile.noCompress('mimetype', mimetype.length, utf8.encode(mimetype)),
-  );
-  for (final entry in archive.files) {
-    if (entry.name == 'mimetype') continue;
-    final isContentDoc = contentDocs.contains(entry.name);
-    // Never-consumed compressed entries (and directories) pass through: the
-    // encoder reuses their raw deflate stream, so images keep their bytes.
-    if (!entry.isFile || (!isContentDoc && entry.isCompressed)) {
-      out.addFile(entry);
-      continue;
-    }
-    // Everything else is rebuilt from decompressed bytes. Once readBytes()
-    // has consumed a decoder entry (container.xml and the OPF, read during
-    // manifest discovery) the encoder corrupts it on pass-through — it
-    // deflates the raw stream a second time while keeping the original
-    // sizes. Carrying `compression` over keeps STORED entries stored.
-    final originalBytes = entry.readBytes()!;
-    if (!isContentDoc) {
-      out.addFile(
-        ArchiveFile.bytes(entry.name, originalBytes)
-          ..compression = entry.compression,
-      );
-      continue;
-    }
-    final xhtml = utf8.decode(originalBytes, allowMalformed: true);
-    final rewritten = mode == FuriganaMode.hide
-        ? stripRubyXhtml(xhtml)
-        : await annotateXhtml(
-            xhtml,
-            generator!,
-            stripRubyWhere: stripRubyWhere,
-          );
-    out.addFile(
-      ArchiveFile.bytes(
-        entry.name,
-        rewritten == null ? originalBytes : utf8.encode(rewritten),
-      ),
+  final dir = await Directory.systemTemp.createTemp('furigana_export_');
+  try {
+    final outPath = p.join(dir.path, 'out.epub');
+    final written = await writeFuriganaEpub(
+      epubPath,
+      outPath,
+      mode: mode,
+      generator: generator,
+      stripRubyWhere: stripRubyWhere,
     );
+    return written ? await File(outPath).readAsBytes() : null;
+  } finally {
+    await dir.delete(recursive: true);
   }
-
-  return ZipEncoder().encodeBytes(out);
 }
 
 /// Worker-isolate entry point: builds the right generator for [mode] and
-/// rewrites the EPUB. Capture only this call in the isolate closure — its
-/// arguments are all sendable.
-Future<Uint8List?> buildFuriganaEpubForMode(
-  String epubPath, {
+/// writes the rewritten EPUB to [outPath] (see [writeFuriganaEpub]). Capture
+/// only this call in the isolate closure — its arguments are all sendable.
+Future<bool> writeFuriganaEpubForMode(
+  String epubPath,
+  String outPath, {
   required FuriganaMode mode,
   required int jlptLevel,
   Set<int> knownKanji = const {},
 }) {
   // The generator is unused by the book/hide modes, so it is built
   // unconditionally rather than branching on the mode.
-  return buildFuriganaEpub(
+  return writeFuriganaEpub(
     epubPath,
+    outPath,
     mode: mode,
     generator: furiganaGeneratorFor(mode, jlptLevel, knownKanji: knownKanji),
     stripRubyWhere: authoredRubyStripFor(

@@ -10,6 +10,9 @@ const _notInCi = {
       'never listed; reason unknown. A Serena memory '
       '(integration_test_webview_tap_limitations) notes it timed out on a '
       'local emulator at baseline in 2026-07',
+  'furigana_export_large_test.dart':
+      'local only: needs a book hundreds of MB big pushed to the device and '
+      'a host to answer the system save dialog (file header)',
   'high_quality_translation_test.dart':
       'downloads Gemma 4 E2B (about 2.6 GB); its header says local only, too '
       'big for CI',

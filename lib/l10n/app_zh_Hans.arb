@@ -1932,7 +1932,6 @@
   "libraryExportFuriganaNone": "不添加（并移除原有）",
   "libraryExportFuriganaAction": "导出",
   "libraryExportFuriganaProgress": "正在准备 EPUB…",
-  "libraryExportFuriganaSaveTitle": "保存 EPUB",
   "libraryExportFuriganaDone": "已导出 EPUB",
   "libraryExportFuriganaUnavailable": "振假名引擎不可用，请稍后再试",
   "libraryConvertToMangaTitle": "转换为漫画",

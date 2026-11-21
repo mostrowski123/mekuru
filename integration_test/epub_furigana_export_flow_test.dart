@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -13,6 +12,7 @@ import 'package:mekuru/features/library/data/services/epub_furigana_export.dart'
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
+import 'package:path/path.dart' as p;
 
 import 'shared/test_infrastructure.dart';
 import 'test_helpers.dart';
@@ -21,7 +21,7 @@ import 'test_helpers.dart';
 ///
 /// Unit tests cover the XHTML rewriting with a fake tokenizer; this test
 /// exercises the real path used by the export action on device: MeCab init →
-/// MecabService.runOffIsolate worker → buildFuriganaEpubForMode → zip out.
+/// MecabService.runOffIsolate worker → writeFuriganaEpubForMode → zip file.
 const _containerXml =
     '<?xml version="1.0" encoding="UTF-8"?>'
     '<container version="1.0" '
@@ -67,6 +67,17 @@ Uint8List _buildEpub(String chapterXhtml) {
   return ZipEncoder().encodeBytes(archive);
 }
 
+/// The export of the EPUB at [path], written by the worker isolate the way
+/// the export action writes it, read back.
+Future<Uint8List> _export(String path, FuriganaMode mode) async {
+  final outPath = '$path.out.epub';
+  final written = await MecabService.instance.runOffIsolate(
+    () => writeFuriganaEpubForMode(path, outPath, mode: mode, jlptLevel: 3),
+  );
+  expect(written, isTrue);
+  return File(outPath).readAsBytes();
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -96,13 +107,7 @@ void main() {
   test('mode all annotates via the runOffIsolate worker', () async {
     final path = await writeEpub('<p>今日は晴れだ。</p>');
 
-    final bytes = await MecabService.instance.runOffIsolate(
-      () =>
-          buildFuriganaEpubForMode(path, mode: FuriganaMode.all, jlptLevel: 3),
-    );
-
-    expect(bytes, isNotNull);
-    final xhtml = chapterOut(bytes!);
+    final xhtml = chapterOut(await _export(path, FuriganaMode.all));
     expect(xhtml, contains('<ruby>今日<rt>きょう</rt></ruby>'));
     expect(xhtml, contains('<rt>'));
   });
@@ -110,16 +115,7 @@ void main() {
   test('mode aboveLevel keeps easy words bare, annotates hard ones', () async {
     final path = await writeEpub('<p>今日は憂鬱だ。</p>');
 
-    final bytes = await MecabService.instance.runOffIsolate(
-      () => buildFuriganaEpubForMode(
-        path,
-        mode: FuriganaMode.aboveLevel,
-        jlptLevel: 3,
-      ),
-    );
-
-    expect(bytes, isNotNull);
-    final xhtml = chapterOut(bytes!);
+    final xhtml = chapterOut(await _export(path, FuriganaMode.aboveLevel));
     // 憂 is N1 → the whole word gets ruby; 今日 is N5 kanji → stays bare.
     expect(xhtml, contains('<ruby>憂鬱<rt>ゆううつ</rt></ruby>'));
     expect(xhtml, isNot(contains('<ruby>今日')));
@@ -133,20 +129,13 @@ void main() {
   test('JLPT export reimports cleanly with metadata and ruby intact', () async {
     final path = await writeEpub('<p>今日は憂鬱だ。</p>');
 
-    final bytes = await MecabService.instance.runOffIsolate(
-      () => buildFuriganaEpubForMode(
-        path,
-        mode: FuriganaMode.aboveLevel,
-        jlptLevel: 3,
-      ),
-    );
-    expect(bytes, isNotNull);
+    final bytes = await _export(path, FuriganaMode.aboveLevel);
 
     // writeEpub's temp dir already has a recursive-delete teardown; the
     // exported copy can live next to the source.
     addTearDown(cleanupAppBooksDir);
     final exportedPath = '${File(path).parent.path}/exported (furigana).epub';
-    await File(exportedPath).writeAsBytes(bytes!);
+    await File(exportedPath).writeAsBytes(bytes);
 
     final db = createTestDatabase();
     addTearDown(db.close);
@@ -164,24 +153,30 @@ void main() {
   });
 
   // UI-level coverage of runFuriganaExport: long-press → options sheet →
-  // coverage dialog → spinner → save. The SAF save dialog is the one thing
-  // that cannot run headless, so the platform side of FilePicker is swapped
-  // for a capturing fake; everything up to it is the real code path.
+  // coverage dialog → spinner → save. The system save dialog is the one
+  // thing that cannot run headless, so its channel is answered by a fake;
+  // everything up to it is the real code path.
   //
   // Never pumpAndSettle while book tiles are mounted — _CoverTilt's sensor
   // stream rebuilds at 60fps on device and the frame never settles.
   group('export UI', () {
-    late _CapturingFilePicker picker;
-    late FilePickerPlatform originalPicker;
+    late _FakeSaveDialog picker;
 
     setUp(() {
-      originalPicker = FilePickerPlatform.instance;
-      picker = _CapturingFilePicker();
-      FilePickerPlatform.instance = picker;
+      picker = _FakeSaveDialog();
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      for (final channel in _saveChannels) {
+        messenger.setMockMethodCallHandler(channel, picker.handle);
+      }
     });
 
     tearDown(() {
-      FilePickerPlatform.instance = originalPicker;
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      for (final channel in _saveChannels) {
+        messenger.setMockMethodCallHandler(channel, null);
+      }
     });
 
     Future<AppDatabase> dbWithBook(String body, {required String title}) async {
@@ -241,12 +236,50 @@ void main() {
         await pumpUntilGone(tester, find.text('Preparing EPUB…'));
 
         expect(picker.calls, 1);
-        expect(picker.fileName, '吾輩は猫である (furigana).epub');
-        expect(picker.dialogTitle, 'Save EPUB');
+        expect(picker.name, '吾輩は猫である (furigana).epub');
         final xhtml = chapterOut(picker.bytes!);
         expect(xhtml, contains('<ruby>猫<rt>ねこ</rt></ruby>'));
+        await pumpUntilDeleted(tester, picker.path!);
       },
     );
+
+    testWidgets('a cancelled or failed save leaves no temporary file', (
+      tester,
+    ) async {
+      final db = await dbWithBook('<p>吾輩は猫である。</p>', title: '吾輩は猫である');
+      await tester.pumpWidget(
+        buildIntegrationTestApp(db: db, home: const LibraryScreen()),
+      );
+      final bookId = (await db.select(db.books).get()).single.id;
+      final tile = find.byKey(ValueKey('book-tile-$bookId'));
+      await pumpUntilVisible(tester, tile);
+
+      /// Exports until the save dialog has been asked once more.
+      Future<void> export() async {
+        final asked = picker.calls;
+        await longPressTile(tester, tile);
+        await tapSheetItem(tester, 'Export as EPUB');
+        await tester.tap(find.text('Export'));
+        for (var i = 0; i < 360 && picker.calls == asked; i++) {
+          await tester.pump(const Duration(milliseconds: 250));
+        }
+        expect(picker.calls, asked + 1);
+      }
+
+      // Backing out of the save dialog is silent.
+      picker.answer = false;
+      await export();
+      await pumpUntilDeleted(tester, picker.path!);
+      expect(find.text('EPUB exported'), findsNothing);
+      expect(find.textContaining('Error'), findsNothing);
+
+      // A save that fails says so.
+      picker.answer = PlatformException(code: 'saf_io_error', message: 'full');
+      await export();
+      await pumpUntilVisible(tester, find.textContaining('saf_io_error'));
+      expect(find.textContaining('Error: '), findsOneWidget);
+      await pumpUntilDeleted(tester, picker.path!);
+    });
 
     testWidgets('JLPT level picker and None mode reach the pipeline', (
       tester,
@@ -328,30 +361,45 @@ void main() {
   });
 }
 
-/// Captures what runFuriganaExport hands to the platform save dialog.
-/// Extending FilePickerPlatform inherits the real verification token, so the
-/// instance setter accepts it without any mock machinery.
-class _CapturingFilePicker extends FilePickerPlatform {
-  int calls = 0;
-  Uint8List? bytes;
-  String? fileName;
-  String? dialogTitle;
+/// The channels of the system save dialog: `exportFile` on iOS,
+/// `saveDocument` on Android (see saveEpubElsewhere).
+const _saveChannels = [
+  MethodChannel('mekuru/ios_files'),
+  MethodChannel('mekuru/android_saf'),
+];
 
-  @override
-  Future<String?> saveFile({
-    String? dialogTitle,
-    required String fileName,
-    String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    required Uint8List bytes,
-    Function(FilePickerStatus)? onFileLoading,
-    bool lockParentWindow = false,
-  }) async {
+/// Stands in for the system save dialog. Keeps a copy of the file
+/// runFuriganaExport hands it and gives [answer]: true saves (on iOS by
+/// moving the file out, as the document picker does), false is the user
+/// backing out, and a [PlatformException] is a failed save.
+class _FakeSaveDialog {
+  int calls = 0;
+  String? path;
+  String? name;
+  Uint8List? bytes;
+  Object answer = true;
+
+  Future<Object?> handle(MethodCall call) async {
+    if (call.method != 'exportFile' && call.method != 'saveDocument') {
+      return null;
+    }
     calls++;
-    this.bytes = bytes;
-    this.fileName = fileName;
-    this.dialogTitle = dialogTitle;
-    return '/fake/exported.epub';
+    final args = call.arguments;
+    path = args is Map ? args['path'] as String : args as String;
+    name = args is Map ? args['name'] as String : p.basename(path!);
+    bytes = await File(path!).readAsBytes();
+    if (answer case final PlatformException failure) throw failure;
+    if (answer == true && call.method == 'exportFile') {
+      await File(path!).delete();
+    }
+    return answer;
   }
+}
+
+/// Pumps until the export's temp file at [path] is gone.
+Future<void> pumpUntilDeleted(WidgetTester tester, String path) async {
+  for (var tick = 0; tick < 40 && File(path).existsSync(); tick++) {
+    await tester.pump(const Duration(milliseconds: 250));
+  }
+  expect(File(path).existsSync(), isFalse, reason: 'temp file left: $path');
 }

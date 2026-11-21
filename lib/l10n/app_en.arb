@@ -2258,10 +2258,6 @@
   "@libraryExportFuriganaProgress": {
     "description": "Progress dialog text while the exported EPUB is being generated."
   },
-  "libraryExportFuriganaSaveTitle": "Save EPUB",
-  "@libraryExportFuriganaSaveTitle": {
-    "description": "Title of the system save-file dialog for the exported EPUB."
-  },
   "libraryExportFuriganaDone": "EPUB exported",
   "@libraryExportFuriganaDone": {
     "description": "Snackbar shown after the exported EPUB was saved."

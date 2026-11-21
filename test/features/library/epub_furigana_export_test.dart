@@ -119,6 +119,11 @@ void main() {
       expect(exportFileName('a/b:c?'), 'a_b_c_ (furigana).epub');
       expect(exportFileName(''), 'book (furigana).epub');
       expect(exportFileName('あ' * 200).length, lessThan(100));
+      // The export is written under this name, and a name holds 255 bytes.
+      for (final title in ['あ' * 200, '😀' * 200, 'a' * 200]) {
+        expect(utf8.encode(exportFileName(title)).length, lessThan(256));
+      }
+      expect(sanitizedExportBaseName('a' * 200), 'a' * 80);
     });
   });
 

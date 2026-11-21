@@ -1769,9 +1769,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get libraryExportFuriganaProgress => 'Preparando EPUB…';
 
   @override
-  String get libraryExportFuriganaSaveTitle => 'Guardar EPUB';
-
-  @override
   String get libraryExportFuriganaDone => 'EPUB exportado';
 
   @override

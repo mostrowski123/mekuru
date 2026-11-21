@@ -63,10 +63,6 @@ final _rows = [
     'ZipDecoder().decodeStream(InputFileStream(path)) and read each entry '
         'once, with .content then clear(), as CbzParser._extractZip does '
         '(lib/features/manga/data/services/cbz_parser.dart)',
-    counts: {
-      // buildFuriganaEpub holds the whole EPUB, up to the 400 MB import cap.
-      'lib/features/library/data/services/epub_furigana_export.dart': 4,
-    },
   ),
   _Row(
     'Uri.decodeFull, decodeComponent or decodeQueryComponent',

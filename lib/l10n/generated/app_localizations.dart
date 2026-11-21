@@ -3009,12 +3009,6 @@ abstract class AppLocalizations {
   /// **'Preparing EPUB…'**
   String get libraryExportFuriganaProgress;
 
-  /// Title of the system save-file dialog for the exported EPUB.
-  ///
-  /// In en, this message translates to:
-  /// **'Save EPUB'**
-  String get libraryExportFuriganaSaveTitle;
-
   /// Snackbar shown after the exported EPUB was saved.
   ///
   /// In en, this message translates to:

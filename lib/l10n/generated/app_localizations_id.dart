@@ -1756,9 +1756,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get libraryExportFuriganaProgress => 'Menyiapkan EPUB…';
 
   @override
-  String get libraryExportFuriganaSaveTitle => 'Simpan EPUB';
-
-  @override
   String get libraryExportFuriganaDone => 'EPUB diekspor';
 
   @override

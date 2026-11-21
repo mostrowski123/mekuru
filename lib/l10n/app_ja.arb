@@ -482,7 +482,6 @@
   "libraryExportFuriganaNone": "なし（既存のふりがなも削除）",
   "libraryExportFuriganaAction": "エクスポート",
   "libraryExportFuriganaProgress": "EPUBを準備中…",
-  "libraryExportFuriganaSaveTitle": "EPUBを保存",
   "libraryExportFuriganaDone": "EPUBをエクスポートしました",
   "libraryExportFuriganaUnavailable": "ふりがなエンジンを使用できません。しばらくしてからもう一度お試しください。",
   "libraryConvertToMangaTitle": "マンガに変換",
