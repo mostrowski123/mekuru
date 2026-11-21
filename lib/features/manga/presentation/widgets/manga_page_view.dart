@@ -8,6 +8,7 @@ import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.d
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_highlight_overlay.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_zoom_viewer.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
 
@@ -235,7 +236,7 @@ class _MangaPageViewState extends State<MangaPageView> {
           const Icon(Icons.broken_image, size: 48),
           const SizedBox(height: 8),
           Text(
-            'Could not load image',
+            context.l10n.mangaPageImageLoadFailed,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

@@ -1021,12 +1021,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     });
   }
 
-  void _onViewerFailed(String description) {
+  void _onViewerFailed(String? description) {
     setState(() {
       _isLoading = false;
-      _errorMessage = context.l10n.readerFailedToLoadContent(
-        details: description,
-      );
+      _errorMessage = description == null
+          ? context.l10n.readerStoppedWhileOpening
+          : context.l10n.readerFailedToLoadContent(details: description);
     });
   }
 

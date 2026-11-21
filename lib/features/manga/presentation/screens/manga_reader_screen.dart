@@ -1214,7 +1214,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    error.toString(),
+                    switch (error) {
+                      MangaPagesUnavailable.bookGone =>
+                        context.l10n.serverBrowseBookGone,
+                      MangaPagesUnavailable.pagesMissing =>
+                        context.l10n.mangaReaderPagesMissing,
+                      _ => error.toString(),
+                    },
                     style: const TextStyle(color: Colors.white70),
                     textAlign: TextAlign.center,
                   ),

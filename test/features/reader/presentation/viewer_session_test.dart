@@ -13,7 +13,8 @@ void main() {
     locationsReady: () => heard.add('locationsReady'),
     relocated: (EpubLocation location, {required bool trusted}) =>
         heard.add(trusted ? 'relocated trusted' : 'relocated untrusted'),
-    failed: (String description) => heard.add('failed: $description'),
+    failed: (String? description) =>
+        heard.add('failed: ${description ?? 'web view stopped'}'),
     rendererGone: () => heard.add('rendererGone'),
   ));
 
@@ -109,7 +110,7 @@ void main() {
 
     expect(session.phase, ViewerPhase.failed);
     expect(session.isLoaded, isFalse);
-    expect(heard, ['failed: The web view stopped.']);
+    expect(heard, ['failed: web view stopped']);
     expect(session.beginReplacement(), isFalse);
   });
 

@@ -351,11 +351,21 @@ void main() {
 
     viewer(tester).onRendererGone!();
     await tester.pump();
-    expect(find.textContaining('The web view stopped.'), findsOneWidget);
+    expect(
+      find.text(
+        'The reader stopped while opening the book. Tap Retry to try again.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Retry'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 16));
-    expect(find.textContaining('The web view stopped.'), findsOneWidget);
+    expect(
+      find.text(
+        'The reader stopped while opening the book. Tap Retry to try again.',
+      ),
+      findsOneWidget,
+    );
     await closeReader(tester);
   });
 

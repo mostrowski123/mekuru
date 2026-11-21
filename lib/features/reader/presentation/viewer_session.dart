@@ -20,12 +20,14 @@ enum ViewerPhase {
   retired,
 }
 
-/// What the reader does when its current viewer reports in.
+/// What the reader does when its current viewer reports in. [failed] gets
+/// the load error's own text, or null when the web view stopped before the
+/// book showed; the reader words that one itself.
 typedef ViewerReactions = ({
   void Function() loaded,
   void Function() locationsReady,
   void Function(EpubLocation location, {required bool trusted}) relocated,
-  void Function(String description) failed,
+  void Function(String? description) failed,
   void Function() rendererGone,
 });
 
@@ -139,7 +141,7 @@ class ViewerSession {
   void rendererDied() {
     switch (_phase) {
       case ViewerPhase.loading:
-        _fail('The web view stopped.');
+        _fail(null);
       case ViewerPhase.ready:
         _phase = ViewerPhase.rendererGone;
         _reactions.rendererGone();
@@ -149,7 +151,7 @@ class ViewerSession {
     }
   }
 
-  void _fail(String description) {
+  void _fail(String? description) {
     _watchdog?.cancel();
     _phase = ViewerPhase.failed;
     _reactions.failed(description);

@@ -10,6 +10,15 @@ import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:path/path.dart' as p;
 
+/// Why [mangaPagesProvider] has no pages to show. The reader words it.
+enum MangaPagesUnavailable implements Exception {
+  /// The book is no longer in the library.
+  bookGone,
+
+  /// Its `pages_cache.json` is gone: only a new import brings it back.
+  pagesMissing,
+}
+
 /// Loads and caches the mokuro page data for a manga book.
 ///
 /// The [bookId] is used to look up the book's `filePath` (cache directory),
@@ -18,55 +27,57 @@ import 'package:path/path.dart' as p;
 /// autoDispose: the reader's build keeps it alive while open; closing the
 /// reader releases the parsed book graph instead of retaining every opened
 /// manga for the app's lifetime. Reopening re-reads pages_cache.json.
-final mangaPagesProvider = FutureProvider.autoDispose.family<MokuroBook, int>((
-  ref,
-  bookId,
-) async {
-  final bookRepo = ref.read(bookRepositoryProvider);
-  final book = await bookRepo.getBookById(bookId);
-  if (book == null) throw Exception('Book not found');
+final mangaPagesProvider = FutureProvider.autoDispose.family<MokuroBook, int>(
+  (ref, bookId) async {
+    final bookRepo = ref.read(bookRepositoryProvider);
+    final book = await bookRepo.getBookById(bookId);
+    if (book == null) throw MangaPagesUnavailable.bookGone;
 
-  final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
-  if (!await cacheFile.exists()) {
-    throw Exception('Pages cache not found. Try re-importing this manga.');
-  }
-  final content = await cacheFile.readAsString();
-  final mokuroBook = await decodeMangaCache(content);
+    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    if (!await cacheFile.exists()) throw MangaPagesUnavailable.pagesMissing;
+    final content = await cacheFile.readAsString();
+    final mokuroBook = await decodeMangaCache(content);
 
-  // Self-heal caches with missing word boxes (legacy/partial OCR), broken
-  // ones (segmented while MeCab was still initializing), or ones segmented
-  // with a different dictionary than tap-time lookups tokenize with (the
-  // OCR worker stays on IPADIC while this session may have upgraded to
-  // UniDic-lite), so overlays stay available and consistent after restarts.
-  // The decision — including when to wait for MeCab init or for a pending
-  // dictionary upgrade — lives in MokuroWordSegmenter.needsResegmentation.
-  if (await MokuroWordSegmenter.needsResegmentation(mokuroBook.pages)) {
-    // The cache JSON comes back already encoded by the worker isolate — for
-    // a long volume that's a multi-MB string build kept off the UI isolate.
-    final (
-      book: updated,
-      cacheJson: updatedJson,
-    ) = await MokuroWordSegmenter.segmentBookInBackground(
-      mokuroBook,
-      onlyStale: true,
-    );
-    // Only rewrite the cache when re-segmentation actually changed it (null
-    // means MeCab was unavailable and nothing did), so a block that trips
-    // the repair heuristic but re-segments identically can never cause a
-    // rewrite-on-every-open loop.
-    if (updatedJson != null && updatedJson != content) {
-      final merged = await MangaCacheStore.merge(
-        cacheFile,
-        before: content,
-        after: updatedJson,
+    // Self-heal caches with missing word boxes (legacy/partial OCR), broken
+    // ones (segmented while MeCab was still initializing), or ones segmented
+    // with a different dictionary than tap-time lookups tokenize with (the
+    // OCR worker stays on IPADIC while this session may have upgraded to
+    // UniDic-lite), so overlays stay available and consistent after restarts.
+    // The decision — including when to wait for MeCab init or for a pending
+    // dictionary upgrade — lives in MokuroWordSegmenter.needsResegmentation.
+    if (await MokuroWordSegmenter.needsResegmentation(mokuroBook.pages)) {
+      // The cache JSON comes back already encoded by the worker isolate — for
+      // a long volume that's a multi-MB string build kept off the UI isolate.
+      final (
+        book: updated,
+        cacheJson: updatedJson,
+      ) = await MokuroWordSegmenter.segmentBookInBackground(
+        mokuroBook,
+        onlyStale: true,
       );
-      return decodeMangaCache(merged);
+      // Only rewrite the cache when re-segmentation actually changed it (null
+      // means MeCab was unavailable and nothing did), so a block that trips
+      // the repair heuristic but re-segments identically can never cause a
+      // rewrite-on-every-open loop.
+      if (updatedJson != null && updatedJson != content) {
+        final merged = await MangaCacheStore.merge(
+          cacheFile,
+          before: content,
+          after: updatedJson,
+        );
+        return decodeMangaCache(merged);
+      }
+      return updated;
     }
-    return updated;
-  }
 
-  return mokuroBook;
-});
+    return mokuroBook;
+  },
+  // Trying again brings back neither the book nor its pages: say so now,
+  // not after the default ten tries (about 40 seconds of spinner).
+  retry: (count, error) => error is MangaPagesUnavailable
+      ? null
+      : ProviderContainer.defaultRetry(count, error),
+);
 
 /// Whether the debug word-overlay boxes are drawn in the manga reader.
 /// Session-only by design — resets on every app launch.

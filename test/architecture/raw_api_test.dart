@@ -125,7 +125,6 @@ final _rows = [
     ),
     'an l10n key: add it to lib/l10n/app_en.arb and read it with '
         'context.l10n (lib/l10n/l10n.dart)',
-    counts: {'lib/features/manga/presentation/widgets/manga_page_view.dart': 1},
     allowed: {
       'lib/features/dictionary/presentation/screens/dictionary_manager_screen.dart':
           (2, 'the lookup benchmark, shown only in debug builds'),
