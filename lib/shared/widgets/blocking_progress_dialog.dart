@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures
 import 'package:flutter/material.dart';
 
 /// Shows a non-dismissible spinner dialog with [message] next to it.

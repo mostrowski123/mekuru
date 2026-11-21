@@ -1,3 +1,4 @@
+// ignore_for_file: unawaited_futures
 import 'dart:convert';
 import 'dart:io';
 

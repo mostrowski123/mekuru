@@ -1,3 +1,4 @@
+// ignore_for_file: unawaited_futures
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';

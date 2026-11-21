@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';

@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures
 /// Fire-and-forget usage telemetry.
 ///
 /// Every function here swallows all errors: telemetry must never crash the

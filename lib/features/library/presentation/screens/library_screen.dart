@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures, unawaited_futures
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
 import 'dart:async';
 import 'dart:io';

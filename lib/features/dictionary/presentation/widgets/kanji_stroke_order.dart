@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures
 import 'dart:io';
 
 import 'package:flutter/material.dart';

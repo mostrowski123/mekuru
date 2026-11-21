@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures, unawaited_futures
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_page_overlay.dart';
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';

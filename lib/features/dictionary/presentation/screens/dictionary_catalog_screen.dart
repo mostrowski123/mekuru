@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';

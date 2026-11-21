@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';

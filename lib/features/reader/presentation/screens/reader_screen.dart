@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures, unawaited_futures
 import 'dart:async';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, compute, defaultTargetPlatform, setEquals;

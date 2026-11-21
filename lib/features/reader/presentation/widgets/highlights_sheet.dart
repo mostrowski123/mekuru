@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';

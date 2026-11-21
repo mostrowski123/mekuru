@@ -1,3 +1,4 @@
+// ignore_for_file: discarded_futures
 /// The pieces every HTTP client here needs and none should re-implement:
 /// sending with a timeout while folding package:http's pre-response failures
 /// into one exception, and decoding a JSON body as the UTF-8 it is.
