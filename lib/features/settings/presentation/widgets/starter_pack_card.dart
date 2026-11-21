@@ -11,8 +11,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_cat
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
@@ -22,6 +21,8 @@ import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 // Download size for the mobile-data prompt, rounded up: the JPDB v2.2 zip
 // was 6.0 MB in October 2026.
 const _jpdbMb = 6;
+
+final _jpdb = fixedDictionaryProvider(FixedDictionary.jpdb);
 
 /// The installed dictionaries that stand for the starter pack's: Jitendex,
 /// and JMdict English, which the pack installed before it offered Jitendex.
@@ -42,7 +43,7 @@ const _jpdbMb = 6;
 /// when the calling screen goes away.
 Future<void> installStarterPack(BuildContext context) async {
   final container = ProviderScope.containerOf(context, listen: false);
-  final jpdb = container.read(jpdbFreqProvider.notifier);
+  final jpdb = container.read(_jpdb.notifier);
   // Fresh status first, so nothing installed is downloaded again.
   final (_, dictionaries) = await (
     jpdb.checkStatus(),
@@ -52,8 +53,10 @@ Future<void> installStarterPack(BuildContext context) async {
   final needDictionary =
       !installed.jitendex &&
       !installed.jmdict &&
-      !container.read(jmdictProvider).isDownloading;
-  final needJpdb = !container.read(jpdbFreqProvider).isImported;
+      !container
+          .read(fixedDictionaryProvider(FixedDictionary.jmdict))
+          .isDownloading;
+  final needJpdb = !container.read(_jpdb).isImported;
   if (!needDictionary && !needJpdb) return;
 
   // Only the mobile-data question needs the caller still on screen.
@@ -99,7 +102,7 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(jpdbFreqProvider.notifier).checkStatus();
+      ref.read(_jpdb.notifier).checkStatus();
     });
   }
 
@@ -121,7 +124,7 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
     final jitendex = ref.watch(
       catalogDownloadProvider(CatalogDictionary.jitendex),
     );
-    final jpdb = ref.watch(jpdbFreqProvider);
+    final jpdb = ref.watch(_jpdb);
     final hasDictionary = installed.jitendex || installed.jmdict;
     final ready = hasDictionary && jpdb.isImported;
     final busy = jitendex.isDownloading || jpdb.isDownloading;

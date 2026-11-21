@@ -16,9 +16,8 @@ import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
@@ -28,6 +27,9 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
+
+final _jpdb = fixedDictionaryProvider(FixedDictionary.jpdb);
+final _kanjidic = fixedDictionaryProvider(FixedDictionary.kanjidic);
 
 /// Screen listing all downloadable assets (dictionaries, kanji data, etc.).
 class DownloadsScreen extends ConsumerStatefulWidget {
@@ -43,8 +45,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(kanjiVgProvider.notifier).checkStatus();
-      ref.read(jpdbFreqProvider.notifier).checkStatus();
-      ref.read(kanjidicProvider.notifier).checkStatus();
+      ref.read(_jpdb.notifier).checkStatus();
+      ref.read(_kanjidic.notifier).checkStatus();
       ref.read(enhancedFuriganaDictProvider.notifier).checkStatus();
       ref
           .read(enhancedFuriganaDictEnabledProvider.notifier)
@@ -56,8 +58,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final kanjiVgState = ref.watch(kanjiVgProvider);
-    final jpdbFreqState = ref.watch(jpdbFreqProvider);
-    final kanjidicState = ref.watch(kanjidicProvider);
+    final jpdbFreqState = ref.watch(_jpdb);
+    final kanjidicState = ref.watch(_kanjidic);
     final enhancedFuriganaState = ref.watch(enhancedFuriganaDictProvider);
     final lowRamMode = ref.watch(lowRamModeProvider);
     final theme = Theme.of(context);
@@ -538,7 +540,7 @@ class _KanjiVgTile extends ConsumerWidget {
 class _JpdbFreqTile extends ConsumerWidget {
   const _JpdbFreqTile({required this.state, required this.theme});
 
-  final JpdbFreqState state;
+  final FixedDictionaryState state;
   final ThemeData theme;
 
   @override
@@ -580,7 +582,7 @@ class _JpdbFreqTile extends ConsumerWidget {
       onPressed: () => askThenDownload(
         context,
         _jpdbSize,
-        ref.read(jpdbFreqProvider.notifier).download,
+        ref.read(_jpdb.notifier).download,
       ),
       child: Text(context.l10n.commonDownload),
     );
@@ -602,7 +604,7 @@ class _JpdbFreqTile extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              container.read(jpdbFreqProvider.notifier).delete();
+              container.read(_jpdb.notifier).delete();
             },
             child: Text(
               ctx.l10n.commonDelete,
@@ -618,7 +620,7 @@ class _JpdbFreqTile extends ConsumerWidget {
 class _KanjidicTile extends ConsumerWidget {
   const _KanjidicTile({required this.state, required this.theme});
 
-  final KanjidicState state;
+  final FixedDictionaryState state;
   final ThemeData theme;
 
   @override
@@ -663,7 +665,7 @@ class _KanjidicTile extends ConsumerWidget {
       onPressed: () => askThenDownload(
         context,
         _kanjidicSize,
-        ref.read(kanjidicProvider.notifier).download,
+        ref.read(_kanjidic.notifier).download,
       ),
       child: Text(context.l10n.commonDownload),
     );
@@ -685,7 +687,7 @@ class _KanjidicTile extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              container.read(kanjidicProvider.notifier).delete();
+              container.read(_kanjidic.notifier).delete();
             },
             child: Text(
               ctx.l10n.commonDelete,

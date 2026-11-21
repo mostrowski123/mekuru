@@ -9,9 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -81,25 +79,7 @@ _Shown _shown({
   message: successMessage,
 );
 
-_Shown _jmdict(JmdictState s) => _shown(
-  isImported: s.isImported,
-  isDownloading: s.isDownloading,
-  isDeleting: s.isDeleting,
-  progress: s.progress,
-  error: s.error,
-  successMessage: s.successMessage,
-);
-
-_Shown _kanjidic(KanjidicState s) => _shown(
-  isImported: s.isImported,
-  isDownloading: s.isDownloading,
-  isDeleting: s.isDeleting,
-  progress: s.progress,
-  error: s.error,
-  successMessage: s.successMessage,
-);
-
-_Shown _jpdb(JpdbFreqState s) => _shown(
+_Shown _view(FixedDictionaryState s) => _shown(
   isImported: s.isImported,
   isDownloading: s.isDownloading,
   isDeleting: s.isDeleting,
@@ -118,6 +98,10 @@ _Shown Function(ProviderContainer, [void Function(_Shown)?]) _watch<S>(
   return view(c.read(provider));
 };
 
+final _jmdict = fixedDictionaryProvider(FixedDictionary.jmdict);
+final _kanjidic = fixedDictionaryProvider(FixedDictionary.kanjidic);
+final _jpdb = fixedDictionaryProvider(FixedDictionary.jpdb);
+
 final _tiles = [
   _Tile(
     name: 'JMdict',
@@ -127,11 +111,11 @@ final _tiles = [
     title: 'JMdict (English) [2026-11-01]',
     downloaded: 'JMdict downloaded successfully.',
     deleted: 'JMdict deleted.',
-    watch: _watch(jmdictProvider, _jmdict),
-    checkStatus: (c) => c.read(jmdictProvider.notifier).checkStatus(),
+    watch: _watch(_jmdict, _view),
+    checkStatus: (c) => c.read(_jmdict.notifier).checkStatus(),
     download: (c) =>
-        c.read(jmdictProvider.notifier).download(YomitanDictType.jmdictEnglish),
-    delete: (c) => c.read(jmdictProvider.notifier).delete(),
+        c.read(_jmdict.notifier).download(YomitanDictType.jmdictEnglish),
+    delete: (c) => c.read(_jmdict.notifier).delete(),
   ),
   _Tile(
     name: 'KANJIDIC',
@@ -141,10 +125,10 @@ final _tiles = [
     title: 'KANJIDIC (English) [2026-11-01]',
     downloaded: 'KANJIDIC downloaded successfully.',
     deleted: 'KANJIDIC deleted.',
-    watch: _watch(kanjidicProvider, _kanjidic),
-    checkStatus: (c) => c.read(kanjidicProvider.notifier).checkStatus(),
-    download: (c) => c.read(kanjidicProvider.notifier).download(),
-    delete: (c) => c.read(kanjidicProvider.notifier).delete(),
+    watch: _watch(_kanjidic, _view),
+    checkStatus: (c) => c.read(_kanjidic.notifier).checkStatus(),
+    download: (c) => c.read(_kanjidic.notifier).download(),
+    delete: (c) => c.read(_kanjidic.notifier).delete(),
   ),
   _Tile(
     name: 'JPDB',
@@ -154,10 +138,10 @@ final _tiles = [
     title: 'JPDBv2㋕',
     downloaded: 'Frequency dictionary downloaded successfully.',
     deleted: 'Frequency dictionary deleted.',
-    watch: _watch(jpdbFreqProvider, _jpdb),
-    checkStatus: (c) => c.read(jpdbFreqProvider.notifier).checkStatus(),
-    download: (c) => c.read(jpdbFreqProvider.notifier).download(),
-    delete: (c) => c.read(jpdbFreqProvider.notifier).delete(),
+    watch: _watch(_jpdb, _view),
+    checkStatus: (c) => c.read(_jpdb.notifier).checkStatus(),
+    download: (c) => c.read(_jpdb.notifier).download(),
+    delete: (c) => c.read(_jpdb.notifier).delete(),
   ),
 ];
 
@@ -373,13 +357,13 @@ void main() {
     http.handler = serve(_zip('JMdict (English) [2026-11-01]'));
 
     await container
-        .read(jmdictProvider.notifier)
+        .read(_jmdict.notifier)
         .download(YomitanDictType.jmdictEnglishWithExamples);
 
     expect(http.requests, [
       'github.com/yomidevs/jmdict-yomitan/releases/latest/download/'
           'JMdict_english_with_examples.zip',
     ]);
-    expect(container.read(jmdictProvider).isImported, isTrue);
+    expect(container.read(_jmdict).isImported, isTrue);
   });
 }

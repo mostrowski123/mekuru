@@ -10,7 +10,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_cat
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 
 import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
@@ -18,7 +18,7 @@ import 'test_app.dart';
 void main() {
   late List<CatalogDictionary> started;
   late List<CatalogDictionary> replacingJmdict;
-  late List<YomitanDictType> jmdictStarted;
+  late List<YomitanDictType?> jmdictStarted;
   late List<int> deleted;
 
   setUp(() {
@@ -62,8 +62,11 @@ void main() {
                 onReplaceJmdict: replacingJmdict.add,
               ),
             ),
-          jmdictProvider.overrideWith(
-            () => FakeJmdictNotifier(jmdictStarted.add, const JmdictState()),
+          fixedDictionaryProvider(FixedDictionary.jmdict).overrideWith(
+            () => FakeFixedDictionaryNotifier(
+              FixedDictionary.jmdict,
+              jmdictStarted.add,
+            ),
           ),
         ],
         child: buildLocalizedTestApp(home: const DictionaryCatalogScreen()),

@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 
 /// State of one catalog dictionary's download.
 class CatalogDownloadState {
@@ -61,7 +61,8 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
       }
       state = const CatalogDownloadState();
       // JMdict's own tile shows the delete and anything that stops it.
-      if (replaceJmdict) await ref.read(jmdictProvider.notifier).delete();
+      final jmdict = fixedDictionaryProvider(FixedDictionary.jmdict);
+      if (replaceJmdict) await ref.read(jmdict.notifier).delete();
     } on DownloadStoppedException {
       // iOS ended the background work, or the user stopped it there.
       state = const CatalogDownloadState();

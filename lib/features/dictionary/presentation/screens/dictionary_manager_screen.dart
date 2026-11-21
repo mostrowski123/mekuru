@@ -19,9 +19,7 @@ import 'package:mekuru/features/dictionary/data/services/lookup_benchmark.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/delete_dictionary_dialog.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
@@ -695,9 +693,11 @@ class _DictionaryManagerScreenState
         await container.read(dictionaryRepositoryProvider).deleteDictionary(id);
         _deleted.add(id);
         // Refresh download status so the downloads page reflects the deletion.
-        container.read(jmdictProvider.notifier).checkStatus();
-        container.read(kanjidicProvider.notifier).checkStatus();
-        container.read(jpdbFreqProvider.notifier).checkStatus();
+        for (final dictionary in FixedDictionary.values) {
+          container
+              .read(fixedDictionaryProvider(dictionary).notifier)
+              .checkStatus();
+        }
       } finally {
         if (mounted) setState(() => _deleting.remove(id));
       }

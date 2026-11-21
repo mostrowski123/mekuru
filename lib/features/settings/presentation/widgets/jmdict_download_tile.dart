@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
@@ -13,6 +13,8 @@ import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 // releases were 15.6 and 18.1 MB in October 2026.
 const _jmdictSize = '16 MB';
 const _jmdictExamplesSize = '18 MB';
+
+final _jmdict = fixedDictionaryProvider(FixedDictionary.jmdict);
 
 /// JMdict English, with or without example sentences: a download button
 /// that turns into progress, then into Delete once installed.
@@ -28,14 +30,14 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(jmdictProvider.notifier).checkStatus();
+      ref.read(_jmdict.notifier).checkStatus();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final state = ref.watch(jmdictProvider);
+    final state = ref.watch(_jmdict);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,7 +68,7 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
     );
   }
 
-  Widget _buildTrailing(BuildContext context, JmdictState state) {
+  Widget _buildTrailing(BuildContext context, FixedDictionaryState state) {
     if (state.isDownloading || state.isDeleting) {
       return const SizedBox(
         width: 24,
@@ -122,7 +124,7 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
                   context,
                   _jmdictSize,
                   () => container
-                      .read(jmdictProvider.notifier)
+                      .read(_jmdict.notifier)
                       .download(YomitanDictType.jmdictEnglish),
                 );
               },
@@ -137,7 +139,7 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
                   context,
                   _jmdictExamplesSize,
                   () => container
-                      .read(jmdictProvider.notifier)
+                      .read(_jmdict.notifier)
                       .download(YomitanDictType.jmdictEnglishWithExamples),
                 );
               },
@@ -164,7 +166,7 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              container.read(jmdictProvider.notifier).delete();
+              container.read(_jmdict.notifier).delete();
             },
             child: Text(
               ctx.l10n.commonDelete,

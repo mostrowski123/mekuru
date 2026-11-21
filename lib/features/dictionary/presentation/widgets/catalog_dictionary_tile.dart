@@ -7,7 +7,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_cat
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/delete_dictionary_dialog.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -106,7 +106,9 @@ class CatalogDictionaryTile extends ConsumerWidget {
     final notifier = ref.read(catalogDownloadProvider(entry).notifier);
     final replaceJmdict =
         entry == CatalogDictionary.jitendex &&
-            (ref.read(jmdictProvider).isDownloading ||
+            (ref
+                    .read(fixedDictionaryProvider(FixedDictionary.jmdict))
+                    .isDownloading ||
                 YomitanDictDownloadService.isImportedIn(
                   YomitanDictType.jmdictEnglish,
                   ref.read(dictionariesProvider).value ?? const [],

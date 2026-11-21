@@ -10,9 +10,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_cat
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 
 /// Overrides for the Downloads screen's notifiers: only the [installed]
@@ -34,18 +32,19 @@ List<Override> fakeDownloadNotifierOverrides(
         (entry) => started.add('catalog:${entry.name}'),
       ),
     ),
-  jmdictProvider.overrideWith(
-    () => FakeJmdictNotifier(
-      (v) => started.add('jmdict:${v.name}'),
-      JmdictState(isDownloading: jmdictDownloading),
+  for (final dictionary in FixedDictionary.values)
+    fixedDictionaryProvider(dictionary).overrideWith(
+      () => FakeFixedDictionaryNotifier(
+        dictionary,
+        (v) => started.add(
+          v == null ? dictionary.name : '${dictionary.name}:${v.name}',
+        ),
+        initial: FixedDictionaryState(
+          isDownloading:
+              jmdictDownloading && dictionary == FixedDictionary.jmdict,
+        ),
+      ),
     ),
-  ),
-  jpdbFreqProvider.overrideWith(
-    () => _FakeJpdbFreqNotifier(() => started.add('jpdb')),
-  ),
-  kanjidicProvider.overrideWith(
-    () => _FakeKanjidicNotifier(() => started.add('kanjidic')),
-  ),
   kanjiVgProvider.overrideWith(
     () => _FakeKanjiVgNotifier(() => started.add('kanjivg')),
   ),
@@ -90,36 +89,26 @@ void mockWifiConnected(bool connected, {bool vpn = false}) {
   });
 }
 
-class FakeJmdictNotifier extends JmdictNotifier {
-  FakeJmdictNotifier(this.onDownload, this.initial);
+/// Shows [initial] and records [download] calls instead of downloading.
+class FakeFixedDictionaryNotifier extends FixedDictionaryNotifier {
+  FakeFixedDictionaryNotifier(
+    super.dictionary,
+    this.onDownload, {
+    this.initial = const FixedDictionaryState(),
+  });
 
-  final void Function(YomitanDictType variant) onDownload;
-  final JmdictState initial;
+  final void Function(YomitanDictType? variant) onDownload;
+  final FixedDictionaryState initial;
 
   @override
-  JmdictState build() => initial;
-
-  @override
-  Future<void> checkStatus() async {}
-
-  @override
-  Future<void> download(YomitanDictType variant) async {
-    onDownload(variant);
-  }
-}
-
-class _FakeJpdbFreqNotifier extends JpdbFreqNotifier {
-  _FakeJpdbFreqNotifier(this.onDownload);
-
-  final VoidCallback onDownload;
+  FixedDictionaryState build() => initial;
 
   @override
   Future<void> checkStatus() async {}
 
   @override
-  Future<void> download() async {
-    onDownload();
-  }
+  Future<void> download([YomitanDictType? variant]) async =>
+      onDownload(variant);
 }
 
 /// Records [download] calls instead of downloading, then shows [result];
@@ -151,18 +140,6 @@ class FakeCatalogDownloadNotifier extends CatalogDownloadNotifier {
     onDelete?.call(dictionaryId);
     state = CatalogDownloadState(deletedId: dictionaryId);
   }
-}
-
-class _FakeKanjidicNotifier extends KanjidicNotifier {
-  _FakeKanjidicNotifier(this.onDownload);
-
-  final VoidCallback onDownload;
-
-  @override
-  Future<void> checkStatus() async {}
-
-  @override
-  Future<void> download() async => onDownload();
 }
 
 class _FakeKanjiVgNotifier extends KanjiVgNotifier {
