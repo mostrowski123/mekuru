@@ -3233,6 +3233,7 @@
   "downloadsEnhancedFuriganaInstalledLowRam": "增强词典已安装。请关闭低内存模式并重启应用以启用。",
   "downloadsEnhancedFuriganaRemoved": "增强词典已移除。请重启应用以切换回内置词典。",
   "downloadNotFinished": "下载未完成。请重试。",
+  "commonNoSaveDialog": "此设备没有文件选择器，因此 Mekuru 无法在此将文件保存到存储中。",
   "localOcrCouldNotContinue": "OCR 无法继续。请重试。",
   "serverErrorUnreadable": "服务器返回了 Mekuru 无法读取的响应。请确认 URL 指向您的 Komga 或 Kavita 服务器。",
   "serverErrorUnknown": "无法完成请求。请重试。",

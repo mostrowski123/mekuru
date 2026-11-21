@@ -1205,6 +1205,7 @@
   "downloadsEnhancedFuriganaInstalledLowRam": "強化辞書をインストールしました。使うには省メモリモードをオフにして、アプリを再起動してください。",
   "downloadsEnhancedFuriganaRemoved": "強化辞書を削除しました。内蔵の辞書に戻すにはアプリを再起動してください。",
   "downloadNotFinished": "ダウンロードを完了できませんでした。もう一度お試しください。",
+  "commonNoSaveDialog": "この端末にはファイル選択画面がないため、Mekuruはストレージにファイルを保存できません。",
   "localOcrCouldNotContinue": "OCRを続行できませんでした。もう一度お試しください。",
   "serverErrorUnreadable": "サーバーから、Mekuruが読み取れない応答が返されました。URLがお使いのKomgaまたはKavitaサーバーを指しているか確認してください。",
   "serverErrorUnknown": "リクエストを完了できませんでした。もう一度お試しください。",

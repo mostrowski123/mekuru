@@ -98,7 +98,8 @@ class VocabularyRepository {
 
   // ──────────────── Export ────────────────
 
-  /// Export vocabulary to a CSV file and return the file.
+  /// Export vocabulary to a CSV file in the temp folder, named as the save
+  /// dialog offers it, and return the file.
   ///
   /// If [selectedIds] is provided and non-empty, only words with those IDs
   /// are exported. Otherwise, all words are exported.
@@ -133,8 +134,9 @@ class VocabularyRepository {
 
     final csvString = const csv.CsvEncoder().convert(rows);
 
-    final directory = await getApplicationSupportDirectory();
-    final file = File('${directory.path}/vocabulary_export.csv');
+    final directory = await getTemporaryDirectory();
+    final date = DateTime.now().toIso8601String().split('T').first;
+    final file = File('${directory.path}/vocabulary_export_$date.csv');
     await file.writeAsString(csvString);
 
     return file;

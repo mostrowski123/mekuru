@@ -4570,6 +4570,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadNotFinished => 'The download didn\'t finish. Try again.';
 
   @override
+  String get commonNoSaveDialog =>
+      'This device has no file picker, so Mekuru can\'t save files to storage here.';
+
+  @override
   String get localOcrCouldNotContinue => 'OCR couldn\'t continue. Try again.';
 
   @override

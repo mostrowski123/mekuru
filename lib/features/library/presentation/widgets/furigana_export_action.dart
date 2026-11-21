@@ -2,12 +2,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
-import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/data/services/epub_furigana_export.dart';
@@ -106,11 +104,17 @@ Future<void> runFuriganaExport(
     }
 
     try {
-      if (await saveEpubElsewhere(outPath)) {
-        logUsage('furigana_export.completed', attrs: exportAttrs);
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.libraryExportFuriganaDone)),
-        );
+      switch (await saveFile(outPath, mimeType: 'application/epub+zip')) {
+        case FileDialogDone():
+          logUsage('furigana_export.completed', attrs: exportAttrs);
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.libraryExportFuriganaDone)),
+          );
+        case FileDialogFailed(:final failure):
+          messenger.showSnackBar(
+            SnackBar(content: Text(failure.message(l10n))),
+          );
+        case FileDialogCancelled():
       }
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
@@ -124,27 +128,10 @@ Future<void> runFuriganaExport(
     try {
       await File(outPath).delete();
     } on FileSystemException {
-      // Never written, or moved out by the iOS save dialog.
+      // Never written, or already gone with the save.
     }
   }
 }
-
-/// Lets the user choose where the finished export at [path] goes: on iOS the
-/// document picker moves the file there, on Android the system save dialog
-/// gets a streamed copy. Only the path crosses the channel, never the book.
-/// False when they cancel.
-@visibleForTesting
-Future<bool> saveEpubElsewhere(String path) async =>
-    defaultTargetPlatform == TargetPlatform.iOS
-    ? await const MethodChannel(
-            'mekuru/ios_files',
-          ).invokeMethod<bool>('exportFile', path) ??
-          false
-    : await AndroidSafService.saveDocument(
-        path,
-        name: p.basename(path),
-        mimeType: 'application/epub+zip',
-      );
 
 /// Picks the export coverage: the returned tuple is the mode plus the JLPT
 /// level (meaningful for aboveLevel only). [offerWanikani] adds the WaniKani

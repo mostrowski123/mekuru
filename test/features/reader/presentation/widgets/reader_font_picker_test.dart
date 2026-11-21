@@ -10,6 +10,7 @@ import 'package:mekuru/features/reader/presentation/widgets/reader_settings/read
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/fake_user_font_store.dart';
+import '../../../../shared/file_dialog_fakes.dart';
 import '../../../../test_app.dart';
 
 void main() {
@@ -22,13 +23,11 @@ void main() {
     WidgetTester tester, {
     void Function(String setting, Object value)? onSettingChanged,
   }) async {
+    fakeFilePicker(
+      (_) => pickFailure == null ? [?pickedPath] : throw pickFailure!,
+    );
     container = ProviderContainer(
-      overrides: [
-        userFontStoreProvider.overrideWithValue(store),
-        userFontFilePickerProvider.overrideWithValue(
-          () async => pickFailure == null ? pickedPath : throw pickFailure!,
-        ),
-      ],
+      overrides: [userFontStoreProvider.overrideWithValue(store)],
     );
     addTearDown(container.dispose);
     await tester.pumpWidget(
@@ -171,11 +170,9 @@ void main() {
     store.nextImport = const UserFontImportException(
       UserFontImportError.notAFont,
     );
+    fakeFilePicker((_) => [?pickedPath]);
     container = ProviderContainer(
-      overrides: [
-        userFontStoreProvider.overrideWithValue(store),
-        userFontFilePickerProvider.overrideWithValue(() async => pickedPath),
-      ],
+      overrides: [userFontStoreProvider.overrideWithValue(store)],
     );
     addTearDown(container.dispose);
     await tester.pumpWidget(

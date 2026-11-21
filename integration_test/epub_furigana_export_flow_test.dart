@@ -362,7 +362,7 @@ void main() {
 }
 
 /// The channels of the system save dialog: `exportFile` on iOS,
-/// `saveDocument` on Android (see saveEpubElsewhere).
+/// `saveDocument` on Android (see saveFile in lib/core/platform/file_pick.dart).
 const _saveChannels = [
   MethodChannel('mekuru/ios_files'),
   MethodChannel('mekuru/android_saf'),

@@ -1,8 +1,8 @@
 import 'dart:io' show FileSystemException;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/user_font_store.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
@@ -142,19 +142,23 @@ class _ReaderFontPickerSheet extends ConsumerWidget {
     final l10n = context.l10n;
     String? error;
     try {
-      final path = await container.read(userFontFilePickerProvider)();
-      if (path == null) return;
-      final font = await container.read(userFontStoreProvider).import(path);
-      container.invalidate(userFontsProvider);
-      container
-          .read(readerSettingsProvider.notifier)
-          .setCustomFont(font.fileName);
-      onSettingChanged?.call('font_family', ReaderFontFamily.custom.name);
-    } on PlatformException catch (e) {
-      // MEKURU-2Z: no app on the device answers the system file picker (an
-      // e-reader without one).
-      if (e.code != 'explorer_not_found') rethrow;
-      error = l10n.commonNoFilePicker;
+      // Any file: extension filters miss font MIME types on some Android
+      // OEMs, and iOS has no file type for .woff2. The store checks the bytes.
+      switch (await pickFiles()) {
+        case FileDialogDone(:final value):
+          final font = await container
+              .read(userFontStoreProvider)
+              .import(value.first);
+          container.invalidate(userFontsProvider);
+          container
+              .read(readerSettingsProvider.notifier)
+              .setCustomFont(font.fileName);
+          onSettingChanged?.call('font_family', ReaderFontFamily.custom.name);
+        case FileDialogFailed(:final failure):
+          error = failure.message(l10n);
+        case FileDialogCancelled():
+          return;
+      }
     } on UserFontImportException catch (e) {
       error = switch (e.error) {
         UserFontImportError.notAFont => l10n.settingsFontAddNotAFont,

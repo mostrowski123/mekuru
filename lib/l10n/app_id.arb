@@ -3233,6 +3233,7 @@
   "downloadsEnhancedFuriganaInstalledLowRam": "Kamus yang ditingkatkan terpasang. Matikan mode RAM rendah dan mulai ulang aplikasi untuk menggunakannya.",
   "downloadsEnhancedFuriganaRemoved": "Kamus yang ditingkatkan dihapus. Mulai ulang aplikasi untuk kembali ke kamus bawaan.",
   "downloadNotFinished": "Unduhan tidak selesai. Coba lagi.",
+  "commonNoSaveDialog": "Perangkat ini tidak memiliki pemilih file, sehingga Mekuru tidak dapat menyimpan file ke penyimpanan di sini.",
   "localOcrCouldNotContinue": "OCR tidak dapat dilanjutkan. Coba lagi.",
   "serverErrorUnreadable": "Server mengirim jawaban yang tidak dapat dibaca Mekuru. Pastikan URL mengarah ke server Komga atau Kavita Anda.",
   "serverErrorUnknown": "Permintaan tidak dapat diselesaikan. Coba lagi.",

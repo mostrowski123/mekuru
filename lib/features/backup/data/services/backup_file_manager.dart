@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
@@ -98,37 +98,14 @@ class BackupFileManager {
     return BackupSerializer.decode(content);
   }
 
-  /// Exports a backup file by letting the user choose a save location.
-  /// Returns `true` if the file was saved, `false` if cancelled.
-  /// Opens the system file picker for selecting a backup file to restore.
-  ///
-  /// Tries [FileType.custom] first — on stock Android this greys out
-  /// non-.mekuru files. If it fails (some OEMs don't support custom
-  /// extension filtering), falls back to [FileType.any]. Returns null when
-  /// the user cancels.
-  static Future<PlatformFile?> pickBackupFile() async {
-    try {
-      return await FilePicker.pickFile(
-        type: FileType.custom,
-        allowedExtensions: ['mekuru'],
-      );
-    } catch (_) {
-      return FilePicker.pickFile(type: FileType.any);
-    }
-  }
-
-  Future<bool> exportBackupFile(
-    String filePath, {
-    required String dialogTitle,
-  }) async {
-    final sourceFile = File(filePath);
-    final fileName = path.basename(filePath);
-    final outputPath = await FilePicker.saveFile(
-      dialogTitle: dialogTitle,
-      fileName: fileName,
-      bytes: await sourceFile.readAsBytes(),
+  /// Lets the user choose where a copy of the backup at [filePath] goes.
+  /// The save takes a copy in the temp folder: the iOS document picker moves
+  /// the file it is given, and the backup stays in the history.
+  Future<FileDialogResult<void>> exportBackupFile(String filePath) async {
+    final copy = await File(filePath).copy(
+      path.join((await getTemporaryDirectory()).path, path.basename(filePath)),
     );
-    return outputPath != null;
+    return saveFile(copy.path, mimeType: 'application/octet-stream');
   }
 
   /// Copies an external backup file (from file picker) to the backup directory
@@ -143,21 +120,22 @@ class BackupFileManager {
   }
 
   /// Opens the system picker for a reading data backup and vets the pick:
-  /// null when cancelled, [WrongBackupKindException] when the file is a zip
-  /// (a full backup), [BackupFormatException] for any other non-`.mekuru`
-  /// file. The one place both import entry points go through.
-  static Future<PlatformFile?> pickReadingDataBackup() async {
-    final picked = await pickBackupFile();
-    final path = picked?.path;
-    if (picked == null || path == null) return null;
-    final head = await File(
-      path,
-    ).openRead(0, 4).fold<List<int>>([], (acc, chunk) => acc..addAll(chunk));
-    if (BackupKind.isZipSignature(head)) {
-      throw const WrongBackupKindException(BackupKind.full);
-    }
-    if (!path.endsWith(_extension)) {
-      throw BackupFormatException('Not a $_extension file');
+  /// [WrongBackupKindException] when the file is a zip (a full backup),
+  /// [BackupFormatException] for any other non-`.mekuru` file.
+  static Future<FileDialogResult<List<String>>> pickReadingDataBackup() async {
+    // The filter greys out nothing on Android, which has no MIME type for
+    // .mekuru: the checks below are what keep other files out.
+    final picked = await pickFiles(extensions: const ['mekuru']);
+    if (picked case FileDialogDone(value: [final path, ...])) {
+      final head = await File(
+        path,
+      ).openRead(0, 4).fold<List<int>>([], (acc, chunk) => acc..addAll(chunk));
+      if (BackupKind.isZipSignature(head)) {
+        throw const WrongBackupKindException(BackupKind.full);
+      }
+      if (!path.endsWith(_extension)) {
+        throw BackupFormatException('Not a $_extension file');
+      }
     }
     return picked;
   }

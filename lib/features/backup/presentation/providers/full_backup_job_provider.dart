@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/backup/data/services/ios_full_backup.dart';
 import 'package:mekuru/main.dart';
@@ -184,7 +185,8 @@ class FullBackupJobNotifier extends Notifier<FullBackupJobState> {
   Future<void> saveExportedZip() async {
     final path = state.status.location;
     if (path == null || !File(path).existsSync()) return;
-    await IosFullBackup.saveElsewhere(path);
+    // A cancelled picker must not cost the whole export: the zip stays.
+    await saveFile(path, mimeType: 'application/zip', keepIfNotSaved: true);
     // The page reads whether the file is still there.
     ref.notifyListeners();
   }

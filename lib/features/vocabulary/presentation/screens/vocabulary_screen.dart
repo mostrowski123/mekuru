@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
@@ -77,14 +78,20 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
     final l10n = context.l10n;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final savedPath = await ref.read(exportVocabularyProvider)(
+      switch (await ref.read(exportVocabularyProvider)(
         selectedIds: _selectedIds,
-      );
-      if (savedPath == null) return; // Cancelled: keep the selection.
-      if (mounted) _exitSelectionMode();
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.vocabularyCsvExported)),
-      );
+      )) {
+        case FileDialogDone():
+          if (mounted) _exitSelectionMode();
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.vocabularyCsvExported)),
+          );
+        case FileDialogFailed(:final failure):
+          messenger.showSnackBar(
+            SnackBar(content: Text(failure.message(l10n))),
+          );
+        case FileDialogCancelled(): // Keep the selection.
+      }
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
       messenger.showSnackBar(

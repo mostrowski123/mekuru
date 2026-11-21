@@ -4595,6 +4595,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get downloadNotFinished => 'Unduhan tidak selesai. Coba lagi.';
 
   @override
+  String get commonNoSaveDialog =>
+      'Perangkat ini tidak memiliki pemilih file, sehingga Mekuru tidak dapat menyimpan file ke penyimpanan di sini.';
+
+  @override
   String get localOcrCouldNotContinue =>
       'OCR tidak dapat dilanjutkan. Coba lagi.';
 

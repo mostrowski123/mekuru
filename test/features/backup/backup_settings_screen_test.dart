@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
-import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
@@ -66,15 +66,18 @@ void main() {
         fullBackupJobApiProvider.overrideWithValue(jobs),
         fullBackupPickersProvider.overrideWithValue(
           FullBackupPickers(
-            pickExportTarget: () async =>
-                const FullBackupTarget.tree('content://tree/backups'),
+            pickExportTarget: () async => const FileDialogDone(
+              FullBackupTarget.tree('content://tree/backups'),
+            ),
             pickSource: () async {
               final document = pickedDocument;
               return document == null
-                  ? null
-                  : FullBackupSource.uri(
-                      document.uri,
-                      sizeBytes: document.sizeBytes,
+                  ? const FileDialogCancelled()
+                  : FileDialogDone(
+                      FullBackupSource.uri(
+                        document.uri,
+                        sizeBytes: document.sizeBytes,
+                      ),
                     );
             },
           ),

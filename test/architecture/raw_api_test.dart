@@ -227,6 +227,20 @@ final _rows = [
     },
   ),
   _Row(
+    'FilePicker, or a file dialog on the mekuru/android_saf or '
+        'mekuru/ios_files channel',
+    _matching(
+      r"\bFilePicker\.|'(pickDirectory|pickDocument|saveDocument|pickFolder|"
+      r"pickZip|exportFile)'",
+    ),
+    'pickFiles, pickAndroidFolder, pickAndroidZip, pickIosFolder, pickIosZip '
+        'or saveFile (lib/core/platform/file_pick.dart), which handle every '
+        'failure a file dialog is known to have',
+    allowed: {
+      'lib/core/platform/file_pick.dart': (8, 'the file dialogs themselves'),
+    },
+  ),
+  _Row(
     'Image.file or FileImage',
     _matching(r'\bImage\.file\(|\bFileImage\('),
     'fileImage(), which also shows AVIF on iOS and Android 7-11 '

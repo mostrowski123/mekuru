@@ -5,17 +5,16 @@ import 'dart:io';
 import 'dart:math' show max;
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_reorderable_grid_view/entities/reorderable_animation_config.dart';
 import 'package:flutter_reorderable_grid_view/widgets/widgets.dart';
-import 'package:flutter/services.dart' show MethodChannel, PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
@@ -872,48 +871,24 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
-  /// Open the file picker for [extensions] and return the selected paths.
-  /// Returns an empty list when the user cancels or when another picker is
-  /// still resolving (e.g. double-tap of the FAB).
+  /// Open the file picker for [extensions] and return the selected paths:
+  /// none when the user cancels or the pick failed (said in a snack bar).
   Future<List<String>> _pickFilePaths(List<String> extensions) async {
-    final FilePickerResult? result;
-    try {
-      // allowMultiple defaults to true (and is deprecated as a parameter).
-      result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: extensions,
-      );
-    } on PlatformException catch (e) {
-      // unknown_activity: plugin's Android activity was detached (app
-      // backgrounded mid-tap) — nothing to show the picker from, so no-op.
-      if (e.code == 'already_active' || e.code == 'unknown_activity') {
-        return const [];
-      }
-      // MEKURU-2Z: no app on the device answers the system file picker (an
-      // e-reader without one).
-      final noPicker = e.code == 'explorer_not_found';
-      // MEKURU-2R: on Android the plugin copies each pick into its cache
-      // under the file's own name, which fails past 255 bytes (~85 Japanese
-      // characters) and drops the whole selection.
-      final nameTooLong =
-          e.code == 'file_picker_error' &&
-          (e.message?.contains('File name too long') ?? false);
-      if (!noPicker && !nameTooLong) rethrow;
-      if (mounted) {
-        final l10n = context.l10n;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              noPicker ? l10n.commonNoFilePicker : l10n.libraryFileNameTooLong,
-            ),
-          ),
-        );
-      }
-      return const [];
+    switch (await pickFiles(extensions: extensions, multiple: true)) {
+      case FileDialogDone(:final value):
+        return value;
+      case FileDialogFailed(:final failure):
+        _showFileDialogFailure(failure);
+      case FileDialogCancelled():
     }
+    return const [];
+  }
 
-    if (result == null) return const [];
-    return result.files.map((f) => f.path).nonNulls.toList();
+  void _showFileDialogFailure(FileDialogFailure failure) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(failure.message(context.l10n))));
   }
 
   Future<void> _importEpub(BuildContext context, WidgetRef ref) async {
@@ -1035,8 +1010,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final folder = await AndroidSafService.pickDirectory();
-    if (folder == null) return;
+    final AndroidSafDirectoryAccess folder;
+    switch (await pickAndroidFolder()) {
+      case FileDialogDone(:final value):
+        folder = value;
+      case FileDialogFailed(:final failure):
+        return _showFileDialogFailure(failure);
+      case FileDialogCancelled():
+        return;
+    }
 
     final names = await AndroidSafService.listNamesInTreeDir(folder.treeUri);
     final candidates = names.where(isMangaManifestName).toList()
@@ -1076,12 +1058,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     WidgetRef ref,
   ) async {
     final l10n = context.l10n;
-    // Not FilePicker.getDirectoryPath: on iOS a cancelled folder pick leaves
-    // file_picker in folder mode and breaks every later file pick (MEKURU-1Y).
-    final dirPath = await const MethodChannel(
-      'mekuru/ios_files',
-    ).invokeMethod<String>('pickFolder');
-    if (dirPath == null) return;
+    final String dirPath;
+    switch (await pickIosFolder()) {
+      case FileDialogDone(:final value):
+        dirPath = value;
+      case FileDialogFailed(:final failure):
+        return _showFileDialogFailure(failure);
+      case FileDialogCancelled():
+        return;
+    }
 
     final dir = Directory(dirPath);
     List<FileSystemEntity> entities;
@@ -1687,11 +1672,19 @@ class _BookTileState extends ConsumerState<_BookTile>
   Future<void> _changeCover(BuildContext context) async {
     // Read before the picker opens: the tile can unmount while it's up.
     final repo = ref.read(bookRepositoryProvider);
-    final picked = await FilePicker.pickFile(type: FileType.image);
-
-    if (picked == null) return;
-    final pickedPath = picked.path;
-    if (pickedPath == null) return;
+    final String pickedPath;
+    switch (await pickFiles(images: true)) {
+      case FileDialogDone(:final value):
+        pickedPath = value.first;
+      case FileDialogFailed(:final failure):
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message(context.l10n))));
+        return;
+      case FileDialogCancelled():
+        return;
+    }
 
     try {
       // Copy picked image to the book's storage directory.

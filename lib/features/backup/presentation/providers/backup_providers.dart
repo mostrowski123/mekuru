@@ -3,7 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
@@ -113,6 +113,8 @@ enum BackupMessageKind {
   fullPendingRestore,
   fullFailed,
   fullRestoreFailed,
+  // A system file dialog that could not open; dialogFailure says why.
+  fileDialogFailed,
 }
 
 class BackupMessage {
@@ -121,12 +123,17 @@ class BackupMessage {
     this.details,
     this.count,
     this.result,
+    this.dialogFailure,
   });
 
   final BackupMessageKind kind;
   final String? details;
   final int? count;
   final RestoreResult? result;
+  final FileDialogFailure? dialogFailure;
+
+  const BackupMessage.fileDialogFailed(FileDialogFailure failure)
+    : this._(kind: BackupMessageKind.fileDialogFailed, dialogFailure: failure);
 
   const BackupMessage.backupCreated()
     : this._(kind: BackupMessageKind.backupCreated);
@@ -223,7 +230,7 @@ class BackupNotifier extends Notifier<BackupState> {
   }
 
   /// Export the most recent backup file via the system file browser.
-  Future<void> exportLatestBackup({required String dialogTitle}) async {
+  Future<void> exportLatestBackup() async {
     state = const BackupState(isWorking: true);
     try {
       final fileManager = ref.read(backupFileManagerProvider);
@@ -232,14 +239,13 @@ class BackupNotifier extends Notifier<BackupState> {
         state = const BackupState(error: BackupMessage.noBackupsToExport());
         return;
       }
-      final saved = await fileManager.exportBackupFile(
-        backups.first.filePath,
-        dialogTitle: dialogTitle,
-      );
-      if (saved) {
-        _showSuccess(const BackupMessage.backupExported());
-      } else {
-        state = const BackupState();
+      switch (await fileManager.exportBackupFile(backups.first.filePath)) {
+        case FileDialogDone():
+          _showSuccess(const BackupMessage.backupExported());
+        case FileDialogFailed(:final failure):
+          state = BackupState(error: BackupMessage.fileDialogFailed(failure));
+        case FileDialogCancelled():
+          state = const BackupState();
       }
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
@@ -286,23 +292,6 @@ class RestoreNotifier extends Notifier<RestoreState> {
 
   @override
   RestoreState build() => const RestoreState();
-
-  /// Restore from an external file (via file picker).
-  Future<void> restoreFromFilePicker() async {
-    try {
-      final picked = await BackupFileManager.pickReadingDataBackup();
-      final filePath = picked?.path;
-      if (filePath == null) return;
-      await _restoreFromPath(filePath, queueDictionaryPreferences: true);
-    } on WrongBackupKindException {
-      state = const RestoreState(error: BackupMessage.wrongKindFullBackup());
-    } on BackupFormatException {
-      state = const RestoreState(error: BackupMessage.invalidBackupFile());
-    } catch (e, st) {
-      Sentry.captureException(e, stackTrace: st);
-      state = RestoreState(error: BackupMessage.couldNotOpenFile(e.toString()));
-    }
-  }
 
   /// Restore from a backup file path (internal backups list).
   Future<void> restoreFromPath(
@@ -517,8 +506,8 @@ final fullBackupServiceProvider = FutureProvider<FullBackupApi>((ref) async {
 /// integration tests can point the real service at plain files instead of
 /// SAF dialogs.
 class FullBackupPickers {
-  final Future<FullBackupTarget?> Function() pickExportTarget;
-  final Future<FullBackupSource?> Function() pickSource;
+  final Future<FileDialogResult<FullBackupTarget>> Function() pickExportTarget;
+  final Future<FileDialogResult<FullBackupSource>> Function() pickSource;
 
   const FullBackupPickers({
     required this.pickExportTarget,
@@ -528,22 +517,19 @@ class FullBackupPickers {
 
 final fullBackupPickersProvider = Provider<FullBackupPickers>((ref) {
   if (defaultTargetPlatform == TargetPlatform.iOS) {
-    return const FullBackupPickers(
-      pickExportTarget: IosFullBackup.exportTarget,
+    return FullBackupPickers(
+      pickExportTarget: () async =>
+          FileDialogDone(await IosFullBackup.exportTarget()),
       pickSource: IosFullBackup.pickSource,
     );
   }
   return FullBackupPickers(
-    pickExportTarget: () async {
-      final folder = await AndroidSafService.pickDirectory();
-      return folder == null ? null : FullBackupTarget.tree(folder.treeUri);
-    },
-    pickSource: () async {
-      final document = await AndroidSafService.pickDocument();
-      return document == null
-          ? null
-          : FullBackupSource.uri(document.uri, sizeBytes: document.sizeBytes);
-    },
+    pickExportTarget: () async => (await pickAndroidFolder()).map(
+      (folder) => FullBackupTarget.tree(folder.treeUri),
+    ),
+    pickSource: () async => (await pickAndroidZip()).map(
+      (zip) => FullBackupSource.uri(zip.uri, sizeBytes: zip.sizeBytes),
+    ),
   );
 });
 
@@ -568,7 +554,9 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
   /// Folder picker → snapshot, plan, commit.
   Future<void> exportToFolder() async {
     if (state.busy) return;
-    final target = await ref.read(fullBackupPickersProvider).pickExportTarget();
+    final target = _picked(
+      await ref.read(fullBackupPickersProvider).pickExportTarget(),
+    );
     if (target == null) return;
     await _commitJob(
       FullBackupJobKind.export,
@@ -580,7 +568,9 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
   /// dialogs show, or null when the picker was dismissed or the file refused.
   Future<FullBackupPreview?> pickAndInspect() async {
     if (state.busy) return null;
-    final source = await ref.read(fullBackupPickersProvider).pickSource();
+    final source = _picked(
+      await ref.read(fullBackupPickersProvider).pickSource(),
+    );
     if (source == null) return null;
 
     state = const FullBackupState(busy: true);
@@ -593,6 +583,18 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
       state = FullBackupState(error: _messageFor(e, st, restoring: true));
       return null;
     }
+  }
+
+  /// What the user picked; null after a cancel, or after a failure, which
+  /// goes to the screen.
+  T? _picked<T>(FileDialogResult<T> picked) {
+    if (picked case FileDialogFailed(:final failure)) {
+      state = FullBackupState(error: BackupMessage.fileDialogFailed(failure));
+    }
+    return switch (picked) {
+      FileDialogDone(:final value) => value,
+      _ => null,
+    };
   }
 
   /// Commits the restore job; the job page takes over from here.

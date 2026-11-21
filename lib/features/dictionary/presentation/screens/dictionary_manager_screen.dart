@@ -1,14 +1,13 @@
 // ignore_for_file: discarded_futures, unawaited_futures
 import 'dart:async';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart'
     show DictionaryMeta;
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
@@ -689,21 +688,12 @@ class _DictionaryManagerScreenState
     // copied the file (seconds for a large zip), and the user may have left
     // this screen by then. The import itself outlives the screen.
     final importer = ref.read(dictionaryImportProvider.notifier);
-    try {
-      final picked = await FilePicker.pickFile(
-        type: FileType.custom,
-        allowedExtensions: ['zip', 'json'],
-      );
-      final filePath = picked?.path;
-      if (filePath != null) importer.importDictionary(filePath);
-    } on PlatformException catch (e) {
-      // already_active: a second tap while the first pick is still copying
-      // its file. unknown_activity: the picker came back without a file.
-      if (e.code == 'already_active' || e.code == 'unknown_activity') return;
-      // MEKURU-2Z: no app on the device answers the system file picker (an
-      // e-reader without one).
-      if (e.code != 'explorer_not_found') rethrow;
-      if (context.mounted) _showMessage(context.l10n.commonNoFilePicker);
+    switch (await pickFiles(extensions: const ['zip', 'json'])) {
+      case FileDialogDone(:final value):
+        importer.importDictionary(value.first);
+      case FileDialogFailed(:final failure):
+        if (context.mounted) _showMessage(failure.message(context.l10n));
+      case FileDialogCancelled():
     }
   }
 

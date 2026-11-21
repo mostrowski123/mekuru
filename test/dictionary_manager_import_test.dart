@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,29 +9,8 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'shared/file_dialog_fakes.dart';
 import 'test_app.dart';
-
-/// Answers each pick with whatever the test scripted.
-class _ScriptedFilePicker extends FilePickerPlatform {
-  Future<FilePickerResult?> Function() next = () async => null;
-
-  @override
-  Future<FilePickerResult?> pickFiles({
-    String? dialogTitle,
-    String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    Function(FilePickerStatus)? onFileLoading,
-    int compressionQuality = 0,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-    bool cancelUploadOnWindowBlur = true,
-    AndroidSAFOptions? androidSafOptions,
-  }) => next();
-}
 
 /// Records the files the screen hands over instead of importing them.
 class _RecordingImportNotifier extends DictionaryImportNotifier {
@@ -47,20 +25,16 @@ class _RecordingImportNotifier extends DictionaryImportNotifier {
 /// answers (~18 s for a large zip), so users tap import again or leave the
 /// screen while it works.
 void main() {
-  late _ScriptedFilePicker picker;
-  late FilePickerPlatform originalPicker;
+  late Future<List<String>?> Function() nextPick;
   late _RecordingImportNotifier importer;
   final navigatorKey = GlobalKey<NavigatorState>();
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
-    originalPicker = FilePickerPlatform.instance;
-    picker = _ScriptedFilePicker();
-    FilePickerPlatform.instance = picker;
+    nextPick = () async => null;
+    fakeFilePicker((_) => nextPick());
     importer = _RecordingImportNotifier();
   });
-
-  tearDown(() => FilePickerPlatform.instance = originalPicker);
 
   Future<void> openDictionaryManager(WidgetTester tester) async {
     await tester.pumpWidget(
@@ -90,8 +64,8 @@ void main() {
   testWidgets('imports the picked file even after the screen was closed', (
     tester,
   ) async {
-    final pick = Completer<FilePickerResult?>();
-    picker.next = () => pick.future;
+    final pick = Completer<List<String>?>();
+    nextPick = () => pick.future;
     await openDictionaryManager(tester);
 
     await tester.tap(find.byType(FloatingActionButton));
@@ -100,11 +74,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(DictionaryManagerScreen), findsNothing);
 
-    pick.complete(
-      FilePickerResult([
-        PlatformFile(name: 'jmdict.zip', size: 0, path: '/picked/jmdict.zip'),
-      ]),
-    );
+    pick.complete(['/picked/jmdict.zip']);
     await tester.pumpAndSettle();
 
     expect(importer.imported, ['/picked/jmdict.zip']);
@@ -114,7 +84,7 @@ void main() {
   // unknown_activity: the system picker came back without a file.
   for (final code in ['already_active', 'unknown_activity']) {
     testWidgets('a pick that fails with $code does nothing', (tester) async {
-      picker.next = () async => throw PlatformException(code: code);
+      nextPick = () async => throw PlatformException(code: code);
       await openDictionaryManager(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
@@ -127,8 +97,7 @@ void main() {
 
   // MEKURU-2Z: an e-reader with no system file picker.
   testWidgets('a device with no file picker says so', (tester) async {
-    picker.next = () async =>
-        throw PlatformException(code: 'explorer_not_found');
+    nextPick = () async => throw PlatformException(code: 'explorer_not_found');
     await openDictionaryManager(tester);
 
     await tester.tap(find.byType(FloatingActionButton));

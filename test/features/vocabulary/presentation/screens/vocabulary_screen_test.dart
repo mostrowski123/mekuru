@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/screens/vocabulary_screen.dart';
 
@@ -28,15 +29,15 @@ final _taberu = SavedWord(
   dateAdded: DateTime(2026, 10, 7),
 );
 
-/// Answers each CSV export with the next of [answers]: a saved path, null
-/// (cancelled) or an error to throw.
-Override _exportAnswering(List<Object?> answers, List<Set<int>?> calls) =>
+/// Answers each CSV export with the next of [answers]: what the save dialog
+/// came back with, or an error to throw.
+Override _exportAnswering(List<Object> answers, List<Set<int>?> calls) =>
     exportVocabularyProvider.overrideWith(
       (ref) => ({Set<int>? selectedIds}) async {
         calls.add({...?selectedIds});
         final answer = answers.removeAt(0);
         if (answer is Exception) throw answer;
-        return answer as String?;
+        return answer as FileDialogResult<void>;
       },
     );
 
@@ -118,7 +119,10 @@ void main() {
       _app(
         [_taberu],
         overrides: [
-          _exportAnswering([null, '/storage/vocabulary_export.csv'], calls),
+          _exportAnswering([
+            const FileDialogCancelled<void>(),
+            const FileDialogDone<void>(null),
+          ], calls),
         ],
       ),
     );
@@ -137,6 +141,31 @@ void main() {
     expect(find.text('CSV exported'), findsOneWidget);
     expect(find.text('1 selected'), findsNothing);
     expect(find.byType(Checkbox), findsNothing);
+  });
+
+  testWidgets('a device with no save dialog says so and keeps the selection', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        [_taberu],
+        overrides: [
+          _exportAnswering([
+            const FileDialogFailed<void>(FileDialogFailure.noSaveDialog),
+          ], []),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await _selectAndExport(tester);
+    expect(
+      find.text(
+        "This device has no file picker, so Mekuru can't save files to storage here.",
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('1 selected'), findsOneWidget);
   });
 
   testWidgets('a failed CSV export says why and keeps the selection', (

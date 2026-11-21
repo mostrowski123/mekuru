@@ -2,6 +2,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
 import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
@@ -15,6 +16,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
+import 'package:path/path.dart' as p;
 
 /// Backup & Restore. Two visibly different kinds live here:
 /// - reading data backup (`.mekuru`, small, merges, can run automatically)
@@ -142,9 +144,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                       AppHaptics.light();
                       ref
                           .read(backupNotifierProvider.notifier)
-                          .exportLatestBackup(
-                            dialogTitle: l10n.backupSaveFileDialogTitle,
-                          );
+                          .exportLatestBackup();
                     },
             ),
             ListTile(
@@ -407,6 +407,9 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       BackupMessageKind.fullRestoreFailed => l10n.backupFullRestoreFailed(
         details: details,
       ),
+      BackupMessageKind.fileDialogFailed => message.dialogFailure!.message(
+        l10n,
+      ),
     };
   }
 
@@ -491,14 +494,18 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     final l10n = context.l10n;
 
     try {
-      final picked = await BackupFileManager.pickReadingDataBackup();
-      final filePath = picked?.path;
-      if (picked == null || filePath == null || !context.mounted) return;
-      _confirmReadingDataImport(
-        context,
-        filePath: filePath,
-        fileName: picked.name,
-      );
+      switch (await BackupFileManager.pickReadingDataBackup()) {
+        case FileDialogDone(value: [final filePath, ...]):
+          if (!context.mounted) return;
+          _confirmReadingDataImport(
+            context,
+            filePath: filePath,
+            fileName: p.basename(filePath),
+          );
+        case FileDialogFailed(:final failure):
+          _showSnackbar(failure.message(l10n), isError: true);
+        case _:
+      }
     } on WrongBackupKindException {
       _showSnackbar(l10n.backupWrongKindFullBackup, isError: true);
     } on BackupFormatException {

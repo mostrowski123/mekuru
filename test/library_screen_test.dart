@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -21,58 +20,9 @@ import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart';
+import 'shared/file_dialog_fakes.dart';
 import 'shared/test_database.dart';
 import 'test_app.dart';
-
-/// Fails every pick with [error].
-class _FailingFilePicker extends FilePickerPlatform {
-  _FailingFilePicker(this.error);
-
-  final PlatformException error;
-
-  @override
-  Future<FilePickerResult?> pickFiles({
-    String? dialogTitle,
-    String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    Function(FilePickerStatus)? onFileLoading,
-    int compressionQuality = 0,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-    bool cancelUploadOnWindowBlur = true,
-    AndroidSAFOptions? androidSafOptions,
-  }) async => throw error;
-}
-
-/// Picks the file at [path].
-class _PicksFile extends FilePickerPlatform {
-  _PicksFile(this.path);
-
-  final String path;
-
-  @override
-  Future<FilePickerResult?> pickFiles({
-    String? dialogTitle,
-    String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    Function(FilePickerStatus)? onFileLoading,
-    int compressionQuality = 0,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-    bool cancelUploadOnWindowBlur = true,
-    AndroidSAFOptions? androidSafOptions,
-  }) async => FilePickerResult([
-    PlatformFile(path: path, name: p.basename(path), size: 1),
-  ]);
-}
 
 /// Fails the cover write the way a full disk fails SQLite.
 class _CoverWriteFails extends BookRepository {
@@ -201,14 +151,12 @@ void main() {
   testWidgets('a file name too long to copy explains how to fix it', (
     tester,
   ) async {
-    final original = FilePickerPlatform.instance;
-    FilePickerPlatform.instance = _FailingFilePicker(
-      PlatformException(
+    fakeFilePicker(
+      (_) => throw PlatformException(
         code: 'file_picker_error',
         message: 'File name too long',
       ),
     );
-    addTearDown(() => FilePickerPlatform.instance = original);
     await pumpEmptyLibrary(tester);
 
     await tester.tap(find.text('Import EPUB'));
@@ -225,11 +173,7 @@ void main() {
   // MEKURU-2Z: an e-reader with no system file picker. The import used to
   // fail silently with an unhandled exception.
   testWidgets('a device with no file picker says so', (tester) async {
-    final original = FilePickerPlatform.instance;
-    FilePickerPlatform.instance = _FailingFilePicker(
-      PlatformException(code: 'explorer_not_found'),
-    );
-    addTearDown(() => FilePickerPlatform.instance = original);
+    fakeFilePicker((_) => throw PlatformException(code: 'explorer_not_found'));
     await pumpEmptyLibrary(tester);
 
     await tester.tap(find.text('Import EPUB'));
@@ -265,9 +209,7 @@ void main() {
     final bookFile = File(p.join(dir.path, 'book', 'book.epub'))
       ..createSync(recursive: true);
     final picked = File(p.join(dir.path, 'cover.png'))..writeAsBytesSync([1]);
-    final original = FilePickerPlatform.instance;
-    FilePickerPlatform.instance = _PicksFile(picked.path);
-    addTearDown(() => FilePickerPlatform.instance = original);
+    fakeFilePicker((_) => [picked.path]);
     final db = createTestDatabase();
     addTearDown(db.close);
     final semantics = tester.ensureSemantics();

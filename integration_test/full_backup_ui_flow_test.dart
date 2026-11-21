@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
 import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
@@ -33,7 +34,7 @@ void main() {
   late Directory root;
   late Directory tempDir;
   late String zipPath;
-  late FullBackupSource? pickedSource;
+  late FullBackupSource pickedSource;
   late int exitCalls;
 
   setUp(() async {
@@ -82,8 +83,9 @@ void main() {
           backupHistoryProvider.overrideWith((ref) async => []),
           fullBackupPickersProvider.overrideWithValue(
             FullBackupPickers(
-              pickExportTarget: () async => FullBackupTarget.file(zipPath),
-              pickSource: () async => pickedSource,
+              pickExportTarget: () async =>
+                  FileDialogDone(FullBackupTarget.file(zipPath)),
+              pickSource: () async => FileDialogDone(pickedSource),
             ),
           ),
           appExitProvider.overrideWithValue(() async => exitCalls++),

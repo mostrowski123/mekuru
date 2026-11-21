@@ -3,48 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-/// Persisted SAF tree access info for a picked document on Android.
-class AndroidSafTreeAccess {
-  final String treeUri;
-  final String? treeDocumentId;
-  final String selectedFileUri;
-  final String? selectedFileDocumentId;
-  final String? selectedFileRelativePath;
-
-  const AndroidSafTreeAccess({
-    required this.treeUri,
-    required this.selectedFileUri,
-    this.treeDocumentId,
-    this.selectedFileDocumentId,
-    this.selectedFileRelativePath,
-  });
-
-  factory AndroidSafTreeAccess.fromMap(Map<Object?, Object?> map) {
-    return AndroidSafTreeAccess(
-      treeUri: (map['treeUri'] as String?) ?? '',
-      treeDocumentId: map['treeDocumentId'] as String?,
-      selectedFileUri: (map['selectedFileUri'] as String?) ?? '',
-      selectedFileDocumentId: map['selectedFileDocumentId'] as String?,
-      selectedFileRelativePath: map['selectedFileRelativePath'] as String?,
-    );
-  }
-}
-
-/// Result of selecting a directory via the Android SAF tree picker.
-class AndroidSafDirectoryAccess {
-  final String treeUri;
-  final String? treeDocumentId;
-
-  const AndroidSafDirectoryAccess({required this.treeUri, this.treeDocumentId});
-
-  factory AndroidSafDirectoryAccess.fromMap(Map<Object?, Object?> map) {
-    return AndroidSafDirectoryAccess(
-      treeUri: (map['treeUri'] as String?) ?? '',
-      treeDocumentId: map['treeDocumentId'] as String?,
-    );
-  }
-}
-
 /// Why a Storage Access Framework operation failed.
 ///
 /// SAF reads return `null` for both "this file is not there" and "the provider
@@ -108,14 +66,6 @@ class AndroidSafFailure {
   }
 }
 
-/// A single document picked with the system file picker.
-class AndroidSafDocument {
-  final String uri;
-  final int sizeBytes;
-
-  const AndroidSafDocument({required this.uri, required this.sizeBytes});
-}
-
 /// A file inside a folder the user granted Mekuru access to.
 class SafTreeFile {
   final String name;
@@ -141,7 +91,8 @@ class SafTreeFile {
 ///
 /// Provides persisted tree access and tree-relative file reads so the app can
 /// read mokuro HTML/JSON and image files without MANAGE_EXTERNAL_STORAGE,
-/// plus the pickers and free-space query behind the full backup.
+/// plus the free-space query behind the full backup. The pickers and the
+/// save dialog are in file_pick.dart.
 class AndroidSafService {
   static const MethodChannel _channel = MethodChannel('mekuru/android_saf');
 
@@ -169,51 +120,6 @@ class AndroidSafService {
 
   static bool isContentUri(String value) =>
       value.toLowerCase().startsWith('content://');
-
-  /// Lets the user pick a directory via SAF and persists the tree grant.
-  static Future<AndroidSafDirectoryAccess?> pickDirectory() async {
-    try {
-      final result = await _channel.invokeMethod<Object?>('pickDirectory');
-      if (result == null || result is! Map) return null;
-      final access = AndroidSafDirectoryAccess.fromMap(
-        Map<Object?, Object?>.from(result),
-      );
-      if (access.treeUri.isEmpty) return null;
-      return access;
-    } on MissingPluginException {
-      return null;
-    } on PlatformException catch (e) {
-      debugPrint('[AndroidSaf] pickDirectory failed: $e');
-      rethrow;
-    }
-  }
-
-  /// Prompts the user to grant folder access (via SAF tree picker) for the
-  /// directory containing the picked document, and persists the permission.
-  static Future<AndroidSafTreeAccess?> requestDirectoryAccessForDocument(
-    String documentUri,
-  ) async {
-    try {
-      final result = await _channel.invokeMethod<Object?>(
-        'requestDirectoryAccessForDocument',
-        {'documentUri': documentUri},
-      );
-      if (result == null) return null;
-      if (result is! Map) return null;
-      final access = AndroidSafTreeAccess.fromMap(
-        Map<Object?, Object?>.from(result),
-      );
-      if (access.treeUri.isEmpty || access.selectedFileUri.isEmpty) {
-        return null;
-      }
-      return access;
-    } on MissingPluginException {
-      return null;
-    } on PlatformException catch (e) {
-      debugPrint('[AndroidSaf] requestDirectoryAccessForDocument failed: $e');
-      rethrow;
-    }
-  }
 
   static Future<Uint8List?> readBytesFromUri(
     String uri, {
@@ -386,49 +292,7 @@ class AndroidSafService {
     }
   }
 
-  // ──────────────── Full backup: picker and free space ────────────────
-
-  /// Lets the user pick one document. Returns null when cancelled or when
-  /// the channel is not registered.
-  static Future<AndroidSafDocument?> pickDocument({
-    List<String> mimeTypes = const [
-      'application/zip',
-      'application/octet-stream',
-    ],
-  }) async {
-    try {
-      final result = await _channel.invokeMethod<Object?>('pickDocument', {
-        'mimeTypes': mimeTypes,
-      });
-      if (result == null || result is! Map) return null;
-      final uri = result['uri'] as String?;
-      if (uri == null || uri.isEmpty) return null;
-      return AndroidSafDocument(
-        uri: uri,
-        sizeBytes: (result['sizeBytes'] as num?)?.toInt() ?? 0,
-      );
-    } on MissingPluginException {
-      return null;
-    } on PlatformException catch (e) {
-      debugPrint('[AndroidSaf] pickDocument failed: $e');
-      rethrow;
-    }
-  }
-
-  /// Lets the user choose where a copy of the file at [path] goes, offering
-  /// [name], and streams it there natively: the bytes never cross the
-  /// channel. False when they cancel.
-  static Future<bool> saveDocument(
-    String path, {
-    required String name,
-    required String mimeType,
-  }) async =>
-      await _channel.invokeMethod<bool>('saveDocument', {
-        'path': path,
-        'name': name,
-        'mimeType': mimeType,
-      }) ??
-      false;
+  // ──────────────── Full backup: free space ────────────────
 
   /// Usable bytes on the volume holding [path]; null when unknown.
   static Future<int?> getFreeBytes(String path) => _read<int>(

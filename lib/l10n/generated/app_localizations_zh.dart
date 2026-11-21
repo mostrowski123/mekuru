@@ -4354,6 +4354,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadNotFinished => '下载未完成。请重试。';
 
   @override
+  String get commonNoSaveDialog => '此设备没有文件选择器，因此 Mekuru 无法在此将文件保存到存储中。';
+
+  @override
   String get localOcrCouldNotContinue => 'OCR 无法继续。请重试。';
 
   @override
@@ -8921,6 +8924,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadNotFinished => '下载未完成。请重试。';
+
+  @override
+  String get commonNoSaveDialog => '此设备没有文件选择器，因此 Mekuru 无法在此将文件保存到存储中。';
 
   @override
   String get localOcrCouldNotContinue => 'OCR 无法继续。请重试。';

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -33,7 +34,7 @@ abstract final class IosFullBackup {
   }
 
   /// Exports are written inside the app first and moved out afterwards
-  /// ([saveElsewhere]): the picker can only hand over a finished file.
+  /// (`saveExportedZip`): the picker can only hand over a finished file.
   static Future<FullBackupTarget> exportTarget() async => FullBackupTarget.file(
     p.join(
       (await getTemporaryDirectory()).path,
@@ -41,17 +42,11 @@ abstract final class IosFullBackup {
     ),
   );
 
-  static Future<FullBackupSource?> pickSource() async {
-    final path = await _files.invokeMethod<String>('pickZip');
-    if (path == null) return null;
-    _pickedZip = path;
-    return FullBackupSource.file(path);
+  static Future<FileDialogResult<FullBackupSource>> pickSource() async {
+    final picked = await pickIosZip();
+    if (picked case FileDialogDone(value: final path)) _pickedZip = path;
+    return picked.map(FullBackupSource.file);
   }
-
-  /// Lets the user choose where the finished zip goes and moves it there.
-  /// False when they cancel; the file then stays where it was.
-  static Future<bool> saveElsewhere(String path) async =>
-      await _files.invokeMethod<bool>('exportFile', path) ?? false;
 
   static Future<int?> freeBytes() => _files.invokeMethod<int>('freeBytes');
 

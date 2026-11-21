@@ -7400,6 +7400,12 @@ abstract class AppLocalizations {
   /// **'The download didn\'t finish. Try again.'**
   String get downloadNotFinished;
 
+  /// Shown when the user tries to save an export (a book, a backup or a vocabulary CSV) on an Android device that has no system file picker (some e-readers).
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no file picker, so Mekuru can\'t save files to storage here.'**
+  String get commonNoSaveDialog;
+
   /// On-device manga OCR (Android) and starting any OCR scan: a failure with no message of its own. Shown on its own, as a scan's reason, or after a page number in localOcrPageError.
   ///
   /// In en, this message translates to:

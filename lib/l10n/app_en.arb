@@ -5875,6 +5875,10 @@
   "@downloadNotFinished": {
     "description": "Shown when a download (dictionary, model, word list or server book) failed for a reason that has no message of its own, such as its files not unpacking or importing."
   },
+  "commonNoSaveDialog": "This device has no file picker, so Mekuru can't save files to storage here.",
+  "@commonNoSaveDialog": {
+    "description": "Shown when the user tries to save an export (a book, a backup or a vocabulary CSV) on an Android device that has no system file picker (some e-readers)."
+  },
   "localOcrCouldNotContinue": "OCR couldn't continue. Try again.",
   "@localOcrCouldNotContinue": {
     "description": "On-device manga OCR (Android) and starting any OCR scan: a failure with no message of its own. Shown on its own, as a scan's reason, or after a page number in localOcrPageError."

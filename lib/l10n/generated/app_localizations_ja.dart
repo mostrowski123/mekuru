@@ -4450,6 +4450,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get downloadNotFinished => 'ダウンロードを完了できませんでした。もう一度お試しください。';
 
   @override
+  String get commonNoSaveDialog =>
+      'この端末にはファイル選択画面がないため、Mekuruはストレージにファイルを保存できません。';
+
+  @override
   String get localOcrCouldNotContinue => 'OCRを続行できませんでした。もう一度お試しください。';
 
   @override

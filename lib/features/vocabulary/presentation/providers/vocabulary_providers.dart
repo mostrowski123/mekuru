@@ -1,6 +1,6 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/features/vocabulary/data/repositories/vocabulary_repository.dart';
 import 'package:mekuru/main.dart';
 
@@ -16,23 +16,14 @@ final vocabularyListProvider = StreamProvider<List<SavedWord>>((ref) {
 
 /// Export vocabulary function.
 /// Accepts an optional [selectedIds] set to export only specific words.
-/// Opens a save-file dialog so the user can choose where to save the CSV,
-/// and returns where it was saved, or null when the user cancelled.
+/// Opens a save-file dialog so the user can choose where to save the CSV.
 final exportVocabularyProvider =
-    Provider.autoDispose<Future<String?> Function({Set<int>? selectedIds})>((
-      ref,
-    ) {
+    Provider.autoDispose<
+      Future<FileDialogResult<void>> Function({Set<int>? selectedIds})
+    >((ref) {
       return ({Set<int>? selectedIds}) async {
         final repo = ref.read(vocabularyRepositoryProvider);
         final file = await repo.exportToCsv(selectedIds: selectedIds);
-
-        final date = DateTime.now().toIso8601String().split('T').first;
-
-        // No dialogTitle or type filter: Android's and iOS's save dialogs
-        // ignore both; the .csv name is what matters.
-        return FilePicker.saveFile(
-          fileName: 'vocabulary_export_$date.csv',
-          bytes: await file.readAsBytes(),
-        );
+        return saveFile(file.path, mimeType: 'text/csv');
       };
     });

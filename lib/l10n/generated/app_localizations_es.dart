@@ -4627,6 +4627,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'La descarga no se completó. Vuelve a intentarlo.';
 
   @override
+  String get commonNoSaveDialog =>
+      'Este dispositivo no tiene selector de archivos, así que Mekuru no puede guardar archivos en el almacenamiento aquí.';
+
+  @override
   String get localOcrCouldNotContinue =>
       'El OCR no pudo continuar. Vuelve a intentarlo.';
 
