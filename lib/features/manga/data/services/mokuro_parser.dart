@@ -87,200 +87,20 @@ class MokuroParser {
       await AndroidSafService.getDocumentUriInTree(treeUri, relativeDir) !=
       null;
 
-  /// Discover all mokuro books in a directory.
-  ///
-  /// Uses a three-pass discovery strategy:
-  /// 1. Try to find `.html` files via directory listing
-  /// 2. If no files are visible (common on Android due to scoped storage),
-  ///    infer book names from visible subdirectories and probe for HTML files
-  /// 3. If HTML files are still not accessible, discover books purely from
-  ///    directory structure by probing for OCR JSON files
-  ///
-  /// Returns a list of manifests for valid books.
-  /// Throws a descriptive [Exception] if no books are found.
-  static Future<List<MokuroBookManifest>> parseMokuroDirectory(
-    String dirPath,
-  ) async {
-    final dir = Directory(dirPath);
-
-    debugPrint('[MokuroParser] Scanning directory: $dirPath');
-
-    List<FileSystemEntity> entities;
+  /// Logs how much sits beside the book, for diagnosis. Counts only: the
+  /// names are the user's other files and folders, and release builds send
+  /// this line to Sentry as a breadcrumb.
+  static Future<void> _logParentDir(String parentDir) async {
     try {
-      entities = await dir.list().toList();
-    } catch (e) {
-      throw Exception('Cannot read directory: $dirPath\n$e');
-    }
-
-    debugPrint('[MokuroParser] Found ${entities.length} entities');
-
-    // Separate files and directories from the listing
-    final listedFiles = <File>[];
-    final listedDirs = <Directory>[];
-    for (final entity in entities) {
-      if (entity is File) {
-        listedFiles.add(entity);
-      } else if (entity is Directory) {
-        listedDirs.add(entity);
-      }
-    }
-
-    // Build directory basename → full path map
-    final dirsByName = <String, String>{};
-    for (final d in listedDirs) {
-      dirsByName[p.basename(d.path)] = d.path;
-    }
-
-    debugPrint(
-      '[MokuroParser] Listed files: ${listedFiles.length}, '
-      'dirs: ${listedDirs.length}',
-    );
-    debugPrint('[MokuroParser] Dir names: ${dirsByName.keys.toList()}');
-
-    // Check for _ocr directory
-    final ocrBasePath = dirsByName['_ocr'];
-    if (ocrBasePath == null) {
-      throw Exception(
-        'No _ocr folder found in the selected directory.\n'
-        'Found directories: ${dirsByName.keys.join(", ")}\n'
-        'Expected: an _ocr/ folder containing per-book OCR JSON subfolders.',
-      );
-    }
-
-    // List _ocr subdirectories for matching
-    final ocrSubDirs = <String, String>{};
-    try {
-      await for (final entity in Directory(ocrBasePath).list()) {
-        if (entity is Directory) {
-          ocrSubDirs[p.basename(entity.path)] = entity.path;
-        }
-      }
-    } catch (e) {
-      throw Exception('Cannot read _ocr directory: $ocrBasePath\n$e');
-    }
-
-    debugPrint('[MokuroParser] _ocr subdirs: ${ocrSubDirs.keys.toList()}');
-
-    // ── Pass 1: Find HTML files from directory listing ──
-    var htmlFiles =
-        listedFiles
-            .where(
-              (f) =>
-                  f.path.endsWith('.html') && !f.path.endsWith('.mobile.html'),
-            )
-            .toList()
-          ..sort((a, b) => a.path.compareTo(b.path));
-
-    debugPrint('[MokuroParser] HTML files from listing: ${htmlFiles.length}');
-
-    // ── Pass 2: If no files were listed (Android scoped storage),
-    //    infer from subdirectory names and probe for HTML files ──
-    if (htmlFiles.isEmpty && dirsByName.length > 1) {
-      debugPrint('[MokuroParser] No files in listing — probing by dir names');
-      final probed = <File>[];
-      for (final name in dirsByName.keys) {
-        if (name == '_ocr') continue;
-        // Construct the expected HTML path and check if it exists
-        final htmlPath = p.join(dirPath, '$name.html');
-        final htmlFile = File(htmlPath);
-        if (await htmlFile.exists()) {
-          debugPrint('[MokuroParser]   Found: $name.html');
-          probed.add(htmlFile);
-        } else {
-          debugPrint('[MokuroParser]   Not found: $name.html');
-        }
-      }
-      htmlFiles = probed..sort((a, b) => a.path.compareTo(b.path));
-    }
-
-    // ── Pass 3: If HTML files still not accessible, discover books
-    //    purely from directory structure (no HTML needed) ──
-    if (htmlFiles.isEmpty) {
+      final entities = await Directory(parentDir).list().toList();
+      final folders = entities.whereType<Directory>().length;
       debugPrint(
-        '[MokuroParser] HTML files not accessible — '
-        'discovering from directory structure only',
+        '[MokuroParser] Parent dir holds $folders folders, '
+        '${entities.length - folders} files',
       );
-      return _discoverFromDirectories(dirPath, dirsByName, ocrSubDirs);
+    } catch (e) {
+      debugPrint('[MokuroParser] Cannot list parent dir: $e');
     }
-
-    // ── Process discovered HTML files ──
-    final manifests = <MokuroBookManifest>[];
-    final skipReasons = <String>[];
-
-    for (final htmlFile in htmlFiles) {
-      final stem = p.basenameWithoutExtension(htmlFile.path);
-      debugPrint('[MokuroParser] Processing: $stem');
-
-      // Look up image directory by name match
-      final imageDirPath = dirsByName[stem];
-      if (imageDirPath == null) {
-        final reason = '  "$stem": no matching image folder';
-        debugPrint('[MokuroParser] SKIP $reason');
-        skipReasons.add(reason);
-        continue;
-      }
-
-      // Look up OCR directory by name match
-      final ocrDirPath = ocrSubDirs[stem];
-      if (ocrDirPath == null) {
-        final reason = '  "$stem": no matching _ocr subfolder';
-        debugPrint('[MokuroParser] SKIP $reason');
-        skipReasons.add(reason);
-        continue;
-      }
-
-      // Extract title from HTML <title> tag
-      final title = await _extractTitle(htmlFile.path, stem);
-
-      // Extract image filenames from the HTML file.
-      // This is the primary method — works on Android where dir.list()
-      // cannot see files due to scoped storage restrictions.
-      var imageFiles = await _extractImageFileNamesFromHtml(htmlFile.path);
-
-      // Fallback: try directory listing (works on desktop/iOS)
-      if (imageFiles.isEmpty) {
-        debugPrint(
-          '[MokuroParser] HTML image extraction failed, '
-          'trying dir listing for: $imageDirPath',
-        );
-        imageFiles = await _listSortedImageFiles(imageDirPath);
-        debugPrint('[MokuroParser] Dir listing found: ${imageFiles.length}');
-      }
-
-      if (imageFiles.isEmpty) {
-        final reason =
-            '  "$stem": no images found '
-            '(HTML extraction and dir listing both failed)';
-        debugPrint('[MokuroParser] SKIP $reason');
-        skipReasons.add(reason);
-        continue;
-      }
-
-      debugPrint('[MokuroParser] OK "$title" — ${imageFiles.length} pages');
-
-      manifests.add(
-        MokuroBookManifest(
-          title: title,
-          htmlPath: htmlFile.path,
-          imageDirPath: imageDirPath,
-          ocrDirPath: ocrDirPath,
-          imageFileNames: imageFiles,
-        ),
-      );
-    }
-
-    if (manifests.isEmpty) {
-      throw Exception(
-        'Found ${htmlFiles.length} HTML file(s) but all were skipped:\n'
-        '${skipReasons.join("\n")}\n\n'
-        'Expected folder structure:\n'
-        '  <dir>/BookName.html\n'
-        '  <dir>/BookName/        (page images)\n'
-        '  <dir>/_ocr/BookName/   (OCR JSON files)',
-      );
-    }
-
-    return manifests;
   }
 
   /// Parse a single legacy mokuro HTML file.
@@ -329,18 +149,7 @@ class MokuroParser {
       debugPrint('[MokuroParser] SAF selected file: $selectedFileName');
     }
     debugPrint('[MokuroParser] Stem: $stem, Parent dir: $parentDir');
-
-    // Log parent directory contents for diagnosis
-    try {
-      final entities = await Directory(parentDir).list().toList();
-      debugPrint('[MokuroParser] Parent dir contents (${entities.length}):');
-      for (final entity in entities) {
-        final type = entity is Directory ? 'DIR' : 'FILE';
-        debugPrint('[MokuroParser]   [$type] ${p.basename(entity.path)}');
-      }
-    } catch (e) {
-      debugPrint('[MokuroParser] Cannot list parent dir: $e');
-    }
+    await _logParentDir(parentDir);
 
     // Resolve image directory
     final imageDirPath = p.join(parentDir, stem);
@@ -485,18 +294,7 @@ class MokuroParser {
     debugPrint('[MokuroParser] .mokuro file: $mokuroFilePath');
     debugPrint('[MokuroParser] Parent dir: $parentDir');
     debugPrint('[MokuroParser] Title: $title, Volume: $volume');
-
-    // Log parent directory contents for diagnosis
-    try {
-      final entities = await Directory(parentDir).list().toList();
-      debugPrint('[MokuroParser] Parent dir contents (${entities.length}):');
-      for (final entity in entities) {
-        final type = entity is Directory ? 'DIR' : 'FILE';
-        debugPrint('[MokuroParser]   [$type] ${p.basename(entity.path)}');
-      }
-    } catch (e) {
-      debugPrint('[MokuroParser] Cannot list parent dir: $e');
-    }
+    await _logParentDir(parentDir);
 
     // The image folder is a sibling folder named after the volume or the
     // mokuro file's stem, or the parent folder itself (images beside the
@@ -667,138 +465,6 @@ class MokuroParser {
       debugPrint('[MokuroParser] Failed to extract images from HTML: $e');
       return [];
     }
-  }
-
-  /// Discover books purely from directory structure when HTML files
-  /// are not accessible (e.g. Android scoped storage hiding files).
-  ///
-  /// For each non-_ocr subdirectory that has a matching _ocr subfolder,
-  /// discovers image filenames by probing for sequential OCR JSON files
-  /// (since [Directory.list] may not see files on Android).
-  static Future<List<MokuroBookManifest>> _discoverFromDirectories(
-    String dirPath,
-    Map<String, String> dirsByName,
-    Map<String, String> ocrSubDirs,
-  ) async {
-    final manifests = <MokuroBookManifest>[];
-    final skipReasons = <String>[];
-
-    for (final entry in dirsByName.entries) {
-      if (entry.key == '_ocr') continue;
-      final stem = entry.key;
-      final imageDirPath = entry.value;
-
-      debugPrint('[MokuroParser] Dir-based discovery: $stem');
-
-      // Must have matching OCR subfolder
-      final ocrDirPath = ocrSubDirs[stem];
-      if (ocrDirPath == null) {
-        skipReasons.add('  "$stem": no matching _ocr subfolder');
-        continue;
-      }
-
-      // Try directory listing first (works on desktop/iOS)
-      var imageFiles = await _listSortedImageFiles(imageDirPath);
-
-      // Fallback: probe for sequential OCR JSON files to discover
-      // image filenames (needed on Android where dir.list() fails)
-      if (imageFiles.isEmpty) {
-        debugPrint(
-          '[MokuroParser] Dir listing failed for $stem, '
-          'probing OCR files',
-        );
-        imageFiles = await _probeImageFilesFromOcr(ocrDirPath);
-      }
-
-      if (imageFiles.isEmpty) {
-        skipReasons.add(
-          '  "$stem": no images found '
-          '(dir listing and OCR probing both failed)',
-        );
-        continue;
-      }
-
-      // Clean up the directory name for display as title
-      final title = _cleanDirectoryTitle(stem);
-
-      debugPrint('[MokuroParser] OK "$title" — ${imageFiles.length} pages');
-
-      manifests.add(
-        MokuroBookManifest(
-          title: title,
-          htmlPath: '', // not available
-          imageDirPath: imageDirPath,
-          ocrDirPath: ocrDirPath,
-          imageFileNames: imageFiles,
-        ),
-      );
-    }
-
-    if (manifests.isEmpty) {
-      throw Exception(
-        'Found image folders but could not match them to OCR data:\n'
-        '${skipReasons.join("\n")}\n\n'
-        'Expected: each image folder should have a matching '
-        'subfolder in _ocr/',
-      );
-    }
-
-    return manifests;
-  }
-
-  /// Probe for image filenames by checking which OCR JSON files exist.
-  ///
-  /// Mokuro generates sequential filenames. This method probes common
-  /// naming patterns (e.g. `0.json`, `00001.json`, `001.json`) and
-  /// derives image filenames by assuming `.jpg` extension (mokuro default).
-  ///
-  /// Used as a last resort when both HTML parsing and [Directory.list]
-  /// fail (Pass 3 on Android).
-  static Future<List<String>> _probeImageFilesFromOcr(String ocrDirPath) async {
-    // Try common mokuro naming patterns
-    final patterns = <String Function(int)>[
-      // No padding, starting from 0: 0.json, 1.json, ...
-      (i) => '$i.json',
-      // 5-digit padding, starting from 1: 00001.json, 00002.json, ...
-      (i) => '${(i + 1).toString().padLeft(5, '0')}.json',
-      // 3-digit padding, starting from 1: 001.json, 002.json, ...
-      (i) => '${(i + 1).toString().padLeft(3, '0')}.json',
-    ];
-
-    for (final pattern in patterns) {
-      // Check if the first file exists for this pattern
-      final firstPath = p.join(ocrDirPath, pattern(0));
-      debugPrint('[MokuroParser] OCR probe: trying $firstPath');
-      if (!await File(firstPath).exists()) continue;
-
-      debugPrint('[MokuroParser] OCR probe: pattern ${pattern(0)} matched');
-
-      // Found a pattern — enumerate all files
-      final imageFiles = <String>[];
-      for (var i = 0; i < 9999; i++) {
-        final jsonName = pattern(i);
-        final jsonPath = p.join(ocrDirPath, jsonName);
-        if (!await File(jsonPath).exists()) break;
-
-        // Derive image filename: same stem with .jpg (mokuro convention)
-        final stem = p.basenameWithoutExtension(jsonName);
-        imageFiles.add('$stem.jpg');
-      }
-
-      debugPrint('[MokuroParser] OCR probe found ${imageFiles.length} pages');
-      return imageFiles;
-    }
-
-    return [];
-  }
-
-  /// Clean a directory name for use as a book title.
-  /// Strips resolution suffixes like "-2k" and whitespace.
-  static String _cleanDirectoryTitle(String dirName) {
-    var title = dirName;
-    // Strip trailing resolution suffixes: -2k, -4k, etc.
-    title = title.replaceFirst(RegExp(r'-\d+k$', caseSensitive: false), '');
-    return title.trim();
   }
 
   /// Parse a single OCR JSON file into a [MokuroPage].

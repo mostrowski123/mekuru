@@ -71,6 +71,22 @@ void main() {
       expect(out, isNot(contains('volume 1')));
       expect(out, contains('Could not parse'));
     });
+
+    test('replaces bare filenames of the files a manga import reads', () {
+      for (final name in [
+        'Clinic Notes.html',
+        'Clinic Notes.mobile.html',
+        'Clinic Notes.bmp',
+        'Clinic Notes.tif',
+        'Clinic Notes.tiff',
+      ]) {
+        expect(
+          scrubPaths('Not found: $name'),
+          isNot(contains('Clinic')),
+          reason: name,
+        );
+      }
+    });
   });
 
   group('scrubEvent', () {

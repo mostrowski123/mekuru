@@ -27,8 +27,8 @@ final RegExp _genericPathPattern = RegExp(
 /// are already gone by this point, so this only mops up name-only mentions.
 final RegExp _bareFileNamePattern = RegExp(
   r'(?:[^\s<>]+ ){0,2}[^\s<>]+\.(?:'
-  'epub|cbz|cbr|cbt|zip|rar|json|mekuru|csv|mokuro|txt|tar|gz|tgz|'
-  'png|jpg|jpeg|webp|gif|avif|pdf|db|sqlite|apk|dic|bin'
+  'epub|cbz|cbr|cbt|zip|rar|json|mekuru|csv|mokuro|html|txt|tar|gz|tgz|'
+  'png|jpg|jpeg|webp|gif|avif|bmp|tif|tiff|pdf|db|sqlite|apk|dic|bin'
   r')\b',
   caseSensitive: false,
 );
