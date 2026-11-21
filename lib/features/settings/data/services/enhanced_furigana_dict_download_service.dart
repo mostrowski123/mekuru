@@ -7,9 +7,9 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/platform/network_status.dart';
-import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -99,14 +99,11 @@ class EnhancedFuriganaDictDownloadService {
     }
   }
 
-  /// Download, verify, and extract unidic-lite. [onProgress] is called with
-  /// a value in `[0, 1]`: roughly `0–0.85` covers the download, `0.85–1.0`
-  /// covers the extraction.
-  ///
-  /// Throws an [HttpException] on network failures, a [FormatException]
-  /// when the SHA-256 doesn't match, an [Exception] on archive decoding
-  /// failures, or a [WifiLostException] when Wi-Fi goes and [network]
-  /// doesn't allow mobile data.
+  /// Download ([DownloadKind.uniDic]), verify, and extract unidic-lite.
+  /// [onProgress] gets `0–0.85` for the download, `0.85–1.0` for the
+  /// extraction. Throws an [HttpException] on network failures, a
+  /// [FormatException] when the SHA-256 doesn't match, an [Exception] on
+  /// archive decoding failures.
   static Future<void> downloadAndInstall({
     required NetworkConsent network,
     void Function(double progress)? onProgress,
@@ -131,8 +128,6 @@ class EnhancedFuriganaDictDownloadService {
     required NetworkConsent network,
     void Function(double progress)? onProgress,
   }) async {
-    onProgress?.call(0.0);
-
     final dir = await getStorageDir();
     final outputDir = Directory(dir);
     // MeCab memory-maps these files: delete them, never rewrite in place.
@@ -142,20 +137,35 @@ class EnhancedFuriganaDictDownloadService {
     await outputDir.create(recursive: true);
     await excludeFromIosBackup([dir]);
 
-    final tempDir = await getTemporaryDirectory();
     try {
-      await withDownloadedFile(
-        downloadUrl,
-        p.join(tempDir.path, 'unidic_lite_download.tar.gz'),
-        network: network,
-        onProgress: (p) => onProgress?.call(p * 0.85),
-        use: (archivePath) async {
-          onProgress?.call(0.85);
+      await runDownload<void>(
+        const DownloadSpec(
+          DownloadKind.uniDic,
+          id: 'unidic',
+          parts: [
+            (
+              name: 'unidic_lite_download.tar.gz',
+              url: downloadUrl,
+              bytes: null,
+              sha256: null,
+            ),
+          ],
+        ),
+        network,
+        share: 0.85,
+        onProgress: onProgress,
+        install: (archivePath, _) async {
           await compute(verifyAndExtractTarGz, (
             archivePath: archivePath,
             outputDir: dir,
             expectedSha256: expectedSha256,
           ));
+          await File(p.join(dir, _markerFileName)).writeAsString(
+            jsonEncode({
+              'sha256': expectedSha256,
+              'installed_at': DateTime.now().toIso8601String(),
+            }),
+          );
         },
       );
     } on FormatException {
@@ -164,15 +174,6 @@ class EnhancedFuriganaDictDownloadService {
       await outputDir.delete(recursive: true);
       rethrow;
     }
-
-    await File(p.join(dir, _markerFileName)).writeAsString(
-      jsonEncode({
-        'sha256': expectedSha256,
-        'installed_at': DateTime.now().toIso8601String(),
-      }),
-    );
-
-    onProgress?.call(1.0);
   }
 
   /// Runs on a background isolate via [compute]: verifies the archive's

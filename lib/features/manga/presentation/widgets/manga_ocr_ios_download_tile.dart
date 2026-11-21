@@ -9,8 +9,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
-/// Why a model download ([downloadModelFiles]) failed, in the user's
-/// language.
+/// Why a model download (`runDownload`) failed, in the user's language.
 String modelDownloadFailureReason(AppLocalizations l, Object error) =>
     error is WifiLostException
     ? l.localOcrWifiLostIos

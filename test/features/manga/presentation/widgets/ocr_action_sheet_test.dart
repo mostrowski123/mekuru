@@ -377,7 +377,7 @@ void main() {
     Future<String> installModel(WidgetTester tester) async =>
         (await tester.runAsync(() async {
           final dir = await NdlTextModel.instance.path;
-          // downloadModelFiles' marker of a finished download.
+          // runDownload's marker of a finished download.
           await File(p.join(dir, 'INSTALLED')).create(recursive: true);
           return dir;
         }))!;

@@ -4,8 +4,8 @@ import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/platform/network_status.dart';
-import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -66,14 +66,10 @@ class KanjiVgDownloadService {
     return null;
   }
 
-  /// Download the KanjiVG archive from GitHub and extract SVG files.
-  ///
-  /// [onProgress] is called with a value between 0.0 and 1.0 during download.
-  /// The extraction phase reports progress as 0.9–1.0.
-  ///
-  /// Throws on network errors, invalid archive, or disk write failures, and
-  /// with [WifiLostException] when Wi-Fi goes and [network] doesn't allow
-  /// mobile data.
+  /// Download the KanjiVG archive from GitHub ([DownloadKind.kanjiVg]) and
+  /// extract SVG files. [onProgress] gets 0.0–0.9 for the download, then
+  /// 0.9–1.0 for the extraction. Throws on network errors, an invalid archive
+  /// or disk write failures.
   static Future<int> downloadAndExtract({
     required NetworkConsent network,
     void Function(double progress)? onProgress,
@@ -109,33 +105,37 @@ class KanjiVgDownloadService {
     }
     await excludeFromIosBackup([dir]);
 
-    // Phase 1: Download ZIP straight to disk
-    onProgress?.call(0.0);
-    final tempDir = await getTemporaryDirectory();
-    final count = await withDownloadedFile(
-      downloadUrl,
-      p.join(tempDir.path, 'kanjivg_download.zip'),
-      network: network,
-      onProgress: (p) => onProgress?.call(p * 0.9), // 0–90% for download
-      use: (zipPath) {
-        // Phase 2: Extract SVGs (runs on isolate to avoid blocking UI)
-        onProgress?.call(0.9);
-        return compute(extractSvgsFromArchive, (
+    return runDownload(
+      const DownloadSpec(
+        DownloadKind.kanjiVg,
+        id: 'kanjivg',
+        parts: [
+          (
+            name: 'kanjivg_download.zip',
+            url: downloadUrl,
+            bytes: null,
+            sha256: null,
+          ),
+        ],
+      ),
+      network,
+      share: 0.9,
+      onProgress: onProgress,
+      install: (zipPath, _) async {
+        // Extract SVGs (runs on isolate to avoid blocking UI)
+        final count = await compute(extractSvgsFromArchive, (
           zipPath: zipPath,
           outputDir: dir,
         ));
+        // Write completion marker
+        await File(p.join(dir, _markerFileName)).writeAsString(
+          'KanjiVG kanjivg-20220427\n'
+          'Files: $count\n'
+          'Downloaded: ${DateTime.now().toIso8601String()}\n',
+        );
+        return count;
       },
     );
-
-    // Write completion marker
-    await File(p.join(dir, _markerFileName)).writeAsString(
-      'KanjiVG kanjivg-20220427\n'
-      'Files: $count\n'
-      'Downloaded: ${DateTime.now().toIso8601String()}\n',
-    );
-
-    onProgress?.call(1.0);
-    return count;
   }
 
   /// Delete all downloaded KanjiVG files.

@@ -3,6 +3,7 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 
 /// Service for downloading and managing the JPDB frequency dictionary.
 ///
@@ -39,6 +40,7 @@ class JpdbFreqDownloadService {
   }) async {
     if (await isImported(repository)) return;
     await DictionaryDownloadService.downloadAndImportUrl(
+      kind: DownloadKind.fixedDictionary,
       url: downloadUrl,
       asset: 'jpdb_freq',
       importer: importer,

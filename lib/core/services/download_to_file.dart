@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:mekuru/core/platform/network_status.dart';
-
 /// A non-200 answer to [downloadToFile].
 class DownloadHttpException extends HttpException {
   final int statusCode;
@@ -87,41 +85,5 @@ Future<void> downloadToFile(
   } finally {
     // Forced on failure: a stalled connection would otherwise linger.
     client.close(force: !completed);
-  }
-}
-
-/// Download [url] to [destinationPath], hand the path to [use], and delete
-/// the file afterwards — also when the download or [use] throws.
-///
-/// Unless [network] allows mobile data, the download stops with
-/// [WifiLostException] once the network is no longer Wi-Fi ([whileOnWifi]);
-/// [use] is not watched.
-///
-/// Returns whatever [use] returns.
-Future<T> withDownloadedFile<T>(
-  String url,
-  String destinationPath, {
-  required NetworkConsent network,
-  void Function(double progress)? onProgress,
-  required Future<T> Function(String path) use,
-}) async {
-  try {
-    final client = HttpClient();
-    Future<void> download() => downloadToFile(
-      url,
-      destinationPath,
-      onProgress: onProgress,
-      client: client,
-    );
-    await (network.allowsMobileData
-        ? download()
-        : whileOnWifi(client, download));
-    return await use(destinationPath);
-  } finally {
-    try {
-      await File(destinationPath).delete();
-    } on FileSystemException {
-      // Already gone (failed download) or undeletable; nothing to leak.
-    }
   }
 }

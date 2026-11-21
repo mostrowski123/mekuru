@@ -6,6 +6,7 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart'
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 
 /// Dictionary types available for one-tap download from GitHub releases.
 enum YomitanDictType {
@@ -103,6 +104,7 @@ class YomitanDictDownloadService {
   }) async {
     if (await isImported(type, repository)) return;
     await DictionaryDownloadService.downloadAndImportUrl(
+      kind: DownloadKind.fixedDictionary,
       url: assetUrl(type),
       asset: 'yomitan_collection',
       importer: importer,

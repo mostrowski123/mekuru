@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 
 void main() {
   test('a file the server would gzip arrives as pinned', () async {
@@ -27,14 +28,22 @@ void main() {
     final dir = await Directory.systemTemp.createTemp('model_download_test');
     addTearDown(() => dir.delete(recursive: true));
 
-    await downloadModelFiles(dir, [
-      (
-        name: 'NDLmoji.yaml',
-        url: 'http://127.0.0.1:${server.port}/NDLmoji.yaml',
-        bytes: body.length,
-        sha256: sha256.convert(body).toString(),
+    await runDownload<void>(
+      DownloadSpec(
+        DownloadKind.ndlTextModel,
+        id: dir.path,
+        dir: dir.path,
+        parts: [
+          (
+            name: 'NDLmoji.yaml',
+            url: 'http://127.0.0.1:${server.port}/NDLmoji.yaml',
+            bytes: body.length,
+            sha256: sha256.convert(body).toString(),
+          ),
+        ],
       ),
-    ], network: NetworkConsent.mobileData);
+      NetworkConsent.mobileData,
+    );
 
     expect(await modelFilesInstalled(dir), isTrue);
     expect(await File('${dir.path}/NDLmoji.yaml').readAsBytes(), body);
@@ -62,9 +71,15 @@ void main() {
       ),
     ];
 
+    final spec = DownloadSpec(
+      DownloadKind.ndlTextModel,
+      id: dir.path,
+      dir: dir.path,
+      parts: files,
+    );
     await Future.wait([
-      downloadModelFiles(dir, files, network: NetworkConsent.mobileData),
-      downloadModelFiles(dir, files, network: NetworkConsent.mobileData),
+      runDownload<void>(spec, NetworkConsent.mobileData),
+      runDownload<void>(spec, NetworkConsent.mobileData),
     ]);
 
     expect(requests, 1);

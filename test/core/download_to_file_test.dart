@@ -4,11 +4,16 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
-/// Tests [downloadToFile] and [withDownloadedFile] against a loopback HTTP
-/// server so the redirect, progress, and error paths run through the real
-/// dart:io HttpClient.
+import '../shared/fake_path_provider.dart';
+
+/// Tests [downloadToFile], and [runDownload] of a part that isn't resumed,
+/// against a loopback HTTP server so the redirect, progress, and error paths
+/// run through the real dart:io HttpClient.
 void main() {
   late Directory tempDir;
   late HttpServer server;
@@ -186,17 +191,29 @@ void main() {
     );
   });
 
-  group('withDownloadedFile', () {
+  group('runDownload of a part not resumed', () {
+    // The temporary folder runDownload puts the part in.
+    setUp(() {
+      PathProviderPlatform.instance = FakePathProviderPlatform(tempDir.path);
+    });
+
+    DownloadSpec specFor(String path) => DownloadSpec(
+      DownloadKind.kanjiVg,
+      id: path,
+      parts: [
+        (name: 'asset.zip', url: urlFor(path), bytes: null, sha256: null),
+      ],
+    );
+
     test(
       'passes the downloaded file to use and deletes it afterwards',
       () async {
         final destination = p.join(tempDir.path, 'asset.zip');
 
-        final length = await withDownloadedFile(
-          urlFor('/asset'),
-          destination,
-          network: NetworkConsent.mobileData,
-          use: (path) async {
+        final length = await runDownload(
+          specFor('/asset'),
+          NetworkConsent.mobileData,
+          install: (path, _) async {
             expect(path, destination);
             return File(path).lengthSync();
           },
@@ -211,11 +228,10 @@ void main() {
       final destination = p.join(tempDir.path, 'asset.zip');
 
       await expectLater(
-        withDownloadedFile<void>(
-          urlFor('/asset'),
-          destination,
-          network: NetworkConsent.mobileData,
-          use: (_) async => throw StateError('use failed'),
+        runDownload<void>(
+          specFor('/asset'),
+          NetworkConsent.mobileData,
+          install: (_, _) async => throw StateError('use failed'),
         ),
         throwsStateError,
       );
@@ -227,11 +243,10 @@ void main() {
       var useCalled = false;
 
       await expectLater(
-        withDownloadedFile<void>(
-          urlFor('/missing'),
-          destination,
-          network: NetworkConsent.mobileData,
-          use: (_) async => useCalled = true,
+        runDownload<void>(
+          specFor('/missing'),
+          NetworkConsent.mobileData,
+          install: (_, _) async => useCalled = true,
         ),
         throwsA(isA<HttpException>()),
       );

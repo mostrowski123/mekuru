@@ -4,6 +4,7 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 
 /// State of one catalog dictionary's download.
 class CatalogDownloadState {
@@ -53,6 +54,7 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
       final repository = ref.read(dictionaryRepositoryProvider);
       if (!entry.isInstalledIn(await repository.getAllDictionaries())) {
         await DictionaryDownloadService.downloadAndImportUrl(
+          kind: DownloadKind.catalogDictionary,
           url: entry.url,
           asset: entry.name,
           importer: ref.read(dictionaryImporterProvider),

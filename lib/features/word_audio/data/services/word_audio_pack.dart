@@ -5,14 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/platform/network_status.dart';
-import 'package:mekuru/core/services/background_work.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
-import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
-    show InsufficientSpaceException;
-import 'package:mekuru/features/backup/data/services/ios_full_backup.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/manga/data/services/model_download_job.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
 
@@ -64,7 +61,7 @@ Future<void> dropOlderWordAudioPin(
 const wordAudioPackTaskName = 'mekuru.word_audio_pack_download';
 
 const _workName = 'word_audio_pack_download';
-const _backgroundWorkId = 'word_audio_pack';
+const _inAppId = 'word_audio_pack';
 
 /// The optional offline pack: its download, removal and the clips in it.
 class WordAudioPack {
@@ -87,8 +84,6 @@ class WordAudioPack {
     return dir;
   }
 
-  /// The transfer running in the app on iOS, closed to stop it.
-  HttpClient? _transfer;
   Database? _db;
 
   /// Not under the word list's folder: each has its own installed marker.
@@ -107,11 +102,11 @@ class WordAudioPack {
   }
 
   /// Downloads the pack, following it until it is installed: a WorkManager job
-  /// on Android, which also goes on after Mekuru closes, and in the app on iOS,
-  /// which goes on after Mekuru is left ([BackgroundWork]). Mobile data only
-  /// when [network] allows it. A stopped download keeps its partial file, and
-  /// the next one resumes it. [onProgress] gets the fraction downloaded and
-  /// whether the Android job waits for Wi-Fi.
+  /// on Android, which also goes on after Mekuru closes, and in the app on iOS
+  /// ([DownloadKind.wordAudioPackIos]). Mobile data only when [network] allows
+  /// it. A stopped download keeps its partial file, and the next one resumes
+  /// it. [onProgress] gets the fraction downloaded and whether the Android job
+  /// waits for Wi-Fi.
   Future<void> download({
     required NetworkConsent network,
     void Function(double fraction, bool waitingForWifi)? onProgress,
@@ -125,51 +120,28 @@ class WordAudioPack {
   ) async {
     final dir = await Directory(await _dir).create(recursive: true);
     await excludeFromIosBackup([dir.path]);
-    final partial = File(p.join(dir.path, '${file.name}.part'));
-    final needed =
-        file.bytes - (await partial.exists() ? await partial.length() : 0);
-    final free = await IosFullBackup.freeBytes();
-    if (free != null && free < needed) {
-      throw InsufficientSpaceException(neededBytes: needed - free);
-    }
-    final client = _transfer = HttpClient();
-    var stopped = false;
-    BackgroundWork.instance.start(
-      _backgroundWorkId,
-      BackgroundJobKind.wordAudio,
-      onStopped: () {
-        stopped = true;
-        client.close(force: true);
-      },
-    );
     try {
-      await downloadModelFiles(
-        dir,
-        [file],
-        client: client,
-        network: network,
-        onProgress: (fraction) {
-          onProgress?.call(fraction, false);
-          BackgroundWork.instance.progress(_backgroundWorkId, fraction);
-        },
+      await runDownload<void>(
+        DownloadSpec(
+          DownloadKind.wordAudioPackIos,
+          id: _inAppId,
+          dir: dir.path,
+          parts: [file],
+        ),
+        network,
+        onProgress: (fraction) => onProgress?.call(fraction, false),
       );
-    } catch (_) {
-      if (!stopped) rethrow;
+    } on DownloadStoppedException {
+      // As the Android job says it.
       throw const ServerDownloadFailedException(serverDownloadStoppedError);
-    } finally {
-      BackgroundWork.instance.finish(_backgroundWorkId);
-      _transfer = null;
     }
   }
 
   /// Stops the download; the next [download] resumes it. True when something
   /// was asked to stop, so the error that follows is this.
-  bool cancel() {
-    if (defaultTargetPlatform != TargetPlatform.iOS) return _job.cancel();
-    final client = _transfer;
-    client?.close(force: true);
-    return client != null;
-  }
+  bool cancel() => defaultTargetPlatform == TargetPlatform.iOS
+      ? stopDownload(_inAppId)
+      : _job.cancel();
 
   /// A job queued, running or finished unseen. iOS writes no job status: its
   /// transfer dies with the app, so there is never anything to follow.

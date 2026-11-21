@@ -6,6 +6,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -174,11 +175,9 @@ class MozillaTranslation implements TranslationEngine {
     }
   }
 
-  /// Downloads and verifies each pair [target] needs. An interrupted
-  /// download keeps its partial file and the next one resumes it. Unless
-  /// [network] allows mobile data, it stops with [WifiLostException] when
-  /// Wi-Fi goes. A pair already downloading (the Sentence tab and Downloads
-  /// both offer it) is joined, not fetched twice.
+  /// Downloads each pair [target] needs, as [DownloadKind.translationModel].
+  /// A pair already downloading (the Sentence tab and Downloads both offer
+  /// it) is joined, not fetched twice.
   @override
   Future<void> download(String target, NetworkConsent network) async {
     final root = await _root;
@@ -186,10 +185,14 @@ class MozillaTranslation implements TranslationEngine {
       final dir = Directory(p.join(root.path, pair));
       if (await modelFilesInstalled(dir)) continue;
       await dir.create(recursive: true);
-      await downloadModelFiles(
-        dir,
-        mozillaTranslationModels[pair]!,
-        network: network,
+      await runDownload<void>(
+        DownloadSpec(
+          DownloadKind.translationModel,
+          id: dir.path,
+          dir: dir.path,
+          parts: mozillaTranslationModels[pair]!,
+        ),
+        network,
       );
     }
   }

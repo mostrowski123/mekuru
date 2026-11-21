@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 
 import 'manga_ocr_ios.dart';
 import 'model_download.dart';
@@ -42,21 +43,21 @@ class NdlTextModel {
   Future<bool> get installed async =>
       modelFilesInstalled(Directory(await path));
 
-  /// Downloads and verifies every file, then marks the model installed.
-  /// [onProgress] is the fraction of all bytes. An interrupted download keeps
-  /// its partial file, and the next one resumes it. Unless [network] allows
-  /// mobile data, the download stops with [WifiLostException] when the
-  /// network stops being Wi-Fi.
+  /// Downloads the model, as [DownloadKind.ndlTextModel].
   Future<void> download({
     required NetworkConsent network,
     void Function(double)? onProgress,
   }) async {
     final dir = await Directory(await path).create(recursive: true);
     await excludeFromIosBackup([dir.path]);
-    await downloadModelFiles(
-      dir,
-      ndlTextModelFiles,
-      network: network,
+    await runDownload<void>(
+      DownloadSpec(
+        DownloadKind.ndlTextModel,
+        id: dir.path,
+        dir: dir.path,
+        parts: ndlTextModelFiles,
+      ),
+      network,
       onProgress: onProgress,
     );
   }

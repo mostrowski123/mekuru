@@ -11,6 +11,7 @@ import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
@@ -96,6 +97,7 @@ void main() {
     final progress = <double>[];
 
     await DictionaryDownloadService.downloadAndImportUrl(
+      kind: DownloadKind.fixedDictionary,
       url: urlFor('/JMnedict.zip'),
       asset: 'jmnedict',
       network: NetworkConsent.mobileData,
@@ -120,6 +122,7 @@ void main() {
 
     await expectLater(
       DictionaryDownloadService.downloadAndImportUrl(
+        kind: DownloadKind.fixedDictionary,
         url: urlFor('/missing.zip'),
         asset: 'missing',
         network: NetworkConsent.mobileData,
@@ -146,6 +149,7 @@ void main() {
 
     await expectLater(
       DictionaryDownloadService.downloadAndImportUrl(
+        kind: DownloadKind.catalogDictionary,
         url: urlFor('/JMnedict.zip'),
         asset: 'jmnedict',
         network: NetworkConsent.mobileData,
@@ -174,6 +178,7 @@ void main() {
       ..writeAsBytesSync([0]);
 
     await DictionaryDownloadService.downloadAndImportUrl(
+      kind: DownloadKind.fixedDictionary,
       url: urlFor('/JMnedict.zip'),
       asset: 'jmnedict',
       network: NetworkConsent.mobileData,
@@ -191,6 +196,7 @@ void main() {
     final repo = DictionaryRepository(db);
 
     final download = DictionaryDownloadService.downloadAndImportUrl(
+      kind: DownloadKind.fixedDictionary,
       url: urlFor('/slow.zip'),
       asset: 'jmnedict',
       network: NetworkConsent.wifiOnly,
@@ -221,6 +227,7 @@ void main() {
     addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
     final download = DictionaryDownloadService.downloadAndImportUrl(
+      kind: DownloadKind.fixedDictionary,
       url: urlFor('/JMnedict.zip'),
       asset: 'jmnedict',
       network: NetworkConsent.mobileData,
@@ -254,6 +261,7 @@ void main() {
     addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
     await DictionaryDownloadService.downloadAndImportUrl(
+      kind: DownloadKind.fixedDictionary,
       url: urlFor('/JMnedict.zip'),
       asset: 'jmnedict',
       network: NetworkConsent.mobileData,

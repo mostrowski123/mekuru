@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -61,11 +62,7 @@ class MangaOcrIos {
 
   Future<bool> get installed async => modelFilesInstalled(await _dir());
 
-  /// Downloads and verifies every file, then marks the pack installed.
-  /// [onProgress] is the fraction of all bytes. An interrupted download keeps
-  /// its partial file, and the next one resumes it. Unless [network] allows
-  /// mobile data, the download stops with [WifiLostException] when the
-  /// network stops being Wi-Fi.
+  /// Downloads the pack, as [DownloadKind.mangaOcrIos].
   Future<void> download({
     required NetworkConsent network,
     void Function(double)? onProgress,
@@ -73,10 +70,14 @@ class MangaOcrIos {
     final dir = await (await _dir()).create(recursive: true);
     // Re-downloadable, so kept out of iCloud and device backups.
     await _storage.invokeMethod('excludeFromBackup', [dir.path]);
-    await downloadModelFiles(
-      dir,
-      mangaOcrIosModelFiles,
-      network: network,
+    await runDownload<void>(
+      DownloadSpec(
+        DownloadKind.mangaOcrIos,
+        id: dir.path,
+        dir: dir.path,
+        parts: mangaOcrIosModelFiles,
+      ),
+      network,
       onProgress: onProgress,
     );
   }

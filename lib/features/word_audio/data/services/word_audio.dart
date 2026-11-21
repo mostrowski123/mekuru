@@ -14,11 +14,12 @@ import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio_lookup.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio_pack.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 /// The word list that says which clip speaks which word, pinned by size and
-/// sha256. Uncompressed so [downloadModelFiles] takes it as it is.
+/// sha256. Uncompressed so [runDownload] takes it as it is.
 const ModelFile wordAudioIndexFile = (
   name: 'word_audio_index_2026-11-05.sqlite',
   url: '${AppLinks.wordAudioBase}/word_audio_index_2026-11-05.sqlite',
@@ -75,17 +76,21 @@ class WordAudio {
   /// The address of a clip. AnkiMobile downloads a field that links to it.
   String clipUrl(String id) => '$base/clips/${id.substring(0, 2)}/$id.mp3';
 
-  /// Unless [network] allows mobile data, the download stops when Wi-Fi goes.
+  /// Downloads the word list, as [DownloadKind.wordAudioList].
   Future<void> download({
     required NetworkConsent network,
     void Function(double)? onProgress,
   }) async {
     final dir = await Directory(await _dir).create(recursive: true);
     await excludeFromIosBackup([dir.path]);
-    await downloadModelFiles(
-      dir,
-      [indexFile],
-      network: network,
+    await runDownload<void>(
+      DownloadSpec(
+        DownloadKind.wordAudioList,
+        id: dir.path,
+        dir: dir.path,
+        parts: [indexFile],
+      ),
+      network,
       onProgress: onProgress,
     );
     _installed = true;

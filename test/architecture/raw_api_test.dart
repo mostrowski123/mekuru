@@ -98,7 +98,6 @@ final _rows = [
       'lib/features/library/data/repositories/book_repository.dart': 1,
       'lib/features/library/data/services/epub_parser.dart': 1,
       'lib/features/manga/data/services/cbz_parser.dart': 2,
-      'lib/features/manga/data/services/model_download.dart': 1,
       'lib/features/manga/data/services/pdf_pages.dart': 1,
       'lib/features/reader/data/services/mecab_service.dart': 1,
       'lib/features/settings/data/services/enhanced_furigana_dict_download_service.dart':
@@ -106,6 +105,8 @@ final _rows = [
       'lib/features/settings/data/services/kanjivg_download_service.dart': 2,
       'lib/features/sync/data/services/server_download_work.dart': 2,
       'lib/features/vocabulary/data/repositories/vocabulary_repository.dart': 1,
+      // Moved from model_download.dart: a model's INSTALLED marker.
+      'lib/shared/downloads/download.dart': 1,
     },
     allowed: {
       'lib/core/utils/atomic_file.dart': (1, 'the atomic write itself'),
@@ -160,6 +161,67 @@ final _rows = [
         '(lib/shared/widgets/mobile_data_dialog.dart)',
     allowed: {
       'lib/shared/widgets/mobile_data_dialog.dart': (1, 'askNetwork itself'),
+    },
+  ),
+  _Row(
+    'A raw HttpClient, IOClient, or package:http client or request',
+    _matching(
+      r'\bHttpClient(\(|\.new\b)|\bIOClient\(|\bhttp\.(Client|Request|'
+      r'MultipartRequest|StreamedRequest|get|post|put|patch|delete|head|'
+      r'read|readBytes)\(',
+    ),
+    'runDownload for a download (lib/shared/downloads/download.dart), or '
+        "sendWithTimeout on an API class's own client "
+        '(lib/core/services/http_transport.dart)',
+    counts: {
+      // Free books: to move onto runDownload, which owns their rules then.
+      'lib/features/free_books/data/services/aozora_download.dart': 1,
+      'lib/features/free_books/presentation/providers/free_books_providers.dart':
+          2,
+    },
+    allowed: {
+      'lib/core/services/download_to_file.dart': (
+        1,
+        "downloadToFile, the transfer of a part runDownload doesn't resume",
+      ),
+      'lib/core/services/server_http_client.dart': (
+        3,
+        'the transport of a server the user added (Komga, Kavita, the OCR '
+            'server), with the self-signed certificate they allowed',
+      ),
+      'lib/features/ankidroid/data/services/anki_connect_service.dart': (
+        1,
+        "AnkiConnect, an API on the user's computer",
+      ),
+      'lib/features/manga/data/services/manga_ocr_client.dart': (
+        2,
+        'the OCR server API',
+      ),
+      'lib/features/manga/data/services/model_download_job.dart': (
+        1,
+        "a background model download's client, run by runWorkerDownload",
+      ),
+      'lib/features/manga/data/services/ocr_billing_client.dart': (
+        2,
+        'the billing API',
+      ),
+      'lib/features/settings/data/services/ocr_server_health_client.dart': (
+        2,
+        "the OCR server's health check",
+      ),
+      'lib/features/sync/data/services/http_server_client.dart': (
+        2,
+        'the Komga and Kavita APIs',
+      ),
+      'lib/features/wanikani/data/services/wanikani_api_client.dart': (
+        2,
+        'the WaniKani API',
+      ),
+      'lib/shared/downloads/download.dart': (
+        1,
+        'runDownload itself: a client per transfer, which a stop or a Wi-Fi '
+            'drop closes',
+      ),
     },
   ),
   _Row(
