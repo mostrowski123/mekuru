@@ -108,6 +108,10 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
   late TextEditingController _editController;
   String? _editedText;
 
+  /// Whether the last empty lookup found no dictionary that can answer one,
+  /// which offers the starter pack instead of "no results".
+  bool _noDictionaries = false;
+
   String? _normalizeEditedText(String? value) {
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) {
@@ -181,12 +185,26 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
   }
 
   /// Search by dictionary form, surface form, and all deinflected candidates.
+  /// Only an empty result then asks whether any dictionary can answer, so a
+  /// lookup that finds words never waits on that query.
   Future<List<DictionaryEntryWithSource>> _search(
     String primary, [
     String? secondary,
   ]) async {
     final queryService = ref.read(dictionaryQueryServiceProvider);
-    return queryService.searchLookupWithSource(primary, secondary);
+    final repository = ref.read(dictionaryRepositoryProvider);
+    final results = await queryService.searchLookupWithSource(
+      primary,
+      secondary,
+    );
+    _noDictionaries = false;
+    if (results.isEmpty && mounted) {
+      final dictionaries = await ref.read(dictionariesProvider.future);
+      _noDictionaries = !await repository.anyAnswersLookups([
+        for (final d in dictionaries) d.id,
+      ]);
+    }
+    return results;
   }
 
   /// Search pitch accents for the given terms.
@@ -238,10 +256,10 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
 
   @override
   Widget build(BuildContext context) {
-    // Look the word up again when the first dictionary lands, so installing
-    // the starter pack from this sheet resolves the word in place.
-    ref.listen(noDictionariesProvider, (wasEmpty, isEmpty) {
-      if (wasEmpty == true && !isEmpty) setState(_refreshLookupFutures);
+    // Look the word up again when a dictionary lands while the starter pack
+    // is offered, so installing it from this sheet resolves the word in place.
+    ref.listen(dictionariesProvider, (_, _) {
+      if (_noDictionaries) setState(_refreshLookupFutures);
     });
     if (widget.showAtTop) {
       return _buildTopSheet(context);
@@ -491,7 +509,6 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
     bool? primary,
   }) {
     final fontSize = ref.watch(lookupFontSizeProvider);
-    final noDictionaries = ref.watch(noDictionariesProvider);
 
     return FutureBuilder<List<DictionaryEntryWithSource>>(
       future: _searchResultsFuture,
@@ -512,7 +529,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
           results: results,
           onAdded: _onUserDefinitionChanged,
         );
-        if (results.isEmpty && noDictionaries) {
+        if (results.isEmpty && _noDictionaries) {
           return SingleChildScrollView(
             controller: scrollController,
             padding: const EdgeInsets.all(16),

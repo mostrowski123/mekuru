@@ -340,7 +340,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasDictionaries = ref.watch(lookupDictionariesProvider);
+    final hasDictionaries = ref.watch(dictionariesProvider);
 
     // Re-search when Roman letter filter changes
     ref.listen(filterRomanLettersProvider, (_, _) => _searchAgain());
@@ -425,20 +425,37 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
                   context.l10n.commonErrorWithDetails(details: err.toString()),
                 ),
               ),
-              data: (dictionaries) {
-                if (dictionaries.isEmpty) {
-                  return _buildNoDictionariesState(theme);
-                }
-                if (!dictionaries.any((dictionary) => dictionary.isEnabled)) {
-                  return _buildNoEnabledDictionariesState(theme);
-                }
-                return _buildResultsArea(theme);
-              },
+              data: (dictionaries) =>
+                  switch (_lookupDictionaries(dictionaries)) {
+                    LookupDictionaries.none => _buildNoDictionariesState(theme),
+                    LookupDictionaries.allOff =>
+                      _buildNoEnabledDictionariesState(theme),
+                    LookupDictionaries.ready => _buildResultsArea(theme),
+                  },
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// What [dictionaries] allow. The list alone settles it unless every one
+  /// that is on only ranks words, which takes a database query. A search
+  /// under way or with words on screen needs no answer, so it never waits on
+  /// that query: only an idle screen, an empty result or a list with every
+  /// dictionary off asks.
+  LookupDictionaries _lookupDictionaries(List<DictionaryMeta> dictionaries) {
+    if (dictionaries.isEmpty) return LookupDictionaries.none;
+    final fromList = dictionaries.any((d) => d.isEnabled)
+        ? LookupDictionaries.ready
+        : LookupDictionaries.allOff;
+    final searchMayFindWords =
+        _controller.text.trim().isNotEmpty &&
+        (_isSearching || (_groupedResults?.isNotEmpty ?? true));
+    if (fromList == LookupDictionaries.ready && searchMayFindWords) {
+      return fromList;
+    }
+    return ref.watch(lookupDictionariesProvider).value ?? fromList;
   }
 
   Widget _buildNoDictionariesState(ThemeData theme) {

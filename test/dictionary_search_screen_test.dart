@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart' show ApplyInterceptor;
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -17,6 +19,7 @@ import 'package:mekuru/shared/widgets/structured_glossary_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart';
+import 'shared/select_log.dart';
 import 'shared/test_database.dart';
 import 'test_app.dart';
 
@@ -160,6 +163,23 @@ void main() {
         .length;
     expect(built, greaterThan(0));
     expect(built, lessThan(40));
+  });
+
+  testWidgets('a search that finds words never asks the database which '
+      'dictionaries can answer one', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final selects = SelectLog();
+    final db = AppDatabase(NativeDatabase.memory().interceptWith(selects));
+    addTearDown(db.close);
+
+    // A word tapped in a definition opens a search for it straight away.
+    await _pumpSearchScreen(tester, db, _buildService(db), initialQuery: '食べる');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ichidan verb'), findsOneWidget);
+    // The search's own queries are faked, so a read of the dictionary tables
+    // can only be the check.
+    expect(selects.reading(['dictionary_entries', 'frequencies']), isEmpty);
   });
 
   testWidgets('tapping outside the search field dismisses the keyboard', (

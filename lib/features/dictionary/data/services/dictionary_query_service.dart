@@ -381,9 +381,10 @@ class DictionaryQueryService {
   }
 
   /// Batch-query frequency ranks keyed by (expression, reading) pair, from
-  /// the switched-on dictionaries only. With several, the lowest rank wins.
+  /// the switched-on dictionaries only. A pair's rank comes from the highest
+  /// dictionary in the user's list that ranks it.
   ///
-  /// Lookup strategy per pair:
+  /// Lookup strategy per pair, inside one dictionary:
   /// 1. Prefer an exact (expression, reading) match in the Frequencies table.
   /// 2. Fall back to an exact surface-form rank for the result's expression
   ///    when the frequency source does not specify a reading.
@@ -421,71 +422,82 @@ class DictionaryQueryService {
           _db.frequencies.expression,
           _db.frequencies.reading,
           _db.frequencies.frequencyRank,
+          _db.frequencies.dictionaryId,
         ])
-        ..where(
-          _db.frequencies.expression.isIn(batch) &
-              _db.frequencies.dictionaryId.isIn(cache.enabledIds),
-        );
+        // Switched-off dictionaries are dropped below, not here: filtering
+        // dictionary_id in SQL made this query measurably slower.
+        ..where(_db.frequencies.expression.isIn(batch));
 
       allRows.addAll(await query.get());
     }
 
-    // Build two lookup structures:
+    // Per dictionary, two lookup structures:
     // 1. (expression, reading) -> min rank for reading-specific entries
     // 2. expression -> min rank for surface-form-only entries
-    final pairRanks = <(String, String), int>{};
-    final surfaceRanks = <String, int>{};
+    final pairRanks = <int, Map<(String, String), int>>{};
+    final surfaceRanks = <int, Map<String, int>>{};
 
     for (final row in allRows) {
       final expression = row.read(_db.frequencies.expression);
       final reading = row.read(_db.frequencies.reading);
       final frequencyRank = row.read(_db.frequencies.frequencyRank);
-      if (expression == null || reading == null || frequencyRank == null) {
+      final dictionaryId = row.read(_db.frequencies.dictionaryId);
+      if (expression == null ||
+          reading == null ||
+          frequencyRank == null ||
+          dictionaryId == null ||
+          !cache.enabledIds.contains(dictionaryId)) {
         continue;
       }
 
       if (reading.isEmpty) {
-        final existingSurfaceRank = surfaceRanks[expression];
+        final bySurface = surfaceRanks.putIfAbsent(dictionaryId, () => {});
+        final existingSurfaceRank = bySurface[expression];
         if (existingSurfaceRank == null ||
             frequencyRank < existingSurfaceRank) {
-          surfaceRanks[expression] = frequencyRank;
+          bySurface[expression] = frequencyRank;
         }
         continue;
       }
 
+      final byPair = pairRanks.putIfAbsent(dictionaryId, () => {});
       final key = (expression, reading);
-      final existingPairRank = pairRanks[key];
+      final existingPairRank = byPair[key];
       if (existingPairRank == null || frequencyRank < existingPairRank) {
-        pairRanks[key] = frequencyRank;
+        byPair[key] = frequencyRank;
       }
     }
 
-    // For each unique (expression, reading) in results, prefer the
-    // pair-specific rank. When that pair is missing, only fall back to an
-    // exact surface-form rank for the same expression, or for the searched
-    // reading itself when the user searched by kana.
-    final resultPairs = results
-        .map((r) => (r.entry.expression, r.entry.reading))
-        .toSet();
+    // Highest in the user's list first.
+    final dictionaryIds = {...pairRanks.keys, ...surfaceRanks.keys}.toList()
+      ..sort((a, b) {
+        final orderA = cache.sortOrders[a] ?? 0;
+        final orderB = cache.sortOrders[b] ?? 0;
+        final cmp = orderA.compareTo(orderB);
+        return cmp != 0 ? cmp : a.compareTo(b);
+      });
+
+    // For each unique (expression, reading) in results, each dictionary
+    // prefers the pair-specific rank. When that pair is missing, it only
+    // falls back to an exact surface-form rank for the same expression, or
+    // for the searched reading itself when the user searched by kana.
+    int? rankIn(int dictionaryId, (String, String) pair) {
+      final surfaces = surfaceRanks[dictionaryId] ?? const {};
+      final searchedReading =
+          pair.$2.isNotEmpty && searchTerms.contains(pair.$2);
+      return pairRanks[dictionaryId]?[pair] ??
+          surfaces[pair.$1] ??
+          (searchedReading ? surfaces[pair.$2] : null);
+    }
 
     final ranks = <(String, String), int>{};
-    for (final pair in resultPairs) {
-      final pairRank = pairRanks[pair];
-      if (pairRank != null) {
-        ranks[pair] = pairRank;
-        continue;
-      }
-
-      final expressionSurfaceRank = surfaceRanks[pair.$1];
-      if (expressionSurfaceRank != null) {
-        ranks[pair] = expressionSurfaceRank;
-        continue;
-      }
-
-      if (pair.$2.isNotEmpty && searchTerms.contains(pair.$2)) {
-        final readingSurfaceRank = surfaceRanks[pair.$2];
-        if (readingSurfaceRank != null) {
-          ranks[pair] = readingSurfaceRank;
+    for (final pair in {
+      for (final r in results) (r.entry.expression, r.entry.reading),
+    }) {
+      for (final dictionaryId in dictionaryIds) {
+        if (rankIn(dictionaryId, pair) case final rank?) {
+          ranks[pair] = rank;
+          break;
         }
       }
     }

@@ -50,32 +50,40 @@ final dictionariesProvider = StreamProvider<List<DictionaryMeta>>((ref) {
 });
 
 /// Whether a dictionary only ranks other dictionaries' words. Asked once per
-/// dictionary: what one holds is fixed at import.
+/// dictionary: what one holds is fixed at import. For the dictionary manager
+/// only: its query can read the whole entry index.
 final frequencyOnlyDictionaryProvider = FutureProvider.family<bool, int>(
   (ref, id) => ref.watch(dictionaryRepositoryProvider).isFrequencyOnly(id),
 );
 
-/// The listed dictionaries that can answer a lookup. A frequency dictionary
-/// such as JPDB only ranks their words, so it is left out.
-final lookupDictionariesProvider = FutureProvider<List<DictionaryMeta>>((
+/// Whether the listed dictionaries can answer a lookup. A frequency
+/// dictionary such as JPDB only ranks the others' words, so it never counts.
+enum LookupDictionaries {
+  /// None can: there are none, or they only rank words.
+  none,
+
+  /// Some can, and all of those are switched off.
+  allOff,
+
+  /// One that can is switched on.
+  ready,
+}
+
+/// What the listed dictionaries allow. Its query can read the whole entry
+/// index, so watch it only while no search is waiting on the database.
+final lookupDictionariesProvider = FutureProvider<LookupDictionaries>((
   ref,
 ) async {
   final dictionaries = await ref.watch(dictionariesProvider.future);
-  final frequencyOnly = await Future.wait([
-    for (final dictionary in dictionaries)
-      ref.watch(frequencyOnlyDictionaryProvider(dictionary.id).future),
+  final repository = ref.watch(dictionaryRepositoryProvider);
+  Future<bool> anyAnswers({required bool on}) => repository.anyAnswersLookups([
+    for (final d in dictionaries)
+      if (d.isEnabled == on) d.id,
   ]);
-  return [
-    for (final (i, dictionary) in dictionaries.indexed)
-      if (!frequencyOnly[i]) dictionary,
-  ];
+  if (await anyAnswers(on: true)) return LookupDictionaries.ready;
+  if (await anyAnswers(on: false)) return LookupDictionaries.allOff;
+  return LookupDictionaries.none;
 });
-
-/// True once the lookup dictionaries have loaded and there are none, which
-/// is when the app offers the starter pack. False while they load.
-final noDictionariesProvider = Provider<bool>(
-  (ref) => ref.watch(lookupDictionariesProvider).value?.isEmpty ?? false,
-);
 
 // ──────────────── Import State ────────────────
 

@@ -362,6 +362,19 @@ void main() {
         ],
         [true, false, false, false],
       );
+      expect(
+        [
+          for (final ids in [
+            <int>[],
+            [ranksOnly],
+            [ranksOnly, both],
+            [ranksOnly, entriesOnly],
+            [ranksOnly, empty],
+          ])
+            await repo.anyAnswersLookups(ids),
+        ],
+        [false, false, true, true, true],
+      );
     },
   );
 

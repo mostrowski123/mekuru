@@ -1,11 +1,15 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNull;
+import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/main.dart' show databaseProvider;
 
 import 'shared/test_database.dart';
 
@@ -899,6 +903,7 @@ void main() {
     late AppDatabase switchDb;
     late DictionaryRepository switchRepo;
     late DictionaryQueryService switchQueryService;
+    late int wordsId;
     late int jpdbId;
     late int bccwjId;
 
@@ -923,20 +928,20 @@ void main() {
       switchRepo = DictionaryRepository(switchDb);
       switchQueryService = DictionaryQueryService(switchDb);
 
-      final dictId = await switchRepo.insertDictionary('Dict A');
+      wordsId = await switchRepo.insertDictionary('Dict A');
       // わっし is stored first, so it leads when nothing ranks the two.
       await switchRepo.batchInsertEntries([
         DictionaryEntriesCompanion.insert(
           expression: '私',
           reading: const Value('わっし'),
           glossaries: jsonEncode(['I (wasshi)']),
-          dictionaryId: dictId,
+          dictionaryId: wordsId,
         ),
         DictionaryEntriesCompanion.insert(
           expression: '私',
           reading: const Value('わたし'),
           glossaries: jsonEncode(['I (watashi)']),
-          dictionaryId: dictId,
+          dictionaryId: wordsId,
         ),
       ]);
       jpdbId = await switchRepo.insertDictionary('JPDB');
@@ -986,12 +991,78 @@ void main() {
       expect(await lookUp('私'), [('わたし', 32), ('わっし', null)]);
     });
 
-    test('with several on, the best rank wins, and switching that one off '
-        'leaves the next', () async {
-      expect(await lookUp('私'), [('わたし', 32), ('わっし', null)]);
+    test('with several on, the one highest in the list sets the rank, even '
+        'when one below it ranks the word better', () async {
+      await switchRepo.reorderDictionaries([wordsId, bccwjId, jpdbId]);
 
-      await switchRepo.toggleDictionary(jpdbId, isEnabled: false);
       expect(await lookUp('私'), [('わたし', 700), ('わっし', null)]);
+    });
+
+    test(
+      'dragging the other one above it swaps the rank, with no restart',
+      () async {
+        await switchRepo.reorderDictionaries([wordsId, bccwjId, jpdbId]);
+        final container = ProviderContainer(
+          overrides: [databaseProvider.overrideWithValue(switchDb)],
+        );
+        addTearDown(container.dispose);
+        // The dictionary manager watches the list while a row is dragged.
+        container.listen(dictionariesProvider, (_, _) {});
+        // The app's service, which follows the dictionary list.
+        final service = container.read(dictionaryQueryServiceProvider);
+        // What the reader's lookup sheet shows on わたし's frequency badge.
+        Future<int?> watashiRank() async {
+          final results = await service.searchLookupWithSource('私');
+          return results
+              .firstWhere((r) => r.entry.reading == 'わたし')
+              .frequencyRank;
+        }
+
+        Future<void> listShows(List<int> ids) async {
+          List<int> listed() => [
+            for (final d in container.read(dictionariesProvider).value ?? [])
+              d.id,
+          ];
+          for (var i = 0; i < 100 && !listEquals(listed(), ids); i++) {
+            await Future<void>.delayed(const Duration(milliseconds: 10));
+          }
+          expect(listed(), ids);
+        }
+
+        await listShows([wordsId, bccwjId, jpdbId]);
+        expect(await watashiRank(), 700);
+
+        // What the dictionary manager does when a row is dropped.
+        await container.read(dictionaryRepositoryProvider).reorderDictionaries([
+          wordsId,
+          jpdbId,
+          bccwjId,
+        ]);
+        await listShows([wordsId, jpdbId, bccwjId]);
+        expect(await watashiRank(), 32);
+      },
+    );
+
+    test("switching the top one off shows the next one's rank", () async {
+      await switchRepo.reorderDictionaries([wordsId, bccwjId, jpdbId]);
+      await switchRepo.toggleDictionary(bccwjId, isEnabled: false);
+
+      expect(await lookUp('私'), [('わたし', 32), ('わっし', null)]);
+    });
+
+    test('a word only a lower one ranks still gets its rank there, never one '
+        'the top one gives another reading', () async {
+      await switchRepo.reorderDictionaries([wordsId, bccwjId, jpdbId]);
+      await switchRepo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: '私',
+          reading: const Value('わっし'),
+          frequencyRank: 5000,
+          dictionaryId: jpdbId,
+        ),
+      ]);
+
+      expect(await lookUp('私'), [('わたし', 700), ('わっし', 5000)]);
     });
 
     test('a dictionary with definitions and ranks shows both while on, '

@@ -141,8 +141,9 @@ class DictionaryRepository {
   /// so callers ask once per dictionary.
   Future<bool> isFrequencyOnly(int dictionaryId) async {
     // ponytail: no index starts with dictionary_id, so a dictionary without
-    // entries costs one full index scan; an index on
-    // dictionary_entries(dictionary_id) would make this instant.
+    // entries costs one full index scan, which is why only the dictionary
+    // manager asks; an index on dictionary_entries(dictionary_id) would make
+    // this instant.
     final row = await _db
         .customSelect(
           'SELECT CASE WHEN EXISTS (SELECT 1 FROM dictionary_entries '
@@ -152,6 +153,25 @@ class DictionaryRepository {
         )
         .getSingle();
     return row.read<bool>('frequency_only');
+  }
+
+  /// Whether one of [ids] can answer a lookup, i.e. is not
+  /// [isFrequencyOnly]. Quick whenever one of them has entries: the scan
+  /// stops at the first. When none has, it reads the whole entry index.
+  Future<bool> anyAnswersLookups(List<int> ids) async {
+    if (ids.isEmpty) return false;
+    final values = List.filled(ids.length, '(?)').join(', ');
+    final row = await _db
+        .customSelect(
+          'WITH ids(id) AS (VALUES $values) '
+          'SELECT CASE WHEN EXISTS (SELECT 1 FROM dictionary_entries '
+          'WHERE dictionary_id IN (SELECT id FROM ids)) THEN 1 '
+          'ELSE EXISTS (SELECT 1 FROM ids WHERE NOT EXISTS (SELECT 1 FROM '
+          'frequencies WHERE dictionary_id = ids.id)) END AS answers',
+          variables: [for (final id in ids) Variable.withInt(id)],
+        )
+        .getSingle();
+    return row.read<bool>('answers');
   }
 
   /// Delete a dictionary and all its entries (including pitch accents and frequencies).

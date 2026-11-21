@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show ApplyInterceptor, Value;
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -23,6 +24,7 @@ import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart' show mockWifiConnected;
+import 'shared/select_log.dart';
 import 'shared/test_database.dart';
 import 'test_app.dart';
 
@@ -481,6 +483,58 @@ void main() {
       expect(headerOffset(), 0);
     });
   }
+
+  testWidgets('a lookup that finds words never asks the database which '
+      'dictionaries can answer one', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final selects = SelectLog();
+    final db = AppDatabase(NativeDatabase.memory().interceptWith(selects));
+    addTearDown(db.close);
+    final entry = _buildEntry(
+      id: 1,
+      expression: '猫',
+      reading: 'ねこ',
+      glossaries: '["cat"]',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          dictionaryQueryServiceProvider.overrideWithValue(
+            _FakeDictionaryQueryService(
+              db,
+              lookupResultsByTerm: {
+                '猫': [
+                  DictionaryEntryWithSource(
+                    entry: entry,
+                    dictionaryName: 'JMdict',
+                  ),
+                ],
+              },
+            ),
+          ),
+          dictionariesProvider.overrideWith(
+            (ref) =>
+                Stream.value([_jmdict, _jmdict.copyWith(id: 2, name: 'JPDB')]),
+          ),
+        ],
+        child: buildLocalizedTestApp(
+          home: const Scaffold(
+            body: SizedBox.expand(child: LookupSheet(selectedText: '猫')),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Ichidan verb'), findsOneWidget);
+    // The lookup's own queries are faked, so a read of the dictionary tables
+    // can only be the check.
+    expect(selects.reading(['dictionary_entries', 'frequencies']), isEmpty);
+  });
 
   group('when the lookup finds nothing', () {
     Future<void> pumpEmptyLookup(
