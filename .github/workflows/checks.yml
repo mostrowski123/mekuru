@@ -1,20 +1,15 @@
 name: Checks
 
-# Analyze and unit-test the pushes to main that build-release.yml skips: one
-# that touches only test/, ios/, packages/ or anything else outside its path
-# filter. paths-ignore is that filter, so a push that touches nothing else
-# does not run twice. Do not widen build-release.yml's paths instead: every run of it
-# creates a GitHub Release and uploads to the Play internal track.
+# Analyze and unit-test every push to main. build-release.yml analyzes only
+# lib/ and test/, and only when lib/, android/, assets/ or pubspec change. It
+# cannot analyze integration_test/, because it strips that package from
+# pubspec before pub get. So a push that touches only test/, ios/ or
+# packages/, or a lib/ change that breaks integration_test/, would otherwise
+# go unanalyzed. Do not widen build-release.yml's paths instead: every run of
+# it creates a GitHub Release and uploads to the Play internal track.
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'lib/**'
-      - 'android/**'
-      - 'assets/**'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      - '.github/workflows/build-release.yml'
 
 permissions:
   contents: read
@@ -64,7 +59,7 @@ jobs:
           --sentryEnvironment=ci
 
       - name: Run static analysis
-        run: flutter analyze lib test
+        run: flutter analyze lib test integration_test benchmark
 
       - name: Run tests
         timeout-minutes: 20

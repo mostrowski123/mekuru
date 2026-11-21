@@ -37,7 +37,7 @@ Run codegen after editing `@DriftDatabase` or `environment_config.yaml`.
 
 ## Before committing
 
-1. `flutter analyze lib test` — **must be clean.** CI fails on info-level deprecation warnings too.
+1. `flutter analyze lib test integration_test benchmark` — **must be clean.** CI fails on info-level deprecation warnings too.
 2. `flutter test` — must pass.
 3. For user-facing changes, bump `version:` in `pubspec.yaml` (minor for `feat:`, patch for `fix:`). It is the one version for both stores, so an iOS-only change bumps it too (see "Versioning").
 4. Never add `Co-Authored-By:` trailers to commits.
