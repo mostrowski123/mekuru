@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
@@ -126,9 +126,10 @@ class _FullRestoreReplaceDialogState extends State<FullRestoreReplaceDialog> {
           children: [
             Text(
               // iOS reloads in place at the end; elsewhere the app closes.
-              (defaultTargetPlatform == TargetPlatform.iOS
-                  ? l10n.backupFullReplaceBodyIos
-                  : l10n.backupFullReplaceBody)(
+              (switch (wording) {
+                Wording.android => l10n.backupFullReplaceBody,
+                Wording.ios => l10n.backupFullReplaceBodyIos,
+              })(
                 books: l10n.backupFullCountBooks(
                   count: preview.currentBookCount,
                 ),

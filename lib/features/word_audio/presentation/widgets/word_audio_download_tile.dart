@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
@@ -67,7 +67,7 @@ class WordAudioPackTile extends ConsumerWidget {
     );
     if (network == null) return;
     // Android's job can fail with Mekuru closed, and says so in a notification.
-    if (defaultTargetPlatform == TargetPlatform.android) {
+    if (longWork == LongWork.systemJob) {
       unawaited(const FullBackupJobChannel().requestNotificationPermission());
     }
     unawaited(notifier.start(network));

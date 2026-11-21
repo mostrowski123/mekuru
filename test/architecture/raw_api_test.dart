@@ -51,11 +51,19 @@ final _rows = [
       'lib/features/backup/data/services/prepare_staged_restore.dart': 1,
       'lib/features/library/data/repositories/book_repository.dart': 1,
       'lib/features/library/presentation/screens/library_screen.dart': 5,
-      'lib/features/sync/data/services/server_client.dart': 3,
+      'lib/features/sync/data/services/server_client.dart': 2,
       'lib/features/sync/presentation/providers/sync_providers.dart': 2,
-      'lib/main.dart': 1,
       'lib/shared/widgets/adaptive_body.dart': 1,
     },
+  ),
+  _Row(
+    'A platform check that picks an l10n key or its …Ios sibling',
+    _matching(
+      r'\b(TargetPlatform\.(iOS|android)|Platform\.is(IOS|Android))\b'
+      r'[^;{}]{0,160}?\.\w+Ios\b',
+    ),
+    'a switch on wording, with both keys '
+        '(lib/core/platform/capabilities.dart)',
   ),
   _Row(
     'ZipDecoder().decodeBytes or readBytes() on a zip entry',

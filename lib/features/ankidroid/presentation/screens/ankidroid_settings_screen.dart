@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_connect_service.dart';

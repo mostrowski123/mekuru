@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import '../../data/services/ocr_background_worker.dart';
 import '../providers/local_ocr_providers.dart';
@@ -21,7 +21,7 @@ class LocalOcrPageOverlay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // iOS runs every scan through the page loop, which keeps no job journal;
     // without this the reader is silent until "OCR complete".
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
+    if (longWork == LongWork.inApp) {
       final progress = ref.watch(ocrProgressProvider(bookId)).asData?.value;
       if (progress?.status != OcrStatus.running) return const SizedBox.shrink();
       return _PageLoopProgress(bookId: bookId, progress: progress!);

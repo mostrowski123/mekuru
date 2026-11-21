@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
@@ -1493,11 +1494,12 @@ class _BookTileState extends ConsumerState<_BookTile>
                           ListTile(
                             leading: const Icon(Icons.document_scanner),
                             title: Text(context.l10n.localOcrRecognize),
-                            subtitle: Text(
-                              defaultTargetPlatform == TargetPlatform.iOS
-                                  ? context.l10n.localOcrOnDeviceSubtitleIos
-                                  : context.l10n.localOcrOnDeviceSubtitle,
-                            ),
+                            subtitle: Text(switch (wording) {
+                              Wording.android =>
+                                context.l10n.localOcrOnDeviceSubtitle,
+                              Wording.ios =>
+                                context.l10n.localOcrOnDeviceSubtitleIos,
+                            }),
                             onTap: () {
                               Navigator.of(sheetContext).pop();
                               showOcrActionSheet(context, book);

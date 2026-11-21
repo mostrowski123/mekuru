@@ -1,7 +1,7 @@
 // ignore_for_file: discarded_futures
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
@@ -253,12 +253,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(
-                defaultTargetPlatform == TargetPlatform.iOS
-                    ? l10n.backupFullNotIncludedIos
-                    : l10n.backupFullNotIncluded,
-                style: theme.textTheme.bodySmall,
-              ),
+              child: Text(switch (wording) {
+                Wording.android => l10n.backupFullNotIncluded,
+                Wording.ios => l10n.backupFullNotIncludedIos,
+              }, style: theme.textTheme.bodySmall),
             ),
             ListTile(
               leading: Icon(
@@ -266,11 +264,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                 color: theme.colorScheme.primary,
               ),
               title: Text(l10n.backupFullExportTitle),
-              subtitle: Text(
-                defaultTargetPlatform == TargetPlatform.iOS
-                    ? l10n.backupFullExportSubtitleIos
-                    : l10n.backupFullExportSubtitle,
-              ),
+              subtitle: Text(switch (wording) {
+                Wording.android => l10n.backupFullExportSubtitle,
+                Wording.ios => l10n.backupFullExportSubtitleIos,
+              }),
               trailing: const Icon(Icons.chevron_right),
               onTap: isWorking
                   ? null
@@ -290,11 +287,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    defaultTargetPlatform == TargetPlatform.iOS
-                        ? l10n.backupFullRestoreSubtitleIos
-                        : l10n.backupFullRestoreSubtitle,
-                  ),
+                  Text(switch (wording) {
+                    Wording.android => l10n.backupFullRestoreSubtitle,
+                    Wording.ios => l10n.backupFullRestoreSubtitleIos,
+                  }),
                   const SizedBox(height: 6),
                   Chip(
                     visualDensity: VisualDensity.compact,

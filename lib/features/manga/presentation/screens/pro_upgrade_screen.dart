@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/ios_sandbox_refund.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
@@ -26,9 +27,6 @@ import '../widgets/local_ocr_widgets.dart';
 /// Why a Pro purchase, restore or check failed, in the user's language;
 /// null for an error with no wording of its own.
 String? describeBillingError(AppLocalizations l, Object error) {
-  final store = defaultTargetPlatform == TargetPlatform.iOS
-      ? 'App Store'
-      : 'Google Play';
   return switch (error) {
     OcrBillingException(:final code) => switch (code) {
       'network_unavailable' => l.proErrorOffline,
@@ -41,9 +39,9 @@ String? describeBillingError(AppLocalizations l, Object error) {
       'store_query_failed' ||
       'store_product_missing' ||
       'restore_query_failed' ||
-      'purchase_token_missing' => l.proErrorStore(store: store),
+      'purchase_token_missing' => l.proErrorStore(store: storeName),
       'purchase_not_started' => l.proErrorPurchaseNotStarted,
-      'purchase_timeout' => l.proErrorPurchaseTimeout(store: store),
+      'purchase_timeout' => l.proErrorPurchaseTimeout(store: storeName),
       'purchase_pending' => l.proPurchasePending,
       'payment_declined' => l.proErrorPaymentDeclined,
       'purchase_cancelled' => l.proErrorPurchaseCancelled,
@@ -203,16 +201,13 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   Future<ProUpgradeSnapshot> _loadSnapshotDefault() async {
     String Function(AppLocalizations l10n)? errorMessage;
     String? priceLabel;
-    final store = defaultTargetPlatform == TargetPlatform.iOS
-        ? 'App Store'
-        : 'Google Play';
 
     try {
       await _storeService.initialize();
     } catch (e) {
       errorMessage ??= (l) =>
           describeBillingError(l, e) ??
-          l.proErrorLoadBilling(store: store, details: '$e');
+          l.proErrorLoadBilling(store: storeName, details: '$e');
     }
 
     final servicesAvailable =
@@ -242,7 +237,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
       } catch (e) {
         errorMessage ??= (l) =>
             describeBillingError(l, e) ??
-            l.proErrorLoadPrice(store: store, details: '$e');
+            l.proErrorLoadPrice(store: storeName, details: '$e');
       }
     }
 
@@ -340,11 +335,10 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
           final l10n = context.l10n;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                defaultTargetPlatform == TargetPlatform.iOS
-                    ? l10n.proRestoreNothingFoundIos
-                    : l10n.proRestoreNothingFound,
-              ),
+              content: Text(switch (wording) {
+                Wording.android => l10n.proRestoreNothingFound,
+                Wording.ios => l10n.proRestoreNothingFoundIos,
+              }),
             ),
           );
         }

@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -1125,8 +1126,7 @@ class BookRepository {
   Future<void> deleteBook(int bookId) async {
     // iOS scans run in the app; without the stop request a scan of this
     // book keeps going and writes into the folder deleted below.
-    if (LocalMangaOcr.available ||
-        defaultTargetPlatform == TargetPlatform.iOS) {
+    if (LocalMangaOcr.available || longWork == LongWork.inApp) {
       await clearOcrTaskState(bookId);
     }
     final book = await getBookById(bookId);

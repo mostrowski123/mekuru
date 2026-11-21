@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
@@ -151,7 +152,7 @@ Future<bool> startOcr(
   }
   // iOS has no native OCR job service or model pack: Apple Vision reads each
   // page inside the page loop, while the app is open.
-  if (defaultTargetPlatform == TargetPlatform.iOS) {
+  if (longWork == LongWork.inApp) {
     if (!context.mounted) return false;
     final ndl = await _ndlModelFor(context, book, manga);
     if (!ndl.go) return false;
@@ -407,8 +408,7 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
             if (remoteRunning) ...[
               // On iOS this page loop runs on-device scans too.
               Text(
-                defaultTargetPlatform == TargetPlatform.iOS &&
-                        _backend == OcrBackend.onDevice
+                longWork == LongWork.inApp && _backend == OcrBackend.onDevice
                     ? l.localOcrOnDevice
                     : l.localOcrRemote,
               ),
@@ -449,9 +449,10 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
               Text(
                 _backend == OcrBackend.remote
                     ? l.localOcrRemoteSubtitle
-                    : defaultTargetPlatform == TargetPlatform.iOS
-                    ? l.localOcrOnDeviceSubtitleIos
-                    : l.localOcrOnDeviceSubtitle,
+                    : switch (wording) {
+                        Wording.android => l.localOcrOnDeviceSubtitle,
+                        Wording.ios => l.localOcrOnDeviceSubtitleIos,
+                      },
               ),
               if (widget.visiblePages.isNotEmpty)
                 DropdownButton<int>(
@@ -504,7 +505,7 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
               // The iOS page loop has no charging condition to honour.
               if (_backend == OcrBackend.onDevice &&
                   _page == null &&
-                  defaultTargetPlatform != TargetPlatform.iOS)
+                  longWork == LongWork.systemJob)
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(l.localOcrChargingOnly),

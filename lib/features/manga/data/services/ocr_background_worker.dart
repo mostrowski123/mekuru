@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../../../core/platform/android_saf_service.dart';
+import '../../../../core/platform/capabilities.dart';
 import '../../../../core/services/background_work.dart';
 import '../../../../core/services/firebase_runtime.dart';
 import '../../../../core/services/server_http_client.dart';
@@ -635,7 +636,7 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
         pageMs: now - lastPageMark,
         activeMsBefore: activeMs,
         pagesBefore: completed - 1,
-        suspends: defaultTargetPlatform == TargetPlatform.iOS,
+        suspends: longWork == LongWork.inApp,
       );
       lastPageMark = now;
       final avgSeconds = completed > 0 ? activeMs / 1000.0 / completed : null;
@@ -1046,9 +1047,7 @@ Future<OcrTaskExecutionMode> determineOcrTaskExecutionMode({
 }) async {
   // An iOS background task gets seconds, not the minutes a volume needs, and
   // cannot reach the app's own channels; scans there run while the app is open.
-  if (defaultTargetPlatform == TargetPlatform.iOS) {
-    return OcrTaskExecutionMode.foreground;
-  }
+  if (longWork == LongWork.inApp) return OcrTaskExecutionMode.foreground;
   final cacheFile = File(cacheFilePath);
   if (!await cacheFile.exists()) {
     return OcrTaskExecutionMode.workmanager;
@@ -1114,7 +1113,7 @@ String _describeMissingPageImage({
 /// progress, and pressing Start again continues, because finished pages are
 /// skipped. A no-op elsewhere (WorkManager re-runs its own tasks).
 Future<void> resetInterruptedIosOcr() async {
-  if (defaultTargetPlatform != TargetPlatform.iOS) return;
+  if (longWork != LongWork.inApp) return;
   final prefs = await SharedPreferences.getInstance();
   for (final bookId in _runningOcrBookIds(prefs)) {
     final progress = OcrProgress.load(prefs, bookId)!;
@@ -1154,7 +1153,7 @@ int activePageMillis({
 /// loops must stop writing into the library first. Best effort: a loop sees
 /// its stop request at the next page boundary.
 Future<void> pauseRunningIosOcr() async {
-  if (defaultTargetPlatform != TargetPlatform.iOS) return;
+  if (longWork != LongWork.inApp) return;
   final prefs = await SharedPreferences.getInstance();
   for (final bookId in _runningOcrBookIds(prefs)) {
     await cancelOcrTask(bookId);
@@ -1338,7 +1337,7 @@ Future<void> cancelOcrTask(int bookId) async {
 /// [determineOcrTaskExecutionMode]), and `workmanager_apple` throws on
 /// `cancelByTag`.
 Future<void> _cancelWorkmanagerTask(int bookId) async {
-  if (defaultTargetPlatform == TargetPlatform.iOS) return;
+  if (longWork == LongWork.inApp) return;
   await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
 }
 

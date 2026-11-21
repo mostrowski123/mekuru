@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +12,7 @@ import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
 import 'core/database/database_provider.dart';
+import 'core/platform/capabilities.dart';
 import 'core/platform/ios_storage.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/firebase_runtime.dart';
@@ -131,9 +131,10 @@ Future<void> _bootApp() async {
       // A job left by the previous process must block the app from the
       // first frame, before any poll answers.
       // iOS has no native job service: the job runs in this process.
-      final iosFullBackupJob = Platform.isIOS
-          ? await IosFullBackup.start()
-          : null;
+      final iosFullBackupJob = switch (longWork) {
+        LongWork.systemJob => null,
+        LongWork.inApp => await IosFullBackup.start(),
+      };
       final fullBackupJobPending = iosFullBackupJob == null
           ? await hasPendingFullBackupJob()
           : await hasPendingFullBackupJob(jobs: iosFullBackupJob);

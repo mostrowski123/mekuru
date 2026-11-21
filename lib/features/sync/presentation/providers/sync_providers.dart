@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/services/background_work.dart';
 import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -172,8 +172,6 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
   final _importing = <String>{};
   Future<void> _imports = Future.value();
 
-  static bool get _onAndroid => defaultTargetPlatform == TargetPlatform.android;
-
   /// On iOS a download and its import are one job, in the in-app ring and
   /// the Live Activity: the download fills this share and the import the
   /// rest, so the Live Activity keeps the app running until the book is in
@@ -219,14 +217,17 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         continue;
       }
       if (status.state == ServerDownloadWorkState.running) {
-        if (!_onAndroid) {
-          await _restartInApp(job, dir, status);
-        } else if (!await Workmanager().isScheduledByUniqueName(
-          serverDownloadWorkName(job.key),
-        )) {
-          await dir.writeStatus(
-            status.failedWith(serverDownloadInterruptedError),
-          );
+        switch (longWork) {
+          case LongWork.inApp:
+            await _restartInApp(job, dir, status);
+          case LongWork.systemJob:
+            if (!await Workmanager().isScheduledByUniqueName(
+              serverDownloadWorkName(job.key),
+            )) {
+              await dir.writeStatus(
+                status.failedWith(serverDownloadInterruptedError),
+              );
+            }
         }
       }
       _follow(job.key, dir);
@@ -288,18 +289,19 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
             state: ServerDownloadWorkState.running,
           ),
         );
-        if (_onAndroid) {
-          await Workmanager().registerOneOffTask(
-            serverDownloadWorkName(key),
-            serverDownloadTaskName,
-            inputData: input,
-            tag: serverDownloadWorkTag,
-            constraints: Constraints(networkType: NetworkType.connected),
-            backoffPolicy: BackoffPolicy.exponential,
-            existingWorkPolicy: ExistingWorkPolicy.replace,
-          );
-        } else {
-          _runInApp(key, dir, input);
+        switch (longWork) {
+          case LongWork.systemJob:
+            await Workmanager().registerOneOffTask(
+              serverDownloadWorkName(key),
+              serverDownloadTaskName,
+              inputData: input,
+              tag: serverDownloadWorkTag,
+              constraints: Constraints(networkType: NetworkType.connected),
+              backoffPolicy: BackoffPolicy.exponential,
+              existingWorkPolicy: ExistingWorkPolicy.replace,
+            );
+          case LongWork.inApp:
+            _runInApp(key, dir, input);
         }
       } catch (_) {
         await _deleteQuietly(Directory(dir.path));
@@ -456,7 +458,10 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
           case ServerDownloadWorkState.running || null:
             final progress = status?.progress;
             if (progress != null && progress < 1) {
-              _report(key, _onAndroid ? progress : progress * _downloadShare);
+              _report(key, switch (longWork) {
+                LongWork.systemJob => progress,
+                LongWork.inApp => progress * _downloadShare,
+              });
             }
         }
       }
@@ -488,12 +493,13 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         await _importFile(
           dir.filePath(job.fileName),
           job.meta,
-          onProgress: _onAndroid
-              ? null
-              : (progress) => _report(
-                  key,
-                  _downloadShare + (1 - _downloadShare) * progress,
-                ),
+          onProgress: switch (longWork) {
+            LongWork.systemJob => null,
+            LongWork.inApp => (progress) => _report(
+              key,
+              _downloadShare + (1 - _downloadShare) * progress,
+            ),
+          },
         );
       }
     } catch (e, st) {

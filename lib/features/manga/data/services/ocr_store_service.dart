@@ -8,6 +8,7 @@ import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 
 import 'ocr_billing_client.dart';
@@ -136,7 +137,10 @@ class OcrStoreService {
   static bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
   static bool get _isIos => defaultTargetPlatform == TargetPlatform.iOS;
   static bool get _hasStore => _isAndroid || _isIos;
-  static String get _storeName => _isIos ? 'the App Store' : 'Google Play';
+  static String get _storeName => switch (wording) {
+    Wording.android => storeName,
+    Wording.ios => 'the $storeName',
+  };
   final Map<String, ProductDetails> _productCache = {};
   final Map<String, List<Completer<PurchaseGrantResult>>> _pendingWaiters = {};
 

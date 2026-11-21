@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/backup/data/services/ios_full_backup.dart';
@@ -114,9 +115,7 @@ class FullBackupJobNotifier extends Notifier<FullBackupJobState> {
     };
     final before = state;
     if (next != state) state = next;
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      await _followOnIos(before, next);
-    }
+    if (longWork == LongWork.inApp) await _followOnIos(before, next);
     if (next.stage == FullBackupJobStage.active) {
       _startPolling();
     } else {

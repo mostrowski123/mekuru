@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/config/app_links.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -110,9 +111,10 @@ class WordAudioPack {
   Future<void> download({
     required NetworkConsent network,
     void Function(double fraction, bool waitingForWifi)? onProgress,
-  }) => defaultTargetPlatform == TargetPlatform.iOS
-      ? _downloadInApp(onProgress, network)
-      : _job.run(network: network, onProgress: onProgress);
+  }) => switch (longWork) {
+    LongWork.systemJob => _job.run(network: network, onProgress: onProgress),
+    LongWork.inApp => _downloadInApp(onProgress, network),
+  };
 
   Future<void> _downloadInApp(
     void Function(double, bool)? onProgress,
@@ -139,9 +141,10 @@ class WordAudioPack {
 
   /// Stops the download; the next [download] resumes it. True when something
   /// was asked to stop, so the error that follows is this.
-  bool cancel() => defaultTargetPlatform == TargetPlatform.iOS
-      ? stopDownload(_inAppId)
-      : _job.cancel();
+  bool cancel() => switch (longWork) {
+    LongWork.systemJob => _job.cancel(),
+    LongWork.inApp => stopDownload(_inAppId),
+  };
 
   /// A job queued, running or finished unseen. iOS writes no job status: its
   /// transfer dies with the app, so there is never anything to follow.

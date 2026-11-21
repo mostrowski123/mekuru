@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/backup/presentation/providers/full_backup_job_provider.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
@@ -158,12 +159,10 @@ class _FullBackupJobScreenState extends ConsumerState<FullBackupJobScreen> {
           style: theme.textTheme.bodySmall,
         ),
       const SizedBox(height: 24),
-      Text(
-        defaultTargetPlatform == TargetPlatform.iOS
-            ? l10n.backupFullJobBackgroundHintIos
-            : l10n.backupFullJobBackgroundHint,
-        style: theme.textTheme.bodyMedium,
-      ),
+      Text(switch (wording) {
+        Wording.android => l10n.backupFullJobBackgroundHint,
+        Wording.ios => l10n.backupFullJobBackgroundHintIos,
+      }, style: theme.textTheme.bodyMedium),
       const SizedBox(height: 24),
       if (cancellable && _confirmingCancel)
         Column(

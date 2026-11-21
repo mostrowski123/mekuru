@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
@@ -353,11 +354,12 @@ class _SentenceTranslationViewState
               // Standard's, wanted because Gemma couldn't answer.
               gemma is GemmaInstalled
                   ? l10n.translationHighQualityNeedsStandard
-                  : _isIos
-                  ? l10n.sentenceTranslationDownloadIos
-                  : l10n.sentenceTranslationDownload(
-                      size: translationDownloadSize(_target!),
-                    ),
+                  : switch (wording) {
+                      Wording.android => l10n.sentenceTranslationDownload(
+                        size: translationDownloadSize(_target!),
+                      ),
+                      Wording.ios => l10n.sentenceTranslationDownloadIos,
+                    },
               style: muted,
             ),
             const SizedBox(height: 12),
@@ -432,9 +434,10 @@ class _SentenceTranslationViewState
               children: [
                 Expanded(
                   child: Text(
-                    _isIos
-                        ? l10n.sentenceTranslationEngineIos
-                        : l10n.sentenceTranslationEngine,
+                    switch (wording) {
+                      Wording.android => l10n.sentenceTranslationEngine,
+                      Wording.ios => l10n.sentenceTranslationEngineIos,
+                    },
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

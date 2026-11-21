@@ -12,9 +12,6 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 /// on the device, or the AnkiConnect desktop add-on) instead of AnkiDroid.
 bool get usesIosAnki => defaultTargetPlatform == TargetPlatform.iOS;
 
-/// User-visible name of the Anki app this platform exports to.
-String get ankiAppName => usesIosAnki ? 'Anki' : 'AnkiDroid';
-
 /// Provider for the Anki service singleton: AnkiDroid on Android; on iOS the
 /// configured backend, rebuilt when the values it is built from change.
 final ankidroidServiceProvider = Provider<AnkidroidService>((ref) {

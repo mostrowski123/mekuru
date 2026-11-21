@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
@@ -39,7 +40,7 @@ Future<void> cancelServerDownloads() async {
   InAppServerDownloads.cancelAll();
   // Host-side tests have no WorkManager or app support directory.
   if (!Platform.isAndroid && !Platform.isIOS) return;
-  if (Platform.isAndroid) {
+  if (longWork == LongWork.systemJob) {
     await Workmanager().cancelByTag(serverDownloadWorkTag);
   }
   final support = await getApplicationSupportDirectory();

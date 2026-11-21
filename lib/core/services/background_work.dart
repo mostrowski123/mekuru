@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 
 /// [download] is a server book, [dictionary] a dictionary download, [wordAudio]
 /// the offline pack.
@@ -46,7 +47,7 @@ class BackgroundWork {
   /// Localized Live Activity text; set by the app once localizations exist.
   BackgroundWorkText? text;
 
-  static bool get _supported => defaultTargetPlatform == TargetPlatform.iOS;
+  static bool get _supported => longWork == LongWork.inApp;
 
   /// Work [id] of [kind] began. [onStopped] runs if the system or the user
   /// ends the background task; the work must then stop.

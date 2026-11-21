@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:mekuru/core/config/app_links.dart';
+import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
