@@ -478,8 +478,14 @@ class MainActivity : FlutterActivity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
         }
+        try {
+            startActivityForResult(intent, REQUEST_OPEN_DOCUMENT)
+        } catch (e: ActivityNotFoundException) {
+            // No picker app; pending stays clear so the next try is not busy.
+            result.error("explorer_not_found", e.message, null)
+            return
+        }
         pendingDocumentPickerResult = result
-        startActivityForResult(intent, REQUEST_OPEN_DOCUMENT)
     }
 
     private fun handleDocumentPicked(resultCode: Int, data: Intent?) {
@@ -737,9 +743,15 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        try {
+            startActivityForResult(intent, REQUEST_OPEN_DOCUMENT_TREE)
+        } catch (e: ActivityNotFoundException) {
+            // No picker app; pending stays clear so the next try is not busy.
+            result.error("explorer_not_found", e.message, null)
+            return
+        }
         pendingTreePickerResult = result
         pendingPickedDocumentUri = pickedDocumentUri
-        startActivityForResult(intent, REQUEST_OPEN_DOCUMENT_TREE)
     }
 
     /**
