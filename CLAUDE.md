@@ -18,12 +18,12 @@ A feature or fix is for both platforms unless the task says otherwise. Android m
 
 ```bash
 flutter pub get
-dart run build_runner build --delete-conflicting-outputs   # drift + riverpod + environment_config codegen
+dart run build_runner build --delete-conflicting-outputs   # drift codegen
 dart run build_runner watch --delete-conflicting-outputs   # codegen, watch mode
 flutter analyze                                            # static analysis
 flutter test                                               # unit tests (in-memory Drift)
 flutter test test/path/to/file_test.dart                   # single test
-dart format lib test integration_test
+dart format <files you changed>
 flutter run                                                # device/emulator
 flutter build ios --no-codesign                            # iOS release build (what CI checks)
 scripts/run_integration_tests.sh <device-id> integration_test/x_test.dart   # iOS simulator or Android emulator, as CI does
@@ -31,7 +31,7 @@ scripts/run_integration_tests.sh <device-id> integration_test/x_test.dart   # iO
 
 iOS: never run two iOS builds at once in this checkout (an integration-test run counts; they share `build/ios` and the loser fails to link). After changing `ios/Podfile`, run `pod install` in `ios/` with `LANG=en_US.UTF-8`. A failing integration test can hang on a simulator instead of failing, hence the script's per-file watchdog.
 
-Run codegen after editing any `@riverpod`, `@DriftDatabase`, or `environment_config.yaml`.
+Run codegen after editing `@DriftDatabase` or `environment_config.yaml`.
 
 **Sentry**: local builds work without it. To enable, run `flutter pub run environment_config:generate --sentryDsn=<dsn> --sentryEnvironment=development` once. This writes `lib/config/environment_config.dart`.
 
@@ -46,9 +46,9 @@ Run codegen after editing any `@riverpod`, `@DriftDatabase`, or `environment_con
 
 - **Commits**: conventional prefix — `feat(scope): …`, `fix(scope): …`, `chore: …`, `refactor(scope): …`. CI / release tooling depends on it. `feat`/`fix`/`perf`/`l10n` subjects are published as they are: in the TestFlight notes, and on the site's `/changelog` under the version bump that follows them (`site/build_site.py`, which leaves out the `INTERNAL_SCOPES` such as `telemetry`, `ci` and `test`). Write them for users; website-only changes go in as `docs(site)`.
 - **Layout**: feature-first under `lib/features/<feature>/{data,presentation}/`. `data/` has `models|repositories|services`; `presentation/` has `providers|screens|widgets`. Shared infra in `lib/core/`.
-- **State**: Riverpod with codegen. The global `databaseProvider` is created once in `lib/main.dart` — **never instantiate `AppDatabase` elsewhere** in app code. Tests use the shared `createTestDatabase()` helper from `test/shared/test_database.dart`, which returns `AppDatabase(NativeDatabase.memory())`.
+- **State**: Riverpod, no codegen. The global `databaseProvider` is created once in `lib/main.dart` — **never instantiate `AppDatabase` elsewhere** in app code. Tests use the shared `createTestDatabase()` helper from `test/shared/test_database.dart`, which returns `AppDatabase(NativeDatabase.memory())`.
 - **Pure-logic files** (e.g. `reader_interaction_logic.dart`, `compound_word_resolver.dart`) must stay free of Flutter UI/widget imports so they remain unit-testable (`flutter/foundation.dart` for `debugPrint` is the accepted ceiling).
-- **Telemetry**: `lib/core/services/usage_telemetry.dart` (Sentry-backed, fire-and-forget). **Never** put book titles, file names, user text, or looked-up words in telemetry messages or attributes.
+- **Telemetry**: `lib/core/services/usage_telemetry.dart` (Sentry-backed, fire-and-forget). **Never** put file names, user text, looked-up words, or other personally identifiable information in telemetry messages, attributes, or breadcrumbs. Book titles may appear only in breadcrumbs.
 
 ## Database — Drift, append-only migrations
 
@@ -66,7 +66,7 @@ In-memory test databases skip migrations entirely (they start at the latest sche
 
 - **MeCab**: singleton at `MecabService.instance`, initialized in `main.dart`. IPADIC is bundled at `assets/ipadic/` and copied to `applicationDocumentsDirectory` on first launch. UniDic-lite is optionally **downloaded** by the user; `init()` always starts on IPADIC, then a background upgrade swaps in UniDic-lite and silently stays on IPADIC if that fails.
 - **Compound words**: greedy longest-match up to 5 tokens (`maxTokenSpan = 5`) against the *enabled* dictionary set.
-- **Dictionary queries**: always join `DictionaryMetas` and filter by `isEnabled`. Disabled dictionaries must never surface results.
+- **Dictionary queries**: always join `DictionaryMetas` and filter by `isEnabled`. Disabled dictionaries must never surface results. The exception is frequency ranks. `getFrequencyRank` and `_getFrequencyRanks` in `dictionary_query_service.dart` ignore `isEnabled`, so a frequency dictionary installed disabled and hidden still ranks words.
 - **Glossaries**: stored as raw JSON strings in Drift — no type converters. Parse on read.
 - **Glossary FTS**: `dictionary_entries_fts` (FTS5) is synced by triggers built from a single DDL map in `database_provider.dart`. Two creation paths (open-time ensure, bulk import) must never construct different triggers.
 - **Kanji glyph forms**: Chinese and Japanese fonts draw some shared kanji differently (直, 骨, 角). Every theme text style is `japaneseTextStyle` (`lib/shared/theme/app_theme.dart`): locale `ja`, plus on Android the bundled Noto Sans JP subset first, because Xiaomi, OnePlus and Oppo system fonts hold every kanji in its Chinese form and ignore the locale. A bare `RichText` or `TextPainter` skips the theme and must start from `japaneseTextStyle`; `test/shared/japanese_text_locale_test.dart` fails on one that doesn't. The reader gives a section that declares no language the book's language, else `ja`, and keeps a declared one so Chinese books stay Chinese (`tagSectionLanguage` in `reader_bridge.js`).
@@ -87,7 +87,7 @@ In-memory test databases skip migrations entirely (they start at the latest sche
 - **WorkManager Dart jobs** all go through `ocrWorkerCallbackDispatcher` (`ocr_background_worker.dart`): remote OCR scans and every Komga/Kavita book download. Queued jobs look the callback up by name, so never rename or move it.
 - **Runtime permissions**: never request one from a Flutter plugin. `ankidroid_for_flutter` force-unwraps its pending result on every `onRequestPermissionsResult`, so any foreign permission callback crashes the app. Request through `FullBackupJobBridge` (its request code is answered in `MainActivity.onRequestPermissionsResult` before `super` fans the result out to plugins); on-device OCR's notification prompt goes this way.
 - **Release builds are R8-minified** (Flutter's Gradle plugin enables shrinking for `--release`). Any library whose Java classes are constructed from JNI needs consumer keep rules or release crashes where debug works: `packages/local_manga_ocr/android/consumer-rules.pro` keeps `ai.onnxruntime.**` and `org.opencv.**` for exactly that reason (release-only SIGABRT in `OrtSession.getInputInfo`, 2026-09-11). Test OCR changes on a `--release` build before shipping a preview.
-- **AVIF manga pages** are stored and read as they are. Flutter's engine decodes AVIF only on Android 12+ (through `ImageDecoder`); everywhere else `decodeWithAvifFallback` (`lib/core/platform/image_convert.dart`) has the platform decode it to RGBA: ImageIO on iOS, AOMedia's libavif (`org.aomedia.avif.android:avif`, in `local_manga_ocr`'s `Avif.kt`) on Android 7-11 through the app's `mekuru/image_convert` channel. OCR's `MangaImageSource` falls back to the same `Avif.kt` when `BitmapRegionDecoder` refuses a page. Show local page and cover files with `fileImage()`, not `Image.file`, or AVIF breaks on iOS and Android 7-11. libavif's JNI fills `AvifDecoder.Info` by name; its AAR ships the keep rules for that. `integration_test/avif_manga_test.dart` covers import and display; CI's API 34 emulator only exercises the engine path, so run it on an Android 11 (or older) emulator and an iOS simulator after touching this.
+- **AVIF manga pages** are stored and read as they are. Flutter's engine decodes AVIF only on Android 12+ (through `ImageDecoder`); everywhere else `decodeWithAvifFallback` (`lib/core/platform/image_convert.dart`) has the platform decode it to RGBA: ImageIO on iOS, AOMedia's libavif (`org.aomedia.avif.android:avif`, in `local_manga_ocr`'s `Avif.kt`) on Android 7-11 through the app's `mekuru/image_convert` channel. OCR's `MangaImageSource` falls back to the same `Avif.kt` when `BitmapRegionDecoder` refuses a page. Show local page and cover files with `fileImage()`, not `Image.file`, or AVIF breaks on iOS and Android 7-11. libavif's JNI fills `AvifDecoder.Info` by name; its AAR ships the keep rules for that. `integration_test/avif_manga_test.dart` covers import and display. No CI workflow runs it, and Android 12+ exercises only the engine path, so run it on an Android 11 (or older) emulator and an iOS simulator after touching this.
 - **On-device OCR** lives in `packages/local_manga_ocr` (Kotlin + JNI + OpenCV DNN detector + onnxruntime recognizer, manga-ocr-base weights downloaded at runtime). Scans run as plain WorkManager work (`OcrJobWorker`), **never a foreground service**: Play rejected 1.43.8 for OCR in a `mediaProcessing` FGS. JVM tests: `.ndroid\gradlew.bat -p android :local_manga_ocr:testDebugUnitTest` from PowerShell. Regenerate the model manifest only with `tools/prepare_ocr_manifest.py`. Books imported from a PDF (`MokuroBook.fromPdf`) can also use NDLOCR-Lite's PARSeq text-line recognizer when it is installed (Tadoku free books require it) (National Diet Library, CC BY 4.0; NOT its DEIM detector, whose weights derive from DINOv3 with no clear licence): an optional download outside the manga-ocr pack (`ndl_text_model.dart`, pinned to one ndl-lab/ndlocr-lite commit), passed to a job as `OcrJobSpec.ndlModelDir`; blocks with a line over 14 times its thickness are then read line by line, long lines by NDL. `NdlAlgorithms.kt` mirrors `ndl_ocr_algorithms.dart` through `ndl_vectors.json`; change both together. See Serena memory `local_ocr_architecture` for the worker/journal invariants.
 
 ## iOS / native
@@ -104,7 +104,7 @@ In-memory test databases skip migrations entirely (they start at the latest sche
 
 Sentry environments: `play-store`, `sideload`, `sideload-parallel`, `ios` (every iOS release install, TestFlight or App Store), `debug`. CI test builds get an empty DSN.
 
-**Flutter is pinned in CI**: `flutter-version` in all six workflows that set up Flutter. Flutter 3.50.0 broke every job on 2026-11-14 (Gradle plugin against this AGP, `drift_dev` resolved past `drift`, `package:flutter/material.dart` deprecated at info level), so move the pin only together with that migration, and change all six at once.
+**Flutter is pinned in CI**: `flutter-version` in all seven workflows that set up Flutter. Flutter 3.50.0 broke every job on 2026-11-14 (Gradle plugin against this AGP, `drift_dev` resolved past `drift`, `package:flutter/material.dart` deprecated at info level), so move the pin only together with that migration, and change all seven at once.
 
 iOS: `build-ios-pr.yml` (release build without signing, plus a check that the MeCab and sqlite frameworks are in `Runner.app`), `integration-ios.yml` (simulator tests through `scripts/run_integration_tests.sh`), both build jobs set `FIREBASE_ANALYTICS_WITHOUT_ADID` (no ATT prompt, so the ad-ID Analytics frameworks must not be in `Runner.app`; needs `firebase_analytics` >= 12.5), `release-ios.yml` (TestFlight; runs after every green `integration-ios.yml` push run on main, writes What to Test from the feat/fix/perf/l10n commits since the last `testflight-*` tag, and submits the build to the external group for Beta App Review: unsigned archive, then every framework and the app are ad-hoc signed with `Runner.entitlements` before `xcodebuild -exportArchive` signs with a cloud-managed certificate, because the export step re-signs only fully signed code and reads entitlements from the signature; the App Store Connect API key needs the Admin role).
 
