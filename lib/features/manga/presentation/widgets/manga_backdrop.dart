@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -116,7 +117,7 @@ class _MangaBackdropState extends State<MangaBackdrop> {
     );
     _blurred?.dispose();
     setState(() => _blurred = blurred);
-    _readEdgeColor(thumbnail, blurred);
+    unawaited(_readEdgeColor(thumbnail, blurred));
   }
 
   void _showBlack() {

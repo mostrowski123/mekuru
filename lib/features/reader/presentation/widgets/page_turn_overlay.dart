@@ -143,15 +143,17 @@ class PageTurnController {
     final timer = Timer(_captureWait, () {
       if (!result.isCompleted) result.complete(null);
     });
-    pending.then(
-      (picture) {
-        timer.cancel();
-        result.isCompleted ? picture?.dispose() : result.complete(picture);
-      },
-      onError: (Object error, StackTrace stack) {
-        timer.cancel();
-        if (!result.isCompleted) result.completeError(error, stack);
-      },
+    unawaited(
+      pending.then(
+        (picture) {
+          timer.cancel();
+          result.isCompleted ? picture?.dispose() : result.complete(picture);
+        },
+        onError: (Object error, StackTrace stack) {
+          timer.cancel();
+          if (!result.isCompleted) result.completeError(error, stack);
+        },
+      ),
     );
     return result.future;
   }
@@ -277,10 +279,12 @@ class _PageTurnOverlayState extends State<PageTurnOverlay>
       turn.turnPage();
       if (pageShown == null) return _shown(turn);
       _pageTimeout = Timer(_pageWait, _finish);
-      pageShown.then((came) {
-        if (_turn != turn) return;
-        came ? _shown(turn) : _finish();
-      }, onError: (_) {});
+      unawaited(
+        pageShown.then((came) {
+          if (_turn != turn) return;
+          came ? _shown(turn) : _finish();
+        }, onError: (_) {}),
+      );
     });
     return turn.done.future;
   }
@@ -291,9 +295,11 @@ class _PageTurnOverlayState extends State<PageTurnOverlay>
     turn.shown = true;
     if (turn.drag != null) return _follow(turn);
     // Completes only when the animation runs to its end.
-    _animation.forward().then((_) {
-      if (_turn == turn) _finish();
-    });
+    unawaited(
+      _animation.forward().then((_) {
+        if (_turn == turn) _finish();
+      }),
+    );
   }
 
   /// Puts a turn under the finger where the finger is or, once the finger
@@ -306,16 +312,18 @@ class _PageTurnOverlayState extends State<PageTurnOverlay>
       return;
     }
     final target = finishes ? 1.0 : 0.0;
-    _animation
-        .animateTo(
-          target,
-          duration: _animation.duration! * (target - _animation.value).abs(),
-          curve: Curves.easeOut,
-        )
-        .then((_) {
-          if (_turn != turn) return;
-          finishes ? _finish() : _putBack(turn);
-        });
+    unawaited(
+      _animation
+          .animateTo(
+            target,
+            duration: _animation.duration! * (target - _animation.value).abs(),
+            curve: Curves.easeOut,
+          )
+          .then((_) {
+            if (_turn != turn) return;
+            finishes ? _finish() : _putBack(turn);
+          }),
+    );
   }
 
   /// A turn given up: the page it left goes back underneath, then the
@@ -334,7 +342,7 @@ class _PageTurnOverlayState extends State<PageTurnOverlay>
       return;
     }
     _pageTimeout = Timer(_pageWait, done);
-    back.then(done, onError: done);
+    unawaited(back.then(done, onError: done));
   }
 
   /// [rebuild] is false only from [dispose], where the tree is going anyway.
