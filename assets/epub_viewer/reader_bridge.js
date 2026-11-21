@@ -834,16 +834,6 @@ function toProgress(progress) {
   }
 }
 
-function getCurrentLocation() {
-  if (!rendition || !rendition.location || !rendition.location.start) return;
-  var loc = rendition.location;
-  callDart('currentLocation', {
-    startCfi: loc.start.cfi,
-    endCfi: loc.end ? loc.end.cfi : loc.start.cfi,
-    progress: loc.start.percentage
-  });
-}
-
 // ── TOC parsing ───────────────────────────────────────────────────────
 
 function parseToc(toc) {
@@ -1798,10 +1788,6 @@ function clearSelection() {
   } catch (e) { /* ignore */ }
   hasSelection = false;
   callDart('selectionCleared');
-}
-
-function getSelectionState() {
-  return hasSelection;
 }
 
 function expandToSentence() {
