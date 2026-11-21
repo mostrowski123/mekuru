@@ -3,21 +3,27 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/core/services/download_to_file.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/features/settings/presentation/widgets/jmdict_download_tile.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
-import 'package:mekuru/shared/utils/format_bytes.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
+import '../../../../shared/fake_download_notifiers.dart';
 import '../../../../shared/fake_path_provider.dart';
 import '../../../../shared/loopback_http.dart';
 import '../../../../shared/test_database.dart';
@@ -29,8 +35,7 @@ typedef _Shown = ({
   bool downloading,
   bool deleting,
   double? progress,
-  String? error,
-  String? message,
+  TileOutcome? outcome,
 });
 
 /// One of the three fixed-dictionary tiles (JMdict English, KANJIDIC English,
@@ -38,17 +43,22 @@ typedef _Shown = ({
 /// table knows which notifier backs a tile.
 class _Tile {
   const _Tile({
+    required this.dictionary,
+    required this.home,
     required this.name,
     required this.url,
     required this.title,
-    required this.downloaded,
-    required this.deleted,
     required this.watch,
     required this.checkStatus,
     required this.download,
     required this.delete,
     required this.room,
   });
+
+  final FixedDictionary dictionary;
+
+  /// The screen the tile is on.
+  final Widget home;
 
   final String name;
 
@@ -60,8 +70,6 @@ class _Tile {
 
   /// The dictionary's title in its zip, which the app stores as its name.
   final String title;
-  final String downloaded;
-  final String deleted;
 
   /// The tile now, and each change from here on to [onChange].
   final _Shown Function(ProviderContainer c, [void Function(_Shown)? onChange])
@@ -71,29 +79,12 @@ class _Tile {
   final Future<void> Function(ProviderContainer c) delete;
 }
 
-_Shown _shown({
-  required bool isImported,
-  required bool isDownloading,
-  required bool isDeleting,
-  required double progress,
-  required String? error,
-  required String? successMessage,
-}) => (
-  installed: isImported,
-  downloading: isDownloading,
-  deleting: isDeleting,
-  progress: isDownloading ? progress : null,
-  error: error,
-  message: successMessage,
-);
-
-_Shown _view(FixedDictionaryState s) => _shown(
-  isImported: s.isImported,
-  isDownloading: s.isDownloading,
-  isDeleting: s.isDeleting,
-  progress: s.progress,
-  error: s.error,
-  successMessage: s.successMessage,
+_Shown _view(FixedDictionaryState s) => (
+  installed: s.isImported,
+  downloading: s.isDownloading,
+  deleting: s.isDeleting,
+  progress: s.isDownloading ? s.progress : null,
+  outcome: s.outcome,
 );
 
 _Shown Function(ProviderContainer, [void Function(_Shown)?]) _watch<S>(
@@ -115,13 +106,13 @@ final _jpdb = fixedDictionaryProvider(FixedDictionary.jpdb);
 
 final _tiles = [
   _Tile(
+    dictionary: FixedDictionary.jmdict,
+    home: const Scaffold(body: JmdictDownloadTile()),
     name: 'JMdict',
     url:
         'github.com/yomidevs/jmdict-yomitan/releases/latest/download/'
         'JMdict_english.zip',
     title: 'JMdict (English) [2026-11-01]',
-    downloaded: 'JMdict downloaded successfully.',
-    deleted: 'JMdict deleted.',
     watch: _watch(_jmdict, _view),
     checkStatus: (c) => c.read(_jmdict.notifier).checkStatus(),
     download: (c) => c
@@ -132,13 +123,13 @@ final _tiles = [
     room: 578_400_000,
   ),
   _Tile(
+    dictionary: FixedDictionary.kanjidic,
+    home: const DownloadsScreen(),
     name: 'KANJIDIC',
     url:
         'github.com/yomidevs/jmdict-yomitan/releases/latest/download/'
         'KANJIDIC_english.zip',
     title: 'KANJIDIC (English) [2026-11-01]',
-    downloaded: 'KANJIDIC downloaded successfully.',
-    deleted: 'KANJIDIC deleted.',
     watch: _watch(_kanjidic, _view),
     checkStatus: (c) => c.read(_kanjidic.notifier).checkStatus(),
     download: (c) => c.read(_kanjidic.notifier).download(_unwatched),
@@ -147,13 +138,13 @@ final _tiles = [
     room: 6_100_000,
   ),
   _Tile(
+    dictionary: FixedDictionary.jpdb,
+    home: const DownloadsScreen(),
     name: 'JPDB',
     url:
         'github.com/Kuuuube/yomitan-dictionaries/raw/main/dictionaries/'
         'JPDB_v2.2_Frequency_Kana_2024-10-13.zip',
     title: 'JPDBv2㋕',
-    downloaded: 'Frequency dictionary downloaded successfully.',
-    deleted: 'Frequency dictionary deleted.',
     watch: _watch(_jpdb, _view),
     checkStatus: (c) => c.read(_jpdb.notifier).checkStatus(),
     download: (c) => c.read(_jpdb.notifier).download(_unwatched),
@@ -162,6 +153,15 @@ final _tiles = [
     room: 84_200_000,
   ),
 ];
+
+/// The real notifier without the status check its tile runs when it opens,
+/// which would clear the tile's message when it ends.
+class _NoStatusCheck extends FixedDictionaryNotifier {
+  _NoStatusCheck(super.dictionary);
+
+  @override
+  Future<void> checkStatus() async {}
+}
 
 /// A one-entry Yomitan zip titled [title].
 List<int> _zip(String title) {
@@ -194,8 +194,7 @@ const _idle = (
   downloading: false,
   deleting: false,
   progress: null,
-  error: null,
-  message: null,
+  outcome: null,
 );
 
 void main() {
@@ -226,6 +225,16 @@ void main() {
     tempDir.deleteSync(recursive: true);
   });
 
+  /// A tile whose download failed with an error [matching].
+  void expectFailed(_Shown shown, Matcher matching) {
+    expect(
+      (shown.installed, shown.downloading, shown.deleting, shown.progress),
+      (false, false, false, null),
+    );
+    expect(shown.outcome?.action, TileAction.download);
+    expect(shown.outcome?.error, matching);
+  }
+
   Future<List<String>> names() async => [
     for (final d in await repo.getAllDictionaries()) d.name,
   ];
@@ -246,21 +255,17 @@ void main() {
           downloading: true,
           deleting: false,
           progress: 0.0,
-          error: null,
-          message: null,
+          outcome: null,
         ));
         final progress = [for (final s in seen) ?s.progress];
         expect(progress, orderedEquals([...progress]..sort()));
         expect(progress.last, 1.0);
-        // English, not localized: the plan's bug 7 (7e) names only KanjiVG
-        // and UniDic, but this text has the same gap.
         expect(seen.last, (
           installed: true,
           downloading: false,
           deleting: false,
           progress: null,
-          error: null,
-          message: tile.downloaded,
+          outcome: (action: TileAction.download, error: null),
         ));
         expect(await names(), [tile.title]);
         expect(tempDir.listSync().whereType<File>(), isEmpty);
@@ -273,14 +278,14 @@ void main() {
         await tile.download(container);
 
         expect(seen.first.downloading, isTrue);
-        expect(seen.last, (
-          installed: false,
-          downloading: false,
-          deleting: false,
-          progress: null,
-          error: 'Download failed: The server returned error 404.',
-          message: null,
-        ));
+        expectFailed(
+          seen.last,
+          isA<DownloadHttpException>().having(
+            (e) => e.statusCode,
+            'status',
+            404,
+          ),
+        );
         expect(await names(), isEmpty);
         expect(tempDir.listSync().whereType<File>(), isEmpty);
       });
@@ -322,8 +327,7 @@ void main() {
           downloading: false,
           deleting: false,
           progress: null,
-          error: null,
-          message: tile.downloaded,
+          outcome: (action: TileAction.download, error: null),
         ));
       });
 
@@ -337,14 +341,12 @@ void main() {
         await tile.delete(container);
 
         expect(seen.first.deleting, isTrue);
-        // English, not localized (same gap as the download message).
         expect(seen.last, (
           installed: false,
           downloading: false,
           deleting: false,
           progress: null,
-          error: null,
-          message: tile.deleted,
+          outcome: (action: TileAction.delete, error: null),
         ));
         expect(await names(), ['Jitendex.org [2026-11-01]']);
       });
@@ -364,19 +366,48 @@ void main() {
         await tile.download(container);
 
         expect(http.requests, isEmpty);
-        // The catalog's message, in the app's language (English here).
-        expect(tile.watch(container), (
-          installed: false,
-          downloading: false,
-          deleting: false,
-          progress: null,
-          error: lookupAppLocalizations(
-            const Locale('en'),
-          ).backupFullNotEnoughSpace(size: formatBytes(tile.room - 1000)),
-          message: null,
-        ));
+        expectFailed(
+          tile.watch(container),
+          isA<InsufficientSpaceException>().having(
+            (e) => e.neededBytes,
+            'needed',
+            tile.room - 1000,
+          ),
+        );
         expect(await names(), isEmpty);
         expect(tempDir.listSync(recursive: true), isEmpty);
+      });
+
+      testWidgets('in Japanese, its tile says why a download failed, then '
+          'that it downloaded, then that it was deleted', (tester) async {
+        final ja = lookupAppLocalizations(const Locale('ja'));
+        final screen = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            ...fakeDownloadNotifierOverrides(
+              [],
+              fixed: (d) => d == tile.dictionary ? _NoStatusCheck(d) : null,
+            ),
+          ],
+        );
+        addTearDown(screen.dispose);
+        await pumpInJapanese(tester, screen, home: tile.home);
+        Future<void> shows(Future<void> Function() action, String text) async {
+          await tester.runAsync(action);
+          await tester.pump();
+          expect(find.text(text), findsOneWidget);
+          expect(untranslatedDownloadText, findsNothing);
+        }
+
+        await shows(
+          () => tile.download(screen),
+          ja.serverBrowseDownloadFailed(
+            error: ja.serverErrorStatus(status: 404),
+          ),
+        );
+        http.handler = serve(_zip(tile.title));
+        await shows(() => tile.download(screen), ja.downloadsDownloadComplete);
+        await shows(() => tile.delete(screen), ja.downloadsDeleted);
       });
     });
   }

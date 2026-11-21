@@ -371,7 +371,10 @@ void main() {
       await tester.tap(inRow(find.byTooltip('Remove')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Download failed: Exception: locked'), findsOneWidget);
+      expect(
+        find.text("Couldn't delete the files. Try again."),
+        findsOneWidget,
+      );
       expect(inRow(find.byTooltip('Remove')), findsOneWidget);
     });
 
@@ -463,7 +466,11 @@ void main() {
       downloadDone.completeError(Exception('boom'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Download failed: Exception: boom'), findsOneWidget);
+      // An error with no message of its own: not its text.
+      expect(
+        find.text("The download didn't finish. Try again."),
+        findsOneWidget,
+      );
       expect(
         inRow(
           find.text(

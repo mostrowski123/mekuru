@@ -7364,6 +7364,48 @@ abstract class AppLocalizations {
   /// **'The download was interrupted. Tap Download to try again.'**
   String get downloadInterrupted;
 
+  /// Shown under a download on the Downloads screen (kanji stroke order, KANJIDIC, JMdict, word frequency) once it has downloaded and installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download complete.'**
+  String get downloadsDownloadComplete;
+
+  /// Shown under a download on the Downloads screen (kanji stroke order, KANJIDIC, JMdict, word frequency) once its files were deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted.'**
+  String get downloadsDeleted;
+
+  /// Shown under a download on the Downloads screen when deleting its files failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the files. Try again.'**
+  String get downloadsDeleteFailed;
+
+  /// Shown under the enhanced furigana dictionary once its download has installed. The app loads it at the next start.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhanced dictionary installed. Restart the app to use it.'**
+  String get downloadsEnhancedFuriganaInstalledRestart;
+
+  /// As downloadsEnhancedFuriganaInstalledRestart, while Low RAM mode (settingsLowRamModeTitle) is on, which never loads the dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhanced dictionary installed. Turn off Low RAM mode and restart the app to use it.'**
+  String get downloadsEnhancedFuriganaInstalledLowRam;
+
+  /// Shown under the enhanced furigana dictionary once it was removed. The app goes back to its bundled dictionary at the next start.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhanced dictionary removed. Restart the app to switch back to the bundled dictionary.'**
+  String get downloadsEnhancedFuriganaRemoved;
+
+  /// Shown when a download (dictionary, model, word list or server book) failed for a reason that has no message of its own, such as its files not unpacking or importing.
+  ///
+  /// In en, this message translates to:
+  /// **'The download didn\'t finish. Try again.'**
+  String get downloadNotFinished;
+
   /// Settings › General (Android): title of the switch that makes Mekuru use less memory.
   ///
   /// In en, this message translates to:

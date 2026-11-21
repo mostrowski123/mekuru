@@ -4573,6 +4573,31 @@ class AppLocalizationsId extends AppLocalizations {
       'Unduhan terputus. Ketuk Unduh untuk mencoba lagi.';
 
   @override
+  String get downloadsDownloadComplete => 'Unduhan selesai.';
+
+  @override
+  String get downloadsDeleted => 'Dihapus.';
+
+  @override
+  String get downloadsDeleteFailed =>
+      'Tidak dapat menghapus berkas. Coba lagi.';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledRestart =>
+      'Kamus yang ditingkatkan terpasang. Mulai ulang aplikasi untuk menggunakannya.';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledLowRam =>
+      'Kamus yang ditingkatkan terpasang. Matikan mode RAM rendah dan mulai ulang aplikasi untuk menggunakannya.';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoved =>
+      'Kamus yang ditingkatkan dihapus. Mulai ulang aplikasi untuk kembali ke kamus bawaan.';
+
+  @override
+  String get downloadNotFinished => 'Unduhan tidak selesai. Coba lagi.';
+
+  @override
   String get settingsLowRamModeTitle => 'Mode RAM rendah';
 
   @override

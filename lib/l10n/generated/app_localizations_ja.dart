@@ -4429,6 +4429,30 @@ class AppLocalizationsJa extends AppLocalizations {
       'ダウンロードが中断されました。「ダウンロード」をタップして、もう一度お試しください。';
 
   @override
+  String get downloadsDownloadComplete => 'ダウンロードが完了しました。';
+
+  @override
+  String get downloadsDeleted => '削除しました。';
+
+  @override
+  String get downloadsDeleteFailed => 'ファイルを削除できませんでした。もう一度お試しください。';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledRestart =>
+      '強化辞書をインストールしました。使うにはアプリを再起動してください。';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledLowRam =>
+      '強化辞書をインストールしました。使うには省メモリモードをオフにして、アプリを再起動してください。';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoved =>
+      '強化辞書を削除しました。内蔵の辞書に戻すにはアプリを再起動してください。';
+
+  @override
+  String get downloadNotFinished => 'ダウンロードを完了できませんでした。もう一度お試しください。';
+
+  @override
   String get settingsLowRamModeTitle => '省メモリモード';
 
   @override

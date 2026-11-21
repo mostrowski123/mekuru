@@ -232,15 +232,19 @@ void main() {
       );
     });
 
-    testWidgets('other failures show the error', (tester) async {
+    testWidgets('other failures say the download did not finish, never the '
+        "error's text", (tester) async {
       mockWifiConnected(true);
       await pumpModelTile(tester);
       await tester.tap(find.text('Download'));
       await tester.pump();
       finish.completeError(Exception('boom'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Download failed'), findsOneWidget);
-      expect(find.textContaining('boom'), findsOneWidget);
+      expect(
+        find.text("The download didn't finish. Try again."),
+        findsOneWidget,
+      );
+      expect(find.textContaining('boom'), findsNothing);
     });
   });
 

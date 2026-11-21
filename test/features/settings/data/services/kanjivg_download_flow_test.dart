@@ -6,16 +6,26 @@ import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/core/services/download_to_file.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
-import 'package:mekuru/shared/utils/format_bytes.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
-import '../../../../shared/fake_download_notifiers.dart' show mockWifiConnected;
+import '../../../../shared/fake_download_notifiers.dart';
 import '../../../../shared/fake_path_provider.dart';
 import '../../../../shared/loopback_http.dart';
+
+/// The real notifier without the status check the screen runs when it opens,
+/// whose file check never ends under a widget test's clock.
+class _NoStatusCheck extends KanjiVgNotifier {
+  @override
+  Future<void> checkStatus() async {}
+}
 
 /// The KanjiVG tile's whole download, from tap to files on disk, against a
 /// loopback server.
@@ -39,6 +49,13 @@ void main() {
   File archive() => inRoot('kanjivg_download.zip');
   File marker() => inRoot(p.join('kanjivg', '.kanjivg_complete'));
   KanjiVgState tile() => container.read(kanjiVgProvider);
+
+  /// What the last download failed with.
+  Object? failure() {
+    expect(tile().outcome?.action, TileAction.download);
+    return tile().outcome?.error;
+  }
+
   // Unwatched unless a test asks for Wi-Fi only, as a tap on Wi-Fi does.
   Future<void> download([NetworkConsent network = NetworkConsent.mobileData]) =>
       container.read(kanjiVgProvider.notifier).download(network);
@@ -75,9 +92,7 @@ void main() {
     expect(tile().isDownloaded, isTrue);
     expect(tile().isDownloading, isFalse);
     expect(tile().fileCount, 2);
-    expect(tile().error, isNull);
-    // 7e changes this (bug 7): English, not localized.
-    expect(tile().successMessage, 'Downloaded 2 kanji stroke order files.');
+    expect(tile().outcome, (action: TileAction.download, error: null));
     expect(inRoot(p.join('kanjivg', '04e00.svg')).existsSync(), isTrue);
     expect(inRoot(p.join('kanjivg', '04e8c.svg')).existsSync(), isTrue);
     expect(marker().existsSync(), isTrue);
@@ -96,11 +111,9 @@ void main() {
 
     expect(tile().isDownloaded, isFalse);
     expect(tile().isDownloading, isFalse);
-    // 7e changes this (bug 7): English, with the raw exception and URL.
     expect(
-      tile().error,
-      'Download failed: HttpException: Download failed: HTTP 404, '
-      'uri = https://$url',
+      failure(),
+      isA<DownloadHttpException>().having((e) => e.statusCode, 'status', 404),
     );
     expect(marker().existsSync(), isFalse);
     expect(archive().existsSync(), isFalse);
@@ -114,7 +127,7 @@ void main() {
     await download();
 
     expect(tile().isDownloaded, isFalse);
-    expect(tile().error, startsWith('Download failed: '));
+    expect(failure(), isA<HttpException>());
     expect(archive().existsSync(), isFalse);
     expect(marker().existsSync(), isFalse);
   });
@@ -136,12 +149,13 @@ void main() {
     expect(http.requests, isEmpty);
     expect(tile().isDownloading, isFalse);
     expect(tile().isDownloaded, isFalse);
-    // The catalog's message, in the app's language (English here).
     expect(
-      tile().error,
-      lookupAppLocalizations(
-        const Locale('en'),
-      ).backupFullNotEnoughSpace(size: formatBytes(102_568_762 - 1000)),
+      failure(),
+      isA<InsufficientSpaceException>().having(
+        (e) => e.neededBytes,
+        'needed',
+        102_568_762 - 1000,
+      ),
     );
     expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
   });
@@ -158,12 +172,36 @@ void main() {
     await done;
 
     expect(tile().isDownloaded, isFalse);
-    expect(
-      tile().error,
-      'The download stopped because Wi-Fi disconnected. Tap Download to try '
-      'again.',
-    );
+    expect(failure(), isA<WifiLostException>());
     expect(marker().existsSync(), isFalse);
     expect(archive().existsSync(), isFalse);
+  });
+
+  testWidgets('in Japanese, the Downloads screen says why a download failed, '
+      'then that it downloaded, then that it was deleted', (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    final screen = ProviderContainer(
+      overrides: fakeDownloadNotifierOverrides([], kanjiVg: _NoStatusCheck.new),
+    );
+    addTearDown(screen.dispose);
+    await pumpInJapanese(tester, screen);
+    final notifier = screen.read(kanjiVgProvider.notifier);
+    Future<void> shows(Future<void> Function() action, String text) async {
+      await tester.runAsync(action);
+      await tester.pump();
+      expect(find.text(text), findsOneWidget);
+      expect(untranslatedDownloadText, findsNothing);
+    }
+
+    await shows(
+      () => notifier.download(NetworkConsent.mobileData),
+      ja.serverBrowseDownloadFailed(error: ja.serverErrorStatus(status: 404)),
+    );
+    http.handler = serve(zip);
+    await shows(
+      () => notifier.download(NetworkConsent.mobileData),
+      ja.downloadsDownloadComplete,
+    );
+    await shows(notifier.delete, ja.downloadsDeleted);
   });
 }

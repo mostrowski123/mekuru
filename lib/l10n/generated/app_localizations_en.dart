@@ -4549,6 +4549,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'The download was interrupted. Tap Download to try again.';
 
   @override
+  String get downloadsDownloadComplete => 'Download complete.';
+
+  @override
+  String get downloadsDeleted => 'Deleted.';
+
+  @override
+  String get downloadsDeleteFailed => 'Couldn\'t delete the files. Try again.';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledRestart =>
+      'Enhanced dictionary installed. Restart the app to use it.';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledLowRam =>
+      'Enhanced dictionary installed. Turn off Low RAM mode and restart the app to use it.';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoved =>
+      'Enhanced dictionary removed. Restart the app to switch back to the bundled dictionary.';
+
+  @override
+  String get downloadNotFinished => 'The download didn\'t finish. Try again.';
+
+  @override
   String get settingsLowRamModeTitle => 'Low RAM mode';
 
   @override

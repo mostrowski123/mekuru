@@ -5,17 +5,40 @@ import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/core/services/download_to_file.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
-import 'package:mekuru/shared/utils/format_bytes.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
-import '../../../../shared/fake_download_notifiers.dart' show mockWifiConnected;
+import '../../../../shared/fake_download_notifiers.dart';
 import '../../../../shared/fake_path_provider.dart';
 import '../../../../shared/loopback_http.dart';
+
+/// The real notifier without the status check the screen runs when it opens,
+/// whose file check never ends under a widget test's clock.
+class _NoStatusCheck extends EnhancedFuriganaDictNotifier {
+  @override
+  Future<void> checkStatus() async {}
+}
+
+/// A download that installs, which no test can serve: the archive's hash is
+/// pinned to the published release.
+class _Installs extends _NoStatusCheck {
+  @override
+  Future<void> download(NetworkConsent network) async {
+    state = const EnhancedFuriganaDictState(
+      isInstalled: true,
+      outcome: (action: TileAction.download, error: null),
+    );
+  }
+}
 
 /// The UniDic-lite (enhanced furigana) tile's download against a loopback
 /// server. The archive is pinned by sha256 to the published release, so no
@@ -36,6 +59,13 @@ void main() {
   Directory installDir() => Directory(p.join(root.path, 'unidic-lite'));
   EnhancedFuriganaDictState tile() =>
       container.read(enhancedFuriganaDictProvider);
+
+  /// What the last download failed with.
+  Object? failure() {
+    expect(tile().outcome?.action, TileAction.download);
+    return tile().outcome?.error;
+  }
+
   // Unwatched unless a test asks for Wi-Fi only, as a tap on Wi-Fi does.
   Future<void> download([NetworkConsent network = NetworkConsent.mobileData]) =>
       container.read(enhancedFuriganaDictProvider.notifier).download(network);
@@ -73,11 +103,9 @@ void main() {
     expect(seen.first.progress, 0.0);
     expect(tile().isDownloading, isFalse);
     expect(tile().isInstalled, isFalse);
-    // 7e changes this (bug 7): English, with the raw exception and URL.
     expect(
-      tile().error,
-      'Download failed: HttpException: Download failed: HTTP 404, '
-      'uri = https://$url',
+      failure(),
+      isA<DownloadHttpException>().having((e) => e.statusCode, 'status', 404),
     );
     expectNothingInstalled();
     expect(await EnhancedFuriganaDictDownloadService.isInstalled(), isFalse);
@@ -96,14 +124,7 @@ void main() {
     // It reached the "Extracting" step.
     expect(progress, contains(0.85));
     expect(tile().isInstalled, isFalse);
-    // 7e changes this (bug 7): English, with the raw exception.
-    expect(
-      tile().error,
-      startsWith(
-        'Download failed: FormatException: Downloaded unidic-lite hash '
-        'mismatch',
-      ),
-    );
+    expect(failure(), isA<FormatException>());
     expect(installDir().existsSync(), isFalse);
     expectNothingInstalled();
   });
@@ -117,7 +138,7 @@ void main() {
     await download();
 
     expect(tile().isInstalled, isFalse);
-    expect(tile().error, startsWith('Download failed: '));
+    expect(failure(), isA<HttpException>());
     expectNothingInstalled();
   });
 
@@ -133,11 +154,7 @@ void main() {
     await done;
 
     expect(tile().isInstalled, isFalse);
-    expect(
-      tile().error,
-      'The download stopped because Wi-Fi disconnected. Tap Download to try '
-      'again.',
-    );
+    expect(failure(), isA<WifiLostException>());
     expectNothingInstalled();
   });
 
@@ -157,13 +174,14 @@ void main() {
     expect(http.requests, isEmpty);
     expect(tile().isDownloading, isFalse);
     expect(tile().isInstalled, isFalse);
-    // The catalog's message, in the app's language (English here): the
-    // archive, its tar and the files taken out of it, 568.7 MB at once.
+    // The archive, its tar and the files taken out of it, 568.7 MB at once.
     expect(
-      tile().error,
-      lookupAppLocalizations(
-        const Locale('en'),
-      ).backupFullNotEnoughSpace(size: formatBytes(568_674_867 - 1000)),
+      failure(),
+      isA<InsufficientSpaceException>().having(
+        (e) => e.neededBytes,
+        'needed',
+        568_674_867 - 1000,
+      ),
     );
     expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
   });
@@ -179,4 +197,68 @@ void main() {
 
     expect(tile().isInstalled, isTrue);
   });
+
+  testWidgets('in Japanese, the Downloads screen says why a download failed, '
+      'and that the dictionary was removed', (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    final screen = ProviderContainer(
+      overrides: fakeDownloadNotifierOverrides(
+        [],
+        enhancedFurigana: _NoStatusCheck.new,
+      ),
+    );
+    addTearDown(screen.dispose);
+    await pumpInJapanese(tester, screen);
+    final notifier = screen.read(enhancedFuriganaDictProvider.notifier);
+    Future<void> shows(Future<void> Function() action, String text) async {
+      await tester.runAsync(action);
+      await tester.pump();
+      expect(find.text(text), findsOneWidget);
+      expect(untranslatedDownloadText, findsNothing);
+    }
+
+    await shows(
+      () => notifier.download(NetworkConsent.mobileData),
+      ja.serverBrowseDownloadFailed(error: ja.serverErrorStatus(status: 404)),
+    );
+    // Not the published archive, so its hash doesn't match.
+    http.handler = serve(archiveBytes);
+    await shows(
+      () => notifier.download(NetworkConsent.mobileData),
+      ja.localOcrDownloadDamaged,
+    );
+    await shows(notifier.uninstall, ja.downloadsEnhancedFuriganaRemoved);
+  });
+
+  for (final lowRamMode in [false, true]) {
+    testWidgets('in Japanese, an install says to restart the app'
+        '${lowRamMode ? ', and to turn off Low RAM mode' : ''}', (
+      tester,
+    ) async {
+      final ja = lookupAppLocalizations(const Locale('ja'));
+      final screen = ProviderContainer(
+        overrides: [
+          lowRamModeProvider.overrideWithBuild((ref, _) => lowRamMode),
+          ...fakeDownloadNotifierOverrides([], enhancedFurigana: _Installs.new),
+        ],
+      );
+      addTearDown(screen.dispose);
+      await pumpInJapanese(tester, screen);
+
+      await screen
+          .read(enhancedFuriganaDictProvider.notifier)
+          .download(NetworkConsent.mobileData);
+      await tester.pump();
+
+      expect(
+        find.text(
+          lowRamMode
+              ? ja.downloadsEnhancedFuriganaInstalledLowRam
+              : ja.downloadsEnhancedFuriganaInstalledRestart,
+        ),
+        findsOneWidget,
+      );
+      expect(untranslatedDownloadText, findsNothing);
+    });
+  }
 }

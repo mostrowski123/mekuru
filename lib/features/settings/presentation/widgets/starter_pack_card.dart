@@ -12,6 +12,7 @@ import 'package:mekuru/features/dictionary/presentation/screens/dictionary_searc
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
@@ -132,8 +133,12 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
     final finishing = inFlight.every(
       (p) => p >= DictionaryDownloadService.finishingProgress,
     );
+    final jpdbFailure = switch (jpdb.outcome) {
+      (action: TileAction.download, :final error) => error,
+      _ => null,
+    };
     final error = widget.showProgress
-        ? dictionaryDownloadError(l10n, jitendex.failure) ?? jpdb.error
+        ? dictionaryDownloadError(l10n, jitendex.failure ?? jpdbFailure)
         : null;
 
     return Container(

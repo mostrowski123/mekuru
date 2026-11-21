@@ -4335,6 +4335,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadInterrupted => '下载已中断。请点按“下载”重试。';
 
   @override
+  String get downloadsDownloadComplete => '下载完成。';
+
+  @override
+  String get downloadsDeleted => '已删除。';
+
+  @override
+  String get downloadsDeleteFailed => '无法删除文件。请重试。';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledRestart => '增强词典已安装。请重启应用以启用。';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledLowRam =>
+      '增强词典已安装。请关闭低内存模式并重启应用以启用。';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoved => '增强词典已移除。请重启应用以切换回内置词典。';
+
+  @override
+  String get downloadNotFinished => '下载未完成。请重试。';
+
+  @override
   String get settingsLowRamModeTitle => '低内存模式';
 
   @override
@@ -8839,6 +8861,28 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadInterrupted => '下载已中断。请点按“下载”重试。';
+
+  @override
+  String get downloadsDownloadComplete => '下载完成。';
+
+  @override
+  String get downloadsDeleted => '已删除。';
+
+  @override
+  String get downloadsDeleteFailed => '无法删除文件。请重试。';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledRestart => '增强词典已安装。请重启应用以启用。';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledLowRam =>
+      '增强词典已安装。请关闭低内存模式并重启应用以启用。';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoved => '增强词典已移除。请重启应用以切换回内置词典。';
+
+  @override
+  String get downloadNotFinished => '下载未完成。请重试。';
 
   @override
   String get settingsLowRamModeTitle => '低内存模式';

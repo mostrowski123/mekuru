@@ -13,6 +13,7 @@ import 'package:mekuru/features/manga/data/services/model_download.dart'
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -176,8 +177,45 @@ class DownloadAttributionText extends StatelessWidget {
   }
 }
 
+/// What a download tile's last download or delete came to: [downloaded] or
+/// [deleted] when it worked (by default "Download complete." and
+/// "Deleted."), else why it failed.
+class DownloadOutcomeText extends StatelessWidget {
+  const DownloadOutcomeText(
+    this.outcome, {
+    super.key,
+    this.downloaded,
+    this.deleted,
+  });
+
+  final TileOutcome outcome;
+  final String? downloaded;
+  final String? deleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return switch (outcome) {
+      (action: TileAction.download, error: null) => DownloadSuccessText(
+        text: downloaded ?? l10n.downloadsDownloadComplete,
+      ),
+      (action: TileAction.delete, error: null) => DownloadSuccessText(
+        text: deleted ?? l10n.downloadsDeleted,
+      ),
+      (action: TileAction.download, :final error?) => DownloadErrorText(
+        text: dictionaryDownloadError(l10n, error)!,
+      ),
+      (action: TileAction.delete, error: _?) => DownloadErrorText(
+        text: l10n.downloadsDeleteFailed,
+      ),
+    };
+  }
+}
+
 /// Why a download (dictionary, translation or OCR model) failed, worded for
-/// the user; null when it did not.
+/// the user; null when it did not. Every way one ends has its own words, and
+/// anything else says only that it didn't finish: an exception's own text
+/// never reaches the user.
 String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
     switch (failure) {
       null => null,
@@ -186,6 +224,9 @@ String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
       WifiLostException() => l10n.dictionaryDownloadWifiLost,
       DownloadStoppedInBackgroundException() =>
         l10n.downloadStoppedInBackground,
+      // iOS ended its background work.
+      DownloadStoppedException() => l10n.downloadInterrupted,
+      // A part of the wrong size or hash.
       ModelVerificationException() => l10n.localOcrDownloadDamaged,
       DownloadHttpException(:final statusCode) ||
       ServerDownloadHttpException(
@@ -204,7 +245,11 @@ String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
       // ENOSPC
       FileSystemException(osError: OSError(errorCode: 28)) =>
         l10n.localOcrStorageFull,
-      _ => l10n.serverBrowseDownloadFailed(error: '$failure'),
+      // An archive that doesn't unpack (ArchiveException, a bad gzip) or a
+      // hash that doesn't match (UniDic).
+      FormatException() => l10n.localOcrDownloadDamaged,
+      // An import or extraction that failed some other way.
+      _ => l10n.downloadNotFinished,
     };
 
 /// [dictionaryDownloadError] for a download with no Download button to tap
@@ -227,5 +272,6 @@ String _recordedDownloadFailure(AppLocalizations l10n, String error) =>
       (_, final int status) => l10n.serverBrowseDownloadFailed(
         error: l10n.serverErrorStatus(status: status),
       ),
-      _ => l10n.serverBrowseDownloadFailed(error: error),
+      // An exception's text (serverDownloadErrorCode), or none.
+      _ => l10n.downloadNotFinished,
     };

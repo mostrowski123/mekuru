@@ -5851,6 +5851,34 @@
   "@downloadInterrupted": {
     "description": "A download (dictionary, translation model) ended because the system dropped its background job. 'Download' is the button that starts it."
   },
+  "downloadsDownloadComplete": "Download complete.",
+  "@downloadsDownloadComplete": {
+    "description": "Shown under a download on the Downloads screen (kanji stroke order, KANJIDIC, JMdict, word frequency) once it has downloaded and installed."
+  },
+  "downloadsDeleted": "Deleted.",
+  "@downloadsDeleted": {
+    "description": "Shown under a download on the Downloads screen (kanji stroke order, KANJIDIC, JMdict, word frequency) once its files were deleted."
+  },
+  "downloadsDeleteFailed": "Couldn't delete the files. Try again.",
+  "@downloadsDeleteFailed": {
+    "description": "Shown under a download on the Downloads screen when deleting its files failed."
+  },
+  "downloadsEnhancedFuriganaInstalledRestart": "Enhanced dictionary installed. Restart the app to use it.",
+  "@downloadsEnhancedFuriganaInstalledRestart": {
+    "description": "Shown under the enhanced furigana dictionary once its download has installed. The app loads it at the next start."
+  },
+  "downloadsEnhancedFuriganaInstalledLowRam": "Enhanced dictionary installed. Turn off Low RAM mode and restart the app to use it.",
+  "@downloadsEnhancedFuriganaInstalledLowRam": {
+    "description": "As downloadsEnhancedFuriganaInstalledRestart, while Low RAM mode (settingsLowRamModeTitle) is on, which never loads the dictionary."
+  },
+  "downloadsEnhancedFuriganaRemoved": "Enhanced dictionary removed. Restart the app to switch back to the bundled dictionary.",
+  "@downloadsEnhancedFuriganaRemoved": {
+    "description": "Shown under the enhanced furigana dictionary once it was removed. The app goes back to its bundled dictionary at the next start."
+  },
+  "downloadNotFinished": "The download didn't finish. Try again.",
+  "@downloadNotFinished": {
+    "description": "Shown when a download (dictionary, model, word list or server book) failed for a reason that has no message of its own, such as its files not unpacking or importing."
+  },
   "settingsLowRamModeTitle": "Low RAM mode",
   "@settingsLowRamModeTitle": {
     "description": "Settings › General (Android): title of the switch that makes Mekuru use less memory."

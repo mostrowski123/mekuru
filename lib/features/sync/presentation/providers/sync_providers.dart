@@ -8,8 +8,6 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/background_work.dart';
 import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
-import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
-    show InsufficientSpaceException;
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/manga/presentation/widgets/scanned_pdf_notice.dart';
@@ -611,21 +609,22 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
   }
 }
 
-/// User-facing text for a failed server request: a hint to the self-signed
-/// switch when the certificate was rejected, the room a download lacks,
-/// else why it failed.
-String describeServerError(
-  AppLocalizations l10n,
-  Object error,
-) => switch (error) {
-  _ when isUntrustedCertificateError(error) => l10n.serverCertificateUntrusted,
-  InsufficientSpaceException() => dictionaryDownloadError(l10n, error)!,
-  _ => l10n.serverBrowseDownloadFailed(error: serverErrorReason(l10n, error)),
-};
+/// User-facing text for a server download that failed to start: a hint to
+/// the self-signed switch when the certificate was rejected, what the server
+/// answered, else why the download failed.
+String describeServerError(AppLocalizations l10n, Object error) =>
+    switch (error) {
+      _ when isUntrustedCertificateError(error) =>
+        l10n.serverCertificateUntrusted,
+      SyncException() => l10n.serverBrowseDownloadFailed(
+        error: serverErrorReason(l10n, error),
+      ),
+      _ => dictionaryDownloadError(l10n, error)!,
+    };
 
 /// User-facing text for a server download that failed with [error], as
 /// [runServerDownloadWork] or the app recorded it, in the user's language.
-/// An error with no code is shown as it is.
+/// An error with no code says only that the download didn't finish.
 String describeServerDownloadError(AppLocalizations l10n, String error) {
   if (error == serverDownloadInterruptedError) {
     return l10n.serverBrowseDownloadInterrupted;
@@ -639,10 +638,9 @@ String describeServerDownloadError(AppLocalizations l10n, String error) {
     return l10n.serverBrowseDownloadFailed(error: l10n.localOcrStorageFull);
   }
   final status = serverDownloadErrorStatus(error);
+  if (status == null) return l10n.downloadNotFinished;
   return l10n.serverBrowseDownloadFailed(
-    error: status == null
-        ? error
-        : serverErrorReason(l10n, SyncException(status, error)),
+    error: serverErrorReason(l10n, SyncException(status, error)),
   );
 }
 

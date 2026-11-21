@@ -1,11 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/network_status.dart';
-import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
-    show InsufficientSpaceException;
 import 'package:mekuru/features/settings/data/services/kanjivg_download_service.dart';
-import 'package:mekuru/main.dart' show appL10n;
-import 'package:mekuru/shared/widgets/download_status.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 
 /// State for KanjiVG asset management.
 class KanjiVgState {
@@ -14,8 +11,9 @@ class KanjiVgState {
   final bool isDeleting;
   final double progress;
   final int fileCount;
-  final String? error;
-  final String? successMessage;
+
+  /// The last download or delete, until the next state change.
+  final TileOutcome? outcome;
 
   const KanjiVgState({
     this.isDownloaded = false,
@@ -23,8 +21,7 @@ class KanjiVgState {
     this.isDeleting = false,
     this.progress = 0.0,
     this.fileCount = 0,
-    this.error,
-    this.successMessage,
+    this.outcome,
   });
 
   KanjiVgState copyWith({
@@ -33,8 +30,7 @@ class KanjiVgState {
     bool? isDeleting,
     double? progress,
     int? fileCount,
-    String? error,
-    String? successMessage,
+    TileOutcome? outcome,
   }) {
     return KanjiVgState(
       isDownloaded: isDownloaded ?? this.isDownloaded,
@@ -42,8 +38,7 @@ class KanjiVgState {
       isDeleting: isDeleting ?? this.isDeleting,
       progress: progress ?? this.progress,
       fileCount: fileCount ?? this.fileCount,
-      error: error,
-      successMessage: successMessage,
+      outcome: outcome,
     );
   }
 }
@@ -67,12 +62,7 @@ class KanjiVgNotifier extends Notifier<KanjiVgState> {
   /// Download and extract KanjiVG SVGs from GitHub over [network].
   Future<void> download(NetworkConsent network) async {
     if (state.isDownloading) return;
-    state = state.copyWith(
-      isDownloading: true,
-      progress: 0.0,
-      error: null,
-      successMessage: null,
-    );
+    state = state.copyWith(isDownloading: true, progress: 0.0);
 
     try {
       final count = await KanjiVgDownloadService.downloadAndExtract(
@@ -84,16 +74,14 @@ class KanjiVgNotifier extends Notifier<KanjiVgState> {
       state = KanjiVgState(
         isDownloaded: true,
         fileCount: count,
-        successMessage: 'Downloaded $count kanji stroke order files.',
+        outcome: (action: TileAction.download, error: null),
       );
     } catch (e) {
+      // The archive goes with the failure, so the next tap starts over.
       state = KanjiVgState(
         isDownloaded: state.isDownloaded,
         fileCount: state.fileCount,
-        // The archive goes with the stop, so the next tap starts over.
-        error: e is WifiLostException || e is InsufficientSpaceException
-            ? dictionaryDownloadError(appL10n(), e)
-            : 'Download failed: $e',
+        outcome: (action: TileAction.download, error: e),
       );
     }
   }
@@ -101,19 +89,19 @@ class KanjiVgNotifier extends Notifier<KanjiVgState> {
   /// Delete all downloaded KanjiVG files.
   Future<void> delete() async {
     if (state.isDeleting) return;
-    state = state.copyWith(isDeleting: true, error: null, successMessage: null);
+    state = state.copyWith(isDeleting: true);
 
     try {
       await KanjiVgDownloadService.delete();
-      state = const KanjiVgState(successMessage: 'Kanji stroke data deleted.');
+      state = const KanjiVgState(
+        outcome: (action: TileAction.delete, error: null),
+      );
     } catch (e) {
-      state = state.copyWith(isDeleting: false, error: 'Delete failed: $e');
+      state = state.copyWith(
+        isDeleting: false,
+        outcome: (action: TileAction.delete, error: e),
+      );
     }
-  }
-
-  /// Clear any transient error/success messages.
-  void clearMessages() {
-    state = state.copyWith(error: null, successMessage: null);
   }
 }
 

@@ -386,7 +386,11 @@ void main() {
       await mapWordAudioFromCard(tester, audio);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('broken list'), findsOneWidget);
+      expect(
+        find.text("The download didn't finish. Try again."),
+        findsOneWidget,
+      );
+      expect(find.textContaining('broken list'), findsNothing);
       expect(find.text('Add to Anki'), findsOneWidget);
     });
 

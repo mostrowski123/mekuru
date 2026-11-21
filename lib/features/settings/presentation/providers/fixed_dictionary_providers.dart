@@ -4,37 +4,15 @@ import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/data/services/jpdb_freq_download_service.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
-import 'package:mekuru/main.dart' show appL10n;
-import 'package:mekuru/shared/widgets/download_status.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 
-/// A dictionary with a download tile of its own, and the English messages
-/// that tile shows.
+/// A dictionary with a download tile of its own.
 enum FixedDictionary {
-  jmdict(
-    YomitanDictType.jmdictEnglish,
-    logTag: 'JMdict',
-    downloaded: 'JMdict downloaded successfully.',
-    deleted: 'JMdict deleted.',
-  ),
-  kanjidic(
-    YomitanDictType.kanjidicEnglish,
-    logTag: 'KANJIDIC',
-    downloaded: 'KANJIDIC downloaded successfully.',
-    deleted: 'KANJIDIC deleted.',
-  ),
-  jpdb(
-    null,
-    logTag: 'JpdbFreq',
-    downloaded: 'Frequency dictionary downloaded successfully.',
-    deleted: 'Frequency dictionary deleted.',
-  );
+  jmdict(YomitanDictType.jmdictEnglish, logTag: 'JMdict'),
+  kanjidic(YomitanDictType.kanjidicEnglish, logTag: 'KANJIDIC'),
+  jpdb(null, logTag: 'JpdbFreq');
 
-  const FixedDictionary(
-    this.yomitanType, {
-    required this.logTag,
-    required this.downloaded,
-    required this.deleted,
-  });
+  const FixedDictionary(this.yomitanType, {required this.logTag});
 
   /// The edition [YomitanDictDownloadService] downloads unless told
   /// otherwise, and always finds (by name prefix) and deletes: JMdict counts
@@ -43,8 +21,6 @@ enum FixedDictionary {
   final YomitanDictType? yomitanType;
 
   final String logTag;
-  final String downloaded;
-  final String deleted;
 }
 
 /// What a [FixedDictionary]'s tile shows.
@@ -53,16 +29,16 @@ class FixedDictionaryState {
   final bool isDownloading;
   final bool isDeleting;
   final double progress;
-  final String? error;
-  final String? successMessage;
+
+  /// The last download or delete, until the next state change.
+  final TileOutcome? outcome;
 
   const FixedDictionaryState({
     this.isImported = false,
     this.isDownloading = false,
     this.isDeleting = false,
     this.progress = 0.0,
-    this.error,
-    this.successMessage,
+    this.outcome,
   });
 
   FixedDictionaryState copyWith({
@@ -70,16 +46,14 @@ class FixedDictionaryState {
     bool? isDownloading,
     bool? isDeleting,
     double? progress,
-    String? error,
-    String? successMessage,
+    TileOutcome? outcome,
   }) {
     return FixedDictionaryState(
       isImported: isImported ?? this.isImported,
       isDownloading: isDownloading ?? this.isDownloading,
       isDeleting: isDeleting ?? this.isDeleting,
       progress: progress ?? this.progress,
-      error: error,
-      successMessage: successMessage,
+      outcome: outcome,
     );
   }
 }
@@ -115,12 +89,7 @@ class FixedDictionaryNotifier extends Notifier<FixedDictionaryState> {
   ]) async {
     assert(variant == null || dictionary == FixedDictionary.jmdict);
     if (state.isDownloading) return;
-    state = state.copyWith(
-      isDownloading: true,
-      progress: 0.0,
-      error: null,
-      successMessage: null,
-    );
+    state = state.copyWith(isDownloading: true, progress: 0.0);
 
     try {
       final repository = ref.read(dictionaryRepositoryProvider);
@@ -144,14 +113,14 @@ class FixedDictionaryNotifier extends Notifier<FixedDictionaryState> {
           onProgress: onProgress,
         );
       }
-      state = FixedDictionaryState(
+      state = const FixedDictionaryState(
         isImported: true,
-        successMessage: dictionary.downloaded,
+        outcome: (action: TileAction.download, error: null),
       );
     } catch (e) {
       state = FixedDictionaryState(
         isImported: state.isImported,
-        error: dictionaryDownloadError(appL10n(), e),
+        outcome: (action: TileAction.download, error: e),
       );
     }
   }
@@ -159,7 +128,7 @@ class FixedDictionaryNotifier extends Notifier<FixedDictionaryState> {
   /// Delete the dictionary.
   Future<void> delete() async {
     if (state.isDeleting) return;
-    state = state.copyWith(isDeleting: true, error: null, successMessage: null);
+    state = state.copyWith(isDeleting: true);
 
     try {
       final repository = ref.read(dictionaryRepositoryProvider);
@@ -169,9 +138,14 @@ class FixedDictionaryNotifier extends Notifier<FixedDictionaryState> {
       } else {
         await YomitanDictDownloadService.delete(type, repository);
       }
-      state = FixedDictionaryState(successMessage: dictionary.deleted);
+      state = const FixedDictionaryState(
+        outcome: (action: TileAction.delete, error: null),
+      );
     } catch (e) {
-      state = state.copyWith(isDeleting: false, error: 'Delete failed: $e');
+      state = state.copyWith(
+        isDeleting: false,
+        outcome: (action: TileAction.delete, error: e),
+      );
     }
   }
 }

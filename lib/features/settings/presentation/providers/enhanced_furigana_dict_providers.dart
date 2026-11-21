@@ -1,28 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/network_status.dart';
-import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
-    show InsufficientSpaceException;
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/main.dart' show appL10n;
-import 'package:mekuru/shared/widgets/download_status.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 
 class EnhancedFuriganaDictState {
   final bool isInstalled;
   final bool isDownloading;
   final bool isUninstalling;
   final double progress;
-  final String? error;
-  final String? successMessage;
+
+  /// The last download or removal, until the next state change.
+  final TileOutcome? outcome;
 
   const EnhancedFuriganaDictState({
     this.isInstalled = false,
     this.isDownloading = false,
     this.isUninstalling = false,
     this.progress = 0.0,
-    this.error,
-    this.successMessage,
+    this.outcome,
   });
 
   EnhancedFuriganaDictState copyWith({
@@ -30,16 +27,14 @@ class EnhancedFuriganaDictState {
     bool? isDownloading,
     bool? isUninstalling,
     double? progress,
-    String? error,
-    String? successMessage,
+    TileOutcome? outcome,
   }) {
     return EnhancedFuriganaDictState(
       isInstalled: isInstalled ?? this.isInstalled,
       isDownloading: isDownloading ?? this.isDownloading,
       isUninstalling: isUninstalling ?? this.isUninstalling,
       progress: progress ?? this.progress,
-      error: error,
-      successMessage: successMessage,
+      outcome: outcome,
     );
   }
 }
@@ -59,12 +54,7 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
 
   Future<void> download(NetworkConsent network) async {
     if (state.isDownloading) return;
-    state = state.copyWith(
-      isDownloading: true,
-      progress: 0.0,
-      error: null,
-      successMessage: null,
-    );
+    state = state.copyWith(isDownloading: true, progress: 0.0);
 
     try {
       await EnhancedFuriganaDictDownloadService.downloadAndInstall(
@@ -74,52 +64,35 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
         },
       );
       ref.read(enhancedFuriganaDictEnabledProvider.notifier).setEnabled(true);
-      state = EnhancedFuriganaDictState(
+      state = const EnhancedFuriganaDictState(
         isInstalled: true,
-        // Low RAM mode never loads it (the download can outlast turning the
-        // mode on).
-        successMessage: ref.read(lowRamModeProvider)
-            ? 'Enhanced dictionary installed. Turn off Low RAM mode and '
-                  'restart the app to use it.'
-            : 'Enhanced dictionary installed. Restart the app to use it.',
+        outcome: (action: TileAction.download, error: null),
       );
     } catch (e) {
+      // The archive goes with the failure, so the next tap starts over.
       state = EnhancedFuriganaDictState(
         isInstalled: state.isInstalled,
-        // The archive goes with the stop, so the next tap starts over.
-        error: e is WifiLostException || e is InsufficientSpaceException
-            ? dictionaryDownloadError(appL10n(), e)
-            : 'Download failed: $e',
+        outcome: (action: TileAction.download, error: e),
       );
     }
   }
 
   Future<void> uninstall() async {
     if (state.isUninstalling) return;
-    state = state.copyWith(
-      isUninstalling: true,
-      error: null,
-      successMessage: null,
-    );
+    state = state.copyWith(isUninstalling: true);
 
     try {
       await EnhancedFuriganaDictDownloadService.uninstall();
       ref.read(enhancedFuriganaDictEnabledProvider.notifier).setEnabled(false);
       state = const EnhancedFuriganaDictState(
-        successMessage:
-            'Enhanced dictionary removed. Restart the app to switch back to '
-            'the bundled dictionary.',
+        outcome: (action: TileAction.delete, error: null),
       );
     } catch (e) {
       state = state.copyWith(
         isUninstalling: false,
-        error: 'Removal failed: $e',
+        outcome: (action: TileAction.delete, error: e),
       );
     }
-  }
-
-  void clearMessages() {
-    state = state.copyWith(error: null, successMessage: null);
   }
 }
 

@@ -13,9 +13,13 @@ class _Row {
     this.use, {
     this.counts = const {},
     this.allowed = const {},
+    this.within = 'lib/',
   });
 
   final String what;
+
+  /// Only files whose path contains this are scanned.
+  final String within;
 
   /// The line of each use in a file's source, comment lines blanked.
   final List<int> Function(String source) uses;
@@ -155,6 +159,22 @@ final _rows = [
     },
   ),
   _Row(
+    "A String error or message in a provider's state",
+    _matching(r'\bfinal String\?\s+\w*([eE]rror|[mM]essage)\b'),
+    'what happened (the exception, or an enum or record such as '
+        'TileOutcome in lib/shared/downloads/download.dart), worded by the '
+        "widget with its own context's l10n, as DownloadOutcomeText does "
+        '(lib/shared/widgets/download_status.dart)',
+    within: '/providers/',
+    counts: {
+      // The dictionary import's messages, built with appL10n().
+      'lib/features/dictionary/presentation/providers/dictionary_providers.dart':
+          2,
+      // A native job's error code, or an exception's text.
+      'lib/features/manga/presentation/providers/local_ocr_providers.dart': 1,
+    },
+  ),
+  _Row(
     'NetworkConsent.mobileData, a download allowed mobile data unasked',
     _matching(r'\bNetworkConsent\.mobileData\b'),
     'askNetwork(), the one mobile-data question, for the consent '
@@ -266,7 +286,7 @@ final _rows = [
       'lib/features/settings/presentation/providers/app_settings_providers.dart':
           1,
       'lib/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart':
-          3,
+          2,
       'lib/features/settings/presentation/screens/settings_screen.dart': 4,
       'lib/features/sync/presentation/screens/server_settings_screen.dart': 1,
       'lib/features/wanikani/presentation/providers/wanikani_providers.dart': 3,
@@ -350,6 +370,7 @@ void main() {
     test(row.what, () {
       final found = <String, List<int>>{};
       sources.forEach((path, source) {
+        if (!path.contains(row.within)) return;
         final lines = row.uses(source);
         if (lines.isNotEmpty) found[path] = lines;
       });

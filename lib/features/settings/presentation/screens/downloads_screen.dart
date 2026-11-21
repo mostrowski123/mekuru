@@ -80,10 +80,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           _KanjidicTile(state: kanjidicState, theme: theme),
           if (kanjidicState.isDownloading)
             DictionaryDownloadProgress(progress: kanjidicState.progress),
-          if (kanjidicState.error != null)
-            DownloadErrorText(text: kanjidicState.error!),
-          if (kanjidicState.successMessage != null)
-            DownloadSuccessText(text: kanjidicState.successMessage!),
+          if (kanjidicState.outcome case final outcome?)
+            DownloadOutcomeText(outcome),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
@@ -124,10 +122,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                     )
                   : l10n.downloadsExtractingFiles,
             ),
-          if (kanjiVgState.error != null)
-            DownloadErrorText(text: kanjiVgState.error!),
-          if (kanjiVgState.successMessage != null)
-            DownloadSuccessText(text: kanjiVgState.successMessage!),
+          if (kanjiVgState.outcome case final outcome?)
+            DownloadOutcomeText(outcome),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
@@ -143,10 +139,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           _JpdbFreqTile(state: jpdbFreqState, theme: theme),
           if (jpdbFreqState.isDownloading)
             DictionaryDownloadProgress(progress: jpdbFreqState.progress),
-          if (jpdbFreqState.error != null)
-            DownloadErrorText(text: jpdbFreqState.error!),
-          if (jpdbFreqState.successMessage != null)
-            DownloadSuccessText(text: jpdbFreqState.successMessage!),
+          if (jpdbFreqState.outcome case final outcome?)
+            DownloadOutcomeText(outcome),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
@@ -189,10 +183,16 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                     )
                   : l10n.downloadsEnhancedFuriganaExtracting,
             ),
-          if (enhancedFuriganaState.error != null)
-            DownloadErrorText(text: enhancedFuriganaState.error!),
-          if (enhancedFuriganaState.successMessage != null)
-            DownloadSuccessText(text: enhancedFuriganaState.successMessage!),
+          if (enhancedFuriganaState.outcome case final outcome?)
+            DownloadOutcomeText(
+              outcome,
+              // Low RAM mode never loads it (the download can outlast
+              // turning the mode on).
+              downloaded: lowRamMode
+                  ? l10n.downloadsEnhancedFuriganaInstalledLowRam
+                  : l10n.downloadsEnhancedFuriganaInstalledRestart,
+              deleted: l10n.downloadsEnhancedFuriganaRemoved,
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
@@ -382,10 +382,12 @@ class _HighQualityTranslationTileState
     final l = context.l10n;
     final theme = Theme.of(context);
     final state = ref.watch(gemmaDownloadProvider);
-    final error = dictionaryDownloadError(
-      l,
-      _removeError ?? (state is GemmaDownloadFailed ? state.error : null),
-    );
+    final error = _removeError != null
+        ? l.downloadsDeleteFailed
+        : dictionaryDownloadError(
+            l,
+            state is GemmaDownloadFailed ? state.error : null,
+          );
     final removeButton = IconButton(
       tooltip: l.commonRemove,
       icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),

@@ -55,9 +55,7 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
         ),
         if (state.isDownloading)
           DictionaryDownloadProgress(progress: state.progress),
-        if (state.error != null) DownloadErrorText(text: state.error!),
-        if (state.successMessage != null)
-          DownloadSuccessText(text: state.successMessage!),
+        if (state.outcome case final outcome?) DownloadOutcomeText(outcome),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: DownloadAttributionText(

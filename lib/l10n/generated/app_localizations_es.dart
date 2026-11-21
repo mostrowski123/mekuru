@@ -4604,6 +4604,32 @@ class AppLocalizationsEs extends AppLocalizations {
       'La descarga se interrumpió. Toca Descargar para volver a intentarlo.';
 
   @override
+  String get downloadsDownloadComplete => 'Descarga completada.';
+
+  @override
+  String get downloadsDeleted => 'Eliminado.';
+
+  @override
+  String get downloadsDeleteFailed =>
+      'No se pudieron eliminar los archivos. Vuelve a intentarlo.';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledRestart =>
+      'Diccionario mejorado instalado. Reinicia la aplicación para usarlo.';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalledLowRam =>
+      'Diccionario mejorado instalado. Desactiva el modo de poca RAM y reinicia la aplicación para usarlo.';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoved =>
+      'Diccionario mejorado eliminado. Reinicia la aplicación para volver al diccionario incluido.';
+
+  @override
+  String get downloadNotFinished =>
+      'La descarga no se completó. Vuelve a intentarlo.';
+
+  @override
   String get settingsLowRamModeTitle => 'Modo de poca RAM';
 
   @override

@@ -1,6 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
@@ -14,15 +18,22 @@ import 'package:mekuru/features/settings/presentation/providers/enhanced_furigan
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 
+import '../test_app.dart';
+
 /// Overrides for the Downloads screen's notifiers: only the [installed]
 /// dictionaries, no database, and every download start recorded in [started]
 /// instead of running (`jmdict:<variant>`, `kanjidic`, `jpdb`,
 /// `catalog:<entry>`, `kanjivg`, `enhanced_furigana`).
-/// [jmdictDownloading] shows a JMdict download already running.
+/// [jmdictDownloading] shows a JMdict download already running. [kanjiVg],
+/// [enhancedFurigana] and [fixed] (where it gives one) make the notifier
+/// used instead of the fake.
 List<Override> fakeDownloadNotifierOverrides(
   List<String> started, {
   List<DictionaryMeta> installed = const [],
   bool jmdictDownloading = false,
+  KanjiVgNotifier Function()? kanjiVg,
+  EnhancedFuriganaDictNotifier Function()? enhancedFurigana,
+  FixedDictionaryNotifier? Function(FixedDictionary dictionary)? fixed,
 }) => [
   dictionariesProvider.overrideWith((ref) => Stream.value(installed)),
   wordAudioProvider.overrideWithValue(FakeWordAudio()),
@@ -35,26 +46,56 @@ List<Override> fakeDownloadNotifierOverrides(
     ),
   for (final dictionary in FixedDictionary.values)
     fixedDictionaryProvider(dictionary).overrideWith(
-      () => FakeFixedDictionaryNotifier(
-        dictionary,
-        (v) => started.add(
-          v == null ? dictionary.name : '${dictionary.name}:${v.name}',
-        ),
-        initial: FixedDictionaryState(
-          isDownloading:
-              jmdictDownloading && dictionary == FixedDictionary.jmdict,
-        ),
-      ),
+      () =>
+          fixed?.call(dictionary) ??
+          FakeFixedDictionaryNotifier(
+            dictionary,
+            (v) => started.add(
+              v == null ? dictionary.name : '${dictionary.name}:${v.name}',
+            ),
+            initial: FixedDictionaryState(
+              isDownloading:
+                  jmdictDownloading && dictionary == FixedDictionary.jmdict,
+            ),
+          ),
     ),
   kanjiVgProvider.overrideWith(
-    () => _FakeKanjiVgNotifier(() => started.add('kanjivg')),
+    kanjiVg ?? () => _FakeKanjiVgNotifier(() => started.add('kanjivg')),
   ),
   enhancedFuriganaDictProvider.overrideWith(
-    () => _FakeEnhancedFuriganaDictNotifier(
-      () => started.add('enhanced_furigana'),
-    ),
+    enhancedFurigana ??
+        () => _FakeEnhancedFuriganaDictNotifier(
+          () => started.add('enhanced_furigana'),
+        ),
   ),
 ];
+
+/// The Downloads screen, or [home], in Japanese, tall enough that every row
+/// is built, over [container].
+Future<void> pumpInJapanese(
+  WidgetTester tester,
+  ProviderContainer container, {
+  Widget home = const DownloadsScreen(),
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  mockWifiConnected(true);
+  tester.view.physicalSize = const Size(800, 6000);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: buildLocalizedTestApp(home: home, locale: const Locale('ja')),
+    ),
+  );
+  await tester.pump();
+}
+
+/// Download text that is English or an exception's own, where the screen is
+/// in Japanese.
+final untranslatedDownloadText = find.textContaining(
+  RegExp('Exception|Download failed|successfully|deleted|installed|removed'),
+);
 
 /// The real one checks a file, which never answers under a widget test's fake
 /// clock, so the Downloads row would spin for ever.

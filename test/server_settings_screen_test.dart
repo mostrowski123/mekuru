@@ -89,11 +89,8 @@ void main() {
       describeServerDownloadError(es, serverDownloadStorageFullError),
       'Error al descargar: ${es.localOcrStorageFull}',
     );
-    // Anything else is shown as it is.
-    expect(
-      describe(const FormatException('bad zip')),
-      'Error al descargar: FormatException: bad zip',
-    );
+    // Anything else says only that it didn't finish, never its text.
+    expect(describe(const FormatException('bad zip')), es.downloadNotFinished);
   });
 
   testWidgets('link existing books survives an async secret load', (

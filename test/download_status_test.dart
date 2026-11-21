@@ -10,6 +10,7 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_download_ser
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 
 void main() {
@@ -37,7 +38,28 @@ void main() {
       ),
       'Not enough free space on this device. About 500 MB more is needed.',
     );
-    expect(dictionaryDownloadError(l10n, 'boom'), 'Download failed: boom');
+    // iOS ended its background work.
+    expect(
+      dictionaryDownloadError(l10n, const DownloadStoppedException()),
+      'The download was interrupted. Tap Download to try again.',
+    );
+    // An archive that doesn't unpack, or UniDic's hash that doesn't match.
+    expect(
+      dictionaryDownloadError(l10n, const FormatException('bad CRC')),
+      'The downloaded file was damaged. Download it again.',
+    );
+    // Anything else, such as an import that failed, never shows its text.
+    for (final failure in [
+      'boom',
+      StateError('import failed'),
+      const ServerDownloadFailedException('FileSystemException: read-only'),
+      const ServerDownloadFailedException(''),
+    ]) {
+      expect(
+        dictionaryDownloadError(l10n, failure),
+        "The download didn't finish. Try again.",
+      );
+    }
   });
 
   test('download errors are worded once, in the app language', () {

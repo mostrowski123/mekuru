@@ -123,6 +123,13 @@ class DownloadSpec {
   final int extraBytes;
 }
 
+/// What a download tile last did.
+enum TileAction { download, delete }
+
+/// A download tile's last [TileAction], and the error it failed with (null
+/// when it worked). The tile's widget words it (`DownloadOutcomeText`).
+typedef TileOutcome = ({TileAction action, Object? error});
+
 /// iOS ended a download's background work, or [stopDownload] stopped it.
 class DownloadStoppedException implements Exception {
   const DownloadStoppedException();
