@@ -4404,36 +4404,35 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mangaShiftSpreadsSubtitle => '适用于页面配对错误的书';
 
   @override
-  String get readerAddNote => 'Add note';
+  String get readerAddNote => '添加笔记';
 
   @override
-  String get userDictionaryName => 'My definitions';
+  String get userDictionaryName => '我的释义';
 
   @override
-  String get userDictionarySubtitle => 'Definitions you added';
+  String get userDictionarySubtitle => '您添加的释义';
 
   @override
-  String get userDictionaryDeleteBody =>
-      'Delete My definitions?\nEvery definition you wrote yourself will be lost. This cannot be undone.';
+  String get userDictionaryDeleteBody => '删除“我的释义”？\n您自己编写的所有释义都将丢失。此操作无法撤销。';
 
   @override
-  String get userDefinitionAdd => 'Add my definition';
+  String get userDefinitionAdd => '添加我的释义';
 
   @override
-  String get userDefinitionEdit => 'Edit my definition';
+  String get userDefinitionEdit => '编辑我的释义';
 
   @override
-  String get userDefinitionTermLabel => 'Word';
+  String get userDefinitionTermLabel => '单词';
 
   @override
-  String get userDefinitionReadingLabel => 'Reading (optional)';
+  String get userDefinitionReadingLabel => '读音（可选）';
 
   @override
-  String get userDefinitionDefinitionLabel => 'Definition';
+  String get userDefinitionDefinitionLabel => '释义';
 
   @override
   String userDefinitionDeleteTitle({required String term}) {
-    return 'Delete your definition of “$term”?';
+    return '删除您对“$term”的释义？';
   }
 
   @override
@@ -8909,6 +8908,38 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get mangaShiftSpreadsSubtitle => '适用于页面配对错误的书';
+
+  @override
+  String get readerAddNote => '添加笔记';
+
+  @override
+  String get userDictionaryName => '我的释义';
+
+  @override
+  String get userDictionarySubtitle => '您添加的释义';
+
+  @override
+  String get userDictionaryDeleteBody => '删除“我的释义”？\n您自己编写的所有释义都将丢失。此操作无法撤销。';
+
+  @override
+  String get userDefinitionAdd => '添加我的释义';
+
+  @override
+  String get userDefinitionEdit => '编辑我的释义';
+
+  @override
+  String get userDefinitionTermLabel => '单词';
+
+  @override
+  String get userDefinitionReadingLabel => '读音（可选）';
+
+  @override
+  String get userDefinitionDefinitionLabel => '释义';
+
+  @override
+  String userDefinitionDeleteTitle({required String term}) {
+    return '删除您对“$term”的释义？';
+  }
 
   @override
   String get wordAudioPlayTooltip => '播放单词音频';

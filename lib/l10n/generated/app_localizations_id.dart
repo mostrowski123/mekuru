@@ -4645,36 +4645,36 @@ class AppLocalizationsId extends AppLocalizations {
       'Untuk buku yang pasangan halamannya salah';
 
   @override
-  String get readerAddNote => 'Add note';
+  String get readerAddNote => 'Tambah catatan';
 
   @override
-  String get userDictionaryName => 'My definitions';
+  String get userDictionaryName => 'Definisi saya';
 
   @override
-  String get userDictionarySubtitle => 'Definitions you added';
+  String get userDictionarySubtitle => 'Definisi yang Anda tambahkan';
 
   @override
   String get userDictionaryDeleteBody =>
-      'Delete My definitions?\nEvery definition you wrote yourself will be lost. This cannot be undone.';
+      'Hapus Definisi saya?\nSemua definisi yang Anda tulis sendiri akan hilang. Tindakan ini tidak dapat dibatalkan.';
 
   @override
-  String get userDefinitionAdd => 'Add my definition';
+  String get userDefinitionAdd => 'Tambah definisi saya';
 
   @override
-  String get userDefinitionEdit => 'Edit my definition';
+  String get userDefinitionEdit => 'Edit definisi saya';
 
   @override
-  String get userDefinitionTermLabel => 'Word';
+  String get userDefinitionTermLabel => 'Kata';
 
   @override
-  String get userDefinitionReadingLabel => 'Reading (optional)';
+  String get userDefinitionReadingLabel => 'Bacaan (opsional)';
 
   @override
-  String get userDefinitionDefinitionLabel => 'Definition';
+  String get userDefinitionDefinitionLabel => 'Definisi';
 
   @override
   String userDefinitionDeleteTitle({required String term}) {
-    return 'Delete your definition of “$term”?';
+    return 'Hapus definisi Anda untuk “$term”?';
   }
 
   @override

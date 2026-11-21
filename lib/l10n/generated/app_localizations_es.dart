@@ -4676,36 +4676,36 @@ class AppLocalizationsEs extends AppLocalizations {
       'Para libros cuyas páginas se emparejan mal';
 
   @override
-  String get readerAddNote => 'Add note';
+  String get readerAddNote => 'Añadir nota';
 
   @override
-  String get userDictionaryName => 'My definitions';
+  String get userDictionaryName => 'Mis definiciones';
 
   @override
-  String get userDictionarySubtitle => 'Definitions you added';
+  String get userDictionarySubtitle => 'Definiciones que has añadido';
 
   @override
   String get userDictionaryDeleteBody =>
-      'Delete My definitions?\nEvery definition you wrote yourself will be lost. This cannot be undone.';
+      '¿Eliminar Mis definiciones?\nSe perderán todas las definiciones que escribiste. Esta acción no se puede deshacer.';
 
   @override
-  String get userDefinitionAdd => 'Add my definition';
+  String get userDefinitionAdd => 'Añadir mi definición';
 
   @override
-  String get userDefinitionEdit => 'Edit my definition';
+  String get userDefinitionEdit => 'Editar mi definición';
 
   @override
-  String get userDefinitionTermLabel => 'Word';
+  String get userDefinitionTermLabel => 'Palabra';
 
   @override
-  String get userDefinitionReadingLabel => 'Reading (optional)';
+  String get userDefinitionReadingLabel => 'Lectura (opcional)';
 
   @override
-  String get userDefinitionDefinitionLabel => 'Definition';
+  String get userDefinitionDefinitionLabel => 'Definición';
 
   @override
   String userDefinitionDeleteTitle({required String term}) {
-    return 'Delete your definition of “$term”?';
+    return '¿Eliminar tu definición de “$term”?';
   }
 
   @override
