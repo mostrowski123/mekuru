@@ -131,12 +131,20 @@ class _MangaBackdropState extends State<MangaBackdrop> {
   /// The edge colour comes from the unblurred [thumbnail], which this
   /// disposes.
   Future<void> _readEdgeColor(ui.Image thumbnail, ui.Image blurred) async {
-    final data = await thumbnail.toByteData();
     final (width, height) = (thumbnail.width, thumbnail.height);
-    thumbnail.dispose();
+    final ByteData? data;
+    try {
+      data = await thumbnail.toByteData();
+    } catch (_) {
+      // The pixels could not be read: the colour stays as it was.
+      return;
+    } finally {
+      thumbnail.dispose();
+    }
     // A later page may have replaced this one while its pixels were read.
     if (!mounted || blurred != _blurred || data == null) return;
-    setState(() => _edgeColor = edgeColorFromRgba(data, width, height));
+    final color = edgeColorFromRgba(data, width, height);
+    setState(() => _edgeColor = color);
   }
 
   static ui.Image _redraw(
