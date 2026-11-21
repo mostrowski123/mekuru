@@ -12,6 +12,10 @@ on:
       - 'scripts/test_verify_native_libs.py'
       - 'scripts/check_release_ready.py'
       - 'scripts/test_check_release_ready.py'
+      - 'tools/build_aozora_catalog.py'
+      - 'tools/build_tadoku_catalog.py'
+      - 'tools/test_build_tadoku_catalog.py'
+      - 'tools/requirements-free-books.txt'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/build-pr.yml'
@@ -113,6 +117,16 @@ jobs:
 
       - name: Test release readiness checks
         run: python -m unittest discover -s scripts -p test_check_release_ready.py
+
+      # The catalog builder needs PyMuPDF; this Python lets pip install it.
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Test the Graded readers catalog builder
+        run: |
+          python -m pip install -r tools/requirements-free-books.txt
+          python -m unittest discover -s tools -p test_build_tadoku_catalog.py
 
       - name: Verify emulator-to-phone native packaging without cleaning
         run: |
