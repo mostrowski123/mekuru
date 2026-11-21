@@ -14,6 +14,8 @@ import 'package:mekuru/features/dictionary/data/repositories/dictionary_reposito
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
 import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';
+import 'package:mekuru/features/manga/data/services/model_download.dart'
+    show ModelFile;
 import 'package:mekuru/features/manga/data/services/ndl_text_model.dart';
 import 'package:mekuru/features/reader/data/services/mozilla_translation.dart';
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
@@ -33,11 +35,11 @@ import '../loopback_http.dart';
 import '../test_database.dart';
 
 /// What each download kind does around its transfer, through the kind's own
-/// entry point, against a loopback server: whether it checks for room, where
-/// its file lives while it arrives, whether a transfer cut off keeps its file
-/// and the next one resumes it, whether iOS runs it as background work, and
-/// whether it stops when Wi-Fi drops. The gaps are pinned as they are; a fix
-/// changes its kind's row here.
+/// entry point, against a loopback server: how much room it asks for before
+/// it fetches anything, where its file lives while it arrives, whether a
+/// transfer cut off keeps its file and the next one resumes it, whether iOS
+/// runs it as background work, and whether it stops when Wi-Fi drops. The
+/// gaps are pinned as they are; a fix changes its kind's row here.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger =
@@ -79,8 +81,12 @@ void main() {
     sha256: '0000000000000000000000000000000000000000000000000000000000000000',
   );
 
+  int bytesOf(List<ModelFile> files) =>
+      files.fold(0, (sum, file) => sum + file.bytes);
+
   // Each kind's entry point, the bytes its server promises, the path its
-  // file has while it arrives, and the rules it has today.
+  // file has while it arrives, and the rules it has today. [room] is the
+  // free space it asks for with nothing of it on disk yet.
   final kinds =
       <
         ({
@@ -88,7 +94,7 @@ void main() {
           Future<void> Function(NetworkConsent network) start,
           int length,
           String arriving,
-          bool room,
+          int room,
           bool resume,
           bool iosWork,
           bool androidToo,
@@ -106,7 +112,7 @@ void main() {
           ),
           length: 4000,
           arriving: r'^app/download_\d+_Jitendex\.zip$',
-          room: true,
+          room: 5000,
           resume: false,
           iosWork: true,
           androidToo: true,
@@ -121,7 +127,8 @@ void main() {
           ),
           length: 4000,
           arriving: r'^app/download_\d+_JMdict_english\.zip$',
-          room: false,
+          // 15.6 MB zip + 2 × 281.4 MB of database.
+          room: 578_400_000,
           resume: false,
           iosWork: true,
           androidToo: true,
@@ -136,7 +143,8 @@ void main() {
           length: 4000,
           arriving:
               r'^app/download_\d+_JPDB_v2\.2_Frequency_Kana_2024-10-13\.zip$',
-          room: false,
+          // 6.0 MB zip + 2 × 39.1 MB of database.
+          room: 84_200_000,
           resume: false,
           iosWork: true,
           androidToo: true,
@@ -147,7 +155,7 @@ void main() {
               KanjiVgDownloadService.downloadAndExtract(network: network),
           length: 4000,
           arriving: r'^app/kanjivg_download\.zip$',
-          room: false,
+          room: 102_568_762,
           resume: false,
           iosWork: false,
           androidToo: true,
@@ -160,7 +168,7 @@ void main() {
               ),
           length: 4000,
           arriving: r'^app/unidic_lite_download\.tar\.gz$',
-          room: false,
+          room: 568_674_867,
           resume: false,
           iosWork: false,
           androidToo: true,
@@ -170,7 +178,7 @@ void main() {
           start: (network) => MangaOcrIos.instance.download(network: network),
           length: mangaOcrIosModelFiles.first.bytes,
           arriving: r'^app/manga_ocr_models/encoder_model_fp16\.onnx\.part$',
-          room: false,
+          room: bytesOf(mangaOcrIosModelFiles),
           resume: true,
           iosWork: false,
           androidToo: true,
@@ -183,7 +191,7 @@ void main() {
               r'^(no_backup|app)/ndl_text_model/'
               r'parseq-ndl-24x768-100-tiny-153epoch-tegaki3-r8data-202604'
               r'\.onnx\.part$',
-          room: false,
+          room: bytesOf(ndlTextModelFiles),
           resume: true,
           iosWork: false,
           androidToo: true,
@@ -197,7 +205,7 @@ void main() {
               '^app/translation_models/ja-en/'
               '${RegExp.escape(mozillaTranslationModels['ja-en']!.first.name)}'
               r'\.part$',
-          room: false,
+          room: bytesOf(mozillaTranslationModels['ja-en']!),
           resume: true,
           iosWork: false,
           androidToo: true,
@@ -209,7 +217,7 @@ void main() {
           length: smallFile.bytes,
           arriving:
               r'^(no_backup|app)/word_audio/word_audio_test\.sqlite\.part$',
-          room: false,
+          room: smallFile.bytes,
           resume: true,
           iosWork: false,
           androidToo: true,
@@ -220,7 +228,7 @@ void main() {
               WordAudioPack(file: smallFile).download(network: network),
           length: smallFile.bytes,
           arriving: r'^app/word_audio_pack/word_audio_test\.sqlite\.part$',
-          room: true,
+          room: smallFile.bytes,
           resume: true,
           iosWork: true,
           // On Android the pack is a WorkManager job (ModelDownloadJob).
@@ -307,22 +315,26 @@ void main() {
     for (final kind in kinds) {
       if (platform == TargetPlatform.android && !kind.androidToo) continue;
       test(
-        '${kind.name} on ${platform.name}: room '
-        '${kind.room ? 'checked' : 'not checked'}, '
+        '${kind.name} on ${platform.name}: room checked, '
         '${kind.resume ? 'resumed' : 'not resumed'}, '
         '${kind.iosWork ? 'background work on iOS' : 'no background work'}',
         () async {
           debugDefaultTargetPlatformOverride = platform;
           http.handler = held(kind.length);
-          // One byte free: a kind that checks stops before any request.
-          if (kind.room) {
-            await expectLater(
-              kind.start(NetworkConsent.mobileData),
-              throwsA(isA<InsufficientSpaceException>()),
-            );
-            expect(http.requests, isEmpty);
-            free = null;
-          }
+          // One byte free: it stops before any request or file.
+          await expectLater(
+            kind.start(NetworkConsent.mobileData),
+            throwsA(
+              isA<InsufficientSpaceException>().having(
+                (e) => e.neededBytes,
+                'neededBytes',
+                kind.room - 1,
+              ),
+            ),
+          );
+          expect(http.requests, isEmpty);
+          expect(files(), isEmpty);
+          free = null;
           final first = kind.start(NetworkConsent.mobileData);
           final failed = expectLater(first, throwsA(anything));
 
@@ -360,6 +372,7 @@ void main() {
       sha256: sha256.convert(body).toString(),
     );
     http.handler = serve(body);
+    free = null;
     final seen = <double>[];
 
     final audio = WordAudio(indexFile: file);

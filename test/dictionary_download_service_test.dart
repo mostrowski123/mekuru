@@ -228,12 +228,16 @@ void main() {
 
     final download = DictionaryDownloadService.downloadAndImportUrl(
       kind: DownloadKind.fixedDictionary,
-      url: urlFor('/JMnedict.zip'),
+      url: urlFor('/slow.zip'),
       asset: 'jmnedict',
       network: NetworkConsent.mobileData,
       importer: DictionaryImporter(repo),
     );
-    // iOS ends the background task before the download gets going.
+    // The task begins once the room check has passed; iOS ends it while the
+    // zip is still on its way.
+    while (!calls.contains('begin')) {
+      await Future<void>.delayed(Duration.zero);
+    }
     await messenger.handlePlatformMessage(
       channel.name,
       channel.codec.encodeMethodCall(const MethodCall('expired')),

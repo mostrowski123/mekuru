@@ -5,11 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 /// The lookup sheet's Sentence tab: the sentence around the tapped word and
@@ -312,8 +315,9 @@ class _SentenceTranslationViewState
           children: [
             Text(
               // The tab has no Download button for a stop to point to.
-              snapshot.error is WifiLostException
-                  ? l10n.downloadWifiLostShort
+              snapshot.error is WifiLostException ||
+                      snapshot.error is InsufficientSpaceException
+                  ? downloadErrorWithoutButton(l10n, snapshot.error!)
                   : l10n.sentenceTranslationFailed,
               style: muted?.copyWith(color: theme.colorScheme.error),
             ),

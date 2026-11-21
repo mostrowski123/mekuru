@@ -2,7 +2,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart'
-    show jmdictYomitanReleases;
+    show dictionaryRequiredMb, jmdictYomitanReleases;
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
@@ -43,6 +43,20 @@ class YomitanDictDownloadService {
       'JMdict_english_with_examples.zip',
     YomitanDictType.kanjidicEnglish => 'KANJIDIC_english.zip',
   };
+
+  /// Free bytes its install needs ([dictionaryRequiredMb]), from the zip and
+  /// what its import added to a database, measured on 2026-11-21.
+  static int requiredBytes(YomitanDictType type) {
+    final mb = switch (type) {
+      YomitanDictType.jmdictEnglish => dictionaryRequiredMb(15.6, 281.4),
+      YomitanDictType.jmdictEnglishWithExamples => dictionaryRequiredMb(
+        18.1,
+        310.7,
+      ),
+      YomitanDictType.kanjidicEnglish => dictionaryRequiredMb(0.7, 2.7),
+    };
+    return (mb * 1e6).round();
+  }
 
   /// The name prefix used to detect whether this type is already imported.
   static String _namePrefix(YomitanDictType type) => switch (type) {
@@ -109,6 +123,7 @@ class YomitanDictDownloadService {
       asset: 'yomitan_collection',
       importer: importer,
       network: network,
+      requiredBytes: requiredBytes(type),
       onProgress: onProgress,
     );
   }

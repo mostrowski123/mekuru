@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -138,9 +141,8 @@ void main() {
     expectNothingInstalled();
   });
 
-  test('a download starts with almost no free space', () async {
-    // 7e changes this (bug 4): no free-space check before a peak of about
-    // 545 MB, so it asks the server with 1 KB free.
+  test('without room for its peak it fetches nothing and says how much more '
+      'it needs', () async {
     const saf = MethodChannel('mekuru/android_saf');
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -152,7 +154,18 @@ void main() {
 
     await download();
 
-    expect(http.requests, [url]);
+    expect(http.requests, isEmpty);
+    expect(tile().isDownloading, isFalse);
+    expect(tile().isInstalled, isFalse);
+    // The catalog's message, in the app's language (English here): the
+    // archive, its tar and the files taken out of it, 568.7 MB at once.
+    expect(
+      tile().error,
+      lookupAppLocalizations(
+        const Locale('en'),
+      ).backupFullNotEnoughSpace(size: formatBytes(568_674_867 - 1000)),
+    );
+    expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
   });
 
   test('an install from an earlier version shows as installed', () async {

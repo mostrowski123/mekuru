@@ -1,10 +1,14 @@
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -113,6 +117,33 @@ void main() {
     expect(tile().error, startsWith('Download failed: '));
     expect(archive().existsSync(), isFalse);
     expect(marker().existsSync(), isFalse);
+  });
+
+  test('without room for the zip and its SVGs it fetches nothing and says '
+      'how much more it needs', () async {
+    const saf = MethodChannel('mekuru/android_saf');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      saf,
+      (call) async => call.method == 'getFreeBytes' ? 1000 : null,
+    );
+    addTearDown(() => messenger.setMockMethodCallHandler(saf, null));
+    http.handler = serve(zip);
+
+    await download();
+
+    expect(http.requests, isEmpty);
+    expect(tile().isDownloading, isFalse);
+    expect(tile().isDownloaded, isFalse);
+    // The catalog's message, in the app's language (English here).
+    expect(
+      tile().error,
+      lookupAppLocalizations(
+        const Locale('en'),
+      ).backupFullNotEnoughSpace(size: formatBytes(102_568_762 - 1000)),
+    );
+    expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
   });
 
   test('a download started on Wi-Fi stops when Wi-Fi drops, and says '

@@ -23,8 +23,10 @@ import 'package:path_provider/path_provider.dart';
 /// null or false in its row. Every kind also needs a [NetworkConsent] and
 /// stops when Wi-Fi drops unless it allows mobile data ([whileOnWifi]), gives
 /// up on a connection stalled for 30 s, joins a download of the same
-/// [DownloadSpec.id], and checks a part against the size and sha256 it pins.
+/// [DownloadSpec.id], checks a part against the size and sha256 it pins, and
+/// checks for room before it fetches anything.
 enum DownloadKind {
+  /// Each dictionary's own room is its [DownloadSpec.extraBytes].
   catalogDictionary(
     room: 0,
     resume: false,
@@ -32,21 +34,32 @@ enum DownloadKind {
     ios: BackgroundJobKind.dictionary,
   ),
 
-  /// The JMdict, KANJIDIC and JPDB tiles.
+  /// The JMdict, KANJIDIC and JPDB tiles; room as [catalogDictionary].
   fixedDictionary(
-    room: null,
+    room: 0,
     resume: false,
     sweep: true,
     ios: BackgroundJobKind.dictionary,
   ),
-  kanjiVg(room: null, resume: false, sweep: false, ios: null),
-  uniDic(room: null, resume: false, sweep: false, ios: null),
-  mangaOcrIos(room: null, resume: true, sweep: false, ios: null),
-  ndlTextModel(room: null, resume: true, sweep: false, ios: null),
+
+  /// The pinned r20250816 zip (22,569,786 bytes) and the 11,661 SVGs taken
+  /// out of it (78,950,400 bytes in 4 KiB blocks), plus 1 MiB for their
+  /// folder's entries and the marker. Measured from the release, 2026-11-21.
+  kanjiVg(room: 102_568_762, resume: false, sweep: false, ios: null),
+
+  /// The pinned archive (47,716,915 bytes), the tar it unpacks to
+  /// (260,464,640) and the files taken out of that (260,493,312 in 4 KiB
+  /// blocks), all on disk at once. Measured from the release, 2026-11-21.
+  uniDic(room: 568_674_867, resume: false, sweep: false, ios: null),
+
+  // The kinds below pin their parts' sizes and keep each part where it
+  // arrives, so their parts are all the room they need.
+  mangaOcrIos(room: 0, resume: true, sweep: false, ios: null),
+  ndlTextModel(room: 0, resume: true, sweep: false, ios: null),
 
   /// A language pair of the Standard translation model.
-  translationModel(room: null, resume: true, sweep: false, ios: null),
-  wordAudioList(room: null, resume: true, sweep: false, ios: null),
+  translationModel(room: 0, resume: true, sweep: false, ios: null),
+  wordAudioList(room: 0, resume: true, sweep: false, ios: null),
 
   /// Android's is a WorkManager job (`ModelDownloadJob`).
   wordAudioPackIos(
@@ -65,8 +78,8 @@ enum DownloadKind {
 
   /// R4. Bytes that must be free before it starts, on top of
   /// [DownloadSpec.extraBytes] and the parts not on disk yet, else
-  /// [InsufficientSpaceException]. Null: not checked.
-  final int? room;
+  /// [InsufficientSpaceException]: what installing it writes beside them.
+  final int room;
 
   /// R5. A part cut off midway stays as `<name>.part` in [DownloadSpec.dir]
   /// and the next download continues it. False: it goes to the temporary
@@ -106,7 +119,7 @@ class DownloadSpec {
   /// Where a resumed download keeps its parts and [modelInstalledMarker].
   final String? dir;
 
-  /// Room an import or extraction needs, when [kind] checks for room.
+  /// Room this download's import needs, on top of [DownloadKind.room].
   final int extraBytes;
 }
 
@@ -176,7 +189,7 @@ Future<T> _run<T>(
   void Function(double)? onProgress,
   Future<T> Function(String, void Function(double))? install,
 ) async {
-  if (spec.kind.room case final room?) await _checkRoom(spec, room);
+  await _checkRoom(spec);
   run.started = true;
   if (spec.kind.ios case final ios?) {
     BackgroundWork.instance.start(spec.id, ios, onStopped: run.stop);
@@ -209,8 +222,8 @@ Future<T> _run<T>(
   }
 }
 
-Future<void> _checkRoom(DownloadSpec spec, int room) async {
-  var needed = room + spec.extraBytes;
+Future<void> _checkRoom(DownloadSpec spec) async {
+  var needed = spec.kind.room + spec.extraBytes;
   for (final part in spec.parts) {
     needed += part.bytes ?? 0;
     if (spec.kind.resume) {
@@ -218,6 +231,13 @@ Future<void> _checkRoom(DownloadSpec spec, int room) async {
       if (await partial.exists()) needed -= await partial.length();
     }
   }
+  await requireRoom(needed);
+}
+
+/// Throws [InsufficientSpaceException] unless [needed] bytes are free where
+/// the app keeps its files. Where that can't be read, it lets whatever runs
+/// out of room fail instead.
+Future<void> requireRoom(int needed) async {
   int? free;
   try {
     free = defaultTargetPlatform == TargetPlatform.iOS

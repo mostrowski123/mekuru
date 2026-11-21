@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,9 +12,16 @@ import 'package:mekuru/features/manga/data/services/ndl_text_model.dart';
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/utils/format_bytes.dart';
+import 'package:path/path.dart' as p;
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/fake_download_notifiers.dart';
+import '../../../../shared/fake_path_provider.dart';
+import '../../../../shared/loopback_http.dart';
 import '../../../../test_app.dart';
 
 void main() {
@@ -233,6 +242,60 @@ void main() {
       expect(find.textContaining('Download failed'), findsOneWidget);
       expect(find.textContaining('boom'), findsOneWidget);
     });
+  });
+
+  testWidgets('without room the NDL tile fetches nothing and says how much '
+      'more it needs', (tester) async {
+    final root = Directory.systemTemp.createTempSync('ndl_room_');
+    PathProviderPlatform.instance = FakePathProviderPlatform(
+      p.join(root.path, 'app'),
+    );
+    const saf = MethodChannel('mekuru/android_saf');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      saf,
+      (call) async => call.method == 'getFreeBytes' ? 1 : null,
+    );
+    final http = (await tester.runAsync(LoopbackHttp.start))!;
+    addTearDown(() async {
+      messenger.setMockMethodCallHandler(saf, null);
+      await tester.runAsync(http.close);
+      root.deleteSync(recursive: true);
+    });
+    mockWifiConnected(true);
+    await tester.pumpWidget(
+      buildLocalizedTestApp(
+        home: const Scaffold(body: NdlTextModelDownloadTile()),
+      ),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await tester.pump();
+
+    final model = ndlTextModelFiles.fold(0, (sum, file) => sum + file.bytes);
+    final shown = find.text(
+      lookupAppLocalizations(
+        const Locale('en'),
+      ).backupFullNotEnoughSpace(size: formatBytes(model - 1)),
+    );
+
+    await tester.tap(find.text('Download'));
+    await tester.pump();
+    expect(find.text('Download'), findsNothing);
+    // The download's file I/O is real, which the fake clock never runs.
+    for (var i = 0; i < 50 && find.text('Download').evaluate().isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pump();
+    }
+
+    expect(http.requests, isEmpty);
+    expect(shown, findsOneWidget);
+    expect(find.text('Download'), findsOneWidget);
+    expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
   });
 
   testWidgets('the NDL tile offers the scanned-book reader with its size', (

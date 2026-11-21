@@ -169,10 +169,13 @@ enum CatalogDictionary {
   bool isInstalledIn(Iterable<DictionaryMeta> dictionaries) =>
       dictionaries.any((d) => matchesTitle(d.name));
 
-  /// Free storage an install needs: the zip, the database's growth, and as
-  /// much again for the import's journal until it commits.
-  double get requiredMb => downloadMb + 2 * installedMb;
+  double get requiredMb => dictionaryRequiredMb(downloadMb, installedMb);
 }
+
+/// Free storage a dictionary's install needs: the zip, the database's growth,
+/// and as much again for the import's journal until it commits.
+double dictionaryRequiredMb(double downloadMb, double installedMb) =>
+    downloadMb + 2 * installedMb;
 
 /// The name the app shows for a dictionary: the catalog's name for a
 /// catalog dictionary ("Jitendex.org [2026-10-03]" → "Jitendex"), otherwise

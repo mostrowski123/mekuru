@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -11,7 +12,9 @@ import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
+import 'package:mekuru/shared/utils/format_bytes.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
@@ -44,9 +47,13 @@ class _Tile {
     required this.checkStatus,
     required this.download,
     required this.delete,
+    required this.room,
   });
 
   final String name;
+
+  /// The free bytes a download asks for.
+  final int room;
 
   /// What a download fetches, as `host/path`.
   final String url;
@@ -121,6 +128,8 @@ final _tiles = [
         .read(_jmdict.notifier)
         .download(_unwatched, YomitanDictType.jmdictEnglish),
     delete: (c) => c.read(_jmdict.notifier).delete(),
+    // 15.6 MB zip + 2 × 281.4 MB of database.
+    room: 578_400_000,
   ),
   _Tile(
     name: 'KANJIDIC',
@@ -134,6 +143,8 @@ final _tiles = [
     checkStatus: (c) => c.read(_kanjidic.notifier).checkStatus(),
     download: (c) => c.read(_kanjidic.notifier).download(_unwatched),
     delete: (c) => c.read(_kanjidic.notifier).delete(),
+    // 0.7 MB zip + 2 × 2.7 MB of database.
+    room: 6_100_000,
   ),
   _Tile(
     name: 'JPDB',
@@ -147,6 +158,8 @@ final _tiles = [
     checkStatus: (c) => c.read(_jpdb.notifier).checkStatus(),
     download: (c) => c.read(_jpdb.notifier).download(_unwatched),
     delete: (c) => c.read(_jpdb.notifier).delete(),
+    // 6.0 MB zip + 2 × 39.1 MB of database.
+    room: 84_200_000,
   ),
 ];
 
@@ -336,9 +349,8 @@ void main() {
         expect(await names(), ['Jitendex.org [2026-11-01]']);
       });
 
-      test('a download starts with almost no free space', () async {
-        // 7e changes this (bug 3): the tile has no free-space check, so it
-        // downloads and imports with 1 KB free.
+      test('without room for the dictionary it fetches nothing and says how '
+          'much more it needs', () async {
         const saf = MethodChannel('mekuru/android_saf');
         final messenger =
             TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -351,9 +363,20 @@ void main() {
 
         await tile.download(container);
 
-        expect(http.requests, [tile.url]);
-        expect(tile.watch(container).installed, isTrue);
-        expect(await names(), [tile.title]);
+        expect(http.requests, isEmpty);
+        // The catalog's message, in the app's language (English here).
+        expect(tile.watch(container), (
+          installed: false,
+          downloading: false,
+          deleting: false,
+          progress: null,
+          error: lookupAppLocalizations(
+            const Locale('en'),
+          ).backupFullNotEnoughSpace(size: formatBytes(tile.room - 1000)),
+          message: null,
+        ));
+        expect(await names(), isEmpty);
+        expect(tempDir.listSync(recursive: true), isEmpty);
       });
     });
   }

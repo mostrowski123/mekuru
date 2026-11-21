@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/main.dart' show appL10n;
+import 'package:mekuru/shared/widgets/download_status.dart';
 
 class EnhancedFuriganaDictState {
   final bool isInstalled;
@@ -84,8 +87,8 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
       state = EnhancedFuriganaDictState(
         isInstalled: state.isInstalled,
         // The archive goes with the stop, so the next tap starts over.
-        error: e is WifiLostException
-            ? appL10n().dictionaryDownloadWifiLost
+        error: e is WifiLostException || e is InsufficientSpaceException
+            ? dictionaryDownloadError(appL10n(), e)
             : 'Download failed: $e',
       );
     }
