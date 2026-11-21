@@ -4667,6 +4667,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerAddNote => 'Add note';
 
   @override
+  String get libraryFavoriteChangeFailed =>
+      'Couldn\'t change your favorites. Try again.';
+
+  @override
+  String get libraryRenameBookFailed => 'Couldn\'t rename the book. Try again.';
+
+  @override
+  String get libraryRenameCollectionFailed =>
+      'Couldn\'t rename the collection. Try again.';
+
+  @override
+  String get libraryDeleteCollectionFailed =>
+      'Couldn\'t delete the collection. Try again.';
+
+  @override
+  String get libraryCreateCollectionFailed =>
+      'Couldn\'t create the collection. Try again.';
+
+  @override
+  String get libraryCollectionChangeFailed =>
+      'Couldn\'t save the change to your collections. Try again.';
+
+  @override
+  String get mangaPageImageLoadFailed => 'Couldn\'t load this page\'s image.';
+
+  @override
+  String get mangaReaderPagesMissing =>
+      'This manga\'s page data is missing. Import the manga again.';
+
+  @override
+  String get readerStoppedWhileOpening =>
+      'The reader stopped while opening the book. Tap Retry to try again.';
+
+  @override
   String get userDictionaryName => 'My definitions';
 
   @override

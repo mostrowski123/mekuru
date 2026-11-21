@@ -4692,6 +4692,42 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerAddNote => 'Tambah catatan';
 
   @override
+  String get libraryFavoriteChangeFailed =>
+      'Tidak dapat mengubah favorit Anda. Coba lagi.';
+
+  @override
+  String get libraryRenameBookFailed =>
+      'Tidak dapat mengganti nama buku. Coba lagi.';
+
+  @override
+  String get libraryRenameCollectionFailed =>
+      'Tidak dapat mengganti nama koleksi. Coba lagi.';
+
+  @override
+  String get libraryDeleteCollectionFailed =>
+      'Tidak dapat menghapus koleksi. Coba lagi.';
+
+  @override
+  String get libraryCreateCollectionFailed =>
+      'Tidak dapat membuat koleksi. Coba lagi.';
+
+  @override
+  String get libraryCollectionChangeFailed =>
+      'Tidak dapat menyimpan perubahan pada koleksi Anda. Coba lagi.';
+
+  @override
+  String get mangaPageImageLoadFailed =>
+      'Tidak dapat memuat gambar halaman ini.';
+
+  @override
+  String get mangaReaderPagesMissing =>
+      'Data halaman manga ini tidak ada. Impor ulang manga.';
+
+  @override
+  String get readerStoppedWhileOpening =>
+      'Pembaca berhenti saat membuka buku. Ketuk Coba lagi untuk mengulang.';
+
+  @override
   String get userDictionaryName => 'Definisi saya';
 
   @override

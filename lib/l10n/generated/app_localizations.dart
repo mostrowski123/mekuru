@@ -7556,6 +7556,60 @@ abstract class AppLocalizations {
   /// **'Add note'**
   String get readerAddNote;
 
+  /// Snack bar when adding a book or a collection to favorites, or removing it, could not be saved. The favorite stays as it was.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change your favorites. Try again.'**
+  String get libraryFavoriteChangeFailed;
+
+  /// Snack bar when a new book title could not be saved. The book keeps its old title.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t rename the book. Try again.'**
+  String get libraryRenameBookFailed;
+
+  /// Snack bar when a new collection name could not be saved. The collection keeps its old name.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t rename the collection. Try again.'**
+  String get libraryRenameCollectionFailed;
+
+  /// Snack bar when deleting a collection failed. The collection is still there.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the collection. Try again.'**
+  String get libraryDeleteCollectionFailed;
+
+  /// Snack bar when a new collection could not be created.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the collection. Try again.'**
+  String get libraryCreateCollectionFailed;
+
+  /// Snack bar when adding books to a collection, removing them from one, or reordering a collection's books could not be saved. Nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the change to your collections. Try again.'**
+  String get libraryCollectionChangeFailed;
+
+  /// Shown in the manga reader in place of a page whose image file couldn't be loaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this page\'s image.'**
+  String get mangaPageImageLoadFailed;
+
+  /// Manga reader error, under mangaReaderFailedToLoad: the manga's stored page data is missing, so it must be imported again.
+  ///
+  /// In en, this message translates to:
+  /// **'This manga\'s page data is missing. Import the manga again.'**
+  String get mangaReaderPagesMissing;
+
+  /// EPUB reader error: the page that shows the book stopped (the system ended it, for example for memory) before the book appeared. A Retry button (commonRetry) follows.
+  ///
+  /// In en, this message translates to:
+  /// **'The reader stopped while opening the book. Tap Retry to try again.'**
+  String get readerStoppedWhileOpening;
+
   /// Name shown for the dictionary that holds the definitions the user wrote themselves.
   ///
   /// In en, this message translates to:

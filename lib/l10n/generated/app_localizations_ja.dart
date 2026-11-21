@@ -4542,6 +4542,36 @@ class AppLocalizationsJa extends AppLocalizations {
   String get readerAddNote => 'メモを追加';
 
   @override
+  String get libraryFavoriteChangeFailed => 'お気に入りを変更できませんでした。もう一度お試しください。';
+
+  @override
+  String get libraryRenameBookFailed => '本の名前を変更できませんでした。もう一度お試しください。';
+
+  @override
+  String get libraryRenameCollectionFailed => 'コレクション名を変更できませんでした。もう一度お試しください。';
+
+  @override
+  String get libraryDeleteCollectionFailed => 'コレクションを削除できませんでした。もう一度お試しください。';
+
+  @override
+  String get libraryCreateCollectionFailed => 'コレクションを作成できませんでした。もう一度お試しください。';
+
+  @override
+  String get libraryCollectionChangeFailed =>
+      'コレクションの変更を保存できませんでした。もう一度お試しください。';
+
+  @override
+  String get mangaPageImageLoadFailed => 'このページの画像を読み込めませんでした。';
+
+  @override
+  String get mangaReaderPagesMissing =>
+      'このマンガのページデータが見つかりません。マンガをもう一度インポートしてください。';
+
+  @override
+  String get readerStoppedWhileOpening =>
+      '本を開いている途中でリーダーが停止しました。「再試行」をタップしてもう一度お試しください。';
+
+  @override
   String get userDictionaryName => 'マイ辞書';
 
   @override

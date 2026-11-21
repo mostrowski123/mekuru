@@ -4446,6 +4446,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerAddNote => '添加笔记';
 
   @override
+  String get libraryFavoriteChangeFailed => '无法更改星标。请重试。';
+
+  @override
+  String get libraryRenameBookFailed => '无法重命名图书。请重试。';
+
+  @override
+  String get libraryRenameCollectionFailed => '无法重命名收藏集。请重试。';
+
+  @override
+  String get libraryDeleteCollectionFailed => '无法删除收藏集。请重试。';
+
+  @override
+  String get libraryCreateCollectionFailed => '无法创建收藏集。请重试。';
+
+  @override
+  String get libraryCollectionChangeFailed => '无法保存对收藏集的更改。请重试。';
+
+  @override
+  String get mangaPageImageLoadFailed => '无法加载此页的图片。';
+
+  @override
+  String get mangaReaderPagesMissing => '此漫画的页面数据丢失。请重新导入漫画。';
+
+  @override
+  String get readerStoppedWhileOpening => '阅读器在打开图书时停止运行。点击重试。';
+
+  @override
   String get userDictionaryName => '我的释义';
 
   @override
@@ -8989,6 +9016,33 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerAddNote => '添加笔记';
+
+  @override
+  String get libraryFavoriteChangeFailed => '无法更改星标。请重试。';
+
+  @override
+  String get libraryRenameBookFailed => '无法重命名图书。请重试。';
+
+  @override
+  String get libraryRenameCollectionFailed => '无法重命名收藏集。请重试。';
+
+  @override
+  String get libraryDeleteCollectionFailed => '无法删除收藏集。请重试。';
+
+  @override
+  String get libraryCreateCollectionFailed => '无法创建收藏集。请重试。';
+
+  @override
+  String get libraryCollectionChangeFailed => '无法保存对收藏集的更改。请重试。';
+
+  @override
+  String get mangaPageImageLoadFailed => '无法加载此页的图片。';
+
+  @override
+  String get mangaReaderPagesMissing => '此漫画的页面数据丢失。请重新导入漫画。';
+
+  @override
+  String get readerStoppedWhileOpening => '阅读器在打开图书时停止运行。点击重试。';
 
   @override
   String get userDictionaryName => '我的释义';

@@ -5989,6 +5989,42 @@
   "@readerAddNote": {
     "description": "Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight held on the page."
   },
+  "libraryFavoriteChangeFailed": "Couldn't change your favorites. Try again.",
+  "@libraryFavoriteChangeFailed": {
+    "description": "Snack bar when adding a book or a collection to favorites, or removing it, could not be saved. The favorite stays as it was."
+  },
+  "libraryRenameBookFailed": "Couldn't rename the book. Try again.",
+  "@libraryRenameBookFailed": {
+    "description": "Snack bar when a new book title could not be saved. The book keeps its old title."
+  },
+  "libraryRenameCollectionFailed": "Couldn't rename the collection. Try again.",
+  "@libraryRenameCollectionFailed": {
+    "description": "Snack bar when a new collection name could not be saved. The collection keeps its old name."
+  },
+  "libraryDeleteCollectionFailed": "Couldn't delete the collection. Try again.",
+  "@libraryDeleteCollectionFailed": {
+    "description": "Snack bar when deleting a collection failed. The collection is still there."
+  },
+  "libraryCreateCollectionFailed": "Couldn't create the collection. Try again.",
+  "@libraryCreateCollectionFailed": {
+    "description": "Snack bar when a new collection could not be created."
+  },
+  "libraryCollectionChangeFailed": "Couldn't save the change to your collections. Try again.",
+  "@libraryCollectionChangeFailed": {
+    "description": "Snack bar when adding books to a collection, removing them from one, or reordering a collection's books could not be saved. Nothing changed."
+  },
+  "mangaPageImageLoadFailed": "Couldn't load this page's image.",
+  "@mangaPageImageLoadFailed": {
+    "description": "Shown in the manga reader in place of a page whose image file couldn't be loaded."
+  },
+  "mangaReaderPagesMissing": "This manga's page data is missing. Import the manga again.",
+  "@mangaReaderPagesMissing": {
+    "description": "Manga reader error, under mangaReaderFailedToLoad: the manga's stored page data is missing, so it must be imported again."
+  },
+  "readerStoppedWhileOpening": "The reader stopped while opening the book. Tap Retry to try again.",
+  "@readerStoppedWhileOpening": {
+    "description": "EPUB reader error: the page that shows the book stopped (the system ended it, for example for memory) before the book appeared. A Retry button (commonRetry) follows."
+  },
   "userDictionaryName": "My definitions",
   "@userDictionaryName": {
     "description": "Name shown for the dictionary that holds the definitions the user wrote themselves."
