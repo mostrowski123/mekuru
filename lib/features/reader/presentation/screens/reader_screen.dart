@@ -24,6 +24,7 @@ import 'package:mekuru/features/reader/presentation/providers/reader_providers.d
 import 'package:mekuru/features/reader/presentation/providers/user_font_providers.dart';
 import 'package:mekuru/features/reader/presentation/reader_display_settings_mapper.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
+import 'package:mekuru/features/reader/presentation/viewer_session.dart';
 import 'package:mekuru/features/reader/data/models/highlight_color.dart';
 import 'package:mekuru/features/reader/presentation/widgets/book_search_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
@@ -137,22 +138,23 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // Opens immersive (controls and system bars hidden), same as the manga
   // reader; a center tap or swipe down brings the controls up.
   bool _showControls = false;
-  bool _isEpubLoaded = false;
-  bool _isRebuildingForDirection = false;
+
+  /// The current viewer's life; replaced whole for each new viewer.
+  late ViewerSession _viewer = ViewerSession.first((
+    loaded: _onViewerLoaded,
+    locationsReady: _maybeApplyRemoteProgress,
+    relocated: _onRelocated,
+    failed: _onViewerFailed,
+    rendererGone: _onRendererGone,
+  ));
 
   // Viewer rebuilds tear down and recreate the WebView, which never completes
   // its load handshake while the reader is covered by an opaque route (e.g.
   // the Reading settings screen). Suppress rebuilds while covered and run one
-  // deferred rebuild after returning.
+  // deferred rebuild after returning (ViewerSession.markStale).
   bool _suppressViewerRebuilds = false;
-  bool _viewerRebuildDeferred = false;
-
-  // The WebView's renderer died; a new viewer is built once the reader is
-  // on top again (see _rebuildIfRendererGone).
-  bool _rendererGone = false;
 
   bool _hasActiveSelection = false;
-  bool _locationsReady = false;
 
   /// Newer server progress waiting for epub.js locations to exist before
   /// the reader can jump to it.
@@ -175,13 +177,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   bool _hasRestoredHighlights = false;
   String? _initialCfi;
   String? _errorMessage;
-  int _viewerEpoch = 0;
 
   // Safety net for the JS-bridge load handshake — if `onLoaded` doesn't fire
   // within this window we surface the existing error+retry UI rather than
   // leave the user staring at a spinner forever.
   static const _kReaderLoadTimeout = Duration(seconds: 15);
-  Timer? _loadWatchdog;
 
   // A tap on [_tappedImage] that would show or hide the controls, held back
   // for a second tap: a double tap opens the image instead. The second tap
@@ -281,10 +281,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   /// Progress percentages mean nothing before epub.js generates locations,
-  /// so the jump waits for [_locationsReady].
+  /// so the jump waits for [ViewerSession.locationsReady].
   void _maybeApplyRemoteProgress() {
     final total = _pendingRemoteProgress?.totalProgression;
-    if (total == null || !_locationsReady) return;
+    if (total == null || !_viewer.locationsReady) return;
     _pendingRemoteProgress = null;
     _epubController.toProgressPercentage(total.clamp(0.0, 1.0));
   }
@@ -293,7 +293,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   void dispose() {
     _emitSessionSummary('closed');
     WidgetsBinding.instance.removeObserver(this);
-    _loadWatchdog?.cancel();
+    _viewer.retire();
     _seekSettleFallback?.cancel();
     _imageTap?.cancel();
     GestureBinding.instance.pointerRouter.removeGlobalRoute(_onPointer);
@@ -392,7 +392,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     ref.listen<Set<int>>(wanikaniKnownKanjiProvider, (previous, next) {
       // A sync that changed nothing must not re-annotate the open page.
       if (previous == null || setEquals(previous, next)) return;
-      if (settings.furiganaMode == FuriganaMode.wanikani && _isEpubLoaded) {
+      if (settings.furiganaMode == FuriganaMode.wanikani && _viewer.isLoaded) {
         _epubController.setFuriganaMode(FuriganaMode.wanikani.storageValue);
       }
     });
@@ -418,27 +418,27 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           'scroll=${previous.scrollView})',
         );
         if (_suppressViewerRebuilds) {
-          _viewerRebuildDeferred = true;
+          _viewer.markStale();
         } else {
           unawaited(_rebuildViewerForDirectionChange());
         }
       }
 
-      if (previous.fontSize != next.fontSize && _isEpubLoaded) {
+      if (previous.fontSize != next.fontSize && _viewer.isLoaded) {
         _epubController.setFontSize(next.fontSize);
       }
 
       final marginsChanged =
           previous.horizontalPadding != next.horizontalPadding ||
           previous.verticalPadding != next.verticalPadding;
-      if (marginsChanged && _isEpubLoaded) {
+      if (marginsChanged && _viewer.isLoaded) {
         _epubController.setMargins(
           next.horizontalPadding,
           next.verticalPadding,
         );
       }
 
-      if (previous.disableLinks != next.disableLinks && _isEpubLoaded) {
+      if (previous.disableLinks != next.disableLinks && _viewer.isLoaded) {
         _epubController.setDisableLinks(next.disableLinks);
       }
 
@@ -448,7 +448,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           previous.furiganaMode != next.furiganaMode ||
           (next.furiganaMode == FuriganaMode.aboveLevel &&
               previous.furiganaJlptLevel != next.furiganaJlptLevel);
-      if (furiganaChanged && _isEpubLoaded) {
+      if (furiganaChanged && _viewer.isLoaded) {
         _epubController.setFuriganaMode(next.furiganaMode.storageValue);
       }
 
@@ -456,14 +456,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           previous.colorMode != next.colorMode ||
           (next.colorMode == ColorMode.sepia &&
               previous.sepiaIntensity != next.sepiaIntensity);
-      if (colorChanged && _isEpubLoaded) _pushTheme(next);
+      if (colorChanged && _viewer.isLoaded) _pushTheme(next);
       // The choice in effect: removing an added font while a built-in one
       // is in use changes the settings but not what the page shows.
       final fontChanged =
           previous.fontFamily != next.fontFamily ||
           _fontChoice(previous) != _fontChoice(next);
       // While the viewer loads or rebuilds, onLoaded picks the change up.
-      if (fontChanged && _isEpubLoaded && !_isRebuildingForDirection) {
+      if (fontChanged && _viewer.isLoaded && !_viewer.isReplacing) {
         _queueFontChange();
       }
     });
@@ -509,7 +509,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                           onIntent: _executeNavigationIntent,
                           child: CustomEpubViewer(
                             key: ValueKey(
-                              'reader-${widget.book.id}-$_viewerEpoch',
+                              'reader-${widget.book.id}-${_viewer.epoch}',
                             ),
                             controller: _epubController,
                             epubPath: _epubPath!,
@@ -547,30 +547,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             furiganaKnownKanji: wanikaniKnownKanji,
                             userFont: _userFont,
                             onUserFontFailed: _onUserFontFailed,
-                            onLoaded: () {
-                              if (!mounted) return;
-                              _loadWatchdog?.cancel();
-                              setState(() {
-                                _isLoading = false;
-                                _isEpubLoaded = true;
-                              });
-                              if (_fontFallbackPending) {
-                                _fontFallbackPending = false;
-                                _showFontFallback();
-                              }
-                              // A font chosen while this viewer loaded was
-                              // not sent to it.
-                              if (_userFontChoice !=
-                                  _fontChoice(
-                                    ref.read(readerSettingsProvider),
-                                  )) {
-                                _queueFontChange();
-                              }
-                              _restoreHighlights();
-                              // Sync disableLinks setting to the JS bridge
-                              final s = ref.read(readerSettingsProvider);
-                              _epubController.setDisableLinks(s.disableLinks);
-                            },
+                            onLoaded: _viewer.loaded,
                             onChaptersLoaded: (chapters) {
                               if (!mounted) return;
                               debugPrint(
@@ -585,52 +562,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                 'entries',
                               );
                             },
-                            onLocationsReady: () {
-                              if (!mounted) return;
-                              _locationsReady = true;
-                              _maybeApplyRemoteProgress();
-                            },
+                            onLocationsReady: _viewer.locationsArrived,
                             // An old bookmark only matches once the section's
                             // furigana is in (see _bookmarkAtCfi).
                             onFuriganaApplied: () {
                               if (mounted) _checkBookmarkState();
                             },
-                            onRelocated: (location) {
-                              if (!mounted) return;
-
-                              _onSeekSettled();
-
-                              final normalizedProgress = location.progress
-                                  .clamp(0.0, 1.0);
-
-                              // Only trust progress values after epub.js has
-                              // generated locations; before that, percentage is 0.
-                              if (_locationsReady) {
-                                setState(() => _progress = normalizedProgress);
-                              }
-
-                              final cfi = location.startCfi.trim();
-                              if (_isEpubCfi(cfi)) {
-                                _currentCfi = cfi;
-                                // Mid-scrub relocations (another seek already in
-                                // flight) skip the bookmark lookup; the final one
-                                // runs it.
-                                if (!_seekInFlight) _checkBookmarkState();
-                                // A newer server position is about to be jumped
-                                // to; saving this (restore) location would write
-                                // stale progress over the applied remote state.
-                                if (_pendingRemoteProgress == null) {
-                                  _progressPersistence.queueSave(
-                                    cfi,
-                                    _locationsReady
-                                        ? normalizedProgress
-                                        : _progress,
-                                    href: location.href,
-                                    hrefProgression: location.hrefProgression,
-                                  );
-                                }
-                              }
-                            },
+                            onRelocated: _viewer.relocated,
                             onPageKey: _onPageKey,
                             onSearchProgress: _search.onProgress,
                             onPageCharacters: (count, pageKey, screens) {
@@ -729,8 +667,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                               }
                               _showHighlightDetails(cfiRange);
                             },
-                            onLoadError: _onLoadError,
-                            onRendererGone: _onRendererGone,
+                            onLoadError: _viewer.loadFailed,
+                            onRendererGone: _viewer.rendererDied,
                           ),
                         ),
                       ),
@@ -779,12 +717,58 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
+  void _onViewerLoaded() {
+    setState(() => _isLoading = false);
+    if (_fontFallbackPending) {
+      _fontFallbackPending = false;
+      _showFontFallback();
+    }
+    // A font chosen while this viewer loaded was not sent to it.
+    if (_userFontChoice != _fontChoice(ref.read(readerSettingsProvider))) {
+      _queueFontChange();
+    }
+    _restoreHighlights();
+    // Sync disableLinks setting to the JS bridge
+    final s = ref.read(readerSettingsProvider);
+    _epubController.setDisableLinks(s.disableLinks);
+  }
+
+  /// [trusted]: epub.js has locations; before that, percentage is 0.
+  void _onRelocated(EpubLocation location, {required bool trusted}) {
+    _onSeekSettled();
+
+    final normalizedProgress = location.progress.clamp(0.0, 1.0);
+
+    if (trusted) {
+      setState(() => _progress = normalizedProgress);
+    }
+
+    final cfi = location.startCfi.trim();
+    if (_isEpubCfi(cfi)) {
+      _currentCfi = cfi;
+      // Mid-scrub relocations (another seek already in flight) skip the
+      // bookmark lookup; the final one runs it.
+      if (!_seekInFlight) _checkBookmarkState();
+      // A newer server position is about to be jumped to; saving this
+      // (restore) location would write stale progress over the applied
+      // remote state.
+      if (_pendingRemoteProgress == null) {
+        _progressPersistence.queueSave(
+          cfi,
+          trusted ? normalizedProgress : _progress,
+          href: location.href,
+          hrefProgression: location.hrefProgression,
+        );
+      }
+    }
+  }
+
   Future<void> _loadEpubData() async {
     setState(() {
       _isLoading = true;
-      _isEpubLoaded = false;
+      // A retry starts from nothing: the failed viewer's facts go with it.
+      _viewer = _viewer.next();
       _hasRestoredHighlights = false;
-      _locationsReady = false;
       _errorMessage = null;
       _chapters = const [];
       _progress = 0;
@@ -866,12 +850,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             : (file: userFont, family: _nextUserFontFamily());
         _initialCfi = initialCfi;
         _progress = latestBook?.readProgress ?? widget.book.readProgress;
-        _viewerEpoch += 1;
+        _viewer = _viewer.next();
       });
 
-      _loadWatchdog?.cancel();
-      _loadWatchdog = Timer(_kReaderLoadTimeout, () {
-        if (!mounted || !_isLoading) return;
+      _viewer.startWatchdog(_kReaderLoadTimeout, () {
         setState(() {
           _isLoading = false;
           _errorMessage = context.l10n.readerLoadTimeout;
@@ -879,7 +861,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       });
     } catch (error) {
       if (!mounted) return;
-      _loadWatchdog?.cancel();
       setState(() {
         _isLoading = false;
         _errorMessage = context.l10n.readerFailedToLoad(
@@ -994,18 +975,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _suppressViewerRebuilds = false;
     if (!mounted) return;
     unawaited(setReaderSystemBarsVisible(_showControls));
-    if (_viewerRebuildDeferred) {
-      _viewerRebuildDeferred = false;
-      unawaited(_rebuildViewerForDirectionChange());
-    }
+    if (_viewer.takeStale()) unawaited(_rebuildViewerForDirectionChange());
   }
 
   Future<void> _rebuildViewerForDirectionChange() async {
-    if (_isRebuildingForDirection || !_isEpubLoaded || _epubPath == null) {
-      return;
-    }
+    if (!_viewer.beginReplacement()) return;
 
-    _isRebuildingForDirection = true;
     final settings = ref.read(readerSettingsProvider);
     final epubDir =
         settings.verticalText &&
@@ -1018,46 +993,35 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       'readerDir=${settings.readingDirection} '
       'vertical=${settings.verticalText}',
     );
+    // A font still being sent must finish first: once the new viewer
+    // attaches, the rest of the transfer would go to it. The chain never
+    // fails (_queueFontChange catches).
+    await _fontChange;
+    String? currentCfi;
     try {
-      // A font still being sent must finish first: once the new viewer
-      // attaches, the rest of the transfer would go to it. The chain never
-      // fails (_queueFontChange catches).
-      await _fontChange;
-      String? currentCfi;
-      try {
-        final location = await _epubController.getCurrentLocation();
-        if (_isEpubCfi(location.startCfi)) {
-          currentCfi = location.startCfi;
-        }
-      } catch (_) {
-        // Best effort only.
+      final location = await _epubController.getCurrentLocation();
+      if (_isEpubCfi(location.startCfi)) {
+        currentCfi = location.startCfi;
       }
-
-      if (!mounted) return;
-      // The new viewer has no search running; reopening the search sheet
-      // runs it again.
-      _search.markInterrupted();
-      setState(() {
-        _initialCfi = currentCfi ?? _initialCfi;
-        _isLoading = true;
-        _isEpubLoaded = false;
-        _hasRestoredHighlights = false;
-        // The fresh viewer must regenerate locations; until then its
-        // relocations report progress 0, which a stale true here would let
-        // overwrite (and persist over) the real progress.
-        _locationsReady = false;
-        _viewerEpoch += 1;
-      });
-    } finally {
-      _isRebuildingForDirection = false;
+    } catch (_) {
+      // Best effort only.
     }
+
+    if (!mounted) return;
+    // The new viewer has no search running; reopening the search sheet
+    // runs it again.
+    _search.markInterrupted();
+    setState(() {
+      _initialCfi = currentCfi ?? _initialCfi;
+      _isLoading = true;
+      _hasRestoredHighlights = false;
+      // The new viewer starts knowing nothing: until its own locations
+      // arrive, its relocations report progress 0 and are not trusted.
+      _viewer = _viewer.next();
+    });
   }
 
-  void _onLoadError(String description) {
-    if (!mounted) return;
-    // Terminal outcome: without this the load watchdog stays armed and
-    // overwrites the real error with a bogus timeout message.
-    _loadWatchdog?.cancel();
+  void _onViewerFailed(String description) {
     setState(() {
       _isLoading = false;
       _errorMessage = context.l10n.readerFailedToLoadContent(
@@ -1066,18 +1030,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     });
   }
 
-  /// The WebView's renderer died (killed for memory, or crashed) and took
-  /// the page with it. A book that had loaded comes back at the page it
-  /// showed; one still loading offers Retry, so a book that crashes the
-  /// renderer cannot loop.
+  /// The WebView's renderer died (killed for memory, or crashed) after the
+  /// book showed: it comes back at the page it showed.
   void _onRendererGone() {
-    if (!mounted) return;
-    if (!_isEpubLoaded) {
-      _onLoadError('The web view stopped.');
-      return;
-    }
     if (_isEpubCfi(_currentCfi)) _initialCfi = _currentCfi;
-    _rendererGone = true;
     // Now, not at the rebuild: that waits for an open search sheet to close.
     _search.markInterrupted();
     _rebuildIfRendererGone();
@@ -1093,8 +1049,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// under a route never finishes loading (see [_suppressViewerRebuilds]).
   /// Reading isCurrent here brings its change to [didChangeDependencies].
   void _rebuildIfRendererGone() {
-    if (!_rendererGone || !(ModalRoute.isCurrentOf(context) ?? true)) return;
-    _rendererGone = false;
+    if (_viewer.phase != ViewerPhase.rendererGone ||
+        !(ModalRoute.isCurrentOf(context) ?? true)) {
+      return;
+    }
     unawaited(_rebuildViewerForDirectionChange());
   }
 
@@ -1458,9 +1416,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   void _goForward() {
-    if (!_isEpubLoaded || _hasActiveSelection) {
+    if (!_viewer.isLoaded || _hasActiveSelection) {
       debugPrint(
-        '[READER] goForward blocked: loaded=$_isEpubLoaded '
+        '[READER] goForward blocked: loaded=${_viewer.isLoaded} '
         'selection=$_hasActiveSelection',
       );
       return;
@@ -1478,9 +1436,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   void _goBackward() {
-    if (!_isEpubLoaded || _hasActiveSelection) {
+    if (!_viewer.isLoaded || _hasActiveSelection) {
       debugPrint(
-        '[READER] goBackward blocked: loaded=$_isEpubLoaded '
+        '[READER] goBackward blocked: loaded=${_viewer.isLoaded} '
         'selection=$_hasActiveSelection',
       );
       return;
@@ -1498,7 +1456,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   void _seekToProgress(double value) {
-    if (!_isEpubLoaded) return;
+    if (!_viewer.isLoaded) return;
 
     final target = value.clamp(0.0, 1.0);
     if (_seekInFlight) {
@@ -1584,7 +1542,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   Future<void> _toggleBookmark() async {
-    if (!_isEpubLoaded || _currentCfi.isEmpty) return;
+    if (!_viewer.isLoaded || _currentCfi.isEmpty) return;
 
     final repo = ref.read(bookmarkRepositoryProvider);
     final existing = await _bookmarkAtCfi(_currentCfi);
@@ -1628,7 +1586,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       context,
       session: _search,
       onOpenHit: (hit) {
-        if (_isEpubLoaded) _epubController.showSearchHit(hit.cfi, hit.match);
+        if (_viewer.isLoaded) _epubController.showSearchHit(hit.cfi, hit.match);
       },
     );
   }
@@ -1640,7 +1598,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       builder: (context) => BookmarksSheet(
         bookId: widget.book.id,
         onNavigate: (cfi) {
-          if (_isEpubLoaded) {
+          if (_viewer.isLoaded) {
             _epubController.display(cfi: cfi);
           }
         },
@@ -1652,7 +1610,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   Future<void> _openProUpgradeFromReader({required String feature}) async {
     logUsage('pro.gate_hit', attrs: {'feature': feature, 'source': 'reader'});
     await openProUpgrade(context, source: 'reader');
-    if (!mounted || !_isEpubLoaded) return;
+    if (!mounted || !_viewer.isLoaded) return;
 
     final isProUnlocked = await ref.read(proUnlockedProvider.future);
     if (isProUnlocked) {
@@ -1672,7 +1630,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       builder: (context) => HighlightsSheet(
         bookId: widget.book.id,
         onNavigate: (cfiRange) {
-          if (_isEpubLoaded) {
+          if (_viewer.isLoaded) {
             _epubController.display(cfi: cfiRange);
           }
         },
@@ -1877,10 +1835,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       leadingLabel: (value) => '${(value * 100).toInt()}%',
       // Live page preview while scrubbing; [_seekToProgress] coalesces the
       // bridge traffic.
-      onChanged: _isEpubLoaded ? _seekToProgress : null,
+      onChanged: _viewer.isLoaded ? _seekToProgress : null,
       // The last onChanged already navigated to this position; just commit
       // it so the thumb doesn't snap back while the relocation is en route.
-      onChangeEnd: _isEpubLoaded
+      onChangeEnd: _viewer.isLoaded
           ? (value) => setState(() => _progress = value)
           : null,
     );
@@ -1962,7 +1920,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                     title: Text(chapter.title),
                     onTap: () {
                       Navigator.pop(context);
-                      if (!_isEpubLoaded) return;
+                      if (!_viewer.isLoaded) return;
                       _epubController.display(cfi: chapter.href);
                     },
                   );
