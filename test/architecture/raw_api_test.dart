@@ -268,7 +268,6 @@ final _rows = [
       'lib/features/free_books/presentation/providers/free_books_providers.dart':
           1,
       'lib/features/library/presentation/providers/library_providers.dart': 1,
-      'lib/features/library/presentation/screens/library_screen.dart': 1,
       'lib/features/library/presentation/widgets/epub_manga_convert_action.dart':
           1,
       'lib/features/library/presentation/widgets/furigana_export_action.dart':

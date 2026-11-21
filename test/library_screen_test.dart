@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -10,12 +12,16 @@ import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
 import 'package:mekuru/features/free_books/data/models/tadoku_book.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
 import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/main.dart' show databaseProvider;
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart';
+import 'shared/test_database.dart';
 import 'test_app.dart';
 
 /// Fails every pick with [error].
@@ -40,6 +46,41 @@ class _FailingFilePicker extends FilePickerPlatform {
     bool cancelUploadOnWindowBlur = true,
     AndroidSAFOptions? androidSafOptions,
   }) async => throw error;
+}
+
+/// Picks the file at [path].
+class _PicksFile extends FilePickerPlatform {
+  _PicksFile(this.path);
+
+  final String path;
+
+  @override
+  Future<FilePickerResult?> pickFiles({
+    String? dialogTitle,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    Function(FilePickerStatus)? onFileLoading,
+    int compressionQuality = 0,
+    bool allowMultiple = false,
+    bool withData = false,
+    bool withReadStream = false,
+    bool lockParentWindow = false,
+    bool readSequential = false,
+    bool cancelUploadOnWindowBlur = true,
+    AndroidSAFOptions? androidSafOptions,
+  }) async => FilePickerResult([
+    PlatformFile(path: path, name: p.basename(path), size: 1),
+  ]);
+}
+
+/// Fails the cover write the way a full disk fails SQLite.
+class _CoverWriteFails extends BookRepository {
+  _CoverWriteFails(super.db);
+
+  @override
+  Future<void> updateCoverImagePath(int bookId, String? path) async =>
+      throw const FileSystemException('database or disk is full');
 }
 
 class _ImportSucceeded extends BookImportNotifier {
@@ -213,6 +254,68 @@ void main() {
     dateAdded: DateTime(2026, 1, 1),
     lastReadAt: lastReadAt,
   );
+
+  // A cover the database refused used to fail silently: the error went
+  // unhandled and the copied image stayed on disk.
+  testWidgets('a cover that cannot be saved says so and keeps no copy', (
+    tester,
+  ) async {
+    final dir = Directory.systemTemp.createTempSync('change_cover_');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final bookFile = File(p.join(dir.path, 'book', 'book.epub'))
+      ..createSync(recursive: true);
+    final picked = File(p.join(dir.path, 'cover.png'))..writeAsBytesSync([1]);
+    final original = FilePickerPlatform.instance;
+    FilePickerPlatform.instance = _PicksFile(picked.path);
+    addTearDown(() => FilePickerPlatform.instance = original);
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final semantics = tester.ensureSemantics();
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          booksProvider.overrideWith(
+            (ref) =>
+                Stream.value([makeBook(1).copyWith(filePath: bookFile.path)]),
+          ),
+          bookRepositoryProvider.overrideWithValue(_CoverWriteFails(db)),
+        ],
+        child: buildLocalizedTestApp(home: const LibraryScreen()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    tester.semantics.customAction(
+      find.semantics.byLabel('Book 1'),
+      CustomSemanticsAction(label: 'Book options'),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Change Cover'));
+    await tester.tap(find.text('Change Cover'));
+    // The copy is real file IO: give it real time, then let the app react.
+    for (var i = 0; i < 10; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump();
+    }
+
+    expect(find.textContaining('Failed to change cover'), findsOneWidget);
+    expect(
+      dir
+          .listSync(recursive: true)
+          .map((e) => p.basename(e.path))
+          .where((name) => name.startsWith('custom_cover_')),
+      isEmpty,
+    );
+    semantics.dispose();
+    // Unmount, so the library's database streams close before the database.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(Duration.zero);
+  });
 
   group('mostRecentlyReadBook', () {
     test('returns null for an empty list', () {

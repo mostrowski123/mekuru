@@ -1671,6 +1671,8 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   Future<void> _changeCover(BuildContext context) async {
+    // Read before the picker opens: the tile can unmount while it's up.
+    final repo = ref.read(bookRepositoryProvider);
     final picked = await FilePicker.pickFile(type: FileType.image);
 
     if (picked == null) return;
@@ -1684,8 +1686,13 @@ class _BookTileState extends ConsumerState<_BookTile>
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final destPath = p.join(bookDir.path, 'custom_cover_$timestamp$ext');
       await File(pickedPath).copy(destPath);
-
-      ref.read(bookRepositoryProvider).updateCoverImagePath(book.id, destPath);
+      try {
+        await repo.updateCoverImagePath(book.id, destPath);
+      } catch (_) {
+        // The book keeps its old cover and nothing points at the copy.
+        await File(destPath).delete();
+        rethrow;
+      }
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
