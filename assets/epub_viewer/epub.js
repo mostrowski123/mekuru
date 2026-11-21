@@ -4186,15 +4186,18 @@ class default_DefaultViewManager {
       forceRight = true;
     }
     this.add(section, forceRight).then(function (view) {
-      // [MEKURU PATCH] In scrolled flow, place and show a new view only once
-      // its content hooks have run: they apply the reader's theme, font size
-      // and image caps, which reflow the text. Upstream showed it first, so
-      // a new chapter appeared in its unthemed layout and then jumped, and a
-      // display() target was placed in text that then moved. Hook failures
-      // were never awaited upstream, so they are ignored here too.
+      // [MEKURU PATCH] Place and show a new view only once its content hooks
+      // have run: they apply the reader's theme, font size and image caps,
+      // which reflow the text. Upstream showed it first, so a new chapter
+      // appeared in its unthemed layout and then jumped, and a display()
+      // target was placed in text that then moved. Hook failures were never
+      // awaited upstream, so they are ignored here too.
       // The hooks' reflow is measured right away (expand()), not a resize
-      // event later, after the view is already on screen.
-      if (this.isPaginated || !view.hooked) return view;
+      // event a frame or two later. Paginated flow needs it too: the view's
+      // size is the chapter's page count, and against the size from before
+      // the reflow, moveTo() clamped a target on the chapter's last pages
+      // and the bridge's snapToLastPage() found the last page pages early.
+      if (!view.hooked) return view;
       return view.hooked.catch(() => {}).then(() => {
         view.expand();
         return view;
@@ -4582,9 +4585,13 @@ class default_DefaultViewManager {
         totalPages = this.layout.count(width, pageWidth).pages;
         stopPos = pageWidth;
       }
-      let currPage = Math.ceil(startPos / stopPos);
+      // [MEKURU PATCH] Whole pixels here too. Android's WebView scrolls in
+      // device pixels: at a 2.625 pixel ratio, 14 pages of 858 px down is
+      // 12012.19, and ceil() named the page after it (page 16 of 15). The
+      // bridge's next() leaves the chapter when the page reads as its last.
+      let currPage = Math.ceil(Math.round(startPos) / stopPos);
       let pages = [];
-      let endPage = Math.ceil(endPos / stopPos);
+      let endPage = Math.ceil(Math.round(endPos) / stopPos);
 
       // Reverse page counts for horizontal rtl
       if (this.settings.direction === "rtl" && !vertical) {

@@ -217,6 +217,35 @@ const checks = [
     expect(JSON.stringify(again) === JSON.stringify(first), 'asked again, but for other text');
   }],
 
+  ["previous() from a chapter's first page lands on the last page before it", async () => {
+    // The last check left the reader on chapter 2's first page. Chapter 1 is
+    // laid out again when it comes back (font size 24, furigana), and the
+    // page back must land on its last page as laid out then.
+    const before = (await calls(0)).filter((c) => c.name === 'relocated').at(-1).args[0];
+    expect(
+      before.startCfi.startsWith('epubcfi(/6/4!') && before.hrefProgression === 0,
+      `not on chapter 2's first page: ${JSON.stringify(before)}`,
+    );
+    await quiet();
+    let at = await mark();
+    await page.evaluate('previous()');
+    await until(at, `c.name === 'pageChars'`);
+    await quiet();
+    const back = await calls(at);
+    const landed = back.filter((c) => c.name === 'relocated').map((c) => c.args[0]);
+    const chars = argOf(back, 'pageChars');
+    expect(landed.length > 0 && landed.every((l) => l.startCfi.startsWith('epubcfi(/6/2!')),
+      `previous() went to ${landed.map((l) => l.startCfi).join()}, not into chapter 1`);
+    expect(landed.every((l) => l.startCfi === chars.pageKey),
+      `pageChars counted ${chars.pageKey}, but the reader was reported on ${landed.map((l) => l.startCfi).join()}`);
+    at = await mark();
+    await page.evaluate('next()');
+    await until(at, `c.name === 'pageChars'`);
+    const fwd = argOf(await calls(at), 'relocated');
+    expect(fwd.startCfi.startsWith('epubcfi(/6/4!'),
+      `previous() landed before chapter 1's last page: one next() from ${chars.pageKey} went to ${fwd.startCfi}, still in chapter 1`);
+  }],
+
   ['every handler the page calls is registered in Dart', async () => {
     // The calls seen so far, and every name written in reader_bridge.js.
     const source = fs.readFileSync(path.join(viewer, 'reader_bridge.js'), 'utf8');
