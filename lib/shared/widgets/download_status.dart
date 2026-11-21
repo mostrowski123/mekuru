@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show CouldNotRollBackException;
+import 'package:drift/isolate.dart' show DriftRemoteException;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/network_status.dart';
@@ -16,6 +18,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
+import 'package:sqlite3/sqlite3.dart' show SqliteException;
 import 'package:url_launcher/url_launcher.dart';
 
 // Rows shown under a download tile: progress, an error, an attribution.
@@ -242,15 +245,26 @@ String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
       HttpException() ||
       TlsException() ||
       TimeoutException() => l10n.localOcrDownloadNetwork,
-      // ENOSPC
-      FileSystemException(osError: OSError(errorCode: 28)) =>
-        l10n.localOcrStorageFull,
+      _ when isStorageFull(failure) => l10n.localOcrStorageFull,
       // An archive that doesn't unpack (ArchiveException, a bad gzip) or a
       // hash that doesn't match (UniDic).
       FormatException() => l10n.localOcrDownloadDamaged,
       // An import or extraction that failed some other way.
       _ => l10n.downloadNotFinished,
     };
+
+/// Whether [error] is the device running out of room: ENOSPC from a file
+/// write, or SQLITE_FULL from the database.
+bool isStorageFull(Object? error) => switch (error) {
+  FileSystemException(osError: OSError(errorCode: 28)) => true,
+  SqliteException(resultCode: 13) => true,
+  // The database runs on drift's background isolate, which wraps what it
+  // throws. SQLite rolls a transaction back itself on SQLITE_FULL, so drift's
+  // own ROLLBACK fails and wraps it again.
+  DriftRemoteException(remoteCause: final cause) ||
+  CouldNotRollBackException(:final cause) => isStorageFull(cause),
+  _ => false,
+};
 
 /// [dictionaryDownloadError] for a download with no Download button to tap
 /// again (the lookup's speaker, the Anki button): a stop because Wi-Fi went
