@@ -331,13 +331,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // this rebuilds the whole screen.
               subtitle: Text(switch (ref.watch(
                 gemmaDownloadProvider.select(
-                  (s) =>
-                      s is GemmaDownloading ? (s.fraction * 100).floor() : null,
+                  (s) => s is GemmaDownloading
+                      ? (
+                          percent: (s.fraction * 100).floor(),
+                          waitingForWifi: s.waitingForWifi,
+                        )
+                      : null,
                 ),
               )) {
-                final int percent => l10n.translationHighQualityDownloading(
-                  percent: '$percent',
-                ),
+                // The job waits for Wi-Fi, so the percentage stands still.
+                (waitingForWifi: true, percent: _) => l10n.localOcrWaitingWifi,
+                (:final percent, waitingForWifi: false) =>
+                  l10n.translationHighQualityDownloading(percent: '$percent'),
                 null => switch (ref.watch(translationModelProvider)) {
                   TranslationModelChoice.standard =>
                     l10n.translationModelStandard,
@@ -769,10 +774,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  static String _gemmaDownloading(AppLocalizations l10n, double fraction) =>
-      l10n.translationHighQualityDownloading(
-        percent: '${(fraction * 100).floor()}',
-      );
+  static String _gemmaDownloading(
+    AppLocalizations l10n,
+    GemmaDownloading download,
+  ) => download.waitingForWifi
+      ? l10n.localOcrWaitingWifi
+      : l10n.translationHighQualityDownloading(
+          percent: '${(download.fraction * 100).floor()}',
+        );
 
   /// Set from the tap until the sheet closes: the disk check before the
   /// sheet leaves time for a second tap.
@@ -818,9 +827,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ? null
           : switch (download) {
               GemmaInstalled() => null,
-              GemmaDownloading(:final fraction) => _gemmaDownloading(
+              final GemmaDownloading downloading => _gemmaDownloading(
                 l10n,
-                fraction,
+                downloading,
               ),
               _ => l10n.translationModelHighDownloadFirst(
                 size: GemmaTranslation.downloadSize(),

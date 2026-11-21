@@ -26,6 +26,7 @@ void main() {
   var cancels = 0;
   late Completer<void> downloadDone;
   late void Function(double fraction) report;
+  late void Function(double fraction, bool waitingForWifi) progress;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -41,6 +42,7 @@ void main() {
       },
       download: (onProgress, _) {
         downloads++;
+        progress = onProgress;
         report = (fraction) => onProgress(fraction, false);
         // Made here, in the test's zone, so completing it reaches pump().
         downloadDone = Completer<void>();
@@ -180,6 +182,42 @@ void main() {
       TranslationModelChoice.high,
     );
     expect(rowSubtitle('High quality'), findsOneWidget);
+  }, variant: _android);
+
+  testWidgets('in Japanese, a download waiting for Wi-Fi says so, not a '
+      'percentage that stands still', (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    final container = await pumpSettings(tester, locale: const Locale('ja'));
+    Finder subtitle(String text) => find.descendant(
+      of: find.widgetWithText(ListTile, ja.settingsTranslationModelTitle),
+      matching: find.text(text),
+    );
+    unawaited(
+      container
+          .read(gemmaDownloadProvider.notifier)
+          .start(NetworkConsent.wifiOnly),
+    );
+    await tester.pump();
+    progress(0.37, false);
+    await tester.pump();
+    expect(
+      subtitle(ja.translationHighQualityDownloading(percent: '37')),
+      findsOneWidget,
+    );
+
+    // Wi-Fi went: the job waits, and its percentage stops.
+    progress(0.37, true);
+    await tester.pump();
+    expect(subtitle(ja.localOcrWaitingWifi), findsOneWidget);
+    expect(find.textContaining('37'), findsNothing);
+
+    // The sheet says the same.
+    await tester.tap(find.text(ja.settingsTranslationModelTitle));
+    await tester.pumpAndSettle();
+    expect(find.text(ja.localOcrWaitingWifi), findsNWidgets(2));
+
+    downloadDone.complete();
+    await tester.pumpAndSettle();
   }, variant: _android);
 
   testWidgets('while it downloads, High quality shows progress and is off', (
