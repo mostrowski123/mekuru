@@ -246,7 +246,6 @@ final _rows = [
     _matching(r'\bImage\.file\(|\bFileImage\('),
     'fileImage(), which also shows AVIF on iOS and Android 7-11 '
         '(lib/core/platform/image_convert.dart)',
-    counts: {'lib/features/free_books/presentation/widgets/tadoku_tab.dart': 1},
     allowed: {
       'lib/core/platform/image_convert.dart': (1, 'fileImage() itself'),
     },

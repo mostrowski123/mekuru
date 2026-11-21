@@ -1,6 +1,7 @@
 // ignore_for_file: discarded_futures
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/features/free_books/data/models/tadoku_book.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
 import 'package:mekuru/features/free_books/presentation/widgets/free_book_actions.dart';
@@ -207,8 +208,8 @@ class _Cover extends ConsumerWidget {
       borderRadius: BorderRadius.circular(8),
       child: file == null
           ? placeholder
-          : Image.file(
-              file,
+          : Image(
+              image: fileImage(file),
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => placeholder,
             ),
