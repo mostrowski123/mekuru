@@ -8472,11 +8472,15 @@ class rendition_Rendition {
     // location, and the location after. Upstream always showed the last
     // location again, which a book still opening has none of (it stayed
     // blank), and which a display() on its way elsewhere was taken back to.
+    // After that, the reader's place (set by reader_bridge.js keepPlace()),
+    // not the start of the page on screen: the page that holds it usually
+    // starts earlier after a re-layout, and showing that start again moved
+    // the reader back a little with every resize.
     let last = this.lastDisplay;
     if (last && (this.displaying || this.location === last.location)) {
       this.display(epubcfi || last.target);
     } else if (this.location && this.location.start) {
-      this.display(epubcfi || this.location.start.cfi);
+      this.display(epubcfi || this.place || this.location.start.cfi);
     }
   }
 

@@ -396,6 +396,60 @@ const checks = [
     }
   }],
 
+  ['a re-layout keeps the reader on the character they were at, not the start of its page', async () => {
+    // A book reopened mid-page (another mode, a turned phone), then turned
+    // and given other font sizes. The page holding the place usually starts
+    // earlier after a re-layout; reporting that start as the place moved
+    // the reader back a little with each one, to the chapter's start.
+    const bytes = fs.readFileSync(path.join(here, 'book.epub'));
+    const place = 'epubcfi(/6/2!/4/10/1:150)'; // mid-paragraph, mid-page
+    const modes = {
+      pages: `"rtl", "paginated", false, "24", "#000000", null, 28, 28, false, "book", 1, null`,
+      scroll: `"rtl", "scrolled", false, "24", "#000000", null, 0, 28, false, "book", 1, null`,
+    };
+    for (const mode of Object.keys(modes)) {
+      const p = await browser.newPage({ viewport: { width: 412, height: 800 }, deviceScaleFactor: 2.625 });
+      try {
+        await p.route('http://viewer.localhost/**', (route) => {
+          const file = path.join(viewer, new URL(route.request().url()).pathname);
+          return fs.existsSync(file) ? route.fulfill({ path: file }) : route.fulfill({ status: 404 });
+        });
+        await p.addInitScript({ path: path.join(here, 'stub.js') });
+        await p.goto('http://viewer.localhost/reader.html');
+        await p.waitForFunction(`window.__calls.some((c) => c.name === 'readyToLoad')`);
+        await p.evaluate(`beginEpubTransfer(${bytes.length}); appendEpubChunk('${bytes.toString('base64')}')`);
+        await p.evaluate(`loadBook(${JSON.stringify(place)}, ${modes[mode]})`);
+        await p.waitForFunction(`window.__calls.some((c) => c.name === 'pageChars')`, null, { timeout: 8000 });
+        const steps = [null, [800, 412], [412, 800], [800, 412], [412, 800], '30', '24'];
+        for (const step of steps) {
+          if (Array.isArray(step)) await p.setViewportSize({ width: step[0], height: step[1] });
+          else if (step) await p.evaluate(`setFontSize("${step}")`);
+          // Until no call for 500 ms: a re-layout reports once it is shown.
+          for (let n = -1, m = 0; n !== m; ) {
+            [n, m] = [m, await p.evaluate(() => window.__calls.length)];
+            if (n !== m) await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+          const label = `${mode}, ${step ? `then ${step}` : 'opened'}`;
+          const got = await p.evaluate((asked) => {
+            const reported = window.__calls.filter((c) => c.name === 'relocated').at(-1).args[0];
+            const shown = rendition.location; // the page on screen
+            const cfi = new ePub.CFI();
+            return {
+              reported: reported.startCfi,
+              pageStart: shown.start.cfi,
+              holds: cfi.compare(shown.start.cfi, asked) <= 0 && cfi.compare(asked, shown.end.cfi) <= 0,
+            };
+          }, place);
+          if (!step) expect(got.pageStart !== place, `${label}: ${place} starts its page, so this checks nothing`);
+          expect(got.reported === place, `${label}: reported ${got.reported}, not the place ${place}`);
+          expect(got.holds, `${label}: shows the page from ${got.pageStart}, which does not hold ${place}`);
+        }
+      } finally {
+        await p.close();
+      }
+    }
+  }],
+
   ['every handler the page calls is registered in Dart', async () => {
     // The calls seen so far, and every name written in reader_bridge.js.
     const source = fs.readFileSync(path.join(viewer, 'reader_bridge.js'), 'utf8');

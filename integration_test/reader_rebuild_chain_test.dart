@@ -1,10 +1,13 @@
 // Reading-mode changes rebuild the viewer, and each new viewer opens at the
-// page the last one reported. Walks page view -> scroll view -> page view and
-// vertical text -> horizontal -> vertical, several times over, and expects
-// every new viewer to show that page, with no script error in the page.
-// Android lays each new WebView out at 0 x 0 and gives it its size while the
-// book opens; that resize used to clear the page being opened (a blank page,
-// or a script error and the load timeout).
+// place the last one reported. Walks page view -> scroll view -> page view and
+// vertical text -> horizontal -> vertical, several times over, then changes
+// the font size, and expects every viewer to show the page that holds the
+// reader's place, with no script error in the page, and that place to stay
+// saved as the same string. Android lays each new WebView out at 0 x 0 and
+// gives it its size while the book opens; that resize used to clear the page
+// being opened (a blank page, or a script error and the load timeout). And
+// each re-layout used to save the start of the page holding the place, which
+// usually starts earlier, so the place walked back to the chapter's start.
 
 import 'dart:io';
 
@@ -13,12 +16,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 
 import 'shared/scroll_view_fixture.dart'
     show expectPageShown, openReader, writeScrollViewEpub;
+import 'shared/test_infrastructure.dart' show createTestDatabase;
 import 'test_helpers.dart';
 
 const _title = '表示切り替えの連続';
@@ -39,7 +44,7 @@ void main() {
     await cleanupAppBooksDir();
   });
 
-  testWidgets('every viewer a mode change rebuilds shows the page', (
+  testWidgets('mode changes and font sizes keep the reader at their place', (
     tester,
   ) async {
     // The page's console reaches the test through debugPrint.
@@ -52,12 +57,19 @@ void main() {
     addTearDown(() => debugPrint = original);
 
     final l10n = await loadExpectedL10n();
+    final db = createTestDatabase();
+    addTearDown(db.close);
     final controller = await openReader(
       tester,
       await writeScrollViewEpub(tempDir, title: _title, vertical: true),
       _title,
       settings: const ReaderSettings(),
+      db: db,
     );
+    final books = BookRepository(db);
+    final bookId = (await books.getAllBooks()).single.id;
+    Future<String?> saved() async =>
+        (await books.getBookById(bookId))!.lastReadCfi;
     final viewer = find.byType(CustomEpubViewer);
     final overlay = find.byKey(const Key('reader-loading-overlay'));
     final timedOut = find.text(l10n.readerLoadTimeout);
@@ -71,6 +83,16 @@ void main() {
     for (var turn = 0; turn < 2; turn++) {
       controller.next();
       await tester.pump(const Duration(milliseconds: 800));
+    }
+    await tester.pump(const Duration(milliseconds: 1500));
+    final place = await saved();
+    expect(place, startsWith('epubcfi('), reason: 'no place saved');
+    await expectPageShown(controller, cfi: place, reason: 'two pages in');
+
+    // The place stays saved, and the page shown holds it.
+    Future<void> expectPlace(String label) async {
+      expect(await saved(), place, reason: '$label: saved');
+      await expectPageShown(controller, cfi: place, reason: label);
     }
 
     Future<void> change(String label, void Function() apply) async {
@@ -94,8 +116,8 @@ void main() {
         isEmpty,
         reason: '$label: the page threw',
       );
-      expect(cfi, startsWith('epubcfi('), reason: '$label: opened at no page');
-      await expectPageShown(controller, cfi: cfi, reason: label);
+      expect(cfi, place, reason: '$label: opened away from the place');
+      await expectPlace(label);
     }
 
     for (var round = 1; round <= _rounds; round++) {
@@ -105,6 +127,11 @@ void main() {
     for (var round = 1; round <= _rounds; round++) {
       await change('horizontal $round', () => settings.setVerticalText(false));
       await change('vertical $round', () => settings.setVerticalText(true));
+    }
+    for (final size in [24.0, 30.0, 20.0]) {
+      settings.setFontSize(size);
+      await tester.pump(const Duration(seconds: 3));
+      await expectPlace('font size $size');
     }
   });
 }

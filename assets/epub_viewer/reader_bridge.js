@@ -20,6 +20,12 @@ var _furiganaProcessedDocs = new WeakSet(); // iframe documents already processe
 // size, margins, rotation → resize + re-display of the same page) never arm
 // it, so they cannot inflate the reading-stats character count.
 var _pendingNavChars = false;
+// The reader's place is rendition.place: the start last reported to Dart,
+// which Dart saves and reopens at. Only the reader moves it (a page turn, a
+// jump, scrolling). Anything else that lays the book out again (a resize or
+// rotation, font size, margins, the book reopened in another mode) sets
+// _holdPlace until the reader takes over (unpinScroll()). See keepPlace().
+var _holdPlace = false;
 // Scroll view: each chapter is one strip scrolled natively (epub.js
 // 'scrolled' flow) instead of pages. Set by loadBook from its flow argument.
 var _scrollView = false;
@@ -238,6 +244,9 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   // wait for the book to be ready, then check whether the default first
   // section has a valid href and skip to the first one that does.
   _pendingNavChars = true; // the initial display counts as a navigation
+  // Reopened at a place (another mode, the library): show it, not move it.
+  rendition.place = cfi || null;
+  _holdPlace = !!cfi;
   if (cfi) {
     displayed = rendition.display(cfi);
   } else {
@@ -281,16 +290,25 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     callDart('loaded');
   });
 
+  // A resize, rotation, or new font size or margins (rendition.resize()).
+  rendition.on('resized', function () {
+    _holdPlace = true;
+  });
+
   rendition.on('relocated', function (location) {
     if (!location || !location.start) return;
-    var percent = location.start.percentage;
     // A single-page spread has no `end`; the page is then its own end.
     var endCfi = location.end ? location.end.cfi : location.start.cfi;
+    var start = { index: location.start.index, cfi: keepPlace(location.start.cfi, endCfi) };
+    // As Rendition.located() works it out for the page's own start.
+    var percent = start.cfi === location.start.cfi
+      ? location.start.percentage
+      : book.locations.percentageFromLocation(book.locations.locationFromCfi(start.cfi));
     // displayed.page (1-based) / total locates the page within the current
     // spine item; Readium locators want that as a 0-based fraction.
     var displayed = location.start.displayed;
     callDart('relocated', {
-      startCfi: location.start.cfi,
+      startCfi: start.cfi,
       endCfi: endCfi,
       progress: percent,
       href: location.start.href || null,
@@ -299,10 +317,10 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
         : null
     });
     if (_scrollView) {
-      reportNewScrollChars(location.start, endCfi);
+      reportNewScrollChars(start, endCfi);
     } else if (_pendingNavChars) {
       _pendingNavChars = false;
-      reportPageChars(location.start.cfi, endCfi);
+      reportPageChars(start.cfi, endCfi);
     }
   });
 
@@ -686,6 +704,28 @@ document.addEventListener('pointerdown', function (e) {
 document.addEventListener('pointerup', function (e) {
   if (e.pointerType !== 'touch') forwardMarginUp(e.clientX, e.clientY);
 }, { passive: true });
+
+// The start to report for the page from pageStart to pageEnd, which becomes
+// the place. A re-layout shows the page that holds the place (epub.js
+// Rendition.onResized() displays rendition.place), and that page usually
+// starts before it: reporting the page's start moved the reader back with
+// every re-layout. So while _holdPlace is set and the page holds the place,
+// the place is reported again: what Dart saves, the progress it shows, and
+// the page key and first character pageChars counts from.
+function keepPlace(pageStart, pageEnd) {
+  var start = pageStart;
+  var place = rendition.place;
+  if (_holdPlace && place && place !== pageStart) {
+    try {
+      var cfi = new ePub.CFI();
+      if (cfi.compare(pageStart, place) <= 0 && cfi.compare(place, pageEnd) <= 0) start = place;
+    } catch (e) {
+      console.log('[EPUB_BRIDGE] keepPlace: compare failed:', e);
+    }
+  }
+  rendition.place = start;
+  return start;
+}
 
 // ── Navigation (section-aware — bypasses epub.js broken scroll-delta logic) ──
 
@@ -1106,6 +1146,7 @@ function setFuriganaMode(mode) {
   // recompute it (and let Dart re-save progress) against the clean DOM.
   if (stripped && !_furiganaBehavior().generate && rendition) {
     _pendingNavChars = false; // same page, not a navigation
+    _holdPlace = true;
     rendition.reportLocation();
   }
 }
@@ -1951,8 +1992,9 @@ function pinScrollEnd() {
 }
 
 // The reader is taking over (a touch, a page turn, a jump): stop holding a
-// position in place (epub.js pinScroll()).
+// position in place (epub.js pinScroll()), and the place (keepPlace()).
 function unpinScroll() {
+  _holdPlace = false;
   if (rendition && rendition.manager) rendition.manager.unpinScroll();
 }
 
