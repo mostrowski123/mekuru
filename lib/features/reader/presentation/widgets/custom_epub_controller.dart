@@ -38,7 +38,6 @@ class CustomEpubController {
       return;
     }
     _webView = null;
-    _failPendingRequests(StateError('EPUB web view is no longer attached'));
   }
 
   // ── Navigation ──────────────────────────────────────────────────────
@@ -54,36 +53,6 @@ class CustomEpubController {
   void toProgressPercentage(double progress) {
     assert(progress >= 0.0 && progress <= 1.0);
     _eval('toProgress($progress)');
-  }
-
-  // ── Current location ────────────────────────────────────────────────
-
-  Completer<EpubLocation>? _locationCompleter;
-
-  Future<EpubLocation> getCurrentLocation() {
-    // If a previous request hasn't completed yet (e.g. fast back-to-back
-    // direction-change rebuilds), supersede it rather than orphaning its
-    // future — otherwise the original caller's `await` hangs forever.
-    _supersedeCompleter(_locationCompleter, 'getCurrentLocation');
-    final completer = Completer<EpubLocation>();
-    _locationCompleter = completer;
-    unawaited(_requestCurrentLocation());
-    return completer.future;
-  }
-
-  void _supersedeCompleter(Completer<Object?>? completer, String label) {
-    if (completer != null && !completer.isCompleted) {
-      completer.completeError(
-        StateError('$label superseded by a newer request'),
-      );
-    }
-  }
-
-  void completeCurrentLocation(Map<String, dynamic> data) {
-    if (_locationCompleter != null && !_locationCompleter!.isCompleted) {
-      _locationCompleter!.complete(EpubLocation.fromJson(data));
-    }
-    _locationCompleter = null;
   }
 
   // ── Chapters ────────────────────────────────────────────────────────
@@ -227,18 +196,6 @@ class CustomEpubController {
     unawaited(_safeEval(source));
   }
 
-  Future<void> _requestCurrentLocation() async {
-    try {
-      await _evaluateJavascript('getCurrentLocation()');
-    } catch (error, stackTrace) {
-      final completer = _locationCompleter;
-      _locationCompleter = null;
-      if (completer != null && !completer.isCompleted) {
-        completer.completeError(error, stackTrace);
-      }
-    }
-  }
-
   Future<dynamic> _evaluateJavascript(String source) async {
     final webView = _webView;
     if (webView == null) {
@@ -247,15 +204,11 @@ class CustomEpubController {
 
     try {
       return await webView.evaluateJavascript(source: source);
-    } on MissingPluginException catch (error, stackTrace) {
+    } on MissingPluginException catch (error) {
       debugPrint('[EPUB_DART] JS bridge unavailable: $error');
       if (identical(_webView, webView)) {
         _webView = null;
       }
-      _failPendingRequests(
-        StateError('EPUB web view is no longer attached'),
-        stackTrace,
-      );
       throw StateError('EPUB web view is no longer attached');
     }
   }
@@ -265,14 +218,6 @@ class CustomEpubController {
       await _evaluateJavascript(source);
     } catch (error) {
       debugPrint('[EPUB_DART] JS call ignored: $error');
-    }
-  }
-
-  void _failPendingRequests(Object error, [StackTrace? stackTrace]) {
-    final locationCompleter = _locationCompleter;
-    _locationCompleter = null;
-    if (locationCompleter != null && !locationCompleter.isCompleted) {
-      locationCompleter.completeError(error, stackTrace);
     }
   }
 

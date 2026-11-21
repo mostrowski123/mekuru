@@ -1,22 +1,33 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/reader/data/models/epub_models.dart';
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/viewer_session.dart';
 
 const _page = 'epubcfi(/6/4!/4/2/1:0)';
 const _location = EpubLocation(startCfi: _page, endCfi: _page, progress: 0);
+final _paged = viewerLayoutOf(const ReaderSettings());
+final _scrolled = viewerLayoutOf(const ReaderSettings(scrollView: true));
 
 void main() {
   late List<String> heard;
 
-  ViewerSession firstSession() => ViewerSession.first((
-    loaded: () => heard.add('loaded'),
-    locationsReady: () => heard.add('locationsReady'),
-    relocated: (EpubLocation location, {required bool trusted}) =>
-        heard.add(trusted ? 'relocated trusted' : 'relocated untrusted'),
-    failed: (String? description) =>
-        heard.add('failed: ${description ?? 'web view stopped'}'),
-    rendererGone: () => heard.add('rendererGone'),
-  ));
+  /// A new viewer for [_paged]; its watchdog fires after [loadTimeout].
+  ViewerSession newSession({
+    Duration loadTimeout = const Duration(minutes: 1),
+  }) {
+    final session = ViewerSession(_paged, (
+      loaded: () => heard.add('loaded'),
+      locationsReady: () => heard.add('locationsReady'),
+      relocated: (EpubLocation location, {required bool trusted}) =>
+          heard.add(trusted ? 'relocated trusted' : 'relocated untrusted'),
+      failed: (String? description) =>
+          heard.add('failed: ${description ?? 'web view stopped'}'),
+      timedOut: () => heard.add('timedOut'),
+      rendererGone: () => heard.add('rendererGone'),
+    ), loadTimeout: loadTimeout);
+    addTearDown(session.retire);
+    return session;
+  }
 
   /// Past a watchdog started with a 1 ms timeout.
   Future<void> afterTimeout() =>
@@ -25,7 +36,7 @@ void main() {
   setUp(() => heard = []);
 
   test('a viewer loads, then reports every display', () {
-    final session = firstSession();
+    final session = newSession();
     expect(session.phase, ViewerPhase.loading);
     expect(session.isLoaded, isFalse);
 
@@ -37,7 +48,7 @@ void main() {
   });
 
   test('a page is trusted only once locations exist', () {
-    final session = firstSession();
+    final session = newSession();
     // Cached locations can come before the book shows.
     session.relocated(_location);
     session.locationsArrived();
@@ -53,33 +64,9 @@ void main() {
     expect(session.locationsReady, isTrue);
   });
 
-  test('a rebuild starts a session that knows nothing yet', () {
-    final old = firstSession()
-      ..loaded()
-      ..locationsArrived()
-      ..markStale();
-    expect(old.beginReplacement(), isTrue);
-    expect(old.beginReplacement(), isFalse, reason: 'one at a time');
-    expect(old.isReplacing, isTrue);
-
-    final session = old.next();
-    heard.clear();
-    expect(session.epoch, old.epoch + 1);
-    expect(session.phase, ViewerPhase.loading);
-    expect(session.isLoaded, isFalse);
-    expect(session.locationsReady, isFalse);
-    expect(session.isReplacing, isFalse);
-    expect(session.takeStale(), isFalse);
-
-    // Its first page comes before its own locations (f6ed8def).
-    session.relocated(_location);
-    expect(heard, ['relocated untrusted']);
-  });
-
-  test('what a replaced viewer still sends reaches nothing', () {
-    final old = firstSession()..loaded();
-    final session = old.next();
-    heard.clear();
+  test('what a retired viewer still sends reaches nothing', () async {
+    final old = newSession(loadTimeout: const Duration(milliseconds: 1))
+      ..retire();
 
     old
       ..loaded()
@@ -87,55 +74,29 @@ void main() {
       ..relocated(_location)
       ..loadFailed('late')
       ..rendererDied();
+    await afterTimeout();
     expect(heard, isEmpty);
     expect(old.phase, ViewerPhase.retired);
-    expect(session.phase, ViewerPhase.loading);
-    expect(session.locationsReady, isFalse);
+    expect(old.beginReplacement(_scrolled), isFalse);
   });
 
-  test('a renderer that dies after the book showed waits for a new viewer', () {
-    final session = firstSession()..loaded();
-    heard.clear();
-
-    session.rendererDied();
-    session.rendererDied();
-    expect(session.phase, ViewerPhase.rendererGone);
-    expect(session.isLoaded, isTrue);
-    expect(heard, ['rendererGone']);
-    expect(session.beginReplacement(), isTrue);
-  });
-
-  test('a renderer that dies while the book opens fails the load', () {
-    final session = firstSession()..rendererDied();
-
-    expect(session.phase, ViewerPhase.failed);
-    expect(session.isLoaded, isFalse);
-    expect(heard, ['failed: web view stopped']);
-    expect(session.beginReplacement(), isFalse);
-  });
-
-  test('a book that does not show in time fails the load', () async {
-    final session = firstSession();
-    var timedOut = 0;
-    session.startWatchdog(const Duration(milliseconds: 1), () => timedOut++);
+  test('a new viewer that does not show the book in time fails', () async {
+    final session = newSession(loadTimeout: const Duration(milliseconds: 1));
 
     await afterTimeout();
-    expect(timedOut, 1);
+    expect(heard, ['timedOut']);
     expect(session.phase, ViewerPhase.failed);
 
     // A late load changes nothing.
     session.loaded();
-    expect(heard, isEmpty);
+    expect(heard, ['timedOut']);
   });
 
   test('the watchdog does not overwrite a load error', () async {
-    final session = firstSession();
-    var timedOut = 0;
-    session.startWatchdog(const Duration(milliseconds: 1), () => timedOut++);
+    final session = newSession(loadTimeout: const Duration(milliseconds: 1));
 
     session.loadFailed('net::ERR_FAILED');
     await afterTimeout();
-    expect(timedOut, 0);
     expect(heard, ['failed: net::ERR_FAILED']);
 
     // A second error in the same burst still shows.
@@ -146,28 +107,66 @@ void main() {
   test(
     'a book that shows, or a viewer that goes, stops the watchdog',
     () async {
-      var timedOut = 0;
-      final loaded = firstSession()
-        ..startWatchdog(const Duration(milliseconds: 1), () => timedOut++)
+      final loaded = newSession(loadTimeout: const Duration(milliseconds: 1))
         ..loaded();
-      final retired = firstSession()
-        ..startWatchdog(const Duration(milliseconds: 1), () => timedOut++)
+      final retired = newSession(loadTimeout: const Duration(milliseconds: 1))
         ..retire();
 
       await afterTimeout();
-      expect(timedOut, 0);
+      expect(heard, ['loaded']);
       expect(loaded.phase, ViewerPhase.ready);
       expect(retired.phase, ViewerPhase.retired);
     },
   );
 
-  test(
-    'a stale viewer is reported once, and a loading one is not replaced',
-    () {
-      final session = firstSession()..markStale();
-      expect(session.beginReplacement(), isFalse);
-      expect(session.takeStale(), isTrue);
-      expect(session.takeStale(), isFalse);
-    },
-  );
+  test('a viewer showing a layout no longer wanted is replaced, once', () {
+    final session = newSession()..loaded();
+
+    expect(session.beginReplacement(_paged), isFalse);
+    expect(session.isReplacing, isFalse);
+    expect(session.beginReplacement(_scrolled), isTrue);
+    expect(session.isReplacing, isTrue);
+    expect(
+      session.beginReplacement(_scrolled),
+      isFalse,
+      reason: 'one at a time',
+    );
+  });
+
+  test('a viewer still loading is judged once it loads', () {
+    final session = newSession();
+    expect(session.beginReplacement(_scrolled), isFalse);
+    expect(session.isReplacing, isFalse);
+
+    session.loaded();
+    expect(session.beginReplacement(_scrolled), isTrue);
+  });
+
+  test('a viewer that failed is replaced for another layout only', () {
+    final session = newSession()..loadFailed('net::ERR_FAILED');
+
+    expect(session.beginReplacement(_paged), isFalse);
+    expect(session.beginReplacement(_scrolled), isTrue);
+  });
+
+  test('a renderer that dies after the book showed waits for a new viewer', () {
+    final session = newSession()..loaded();
+    heard.clear();
+
+    session.rendererDied();
+    session.rendererDied();
+    expect(session.phase, ViewerPhase.rendererGone);
+    expect(session.isLoaded, isTrue);
+    expect(heard, ['rendererGone']);
+    expect(session.beginReplacement(_paged), isTrue, reason: 'same layout');
+  });
+
+  test('a renderer that dies while the book opens fails the load', () {
+    final session = newSession()..rendererDied();
+
+    expect(session.phase, ViewerPhase.failed);
+    expect(session.isLoaded, isFalse);
+    expect(heard, ['failed: web view stopped']);
+    expect(session.beginReplacement(_paged), isFalse);
+  });
 }

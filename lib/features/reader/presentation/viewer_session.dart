@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:mekuru/features/reader/data/models/epub_models.dart';
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 
 /// Where one EPUB viewer is in its life.
 enum ViewerPhase {
@@ -16,9 +17,27 @@ enum ViewerPhase {
   /// The book could not be shown: a load error, or the load timed out.
   failed,
 
-  /// Replaced by a newer viewer, or the reader closed.
+  /// Replaced by a newer viewer, or the reader closed or opens the book
+  /// again.
   retired,
 }
+
+/// The reading mode a viewer is built for. The page is laid out for it
+/// once, so a change to any of it needs a new viewer.
+typedef ViewerLayout = ({
+  ReaderDirection readingDirection,
+  bool verticalText,
+  bool splitVerticalText,
+  bool scrollView,
+});
+
+/// The layout [settings] ask for.
+ViewerLayout viewerLayoutOf(ReaderSettings settings) => (
+  readingDirection: settings.readingDirection,
+  verticalText: settings.verticalText,
+  splitVerticalText: settings.splitVerticalText,
+  scrollView: settings.scrollView,
+);
 
 /// What the reader does when its current viewer reports in. [failed] gets
 /// the load error's own text, or null when the web view stopped before the
@@ -28,29 +47,34 @@ typedef ViewerReactions = ({
   void Function() locationsReady,
   void Function(EpubLocation location, {required bool trusted}) relocated,
   void Function(String? description) failed,
+  void Function() timedOut,
   void Function() rendererGone,
 });
 
 /// One viewer's life, from the build that creates it to the one that
-/// replaces it. The reader holds one session and swaps it whole for each new
-/// viewer ([next]), so nothing known about a viewer outlives it, and the
+/// replaces it. The reader holds one session per viewer and swaps it whole
+/// for each new viewer, so nothing known about a viewer outlives it, and the
 /// viewer's callbacks are this session's methods: once it is retired, what
 /// its viewer still sends reaches nothing.
 class ViewerSession {
-  /// The reader's first session, before it has built a viewer.
-  ViewerSession.first(ViewerReactions reactions) : this._(0, reactions);
+  /// A new viewer for [layout]. It has [loadTimeout] to show the book, or
+  /// the load fails ([ViewerReactions.timedOut]).
+  ViewerSession(this.layout, this._reactions, {required Duration loadTimeout}) {
+    _watchdog = Timer(loadTimeout, () {
+      _phase = ViewerPhase.failed;
+      _reactions.timedOut();
+    });
+  }
 
-  ViewerSession._(this.epoch, this._reactions);
-
-  /// Tells this viewer apart from the ones before and after it.
-  final int epoch;
+  /// The reading mode this viewer lays the book out in.
+  final ViewerLayout layout;
   final ViewerReactions _reactions;
 
+  // Runs only while loading: showing the book, failing and retiring stop it.
+  late final Timer _watchdog;
   ViewerPhase _phase = ViewerPhase.loading;
   bool _locationsReady = false;
   bool _replacing = false;
-  bool _stale = false;
-  Timer? _watchdog;
 
   ViewerPhase get phase => _phase;
 
@@ -68,44 +92,22 @@ class ViewerSession {
   bool get _reports =>
       _phase == ViewerPhase.loading || _phase == ViewerPhase.ready;
 
-  /// The session for the viewer that takes this one's place. This one is
-  /// retired.
-  ViewerSession next() {
-    retire();
-    return ViewerSession._(epoch + 1, _reactions);
-  }
-
   void retire() {
-    _watchdog?.cancel();
+    _watchdog.cancel();
     _phase = ViewerPhase.retired;
   }
 
-  /// Fails the load, and calls [onTimeout], when the book has not shown
-  /// within [timeout].
-  void startWatchdog(Duration timeout, void Function() onTimeout) {
-    _watchdog?.cancel();
-    _watchdog = Timer(timeout, () {
-      _phase = ViewerPhase.failed;
-      onTimeout();
-    });
-  }
-
-  /// Starts replacing this viewer; false when it never showed the book or a
-  /// replacement is already on its way.
-  bool beginReplacement() {
-    if (_replacing || !isLoaded) return false;
-    return _replacing = true;
-  }
-
-  /// Settings changed while a screen covered the reader: replace this viewer
-  /// when the reader shows again.
-  void markStale() => _stale = true;
-
-  /// Whether this viewer went stale under a covering screen; true only once.
-  bool takeStale() {
-    final stale = _stale;
-    _stale = false;
-    return stale;
+  /// Starts replacing this viewer when it no longer serves: its renderer
+  /// died, or it shows, or failed to show, a layout other than [wanted]. A
+  /// viewer still loading is judged once it loads or fails. False when it
+  /// still serves or a replacement is already on its way.
+  bool beginReplacement(ViewerLayout wanted) {
+    if (_replacing) return false;
+    return _replacing = switch (_phase) {
+      ViewerPhase.rendererGone => true,
+      ViewerPhase.ready || ViewerPhase.failed => wanted != layout,
+      ViewerPhase.loading || ViewerPhase.retired => false,
+    };
   }
 
   // ── The viewer's callbacks ───────────────────────────────────────────
@@ -113,7 +115,7 @@ class ViewerSession {
   /// The page shows the book; epub.js says so again after every display.
   void loaded() {
     if (_phase == ViewerPhase.loading) {
-      _watchdog?.cancel();
+      _watchdog.cancel();
       _phase = ViewerPhase.ready;
     }
     if (_phase == ViewerPhase.ready) _reactions.loaded();
@@ -152,7 +154,7 @@ class ViewerSession {
   }
 
   void _fail(String? description) {
-    _watchdog?.cancel();
+    _watchdog.cancel();
     _phase = ViewerPhase.failed;
     _reactions.failed(description);
   }

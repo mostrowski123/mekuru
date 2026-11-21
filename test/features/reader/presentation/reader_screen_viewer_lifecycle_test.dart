@@ -238,6 +238,42 @@ void main() {
     await closeReader(tester);
   });
 
+  testWidgets('a rebuilt viewer that never shows the book times out too', (
+    tester,
+  ) async {
+    await openReader(tester);
+    viewer(tester).onLoaded!();
+    await tester.pump();
+
+    container.read(readerSettingsProvider.notifier).setScrollView(true);
+    await settle(tester);
+    expect(spinner, findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 15));
+    expect(find.textContaining('took too long'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    await closeReader(tester);
+  });
+
+  testWidgets('Retry builds one viewer', (tester) async {
+    await openReader(tester);
+    await tester.pump(const Duration(seconds: 15));
+
+    await tester.tap(find.text('Retry'));
+    final built = <Key?>{};
+    for (var i = 0; i < 30; i++) {
+      await tester.pump();
+      built.addAll(viewerFinder().evaluate().map((e) => e.widget.key));
+      // The book file is found again with real file IO.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+    }
+    expect(built, hasLength(1));
+    expect(spinner, findsOneWidget);
+    await closeReader(tester);
+  });
+
   testWidgets('the timeout does not replace a load error', (tester) async {
     await openReader(tester);
 
@@ -282,6 +318,7 @@ void main() {
     container.read(readerSettingsProvider.notifier).setScrollView(true);
     await settle(tester);
     expect(viewer(tester).key, isNot(oldKey));
+    expect(viewer(tester).initialCfi, _pageB, reason: 'the last page shown');
     expect(spinner, findsOneWidget);
 
     // The new viewer's first page arrives before its locations.
@@ -292,6 +329,29 @@ void main() {
     viewer(tester).onLoaded!();
     await tester.pump();
     expect(spinner, findsNothing);
+    await closeReader(tester);
+  });
+
+  testWidgets('a reading-mode change while a new viewer loads is applied '
+      'once it loads', (tester) async {
+    await openReader(tester);
+    viewer(tester).onLoaded!();
+    await tester.pump();
+
+    container.read(readerSettingsProvider.notifier).setScrollView(true);
+    await settle(tester);
+    final loading = viewer(tester);
+    expect(loading.scrollView, isTrue);
+
+    container.read(readerSettingsProvider.notifier).setScrollView(false);
+    await settle(tester);
+    expect(viewer(tester).key, loading.key, reason: 'left to finish loading');
+
+    loading.onLoaded!();
+    await settle(tester);
+    expect(viewer(tester).key, isNot(loading.key));
+    expect(viewer(tester).scrollView, isFalse);
+    expect(spinner, findsOneWidget);
     await closeReader(tester);
   });
 
@@ -417,6 +477,40 @@ void main() {
     await settle(tester);
     expect(viewer(tester).key, isNot(oldKey));
     expect(spinner, findsOneWidget);
+    await closeReader(tester);
+  });
+
+  testWidgets('a reading-mode change under the full settings screen while a '
+      'new viewer loads is applied once it loads', (tester) async {
+    await openReader(tester);
+    viewer(tester).onLoaded!();
+    await tester.pump();
+
+    // The quick settings sheet stays open over the reader while the new
+    // viewer loads; its "All settings" button opens the full screen.
+    viewer(tester).onTouchDown!(0.5, 0.5, null);
+    viewer(tester).onTouchUp!(0.5, 0.5, false, false, null);
+    await settle(tester);
+    await tester.tap(find.byTooltip('Settings'));
+    await settle(tester);
+    container.read(readerSettingsProvider.notifier).setScrollView(true);
+    await settle(tester);
+    final loading = viewer(tester);
+    expect(loading.scrollView, isTrue);
+
+    await tester.tap(find.byIcon(Icons.tune));
+    await settle(tester);
+    expect(find.byType(ReadingSettingsScreen), findsOneWidget);
+    container.read(readerSettingsProvider.notifier).setScrollView(false);
+    await settle(tester);
+    tester.state<NavigatorState>(find.byType(Navigator)).pop();
+    await settle(tester);
+    expect(viewer(tester).key, loading.key, reason: 'left to finish loading');
+
+    loading.onLoaded!();
+    await settle(tester);
+    expect(viewer(tester).key, isNot(loading.key));
+    expect(viewer(tester).scrollView, isFalse);
     await closeReader(tester);
   });
 }

@@ -220,6 +220,12 @@ class CustomEpubViewer extends StatefulWidget {
   @visibleForTesting
   static bool debugDropReadyToLoad = false;
 
+  /// Test-only: the page's `loaded` calls reach the reader this much later,
+  /// standing in for a slow book, or, past the reader's load timeout, for a
+  /// lost call.
+  @visibleForTesting
+  static Duration? debugLoadedDelay;
+
   @override
   State<CustomEpubViewer> createState() => _CustomEpubViewerState();
 }
@@ -348,7 +354,17 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
 
     controller.addJavaScriptHandler(
       handlerName: 'loaded',
-      callback: (_) => widget.onLoaded?.call(),
+      callback: (_) {
+        final delay = CustomEpubViewer.debugLoadedDelay;
+        if (delay == null) {
+          widget.onLoaded?.call();
+        } else {
+          Timer(delay, () {
+            if (mounted) widget.onLoaded?.call();
+          });
+        }
+        return null;
+      },
     );
 
     controller.addJavaScriptHandler(
@@ -467,15 +483,6 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     controller.addJavaScriptHandler(
       handlerName: 'selectionCleared',
       callback: (_) => widget.onSelectionCleared?.call(),
-    );
-
-    controller.addJavaScriptHandler(
-      handlerName: 'currentLocation',
-      callback: (data) {
-        if (data.isEmpty) return;
-        final map = Map<String, dynamic>.from(data[0] as Map);
-        widget.controller.completeCurrentLocation(map);
-      },
     );
 
     controller.addJavaScriptHandler(

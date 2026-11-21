@@ -234,6 +234,8 @@ jobs:
             integration_test/reader_bridge_regression_test.dart
             integration_test/reader_renderer_gone_test.dart
             integration_test/reader_ready_signal_lost_test.dart
+            integration_test/reader_rebuild_timeout_test.dart
+            integration_test/reader_rebuild_slow_load_test.dart
             integration_test/library_bookmark_open_test.dart
             integration_test/reader_relayout_page_alignment_test.dart
             integration_test/reader_chapter_end_vertical_test.dart
