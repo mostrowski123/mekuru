@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:drift/drift.dart' show ApplyInterceptor, Value;
-import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -488,7 +487,7 @@ void main() {
       'dictionaries can answer one', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final selects = SelectLog();
-    final db = AppDatabase(NativeDatabase.memory().interceptWith(selects));
+    final db = createTestDatabase(intercept: selects);
     addTearDown(db.close);
     final entry = _buildEntry(
       id: 1,

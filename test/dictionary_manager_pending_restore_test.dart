@@ -82,7 +82,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     await tester.pumpWidget(

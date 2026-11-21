@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
-/// Records every query a database is asked to read. Wrap a test database's
-/// executor with it: `AppDatabase(NativeDatabase.memory().interceptWith(log))`.
+/// Records every query a database is asked to read. Give it to the test
+/// database: `createTestDatabase(intercept: log)`.
 class SelectLog extends QueryInterceptor {
   final statements = <String>[];
 

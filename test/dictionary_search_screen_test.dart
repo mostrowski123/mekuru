@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:drift/drift.dart' show ApplyInterceptor;
-import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -169,7 +167,7 @@ void main() {
       'dictionaries can answer one', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final selects = SelectLog();
-    final db = AppDatabase(NativeDatabase.memory().interceptWith(selects));
+    final db = createTestDatabase(intercept: selects);
     addTearDown(db.close);
 
     // A word tapped in a definition opens a search for it straight away.
@@ -215,7 +213,7 @@ void main() {
           ..devicePixelRatio = 1
           ..physicalSize = const Size(600, 260);
         addTearDown(tester.view.reset);
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = createTestDatabase();
         addTearDown(db.close);
 
         await tester.pumpWidget(
@@ -250,7 +248,7 @@ void main() {
         isHidden: false,
       ),
     ];
-    final db = AppDatabase(NativeDatabase.memory());
+    final db = createTestDatabase();
     addTearDown(db.close);
 
     await tester.pumpWidget(
@@ -284,7 +282,7 @@ void main() {
     ]) {
       testWidgets(name, (tester) async {
         SharedPreferences.setMockInitialValues({});
-        final db = AppDatabase(NativeDatabase.memory());
+        final db = createTestDatabase();
         addTearDown(db.close);
         await db
             .into(db.frequencies)

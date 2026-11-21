@@ -320,6 +320,7 @@ void main() {
       () => JpdbFreqDownloadService.downloadAndImport(
         repository: repo,
         importer: DictionaryImporter(repo),
+        network: NetworkConsent.mobileData,
       ),
       _ToLoopback(server.port),
     );
