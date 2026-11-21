@@ -5,6 +5,11 @@
 // the chapter's end: the reader skipped those pages, and Dart saved that page
 // as the progress and counted its characters as read.
 //
+// Also paging through a chapter one page at a time. epub.js turned a page by
+// adding its size to the scroll offset, which Android's WebView keeps in
+// device pixels, so the error grew with every turn: the chapter's last page,
+// or going back its first, was skipped, and pages read with the wrong number.
+//
 // Each test file registers one scenario: a second reader in one process
 // misbehaves (see scroll_view_fixture.dart).
 
@@ -20,7 +25,14 @@ import 'package:path/path.dart' as p;
 import '../test_helpers.dart';
 import 'scroll_view_fixture.dart' show openReader;
 
-void registerChapterEndScenario({required bool vertical}) {
+/// [rtl]: a horizontal book whose spine runs right to left. The reader keeps
+/// vertical text on for it, so epub.js pages it right to left.
+void registerChapterEndScenario({required bool vertical, bool rtl = false}) {
+  final writing = vertical
+      ? 'vertical'
+      : rtl
+      ? 'right-to-left horizontal'
+      : 'horizontal';
   late Directory tempDir;
 
   setUp(() async {
@@ -34,15 +46,14 @@ void registerChapterEndScenario({required bool vertical}) {
   });
 
   testWidgets(
-    '${vertical ? 'vertical' : 'horizontal'} text: going back a chapter '
-    "lands on that chapter's last page",
+    "$writing text: going back a chapter lands on that chapter's last page",
     (tester) async {
       final title = vertical ? '縦章末テスト' : '横章末テスト';
       final controller = await openReader(
         tester,
-        await _writeEpub(tempDir, title: title, vertical: vertical),
+        await _writeEpub(tempDir, title: title, vertical: vertical, rtl: rtl),
         title,
-        settings: vertical
+        settings: vertical || rtl
             ? const ReaderSettings()
             : const ReaderSettings(
                 verticalText: false,
@@ -50,6 +61,29 @@ void registerChapterEndScenario({required bool vertical}) {
               ),
       );
       await _recordReports(controller);
+
+      // Through c1 a page turn at a time: forward from its first page, then
+      // back from its last.
+      final total = (await _settled(tester, controller))['total'] as int;
+      final forward = await _pagesShown(
+        tester,
+        controller,
+        controller.next,
+        total,
+      );
+      controller.prev(); // from the first page of c2
+      final back = await _pagesShown(
+        tester,
+        controller,
+        controller.prev,
+        total,
+      );
+      final pages = [for (var page = 1; page <= total; page++) page];
+      expect(
+        [forward, back],
+        [pages, pages.reversed.toList()],
+        reason: 'pages of c1 shown by next() and previous()',
+      );
 
       // Back into c1 (text only) and into c2 (text, then an image whose size
       // is known only once it loads).
@@ -117,6 +151,7 @@ Future<String> _writeEpub(
   Directory dir, {
   required String title,
   required bool vertical,
+  required bool rtl,
 }) async {
   final archive = Archive();
   void add(String path, String content) {
@@ -146,7 +181,7 @@ Future<String> _writeEpub(
         '<item id="pic" href="pic.svg" media-type="image/svg+xml"/>'
         '<item id="css" href="style.css" media-type="text/css"/>'
         '</manifest>'
-        '<spine${vertical ? ' page-progression-direction="rtl"' : ''}>'
+        '<spine${vertical || rtl ? ' page-progression-direction="rtl"' : ''}>'
         '<itemref idref="c1"/><itemref idref="c2"/>'
         '<itemref idref="c3"/><itemref idref="c4"/></spine></package>',
   );
@@ -205,6 +240,25 @@ Future<Map<String, dynamic>> _settled(
     last = now;
   }
   return jsonDecode(last) as Map<String, dynamic>;
+}
+
+/// The page numbers shown in the chapter on screen while [turn] runs, one
+/// page turn at a time, until the chapter changes or [count] pages show.
+Future<List<int>> _pagesShown(
+  WidgetTester tester,
+  CustomEpubController controller,
+  void Function() turn,
+  int count,
+) async {
+  final shown = <int>[];
+  var at = await _settled(tester, controller);
+  final index = at['index'];
+  while (at['index'] == index && shown.length < count) {
+    shown.add(at['page'] as int);
+    turn();
+    at = await _settled(tester, controller);
+  }
+  return shown;
 }
 
 /// Records the bridge's `relocated` and `pageChars` calls to Dart from now on.

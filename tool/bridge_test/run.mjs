@@ -30,8 +30,10 @@ const dartCalls = matches(
   /'([a-z]\w*)\(|append: '(\w+)'/g,
 );
 
-const browser = await chromium.launch({ channel: 'chrome' });
-const page = await browser.newPage({ viewport: { width: 412, height: 800 } });
+// A phone's pixel ratio. Only the launch flag makes scroll offsets land on
+// device pixels, as Android's WebView does; deviceScaleFactor alone does not.
+const browser = await chromium.launch({ channel: 'chrome', args: ['--force-device-scale-factor=2.625'] });
+const page = await browser.newPage({ viewport: { width: 412, height: 800 }, deviceScaleFactor: 2.625 });
 const pageErrors = [];
 page.on('pageerror', (e) => pageErrors.push(e.message));
 await page.route('http://viewer.localhost/**', (route) => {
@@ -265,6 +267,36 @@ const checks = [
 
   ['the page throws no uncaught errors', async () => {
     expect(pageErrors.length === 0, pageErrors.join(' | '));
+  }],
+
+  ['next() shows every page of a chapter before the next one', async () => {
+    // The book again, in horizontal text. A page turn there lands on the
+    // nearest device pixel, and epub.js added that error up turn by turn
+    // until it left each chapter from its second to last page.
+    await page.goto('http://viewer.localhost/reader.html');
+    await until(0, `c.name === 'readyToLoad'`);
+    const bytes = fs.readFileSync(path.join(here, 'book.epub'));
+    await page.evaluate(`beginEpubTransfer(${bytes.length}); appendEpubChunk('${bytes.toString('base64')}')`);
+    // What Dart sends with vertical text off: ltr, the horizontal axis, and
+    // a writing-mode override (reader_display_settings_mapper.dart).
+    const css = JSON.stringify({ html: { 'writing-mode': 'horizontal-tb !important' } });
+    await page.evaluate(`loadBook("", "ltr", "paginated", false, "28", "#000000", ${css}, 28, 28, true, "off", 1, null)`);
+    await until(0, `c.name === 'pageChars'`, 15000);
+    const where = () => page.evaluate(() => {
+      const s = rendition.currentLocation().start;
+      return [s.index, s.displayed.page, s.displayed.total];
+    });
+    let [index, shown, total] = await where();
+    const pages = [];
+    while (index === 0 && pages.length <= total) {
+      pages.push(shown);
+      const at = await mark();
+      await page.evaluate('next()');
+      await until(at, `c.name === 'pageChars'`);
+      [index, shown] = await where();
+    }
+    const all = Array.from({ length: total }, (_, i) => i + 1).join();
+    expect(total >= 3 && pages.join() === all, `chapter 1 showed pages ${pages.join()} of ${total}`);
   }],
 ];
 

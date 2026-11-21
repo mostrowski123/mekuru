@@ -238,6 +238,7 @@ jobs:
             integration_test/reader_relayout_page_alignment_test.dart
             integration_test/reader_chapter_end_vertical_test.dart
             integration_test/reader_chapter_end_horizontal_test.dart
+            integration_test/reader_chapter_end_horizontal_rtl_test.dart
             integration_test/reader_custom_font_test.dart
             integration_test/reader_custom_font_missing_test.dart
             integration_test/reader_image_pages_test.dart

@@ -4391,34 +4391,37 @@ class default_DefaultViewManager {
     if (!this.views.length) return;
     if (this.isPaginated && this.settings.axis === "horizontal" && (!dir || dir === "ltr")) {
       this.scrollLeft = this.container.scrollLeft;
-      left = this.container.scrollLeft + this.container.offsetWidth + this.layout.delta;
-      if (left <= this.container.scrollWidth) {
-        this.scrollBy(this.layout.delta, 0, true);
+      // [MEKURU PATCH] From the nearest page boundary, see pageStart().
+      left = this.pageStart(this.container.scrollLeft, this.layout.delta) + this.layout.delta;
+      if (left + this.container.offsetWidth <= this.container.scrollWidth) {
+        this.scrollTo(left, this.container.scrollTop, true);
       } else {
         next = this.views.last().section.next();
       }
     } else if (this.isPaginated && this.settings.axis === "horizontal" && dir === "rtl") {
       this.scrollLeft = this.container.scrollLeft;
+      // [MEKURU PATCH] From the nearest page boundary, see pageStart().
+      left = this.pageStart(this.container.scrollLeft, this.layout.delta);
       if (this.settings.rtlScrollType === "default") {
-        left = this.container.scrollLeft;
         if (left > 0) {
-          this.scrollBy(this.layout.delta, 0, true);
+          this.scrollTo(left - this.layout.delta, this.container.scrollTop, true);
         } else {
           next = this.views.last().section.next();
         }
       } else {
-        left = this.container.scrollLeft + this.layout.delta * -1;
+        left = left + this.layout.delta * -1;
         if (left > this.container.scrollWidth * -1) {
-          this.scrollBy(this.layout.delta, 0, true);
+          this.scrollTo(left, this.container.scrollTop, true);
         } else {
           next = this.views.last().section.next();
         }
       }
     } else if (this.isPaginated && this.settings.axis === "vertical") {
       this.scrollTop = this.container.scrollTop;
-      let top = this.container.scrollTop + this.container.offsetHeight;
-      if (top < this.container.scrollHeight) {
-        this.scrollBy(0, this.layout.height, true);
+      // [MEKURU PATCH] From the nearest page boundary, see pageStart().
+      let top = this.pageStart(this.container.scrollTop, this.layout.height);
+      if (top + this.container.offsetHeight < this.container.scrollHeight) {
+        this.scrollTo(this.container.scrollLeft, top + this.layout.height, true);
       } else {
         next = this.views.last().section.next();
       }
@@ -4453,34 +4456,36 @@ class default_DefaultViewManager {
     if (!this.views.length) return;
     if (this.isPaginated && this.settings.axis === "horizontal" && (!dir || dir === "ltr")) {
       this.scrollLeft = this.container.scrollLeft;
-      left = this.container.scrollLeft;
+      // [MEKURU PATCH] From the nearest page boundary, see pageStart().
+      left = this.pageStart(this.container.scrollLeft, this.layout.delta);
       if (left > 0) {
-        this.scrollBy(-this.layout.delta, 0, true);
+        this.scrollTo(left - this.layout.delta, this.container.scrollTop, true);
       } else {
         prev = this.views.first().section.prev();
       }
     } else if (this.isPaginated && this.settings.axis === "horizontal" && dir === "rtl") {
       this.scrollLeft = this.container.scrollLeft;
+      // [MEKURU PATCH] From the nearest page boundary, see pageStart().
+      left = this.pageStart(this.container.scrollLeft, this.layout.delta);
       if (this.settings.rtlScrollType === "default") {
-        left = this.container.scrollLeft + this.container.offsetWidth;
-        if (left < this.container.scrollWidth) {
-          this.scrollBy(-this.layout.delta, 0, true);
+        if (left + this.container.offsetWidth < this.container.scrollWidth) {
+          this.scrollTo(left + this.layout.delta, this.container.scrollTop, true);
         } else {
           prev = this.views.first().section.prev();
         }
       } else {
-        left = this.container.scrollLeft;
         if (left < 0) {
-          this.scrollBy(-this.layout.delta, 0, true);
+          this.scrollTo(left + this.layout.delta, this.container.scrollTop, true);
         } else {
           prev = this.views.first().section.prev();
         }
       }
     } else if (this.isPaginated && this.settings.axis === "vertical") {
       this.scrollTop = this.container.scrollTop;
-      let top = this.container.scrollTop;
+      // [MEKURU PATCH] From the nearest page boundary, see pageStart().
+      let top = this.pageStart(this.container.scrollTop, this.layout.height);
       if (top > 0) {
-        this.scrollBy(0, -this.layout.height, true);
+        this.scrollTo(this.container.scrollLeft, top - this.layout.height, true);
       } else {
         prev = this.views.first().section.prev();
       }
@@ -4520,6 +4525,19 @@ class default_DefaultViewManager {
         this.views.show();
       }.bind(this));
     }
+  }
+
+  // [MEKURU PATCH] Where a paginated page turn starts: the page boundary
+  // nearest the scroll offset. Android's WebView scrolls in device pixels,
+  // so a boundary is only reached to the nearest one: at a 2.625 pixel
+  // ratio a 355 px page scrolls 932 device px, 355.048 px. Upstream turned
+  // a page by adding its size to the offset, so the error grew with every
+  // turn. next()'s test for another page in horizontal ltr has no slack and
+  // left the chapter from its second to last page; elsewhere, once the error
+  // passed half a pixel, the location named the page before or after the
+  // one on screen, and the bridge left the chapter a page early.
+  pageStart(offset, size) {
+    return Math.round(offset / size) * size;
   }
   current() {
     var visible = this.visible();
@@ -4650,9 +4668,13 @@ class default_DefaultViewManager {
       used += pageWidth;
       let mapping = this.mapping.page(view.contents, view.section.cfiBase, start, end);
       let totalPages = this.layout.count(width).pages;
-      let startPage = Math.floor(start / this.layout.pageWidth);
+      // [MEKURU PATCH] Whole pixels, as in scrolledLocation(): a page is
+      // reached only to the nearest device pixel (see pageStart()), and one
+      // landed on a fraction of a pixel off its boundary could read as the
+      // page beside it.
+      let startPage = Math.floor(Math.round(start) / this.layout.pageWidth);
       let pages = [];
-      let endPage = Math.floor(end / this.layout.pageWidth);
+      let endPage = Math.floor(Math.round(end) / this.layout.pageWidth);
 
       // start page should not be negative
       if (startPage < 0) {
