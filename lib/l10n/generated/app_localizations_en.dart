@@ -4573,6 +4573,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadNotFinished => 'The download didn\'t finish. Try again.';
 
   @override
+  String get localOcrCouldNotContinue => 'OCR couldn\'t continue. Try again.';
+
+  @override
+  String get serverErrorUnreadable =>
+      'The server sent an answer Mekuru can\'t read. Make sure the URL points to your Komga or Kavita server.';
+
+  @override
+  String get serverErrorUnknown =>
+      'The request couldn\'t be completed. Try again.';
+
+  @override
+  String get dictionaryImportUnreadable =>
+      'This file couldn\'t be read as a dictionary. Import a Yomitan dictionary (.zip) or collection (.json).';
+
+  @override
+  String get dictionaryImportFailed =>
+      'The dictionary couldn\'t be imported. Try again.';
+
+  @override
   String get settingsLowRamModeTitle => 'Low RAM mode';
 
   @override

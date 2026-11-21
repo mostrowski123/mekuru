@@ -4357,6 +4357,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadNotFinished => '下载未完成。请重试。';
 
   @override
+  String get localOcrCouldNotContinue => 'OCR 无法继续。请重试。';
+
+  @override
+  String get serverErrorUnreadable =>
+      '服务器返回了 Mekuru 无法读取的响应。请确认 URL 指向您的 Komga 或 Kavita 服务器。';
+
+  @override
+  String get serverErrorUnknown => '无法完成请求。请重试。';
+
+  @override
+  String get dictionaryImportUnreadable =>
+      '无法将此文件读取为词典。请导入 Yomitan 词典（.zip）或词典集合（.json）。';
+
+  @override
+  String get dictionaryImportFailed => '无法导入词典。请重试。';
+
+  @override
   String get settingsLowRamModeTitle => '低内存模式';
 
   @override
@@ -8883,6 +8900,23 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadNotFinished => '下载未完成。请重试。';
+
+  @override
+  String get localOcrCouldNotContinue => 'OCR 无法继续。请重试。';
+
+  @override
+  String get serverErrorUnreadable =>
+      '服务器返回了 Mekuru 无法读取的响应。请确认 URL 指向您的 Komga 或 Kavita 服务器。';
+
+  @override
+  String get serverErrorUnknown => '无法完成请求。请重试。';
+
+  @override
+  String get dictionaryImportUnreadable =>
+      '无法将此文件读取为词典。请导入 Yomitan 词典（.zip）或词典集合（.json）。';
+
+  @override
+  String get dictionaryImportFailed => '无法导入词典。请重试。';
 
   @override
   String get settingsLowRamModeTitle => '低内存模式';

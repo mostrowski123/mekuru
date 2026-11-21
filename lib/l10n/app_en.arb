@@ -5879,6 +5879,26 @@
   "@downloadNotFinished": {
     "description": "Shown when a download (dictionary, model, word list or server book) failed for a reason that has no message of its own, such as its files not unpacking or importing."
   },
+  "localOcrCouldNotContinue": "OCR couldn't continue. Try again.",
+  "@localOcrCouldNotContinue": {
+    "description": "On-device manga OCR (Android) and starting any OCR scan: a failure with no message of its own. Shown on its own, as a scan's reason, or after a page number in localOcrPageError."
+  },
+  "serverErrorUnreadable": "The server sent an answer Mekuru can't read. Make sure the URL points to your Komga or Kavita server.",
+  "@serverErrorUnreadable": {
+    "description": "Why a Komga or Kavita request failed when the server answered with something Mekuru can't read (a login page, another kind of server). Shown on its own or as {error} in serverSettingsLinkFailed and serverDialogConnectionFailed."
+  },
+  "serverErrorUnknown": "The request couldn't be completed. Try again.",
+  "@serverErrorUnknown": {
+    "description": "Why a Komga or Kavita request (browsing, a connection test, linking books) failed, when it has no message of its own. Shown on its own or as {error} in serverSettingsLinkFailed and serverDialogConnectionFailed."
+  },
+  "dictionaryImportUnreadable": "This file couldn't be read as a dictionary. Import a Yomitan dictionary (.zip) or collection (.json).",
+  "@dictionaryImportUnreadable": {
+    "description": "Dictionary Manager banner when a file the user imported is not a dictionary Mekuru can read. Matches dictionaryManagerEmptySubtitle's names for the two formats."
+  },
+  "dictionaryImportFailed": "The dictionary couldn't be imported. Try again.",
+  "@dictionaryImportFailed": {
+    "description": "Dictionary Manager banner when importing a dictionary file failed for a reason that has no message of its own."
+  },
   "settingsLowRamModeTitle": "Low RAM mode",
   "@settingsLowRamModeTitle": {
     "description": "Settings › General (Android): title of the switch that makes Mekuru use less memory."

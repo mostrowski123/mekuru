@@ -4453,6 +4453,23 @@ class AppLocalizationsJa extends AppLocalizations {
   String get downloadNotFinished => 'ダウンロードを完了できませんでした。もう一度お試しください。';
 
   @override
+  String get localOcrCouldNotContinue => 'OCRを続行できませんでした。もう一度お試しください。';
+
+  @override
+  String get serverErrorUnreadable =>
+      'サーバーから、Mekuruが読み取れない応答が返されました。URLがお使いのKomgaまたはKavitaサーバーを指しているか確認してください。';
+
+  @override
+  String get serverErrorUnknown => 'リクエストを完了できませんでした。もう一度お試しください。';
+
+  @override
+  String get dictionaryImportUnreadable =>
+      'このファイルは辞書として読み取れませんでした。Yomitan辞書（.zip）またはコレクション（.json）をインポートしてください。';
+
+  @override
+  String get dictionaryImportFailed => '辞書をインポートできませんでした。もう一度お試しください。';
+
+  @override
   String get settingsLowRamModeTitle => '省メモリモード';
 
   @override

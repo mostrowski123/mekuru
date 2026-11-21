@@ -7406,6 +7406,36 @@ abstract class AppLocalizations {
   /// **'The download didn\'t finish. Try again.'**
   String get downloadNotFinished;
 
+  /// On-device manga OCR (Android) and starting any OCR scan: a failure with no message of its own. Shown on its own, as a scan's reason, or after a page number in localOcrPageError.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR couldn\'t continue. Try again.'**
+  String get localOcrCouldNotContinue;
+
+  /// Why a Komga or Kavita request failed when the server answered with something Mekuru can't read (a login page, another kind of server). Shown on its own or as {error} in serverSettingsLinkFailed and serverDialogConnectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The server sent an answer Mekuru can\'t read. Make sure the URL points to your Komga or Kavita server.'**
+  String get serverErrorUnreadable;
+
+  /// Why a Komga or Kavita request (browsing, a connection test, linking books) failed, when it has no message of its own. Shown on its own or as {error} in serverSettingsLinkFailed and serverDialogConnectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The request couldn\'t be completed. Try again.'**
+  String get serverErrorUnknown;
+
+  /// Dictionary Manager banner when a file the user imported is not a dictionary Mekuru can read. Matches dictionaryManagerEmptySubtitle's names for the two formats.
+  ///
+  /// In en, this message translates to:
+  /// **'This file couldn\'t be read as a dictionary. Import a Yomitan dictionary (.zip) or collection (.json).'**
+  String get dictionaryImportUnreadable;
+
+  /// Dictionary Manager banner when importing a dictionary file failed for a reason that has no message of its own.
+  ///
+  /// In en, this message translates to:
+  /// **'The dictionary couldn\'t be imported. Try again.'**
+  String get dictionaryImportFailed;
+
   /// Settings › General (Android): title of the switch that makes Mekuru use less memory.
   ///
   /// In en, this message translates to:

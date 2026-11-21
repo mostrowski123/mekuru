@@ -4630,6 +4630,26 @@ class AppLocalizationsEs extends AppLocalizations {
       'La descarga no se completó. Vuelve a intentarlo.';
 
   @override
+  String get localOcrCouldNotContinue =>
+      'El OCR no pudo continuar. Vuelve a intentarlo.';
+
+  @override
+  String get serverErrorUnreadable =>
+      'El servidor envió una respuesta que Mekuru no puede leer. Asegúrate de que la URL apunte a tu servidor Komga o Kavita.';
+
+  @override
+  String get serverErrorUnknown =>
+      'No se pudo completar la solicitud. Vuelve a intentarlo.';
+
+  @override
+  String get dictionaryImportUnreadable =>
+      'Este archivo no se pudo leer como diccionario. Importa un diccionario Yomitan (.zip) o una colección (.json).';
+
+  @override
+  String get dictionaryImportFailed =>
+      'No se pudo importar el diccionario. Vuelve a intentarlo.';
+
+  @override
   String get settingsLowRamModeTitle => 'Modo de poca RAM';
 
   @override

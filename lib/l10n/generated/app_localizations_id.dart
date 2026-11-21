@@ -4598,6 +4598,25 @@ class AppLocalizationsId extends AppLocalizations {
   String get downloadNotFinished => 'Unduhan tidak selesai. Coba lagi.';
 
   @override
+  String get localOcrCouldNotContinue =>
+      'OCR tidak dapat dilanjutkan. Coba lagi.';
+
+  @override
+  String get serverErrorUnreadable =>
+      'Server mengirim jawaban yang tidak dapat dibaca Mekuru. Pastikan URL mengarah ke server Komga atau Kavita Anda.';
+
+  @override
+  String get serverErrorUnknown =>
+      'Permintaan tidak dapat diselesaikan. Coba lagi.';
+
+  @override
+  String get dictionaryImportUnreadable =>
+      'Berkas ini tidak dapat dibaca sebagai kamus. Impor kamus Yomitan (.zip) atau koleksi (.json).';
+
+  @override
+  String get dictionaryImportFailed => 'Kamus tidak dapat diimpor. Coba lagi.';
+
+  @override
   String get settingsLowRamModeTitle => 'Mode RAM rendah';
 
   @override
