@@ -1,0 +1,71 @@
+name: Checks
+
+# Analyze and unit-test the pushes to main that build-release.yml skips: one
+# that touches only test/, ios/, packages/ or anything else outside its path
+# filter. paths-ignore is that filter, so a push that touches nothing else
+# does not run twice. Do not widen build-release.yml's paths instead: every run of it
+# creates a GitHub Release and uploads to the Play internal track.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'lib/**'
+      - 'android/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/build-release.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          # Bump on purpose, with the local SDK: a new stable can break the build.
+          flutter-version: 3.47.9
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Generate environment config
+        run: >
+          flutter pub run environment_config:generate
+          --sentryDsn=
+          --sentryEnvironment=ci
+
+      - name: Run static analysis
+        run: flutter analyze lib test
+
+      - name: Run tests
+        timeout-minutes: 20
+        run: flutter test -r expanded
