@@ -298,6 +298,10 @@ final _rows = [
         1,
         'writes the staged database file the restore reads',
       ),
+      'test/features/dictionary/dictionary_import_full_disk_test.dart': (
+        1,
+        'a database file capped in size, on a background isolate, to fill it',
+      ),
     },
   ),
 ];
