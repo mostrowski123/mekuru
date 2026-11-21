@@ -189,4 +189,42 @@ void main() {
     expect(channel(3, 8, 2), greaterThan(channel(3, 8, 0))); // blue left
     expect(channel(12, 8, 0), greaterThan(channel(12, 8, 2))); // red right
   });
+
+  // The importer sends images in groups of 16 and converts a group's AVIFs
+  // side by side. When each conversion held a thread of Swift's cooperative
+  // pool (one per CPU core) inside the software AV1 decoder, a group larger
+  // than the pool never finished and Jitendex's import hung for good.
+  test('a dictionary with many AVIF images finishes importing', () async {
+    final db = createTestDatabase();
+    // A hung import keeps its transaction open, and close() would wait on it.
+    addTearDown(
+      () => db.close().timeout(const Duration(seconds: 5), onTimeout: () {}),
+    );
+    final repo = DictionaryRepository(db);
+
+    final avif = base64Decode(_avifBase64);
+    final paths = [
+      for (var i = 0; i < 32; i++)
+        'graphics/pattern_${i.toString().padLeft(2, '0')}.avif',
+    ];
+    final zipPath = await _writeFixtureZip(
+      tempDir,
+      title: 'Many Graphics',
+      extraFiles: {for (final path in paths) path: avif},
+    );
+
+    final inserted = await DictionaryImporter(repo)
+        .importFromFile(zipPath)
+        .timeout(const Duration(seconds: 20), onTimeout: () => -1);
+    expect(inserted, _entries.length, reason: 'the import never finished');
+
+    final id = (await repo.getAllDictionaries()).single.id;
+    for (final path in paths) {
+      final stored = await repo.getMedia(id, path);
+      expect(stored, isNotNull, reason: path);
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        expect(stored!.sublist(0, 4), [0x89, 0x50, 0x4E, 0x47], reason: path);
+      }
+    }
+  });
 }

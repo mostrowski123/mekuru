@@ -10,6 +10,14 @@ import UniformTypeIdentifiers
 import Vision
 import onnxruntime_objc
 
+/// Where `decodeRgba` and `toPng` decode and encode, one image at a time.
+/// Not `Task.detached`: ImageIO blocks its thread, and the software AV1
+/// decoder (AVIF on the simulator and on iPhones without hardware AV1) waits
+/// for threads of its own. With as many conversions under way as Swift's pool
+/// has threads, none of them ever finished, and a Jitendex import (one
+/// conversion per image, a group at a time) hung for good.
+private let imageQueue = DispatchQueue(label: "mekuru.image_convert", qos: .userInitiated)
+
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
@@ -81,7 +89,7 @@ import onnxruntime_objc
         if call.method == "decodeRgba",
           let bytes = (call.arguments as? FlutterStandardTypedData)?.data
         {
-          Task.detached(priority: .userInitiated) {
+          imageQueue.async {
             let reply = AppDelegate.decodeRgba(bytes)
             DispatchQueue.main.async { result(reply) }
           }
@@ -190,7 +198,7 @@ import onnxruntime_objc
         if call.method == "decodeRgba",
           let bytes = (call.arguments as? FlutterStandardTypedData)?.data
         {
-          Task.detached(priority: .userInitiated) {
+          imageQueue.async {
             let reply = AppDelegate.decodeRgba(bytes)
             DispatchQueue.main.async { result(reply) }
           }
@@ -202,7 +210,7 @@ import onnxruntime_objc
           result(FlutterMethodNotImplemented)
           return
         }
-        Task.detached(priority: .userInitiated) {
+        imageQueue.async {
           let png = UIImage(data: bytes)?.pngData()
           DispatchQueue.main.async { result(png.map { FlutterStandardTypedData(bytes: $0) }) }
         }
