@@ -5,11 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 /// Integration tests that run in neither integration workflow, each with the
 /// reason. A file leaves this table when a workflow lists it.
 const _notInCi = {
-  'avif_manga_test.dart': 'never listed; reason unknown',
+  'avif_manga_test.dart':
+      'passes on an API 36 emulator and an iOS simulator (2026-11-22). '
+      '$_unlisted. CI\'s API 34 image only reaches Flutter\'s own decoder',
   'dictionary_scroll_benchmark_test.dart':
-      'never listed; reason unknown. A Serena memory '
-      '(integration_test_webview_tap_limitations) notes it timed out on a '
-      'local emulator at baseline in 2026-07',
+      'needs flutter drive: under flutter test, binding.watchPerformance '
+      'cannot reach the VM service (checked 2026-11-22)',
   'furigana_export_large_test.dart':
       'local only: needs a book hundreds of MB big pushed to the device and '
       'a host to answer the system save dialog (file header)',
@@ -19,23 +20,27 @@ const _notInCi = {
   'local_ocr_model_test.dart':
       'opt-in: needs pinned models and evaluation crops pushed to the device '
       'first (file header)',
-  'reader_font_family_test.dart': 'never listed; reason unknown',
+  'reader_font_family_test.dart':
+      'passes on an API 36 emulator (2026-11-22). $_unlisted',
   'sentence_translation_engine_test.dart':
-      'never listed; reason unknown. Its header says it downloads about 90 MB '
-      'of models',
+      'downloads about 90 MB of models from the network (file header)',
   'word_tap_lookup_furigana_above_level_test.dart': _wordTap,
   'word_tap_lookup_furigana_book_test.dart': _wordTap,
   'word_tap_lookup_furigana_on_test.dart': _wordTap,
   'word_tap_lookup_furigana_wanikani_test.dart': _wordTap,
   'word_tap_lookup_test.dart': _wordTap,
-  'word_tap_lookup_vertical_test.dart':
-      '$_wordTap. A Serena memory (integration_test_webview_tap_limitations) '
-      'notes it failed on a local emulator at baseline in 2026-07',
+  'word_tap_lookup_vertical_test.dart': _wordTap,
 };
 
 const _wordTap =
     'iOS: no tap reaches the WKWebView under the integration-test binding '
-    '(integration-ios.yml). Android: never listed; reason unknown';
+    '(integration-ios.yml). Android: passes on an API 36 emulator '
+    '(2026-11-22). $_unlisted';
+
+/// Why a test that passes locally is not in integration-android.yml yet.
+const _unlisted =
+    'Not listed yet: the Android job has a time budget, and adding a file '
+    'needs a CI run on its API 34 image to check both';
 
 const _workflows = ['integration-android.yml', 'integration-ios.yml'];
 
