@@ -794,13 +794,11 @@ Future<void> _ensureMasterDb(_Config cfg) async {
     final jpdbCount = await importer.importFromFile(cfg.jpdbZip.path);
     _log('[eval] JPDB imported: $jpdbCount rows');
 
-    // Mirror JpdbFreqDownloadService: frequency-only install pattern.
-    final jpdbMeta = await repo.getDictionaryByName(_jpdbDictName);
-    if (jpdbMeta == null) {
+    // Left switched on, as JpdbFreqDownloadService installs it: its ranks
+    // apply only while it is on.
+    if (await repo.getDictionaryByName(_jpdbDictName) == null) {
       fail('JPDB dictionary "$_jpdbDictName" not found after import');
     }
-    await repo.toggleDictionary(jpdbMeta.id, isEnabled: false);
-    await repo.setHidden(jpdbMeta.id, isHidden: true);
 
     final dicts = await repo.getAllDictionaries();
     final jmdictMeta = dicts.firstWhere(

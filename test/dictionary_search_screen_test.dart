@@ -195,10 +195,13 @@ void main() {
           ..devicePixelRatio = 1
           ..physicalSize = const Size(600, 260);
         addTearDown(tester.view.reset);
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
 
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
+              databaseProvider.overrideWithValue(db),
               dictionariesProvider.overrideWith(
                 (ref) => Stream.value(dictionaries),
               ),
@@ -227,10 +230,13 @@ void main() {
         isHidden: false,
       ),
     ];
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          databaseProvider.overrideWithValue(db),
           dictionariesProvider.overrideWith(
             (ref) => Stream.value(dictionaries),
           ),
@@ -244,6 +250,48 @@ void main() {
     expect(find.text('Your dictionaries are turned off'), findsOneWidget);
     expect(find.text('Enable dictionaries'), findsOneWidget);
     expect(find.text('Starter pack'), findsOneWidget);
+  });
+
+  group('a dictionary that only ranks words is not one to search', () {
+    final jpdb = _enabledDictionary().copyWith(id: 2, name: 'JPDB');
+    for (final (name, others, shown) in [
+      ('alone', <DictionaryMeta>[], 'No dictionaries imported'),
+      (
+        'beside switched-off ones',
+        [_enabledDictionary().copyWith(isEnabled: false)],
+        'Your dictionaries are turned off',
+      ),
+    ]) {
+      testWidgets(name, (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        await db
+            .into(db.frequencies)
+            .insert(
+              FrequenciesCompanion.insert(
+                expression: '猫',
+                frequencyRank: 2000,
+                dictionaryId: jpdb.id,
+              ),
+            );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              databaseProvider.overrideWithValue(db),
+              dictionariesProvider.overrideWith(
+                (ref) => Stream.value([...others, jpdb]),
+              ),
+            ],
+            child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text(shown), findsOneWidget);
+      });
+    }
   });
 
   testWidgets(

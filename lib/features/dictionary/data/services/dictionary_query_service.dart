@@ -380,29 +380,8 @@ class DictionaryQueryService {
     return _attachFrequencyRanks(results, exactTerms: {term});
   }
 
-  /// Look up the best (lowest) frequency rank for a given expression.
-  /// Queries all frequency dictionaries regardless of isEnabled flag — this
-  /// supports the frequency-only install pattern where the frequency dict is
-  /// disabled+hidden so its own entries don't appear in search results but
-  /// its ranks still apply to entries from other (enabled) dictionaries.
-  Future<int?> getFrequencyRank(
-    String expression, [
-    String reading = '',
-  ]) async {
-    final query = _db.selectOnly(_db.frequencies)
-      ..addColumns([_db.frequencies.frequencyRank.min()])
-      ..where(
-        _db.frequencies.expression.equals(expression) |
-            (reading.isNotEmpty
-                ? _db.frequencies.reading.equals(reading)
-                : const Constant(false)),
-      );
-
-    final result = await query.getSingleOrNull();
-    return result?.read(_db.frequencies.frequencyRank.min());
-  }
-
-  /// Batch-query frequency ranks keyed by (expression, reading) pair.
+  /// Batch-query frequency ranks keyed by (expression, reading) pair, from
+  /// the switched-on dictionaries only. With several, the lowest rank wins.
   ///
   /// Lookup strategy per pair:
   /// 1. Prefer an exact (expression, reading) match in the Frequencies table.
@@ -417,6 +396,7 @@ class DictionaryQueryService {
   Future<Map<(String, String), int>> _getFrequencyRanks(
     List<DictionaryEntryWithSource> results,
     Set<String> searchTerms,
+    _MetasCache cache,
   ) async {
     if (results.isEmpty) return {};
 
@@ -426,9 +406,6 @@ class DictionaryQueryService {
     };
     if (lookupExpressions.isEmpty) return {};
 
-    // Fetch ALL frequency rows for these expressions in batches.
-    // NOTE: Intentionally not filtered by DictionaryMetas.isEnabled — see
-    // getFrequencyRank for the frequency-only install pattern rationale.
     final allRows = <TypedResult>[];
     final exprList = lookupExpressions.toList();
     const batchSize = 200;
@@ -445,7 +422,10 @@ class DictionaryQueryService {
           _db.frequencies.reading,
           _db.frequencies.frequencyRank,
         ])
-        ..where(_db.frequencies.expression.isIn(batch));
+        ..where(
+          _db.frequencies.expression.isIn(batch) &
+              _db.frequencies.dictionaryId.isIn(cache.enabledIds),
+        );
 
       allRows.addAll(await query.get());
     }
@@ -524,9 +504,11 @@ class DictionaryQueryService {
   }) async {
     if (results.isEmpty) return results;
 
+    final cache = await _ensureMetasCached();
     final ranks = await _getFrequencyRanks(
       results,
       exactTerms ?? const <String>{},
+      cache,
     );
     final matchPriorities = exactTerms == null || exactTerms.isEmpty
         ? null
@@ -534,7 +516,7 @@ class DictionaryQueryService {
     return _applyFrequencyRanks(
       results,
       ranks,
-      await _ensureMetasCached(),
+      cache,
       matchPriorities: matchPriorities,
     );
   }
@@ -1121,7 +1103,7 @@ class DictionaryQueryService {
       ...subComponentResults,
       ...glossaryResults,
     ];
-    final ranks = await _getFrequencyRanks(allResults, exactMatchTerms);
+    final ranks = await _getFrequencyRanks(allResults, exactMatchTerms, cache);
 
     // A long-vowel guess (くじょ → くじょう) never gets a typed spelling's
     // head start. Kana input chose its vowel length, so guess-only matches

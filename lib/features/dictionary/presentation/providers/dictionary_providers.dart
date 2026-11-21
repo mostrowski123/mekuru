@@ -44,16 +44,37 @@ final dictionaryImporterProvider = Provider<DictionaryImporter>((ref) {
 
 // ──────────────── Data Providers ────────────────
 
-/// Reactive stream of user-visible dictionaries (excludes hidden system ones).
+/// Reactive stream of the dictionaries the dictionary manager lists.
 final dictionariesProvider = StreamProvider<List<DictionaryMeta>>((ref) {
   return ref.watch(dictionaryRepositoryProvider).watchVisibleDictionaries();
 });
 
-/// True once the visible dictionary list has loaded and is empty, which is
-/// when the app offers the starter pack. The hidden JPDB frequency data
-/// doesn't count; false while the list loads.
+/// Whether a dictionary only ranks other dictionaries' words. Asked once per
+/// dictionary: what one holds is fixed at import.
+final frequencyOnlyDictionaryProvider = FutureProvider.family<bool, int>(
+  (ref, id) => ref.watch(dictionaryRepositoryProvider).isFrequencyOnly(id),
+);
+
+/// The listed dictionaries that can answer a lookup. A frequency dictionary
+/// such as JPDB only ranks their words, so it is left out.
+final lookupDictionariesProvider = FutureProvider<List<DictionaryMeta>>((
+  ref,
+) async {
+  final dictionaries = await ref.watch(dictionariesProvider.future);
+  final frequencyOnly = await Future.wait([
+    for (final dictionary in dictionaries)
+      ref.watch(frequencyOnlyDictionaryProvider(dictionary.id).future),
+  ]);
+  return [
+    for (final (i, dictionary) in dictionaries.indexed)
+      if (!frequencyOnly[i]) dictionary,
+  ];
+});
+
+/// True once the lookup dictionaries have loaded and there are none, which
+/// is when the app offers the starter pack. False while they load.
 final noDictionariesProvider = Provider<bool>(
-  (ref) => ref.watch(dictionariesProvider).value?.isEmpty ?? false,
+  (ref) => ref.watch(lookupDictionariesProvider).value?.isEmpty ?? false,
 );
 
 // ──────────────── Import State ────────────────

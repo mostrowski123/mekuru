@@ -117,7 +117,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// The schema this build writes. Static so code that must not open a
   /// database (the boot-time full restore) can still compare versions.
-  static const int latestSchemaVersion = 27;
+  static const int latestSchemaVersion = 28;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -238,6 +238,14 @@ class AppDatabase extends _$AppDatabase {
       // pass in beforeOpen adds the columns via the repair-column maps and
       // creates the tables, which also covers databases that missed
       // migrations entirely.
+      if (from < 28) {
+        // Hidden rows are the JPDB frequency copies the user could never
+        // switch. Frequency ranks now follow the switch, so list them, on.
+        await customStatement(
+          'UPDATE dictionary_metas SET is_hidden = 0, is_enabled = 1 '
+          'WHERE is_hidden = 1',
+        );
+      }
     },
     beforeOpen: (details) async {
       await _repairMissingColumns(

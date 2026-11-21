@@ -340,7 +340,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasDictionaries = ref.watch(dictionariesProvider);
+    final hasDictionaries = ref.watch(lookupDictionariesProvider);
 
     // Re-search when Roman letter filter changes
     ref.listen(filterRomanLettersProvider, (_, _) => _searchAgain());

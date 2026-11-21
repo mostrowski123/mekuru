@@ -1,8 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
+import 'package:mekuru/features/backup/data/services/backup_service.dart';
+import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 import 'package:mekuru/features/backup/data/services/pending_dictionary_restore_service.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+import 'package:mekuru/features/settings/data/services/jpdb_freq_download_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/test_database.dart';
@@ -233,5 +236,42 @@ void main() {
 
     expect(result.missingCount, 0);
     expect(applied.missingCount, 0);
+  });
+
+  test('the JPDB frequency dictionary is backed up with its switch, and '
+      'counts as missing where it is not installed', () async {
+    final jpdbId = await repository.insertDictionary(
+      JpdbFreqDownloadService.dictionaryName,
+    );
+    await repository.toggleDictionary(jpdbId, isEnabled: false);
+
+    final backedUp = (await BackupService(
+      db,
+      BookMatchService(),
+    ).createBackup()).dictionaryPreferences;
+    expect(
+      [for (final p in backedUp) (p.name, p.isEnabled)],
+      [(JpdbFreqDownloadService.dictionaryName, false)],
+    );
+
+    await repository.deleteDictionary(jpdbId);
+    final restored = await service.queueFromBackup(
+      preferences: backedUp,
+      shouldQueue: true,
+      repository: repository,
+    );
+    expect(restored.missingCount, 1);
+
+    // Installed later, it takes the backed-up switch.
+    final reinstalledId = await repository.insertDictionary(
+      JpdbFreqDownloadService.dictionaryName,
+    );
+    await service.applyPendingRestore(repository);
+    expect(
+      (await repository.getAllDictionaries())
+          .singleWhere((d) => d.id == reinstalledId)
+          .isEnabled,
+      isFalse,
+    );
   });
 }

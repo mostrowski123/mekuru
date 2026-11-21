@@ -681,6 +681,46 @@ void main() {
     expect(await folderIsFavorite(), isFalse);
   });
 
+  test('lists and switches on hidden dictionaries at schema 28', () async {
+    final tempDir = await Directory.systemTemp.createTemp('mekuru_hidden_');
+    addTearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final dbFile = File('${tempDir.path}/mekuru.sqlite');
+    final seedDb = AppDatabase(NativeDatabase(dbFile));
+    final seedRepo = DictionaryRepository(seedDb);
+    final jpdbId = await seedRepo.insertDictionary('JPDB');
+    final offId = await seedRepo.insertDictionary('Switched off');
+    await seedRepo.toggleDictionary(offId, isEnabled: false);
+    await seedDb.close();
+
+    // Rewind to v27, the frequency dictionary hidden and off the way the
+    // JPDB download left it.
+    final legacyDb = sqlite.sqlite3.open(dbFile.path);
+    legacyDb.execute('PRAGMA user_version = 27;');
+    legacyDb.execute(
+      'UPDATE dictionary_metas SET is_hidden = 1, is_enabled = 0 '
+      'WHERE id = $jpdbId;',
+    );
+    legacyDb.close();
+
+    final migratedDb = AppDatabase(NativeDatabase(dbFile));
+    addTearDown(migratedDb.close);
+    final repo = DictionaryRepository(migratedDb);
+
+    expect(
+      [
+        for (final d in await repo.watchVisibleDictionaries().first)
+          (d.name, d.isEnabled),
+      ],
+      // A dictionary the user switched off stays off.
+      [('JPDB', true), ('Switched off', false)],
+    );
+  });
+
   test(
     'heals a schema 23 database that never ran the server sync DDL',
     () async {

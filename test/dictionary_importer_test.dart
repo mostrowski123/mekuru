@@ -514,6 +514,52 @@ void main() {
       );
     });
 
+    test('a frequency dictionary only ranks the other dictionaries\' words, '
+        'and only while it is on', () async {
+      final definitionsZip = await createTestYomitanZip();
+      final frequencyZip = await createTestYomitanZip(
+        dictionaryName: 'Frequency Only',
+        entries: const [],
+        termMetaEntries: [
+          [
+            '食べる',
+            'freq',
+            {'reading': 'たべる', 'frequency': 77},
+          ],
+        ],
+      );
+      trackTempFile(definitionsZip);
+      trackTempFile(frequencyZip);
+      final service = DictionaryQueryService(db);
+
+      await importer.importFromFile(definitionsZip);
+      expect(await importer.importFromFile(frequencyZip), 0);
+
+      final frequencyDictionary = await repo.getDictionaryByName(
+        'Frequency Only',
+      );
+      expect(frequencyDictionary!.isEnabled, isTrue);
+      // It stores no entries, so no lookup can show it.
+      expect(
+        await (db.select(
+          db.dictionaryEntries,
+        )..where((e) => e.dictionaryId.equals(frequencyDictionary.id))).get(),
+        isEmpty,
+      );
+      Future<List<(String, int?)>> lookUp() async {
+        service.invalidateMetasCache();
+        return [
+          for (final r in await service.searchLookupWithSource('食べる'))
+            (r.dictionaryName, r.frequencyRank),
+        ];
+      }
+
+      expect(await lookUp(), [('Test Dictionary', 77)]);
+
+      await repo.toggleDictionary(frequencyDictionary.id, isEnabled: false);
+      expect(await lookUp(), [('Test Dictionary', null)]);
+    });
+
     test('rolls back a zip import when a later batch insert fails', () async {
       final rollbackDb = createTestDatabase();
       addTearDown(rollbackDb.close);

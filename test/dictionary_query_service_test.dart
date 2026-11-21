@@ -823,8 +823,6 @@ void main() {
             dictionaryId: freqDictId,
           ),
         ]);
-        await installRepo.toggleDictionary(freqDictId, isEnabled: false);
-        await installRepo.setHidden(freqDictId, isHidden: true);
       }
 
       Future<void> installJmdictDictionary() async {
@@ -895,6 +893,132 @@ void main() {
         expect(results[1].frequencyRank, isNull);
       },
     );
+  });
+
+  group('DictionaryQueryService — frequency dictionary switch', () {
+    late AppDatabase switchDb;
+    late DictionaryRepository switchRepo;
+    late DictionaryQueryService switchQueryService;
+    late int jpdbId;
+    late int bccwjId;
+
+    /// (reading, rank) of each result, the rank being what the frequency
+    /// badge shows, on both lookup paths: the search screen and the reader.
+    Future<List<(String, int?)>> lookUp(String term) async {
+      // The app drops this cache whenever a dictionary is switched.
+      switchQueryService.invalidateMetasCache();
+      final searched = await switchQueryService.fuzzySearchWithSource(term);
+      final tapped = await switchQueryService.searchLookupWithSource(term);
+      final seen = [
+        for (final r in searched) (r.entry.reading, r.frequencyRank),
+      ];
+      expect([
+        for (final r in tapped) (r.entry.reading, r.frequencyRank),
+      ], seen);
+      return seen;
+    }
+
+    setUp(() async {
+      switchDb = createTestDatabase();
+      switchRepo = DictionaryRepository(switchDb);
+      switchQueryService = DictionaryQueryService(switchDb);
+
+      final dictId = await switchRepo.insertDictionary('Dict A');
+      // わっし is stored first, so it leads when nothing ranks the two.
+      await switchRepo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '私',
+          reading: const Value('わっし'),
+          glossaries: jsonEncode(['I (wasshi)']),
+          dictionaryId: dictId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '私',
+          reading: const Value('わたし'),
+          glossaries: jsonEncode(['I (watashi)']),
+          dictionaryId: dictId,
+        ),
+      ]);
+      jpdbId = await switchRepo.insertDictionary('JPDB');
+      bccwjId = await switchRepo.insertDictionary('BCCWJ');
+      await switchRepo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: '私',
+          reading: const Value('わたし'),
+          frequencyRank: 32,
+          dictionaryId: jpdbId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '私',
+          reading: const Value('わたし'),
+          frequencyRank: 700,
+          dictionaryId: bccwjId,
+        ),
+      ]);
+    });
+
+    tearDown(() async {
+      await switchDb.close();
+    });
+
+    test('a switched-off frequency dictionary gives no rank', () async {
+      await switchRepo.toggleDictionary(jpdbId, isEnabled: false);
+      await switchRepo.toggleDictionary(bccwjId, isEnabled: false);
+
+      expect(await lookUp('私'), [('わっし', null), ('わたし', null)]);
+    });
+
+    test("switched on, it ranks the other dictionaries' words", () async {
+      await switchRepo.toggleDictionary(bccwjId, isEnabled: false);
+
+      expect(await lookUp('私'), [('わたし', 32), ('わっし', null)]);
+    });
+
+    test('switching it off takes its rank off the badge and out of the '
+        'order, and switching it back on returns it', () async {
+      await switchRepo.toggleDictionary(bccwjId, isEnabled: false);
+      expect(await lookUp('私'), [('わたし', 32), ('わっし', null)]);
+
+      await switchRepo.toggleDictionary(jpdbId, isEnabled: false);
+      expect(await lookUp('私'), [('わっし', null), ('わたし', null)]);
+
+      await switchRepo.toggleDictionary(jpdbId, isEnabled: true);
+      expect(await lookUp('私'), [('わたし', 32), ('わっし', null)]);
+    });
+
+    test('with several on, the best rank wins, and switching that one off '
+        'leaves the next', () async {
+      expect(await lookUp('私'), [('わたし', 32), ('わっし', null)]);
+
+      await switchRepo.toggleDictionary(jpdbId, isEnabled: false);
+      expect(await lookUp('私'), [('わたし', 700), ('わっし', null)]);
+    });
+
+    test('a dictionary with definitions and ranks shows both while on, '
+        'and neither while off', () async {
+      final combinedId = await switchRepo.insertDictionary('Combined');
+      await switchRepo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '僕',
+          reading: const Value('ぼく'),
+          glossaries: jsonEncode(['I (boku)']),
+          dictionaryId: combinedId,
+        ),
+      ]);
+      await switchRepo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: '僕',
+          reading: const Value('ぼく'),
+          frequencyRank: 90,
+          dictionaryId: combinedId,
+        ),
+      ]);
+
+      expect(await lookUp('僕'), [('ぼく', 90)]);
+
+      await switchRepo.toggleDictionary(combinedId, isEnabled: false);
+      expect(await lookUp('僕'), isEmpty);
+    });
   });
 
   // ── Deinflection in fuzzySearchWithSource ────────────────────────
@@ -1248,95 +1372,6 @@ void main() {
         );
       },
     );
-  });
-
-  // ── getFrequencyRank ───────────────────────────────────────────
-
-  group('DictionaryQueryService — getFrequencyRank', () {
-    late AppDatabase freqDb;
-    late DictionaryRepository freqRepo;
-    late DictionaryQueryService freqQueryService;
-
-    setUp(() async {
-      freqDb = createTestDatabase();
-      freqRepo = DictionaryRepository(freqDb);
-      freqQueryService = DictionaryQueryService(freqDb);
-
-      final freqDictId = await freqRepo.insertDictionary('FreqDict');
-      await freqRepo.batchInsertFrequencies([
-        FrequenciesCompanion.insert(
-          expression: '食べる',
-          reading: const Value('たべる'),
-          frequencyRank: 100,
-          dictionaryId: freqDictId,
-        ),
-        FrequenciesCompanion.insert(
-          expression: '食べる',
-          reading: const Value('たべる'),
-          frequencyRank: 200,
-          dictionaryId: freqDictId,
-        ),
-        FrequenciesCompanion.insert(
-          expression: '走る',
-          reading: const Value('はしる'),
-          frequencyRank: 500,
-          dictionaryId: freqDictId,
-        ),
-      ]);
-    });
-
-    tearDown(() async {
-      await freqDb.close();
-    });
-
-    test('returns the best (lowest) rank for an expression', () async {
-      final rank = await freqQueryService.getFrequencyRank('食べる');
-      expect(rank, 100);
-    });
-
-    test('returns rank when querying by expression and reading', () async {
-      final rank = await freqQueryService.getFrequencyRank('食べる', 'たべる');
-      expect(rank, 100);
-    });
-
-    test('returns null for non-existent expression', () async {
-      final rank = await freqQueryService.getFrequencyRank('存在しない');
-      expect(rank, isNull);
-    });
-
-    test('returns correct rank for different expressions', () async {
-      final rank = await freqQueryService.getFrequencyRank('走る');
-      expect(rank, 500);
-    });
-
-    test('returns the minimum across multiple frequency entries', () async {
-      // 食べる has ranks 100 and 200 — should return 100
-      final rank = await freqQueryService.getFrequencyRank('食べる');
-      expect(rank, 100);
-    });
-
-    test('still returns ranks from disabled+hidden frequency dictionaries '
-        '(frequency-only install pattern)', () async {
-      // The frequency-only install pattern (also exercised by the
-      // "frequency install order" group below) keeps the freq dict
-      // disabled+hidden so its own entries don't pollute search results,
-      // while its ranks still apply. getFrequencyRank must respect that.
-      final hiddenFreqId = await freqRepo.insertDictionary('HiddenFreqDict');
-      await freqRepo.batchInsertFrequencies([
-        FrequenciesCompanion.insert(
-          expression: '泳ぐ',
-          reading: const Value('およぐ'),
-          frequencyRank: 250,
-          dictionaryId: hiddenFreqId,
-        ),
-      ]);
-      await freqRepo.toggleDictionary(hiddenFreqId, isEnabled: false);
-      await freqRepo.setHidden(hiddenFreqId, isHidden: true);
-      freqQueryService.invalidateMetasCache();
-
-      final rank = await freqQueryService.getFrequencyRank('泳ぐ');
-      expect(rank, 250);
-    });
   });
 
   group('DictionaryQueryService - exact match prioritization', () {

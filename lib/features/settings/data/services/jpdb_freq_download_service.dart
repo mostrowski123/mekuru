@@ -33,7 +33,9 @@ class JpdbFreqDownloadService {
     return meta != null;
   }
 
-  /// Download the JPDB frequency dictionary and import it into the database.
+  /// Download the JPDB frequency dictionary and import it into the database,
+  /// switched on and listed with the other dictionaries. It has no entries
+  /// of its own: it ranks the other dictionaries' words while it is on.
   /// Does nothing when it is already imported, so a tap that beats a
   /// screen's status check can't add a second copy.
   ///
@@ -54,12 +56,6 @@ class JpdbFreqDownloadService {
       requiredBytes: requiredBytes,
       onProgress: onProgress,
     );
-    // Ranking data, not a dictionary to look words up in.
-    final meta = await repository.getDictionaryByName(dictionaryName);
-    if (meta != null) {
-      await repository.toggleDictionary(meta.id, isEnabled: false);
-      await repository.setHidden(meta.id, isHidden: true);
-    }
   }
 
   /// Delete the JPDB frequency dictionary and all its data from the database.

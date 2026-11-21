@@ -82,10 +82,13 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          databaseProvider.overrideWithValue(db),
           dictionariesProvider.overrideWith(
             (ref) => Stream.value([
               DictionaryMeta(

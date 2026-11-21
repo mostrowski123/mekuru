@@ -136,11 +136,23 @@ class DictionaryRepository {
         DictionaryMetasCompanion(isEnabled: Value(isEnabled)),
       );
 
-  /// Mark a dictionary as hidden from the user-facing dictionary manager.
-  Future<void> setHidden(int id, {required bool isHidden}) =>
-      (_db.update(_db.dictionaryMetas)..where((t) => t.id.equals(id))).write(
-        DictionaryMetasCompanion(isHidden: Value(isHidden)),
-      );
+  /// Whether a dictionary only ranks other dictionaries' words: it has
+  /// frequency data and no entries to look up. Fixed once it is imported,
+  /// so callers ask once per dictionary.
+  Future<bool> isFrequencyOnly(int dictionaryId) async {
+    // ponytail: no index starts with dictionary_id, so a dictionary without
+    // entries costs one full index scan; an index on
+    // dictionary_entries(dictionary_id) would make this instant.
+    final row = await _db
+        .customSelect(
+          'SELECT CASE WHEN EXISTS (SELECT 1 FROM dictionary_entries '
+          'WHERE dictionary_id = ?1) THEN 0 ELSE EXISTS (SELECT 1 FROM '
+          'frequencies WHERE dictionary_id = ?1) END AS frequency_only',
+          variables: [Variable.withInt(dictionaryId)],
+        )
+        .getSingle();
+    return row.read<bool>('frequency_only');
+  }
 
   /// Delete a dictionary and all its entries (including pitch accents and frequencies).
   Future<void> deleteDictionary(int dictionaryId) async {

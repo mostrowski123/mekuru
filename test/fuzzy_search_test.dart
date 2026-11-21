@@ -614,7 +614,7 @@ void main() {
         ),
       ]);
 
-      // Frequency-only install pattern: disabled + hidden, ranks still apply.
+      // A frequency-only dictionary, switched on as installed.
       final freqDictId = await repo2.insertDictionary('FreqDict');
       await repo2.batchInsertFrequencies([
         FrequenciesCompanion.insert(
@@ -654,8 +654,6 @@ void main() {
           dictionaryId: freqDictId,
         ),
       ]);
-      await repo2.toggleDictionary(freqDictId, isEnabled: false);
-      await repo2.setHidden(freqDictId, isHidden: true);
     });
 
     tearDown(() async {

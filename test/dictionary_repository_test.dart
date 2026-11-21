@@ -291,31 +291,6 @@ void main() {
     });
   });
 
-  group('DictionaryRepository — setHidden', () {
-    test('marks a dictionary as hidden', () async {
-      final id = await repo.insertDictionary('FreqDict');
-
-      await repo.setHidden(id, isHidden: true);
-      final dicts = await repo.getAllDictionaries();
-      expect(dicts.first.isHidden, isTrue);
-    });
-
-    test('un-hides a dictionary', () async {
-      final id = await repo.insertDictionary('FreqDict');
-      await repo.setHidden(id, isHidden: true);
-      await repo.setHidden(id, isHidden: false);
-
-      final dicts = await repo.getAllDictionaries();
-      expect(dicts.first.isHidden, isFalse);
-    });
-
-    test('new dictionaries are not hidden by default', () async {
-      await repo.insertDictionary('JMdict');
-      final dicts = await repo.getAllDictionaries();
-      expect(dicts.first.isHidden, isFalse);
-    });
-  });
-
   group('DictionaryRepository — getDictionaryByName', () {
     test('returns dictionary when name exists', () async {
       await repo.insertDictionary('JMdict');
@@ -340,7 +315,8 @@ void main() {
     test('excludes hidden dictionaries', () async {
       await repo.insertDictionary('Visible');
       final id2 = await repo.insertDictionary('Hidden');
-      await repo.setHidden(id2, isHidden: true);
+      await (db.update(db.dictionaryMetas)..where((t) => t.id.equals(id2)))
+          .write(const DictionaryMetasCompanion(isHidden: Value(true)));
 
       final emissions = <List<DictionaryMeta>>[];
       final subscription = repo.watchVisibleDictionaries().listen((data) {
@@ -354,6 +330,40 @@ void main() {
       await subscription.cancel();
     });
   });
+
+  test(
+    'only a dictionary with ranks and no entries is frequency-only',
+    () async {
+      final ranksOnly = await repo.insertDictionary('Ranks');
+      final both = await repo.insertDictionary('Both');
+      final entriesOnly = await repo.insertDictionary('Entries');
+      final empty = await repo.insertDictionary('Empty');
+      await repo.batchInsertFrequencies([
+        for (final id in [ranksOnly, both])
+          FrequenciesCompanion.insert(
+            expression: '猫',
+            frequencyRank: 2000,
+            dictionaryId: id,
+          ),
+      ]);
+      await repo.batchInsertEntries([
+        for (final id in [both, entriesOnly])
+          DictionaryEntriesCompanion.insert(
+            expression: '猫',
+            glossaries: jsonEncode(['cat']),
+            dictionaryId: id,
+          ),
+      ]);
+
+      expect(
+        [
+          for (final id in [ranksOnly, both, entriesOnly, empty])
+            await repo.isFrequencyOnly(id),
+        ],
+        [true, false, false, false],
+      );
+    },
+  );
 
   group('DictionaryRepository — PitchAccent operations', () {
     test('batchInsertPitchAccents inserts correctly', () async {

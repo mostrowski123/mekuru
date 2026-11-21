@@ -486,10 +486,12 @@ void main() {
     Future<void> pumpEmptyLookup(
       WidgetTester tester, {
       required List<DictionaryMeta> dictionaries,
+      List<FrequenciesCompanion> frequencies = const [],
     }) async {
       SharedPreferences.setMockInitialValues({});
       final db = createTestDatabase();
       addTearDown(db.close);
+      await DictionaryRepository(db).batchInsertFrequencies(frequencies);
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -518,6 +520,24 @@ void main() {
       await pumpEmptyLookup(tester, dictionaries: const []);
 
       expect(find.text('No dictionaries imported'), findsOneWidget);
+      expect(find.text('Install Starter Pack'), findsOneWidget);
+    });
+
+    testWidgets('offers the starter pack when the only dictionary ranks '
+        'words', (tester) async {
+      final jpdb = _jmdict.copyWith(id: 2, name: 'JPDB');
+      await pumpEmptyLookup(
+        tester,
+        dictionaries: [jpdb],
+        frequencies: [
+          FrequenciesCompanion.insert(
+            expression: '猫',
+            frequencyRank: 2000,
+            dictionaryId: jpdb.id,
+          ),
+        ],
+      );
+
       expect(find.text('Install Starter Pack'), findsOneWidget);
     });
 

@@ -11,6 +11,7 @@ import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
+import 'package:mekuru/features/settings/data/services/jpdb_freq_download_service.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -62,6 +63,29 @@ void main() {
         ..addFile(ArchiveFile('index.json', index.length, index))
         ..addFile(ArchiveFile('term_bank_1.json', bank.length, bank)),
     );
+    final jpdbIndex = utf8.encode(
+      jsonEncode({
+        'title': JpdbFreqDownloadService.dictionaryName,
+        'format': 3,
+        'revision': 'JPDB_v2.2_Frequency_Kana_2024-10-13',
+      }),
+    );
+    final jpdbRanks = utf8.encode(
+      jsonEncode([
+        [
+          '山田',
+          'freq',
+          {'reading': 'やまだ', 'frequency': 1200},
+        ],
+      ]),
+    );
+    final jpdbZip = ZipEncoder().encode(
+      Archive()
+        ..addFile(ArchiveFile('index.json', jpdbIndex.length, jpdbIndex))
+        ..addFile(
+          ArchiveFile('term_meta_bank_1.json', jpdbRanks.length, jpdbRanks),
+        ),
+    );
 
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     requests = 0;
@@ -71,6 +95,10 @@ void main() {
       if (request.uri.path == '/JMnedict.zip') {
         response.contentLength = zip.length;
         response.add(zip);
+      } else if (request.uri.path ==
+          Uri.parse(JpdbFreqDownloadService.downloadUrl).path) {
+        response.contentLength = jpdbZip.length;
+        response.add(jpdbZip);
       } else if (request.uri.path == '/slow.zip') {
         // Half the zip, a pause, then the rest.
         response.contentLength = zip.length;
@@ -281,6 +309,42 @@ void main() {
 
     expect(await repo.getAllDictionaries(), hasLength(1));
   });
+
+  test('the JPDB frequency download is listed with the dictionaries, '
+      'switched on', () async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repo = DictionaryRepository(db);
+
+    await HttpOverrides.runWithHttpOverrides(
+      () => JpdbFreqDownloadService.downloadAndImport(
+        repository: repo,
+        importer: DictionaryImporter(repo),
+      ),
+      _ToLoopback(server.port),
+    );
+
+    expect(
+      [
+        for (final d in await repo.watchVisibleDictionaries().first)
+          (d.name, d.isEnabled),
+      ],
+      [(JpdbFreqDownloadService.dictionaryName, true)],
+    );
+  });
+}
+
+/// Sends every request, the GitHub one included, to the loopback server.
+class _ToLoopback extends HttpOverrides {
+  _ToLoopback(this.port);
+
+  final int port;
+
+  @override
+  HttpClient createHttpClient(SecurityContext? context) =>
+      super.createHttpClient(context)
+        ..connectionFactory = (uri, proxyHost, proxyPort) =>
+            Socket.startConnect(InternetAddress.loopbackIPv4, port);
 }
 
 /// Lets iOS end the background task right after the import commits.
