@@ -74,8 +74,8 @@ enum LookupDictionaries {
 final lookupDictionariesProvider = FutureProvider<LookupDictionaries>((
   ref,
 ) async {
-  final dictionaries = await ref.watch(dictionariesProvider.future);
   final repository = ref.watch(dictionaryRepositoryProvider);
+  final dictionaries = await ref.watch(dictionariesProvider.future);
   Future<bool> anyAnswers({required bool on}) => repository.anyAnswersLookups([
     for (final d in dictionaries)
       if (d.isEnabled == on) d.id,
