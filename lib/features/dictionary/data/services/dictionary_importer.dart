@@ -1146,6 +1146,10 @@ class DictionaryImporter {
     try {
       input = InputFileStream(filePath);
       final archive = ZipDecoder().decodeStream(input);
+      // ZipDecoder reads anything that isn't a zip (an error page served
+      // with 200) as an empty archive, which would import as an empty
+      // "Unknown Dictionary".
+      if (archive.isEmpty) throw const FormatException('Not a zip file');
 
       final index = _readZipIndex(archive);
       final termBankFiles = archive.files

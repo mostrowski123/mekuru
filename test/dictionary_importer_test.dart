@@ -1082,6 +1082,20 @@ void main() {
       expect(dicts.first.name, 'Unknown Dictionary');
     });
 
+    test('a file that is not a zip at all imports nothing', () async {
+      final tempDir = await Directory.systemTemp.createTemp('yomitan_notzip_');
+      final zipPath = '${tempDir.path}/page.zip';
+      // A captive portal's page, served in place of the zip.
+      await File(zipPath).writeAsString('<html><body>Sign in</body></html>');
+      trackTempFile(zipPath);
+
+      await expectLater(
+        importer.importFromFile(zipPath),
+        throwsA(isA<DictionaryParseException>()),
+      );
+      expect(await repo.getAllDictionaries(), isEmpty);
+    });
+
     test(
       're-importing the same zip creates a duplicate dictionary row',
       () async {

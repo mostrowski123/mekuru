@@ -13,6 +13,8 @@ import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart'
+    show DictionaryParseException;
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
@@ -286,6 +288,17 @@ void main() {
             404,
           ),
         );
+        expect(await names(), isEmpty);
+        expect(tempDir.listSync().whereType<File>(), isEmpty);
+      });
+
+      test('an error page in place of the zip installs nothing', () async {
+        // Was: "Download complete." and an empty "Unknown Dictionary".
+        http.handler = serve('<html><body>Sign in</body></html>'.codeUnits);
+
+        await tile.download(container);
+
+        expectFailed(tile.watch(container), isA<DictionaryParseException>());
         expect(await names(), isEmpty);
         expect(tempDir.listSync().whereType<File>(), isEmpty);
       });
