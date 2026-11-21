@@ -9,7 +9,7 @@ A feature or fix is for both platforms unless the task says otherwise. Android m
 - **Android-only mechanisms have no iOS counterpart**: foreground services and background work, SAF and `content://` URIs, intents (AnkiDroid), the `FullBackupJobBridge` permission path, exiting the process, Google Play billing. A feature built on one needs an iOS equivalent (see "iOS / native"), or its entry point is hidden on iOS. Never ship a control that silently does nothing there.
 - **Branch with `defaultTargetPlatform == TargetPlatform.iOS`**, not `Platform.isIOS`, in code a test should reach: tests switch it with `debugDefaultTargetPlatformOverride`.
 - **Stored paths**: the iOS data container moves on every reinstall and can move on an update. `Books.filePath`, `Books.coverImagePath` and each manga cache's `imageDirPath` are re-anchored at boot (`reanchorLibraryIfMovedAtBoot()`). A new persisted absolute path must join that pass, or be stored relative.
-- **Copy**: text that names Android things (Google Play, AnkiDroid, background notifications) gets an `…Ios` l10n key next to the original, e.g. `backupFullExportSubtitleIos`.
+- **Copy**: text that names Android things (Google Play, AnkiDroid, background notifications) gets an `…Ios` l10n key next to the original, e.g. `backupFullExportSubtitleIos`. A key in `app_en.arb` that another `app_*.arb` lacks stops the Play and TestFlight releases and fails PR checks (`scripts/check_release_ready.py`).
 - **Reader**: `reader_bridge.js` and `epub.js` run in WKWebView on iOS and in the Chromium WebView on Android. Verify a change there on both.
 - **New plugin or native API**: it must support iOS 26 (Swift Package Manager preferred). Add the `Info.plist` usage string it needs (a missing one crashes on first use) and declare required-reason APIs in `ios/Runner/PrivacyInfo.xcprivacy`.
 - **Checking**: `build-ios-pr.yml` builds iOS for every PR that touches `lib/`, `ios/`, `assets/`, `packages/` or `pubspec.*`. Run `flutter build ios --no-codesign` yourself after changing `ios/`, plugins or native assets.
@@ -39,7 +39,7 @@ Run codegen after editing `@DriftDatabase` or `environment_config.yaml`.
 
 1. `flutter analyze lib test integration_test benchmark` — **must be clean.** CI fails on info-level deprecation warnings too.
 2. `flutter test` — must pass.
-3. For user-facing changes, bump `version:` in `pubspec.yaml` (minor for `feat:`, patch for `fix:`). It is the one version for both stores, so an iOS-only change bumps it too (see "Versioning").
+3. For user-facing changes, bump `version:` in `pubspec.yaml` (minor for `feat:`, patch for `fix:`). It is the one version for both stores, so an iOS-only change bumps it too (see "Versioning"). `build-release.yml` stops before the build when a pushed user-facing commit leaves it unchanged (`scripts/check_release_ready.py`).
 4. Never add `Co-Authored-By:` trailers to commits.
 
 ## Conventions

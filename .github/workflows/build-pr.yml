@@ -10,6 +10,8 @@ on:
       - 'test/**'
       - 'scripts/verify_native_libs.py'
       - 'scripts/test_verify_native_libs.py'
+      - 'scripts/check_release_ready.py'
+      - 'scripts/test_check_release_ready.py'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/build-pr.yml'
@@ -109,12 +111,21 @@ jobs:
       - name: Test native archive validation
         run: python -m unittest discover -s scripts -p test_verify_native_libs.py
 
+      - name: Test release readiness checks
+        run: python -m unittest discover -s scripts -p test_check_release_ready.py
+
       - name: Verify emulator-to-phone native packaging without cleaning
         run: |
           flutter build apk --debug --flavor parallel --target-platform android-x64 --split-per-abi --no-pub
           python scripts/verify_native_libs.py build/app/outputs/flutter-apk/app-x86_64-parallel-debug.apk --abis x86_64
           flutter build apk --debug --flavor parallel --target-platform android-arm64 --split-per-abi --no-pub
           python scripts/verify_native_libs.py build/app/outputs/flutter-apk/app-arm64-v8a-parallel-debug.apk --abis arm64-v8a
+
+      # Fails the PR, since the release workflows stop on a missing key, but
+      # runs last so an English-first PR still gets its test results.
+      - name: Check translations
+        if: ${{ !cancelled() }}
+        run: python scripts/check_release_ready.py --translations
 
       - name: Upload test reports
         if: always()

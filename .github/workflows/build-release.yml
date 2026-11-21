@@ -32,6 +32,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The version check needs the previous push's commit.
+          fetch-depth: 0
+
+      - name: Check translations and version bump
+        run: python scripts/check_release_ready.py --translations --version-bump "${{ github.event.before }}" "$GITHUB_SHA"
 
       - name: Set up Java 17
         uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
