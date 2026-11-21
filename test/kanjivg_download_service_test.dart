@@ -111,11 +111,12 @@ void main() {
       expect(extracted.readAsStringSync(), svgContent);
     });
 
-    test('handles empty archive', () {
-      final archive = Archive();
-      final zipBytes = ZipEncoder().encode(archive);
-      final count = _extractSvgsFromArchive(zipBytes, tempDir.path);
-      expect(count, 0);
+    test('an archive without SVGs is damaged', () {
+      final zipBytes = ZipEncoder().encode(Archive());
+      expect(
+        () => _extractSvgsFromArchive(zipBytes, tempDir.path),
+        throwsA(isA<FormatException>()),
+      );
     });
   });
 

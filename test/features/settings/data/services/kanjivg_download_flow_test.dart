@@ -132,6 +132,22 @@ void main() {
     expect(marker().existsSync(), isFalse);
   });
 
+  test('an error page in place of the zip fails as damaged and installs '
+      'nothing', () async {
+    // A captive portal or a proxy answers 200 with its own page.
+    http.handler = serve('<html><body>Sign in</body></html>'.codeUnits);
+
+    await download();
+
+    // Was: downloaded, 0 files, and the installed marker written.
+    expect(tile().isDownloaded, isFalse);
+    expect(failure(), isA<FormatException>());
+    expect(marker().existsSync(), isFalse);
+    expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
+    await container.read(kanjiVgProvider.notifier).checkStatus();
+    expect(tile().isDownloaded, isFalse);
+  });
+
   test('without room for the zip and its SVGs it fetches nothing and says '
       'how much more it needs', () async {
     const saf = MethodChannel('mekuru/android_saf');
@@ -196,6 +212,11 @@ void main() {
     await shows(
       () => notifier.download(NetworkConsent.mobileData),
       ja.serverBrowseDownloadFailed(error: ja.serverErrorStatus(status: 404)),
+    );
+    http.handler = serve('<html>Sign in</html>'.codeUnits);
+    await shows(
+      () => notifier.download(NetworkConsent.mobileData),
+      ja.localOcrDownloadDamaged,
     );
     http.handler = serve(zip);
     await shows(

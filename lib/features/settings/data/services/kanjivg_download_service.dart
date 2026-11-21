@@ -175,6 +175,11 @@ class KanjiVgDownloadService {
         }
       }
 
+      // ZipDecoder reads anything that isn't a zip (an error page served
+      // with 200) as an empty archive.
+      if (count == 0) {
+        throw const FormatException('No stroke order files in the download');
+      }
       return count;
     } finally {
       // closeSync, not close(): close() returns a Future this sync isolate
