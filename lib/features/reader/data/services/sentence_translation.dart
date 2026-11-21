@@ -75,7 +75,12 @@ Future<void> downloadTranslation(String target, NetworkConsent network) =>
     _engine.download(target, network);
 
 /// Android only: iOS language packs belong to the system.
-Future<void> deleteTranslation() => MozillaTranslation.instance.delete();
+Future<void> deleteTranslation() =>
+    (debugDeleteTranslation ?? MozillaTranslation.instance.delete)();
+
+/// Replaces [deleteTranslation]'s work in tests.
+@visibleForTesting
+Future<void> Function()? debugDeleteTranslation;
 
 /// What Android downloads for [target], for the mobile-data question.
 String translationDownloadSize(String target) =>

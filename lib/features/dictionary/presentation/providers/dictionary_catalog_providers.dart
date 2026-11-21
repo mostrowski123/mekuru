@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
@@ -14,6 +15,7 @@ class CatalogDownloadState {
     this.progress = 0,
     this.failure,
     this.deletedId,
+    this.deleteFailed = false,
   });
 
   final bool isDownloading;
@@ -29,6 +31,9 @@ class CatalogDownloadState {
   /// The dictionary this tile deleted. The list stream can still show it:
   /// Drift refetches the list only after every delete queued behind this one.
   final int? deletedId;
+
+  /// The last delete failed; the dictionary is still there to delete again.
+  final bool deleteFailed;
 }
 
 /// Downloads one catalog dictionary at a time and reports how it goes.
@@ -83,14 +88,14 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
   Future<void> delete(int dictionaryId) async {
     if (state.isDownloading || state.isDeleting) return;
     state = const CatalogDownloadState(isDeleting: true);
-    int? deletedId;
     try {
       await ref
           .read(dictionaryRepositoryProvider)
           .deleteDictionary(dictionaryId);
-      deletedId = dictionaryId;
-    } finally {
-      state = CatalogDownloadState(deletedId: deletedId);
+      state = CatalogDownloadState(deletedId: dictionaryId);
+    } catch (e) {
+      logFailure('dictionary.delete_failed', e, attrs: {'asset': entry.name});
+      state = const CatalogDownloadState(deleteFailed: true);
     }
   }
 }

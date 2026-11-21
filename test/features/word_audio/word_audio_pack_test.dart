@@ -16,6 +16,7 @@ import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio_pack.dart';
 import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 import 'package:mekuru/features/word_audio/presentation/widgets/word_audio_download_tile.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -36,6 +37,7 @@ class _FakePack extends WordAudioPack {
   var isPending = false;
   var cancels = 0;
   var deletes = 0;
+  var deleteFails = false;
   bool? lastMobileData;
   void Function(double)? report;
   void Function(double fraction, bool waitingForWifi)? progress;
@@ -75,6 +77,7 @@ class _FakePack extends WordAudioPack {
   @override
   Future<void> delete() async {
     deletes++;
+    if (deleteFails) throw const FileSystemException('locked', '/data/pack');
     filesThere = false;
     isInstalled = false;
   }
@@ -647,6 +650,43 @@ void main() {
 
       expect(pack.deletes, 1);
       expect(find.text('Download'), findsOneWidget);
+    });
+
+    testWidgets('in Japanese, a failed remove says so and keeps Remove', (
+      tester,
+    ) async {
+      final ja = lookupAppLocalizations(const Locale('ja'));
+      pack.isInstalled = true;
+      pack.filesThere = true;
+      pack.deleteFails = true;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [wordAudioProvider.overrideWithValue(_FakeAudio(pack))],
+          child: buildLocalizedTestApp(
+            home: const Scaffold(body: WordAudioPackTile()),
+            locale: const Locale('ja'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pump();
+      await tester.pump();
+
+      expect(pack.deletes, 1);
+      expect(find.text(ja.downloadsDeleteFailed), findsOneWidget);
+      expect(untranslatedDownloadText, findsNothing);
+      expect(find.textContaining('/data/'), findsNothing);
+      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+
+      pack.deleteFails = false;
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pump();
+      await tester.pump();
+      expect(pack.deletes, 2);
+      expect(find.text(ja.downloadsDeleteFailed), findsNothing);
+      expect(find.text(ja.commonDownload), findsOneWidget);
     });
 
     testWidgets('Android: a job waiting for Wi-Fi says so and offers Cancel', (

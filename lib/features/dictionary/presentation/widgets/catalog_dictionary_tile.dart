@@ -60,6 +60,8 @@ class CatalogDictionaryTile extends ConsumerWidget {
           DictionaryDownloadProgress(progress: state.progress),
         if (dictionaryDownloadError(l10n, state.failure) case final error?)
           DownloadErrorText(text: error),
+        if (state.deleteFailed)
+          DownloadErrorText(text: l10n.downloadsDeleteFailed),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: DownloadAttributionText(

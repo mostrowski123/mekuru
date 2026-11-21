@@ -82,7 +82,9 @@ class WordAudioPackTile extends ConsumerWidget {
     final size = ref.watch(wordAudioProvider).pack.downloadSize;
     final fraction = state.fraction;
     // The pack keeps its partial file, so a Wi-Fi stop (iOS) says so.
-    final error = state.error == null
+    final error = state.deleteFailed
+        ? l.downloadsDeleteFailed
+        : state.error == null
         ? null
         : modelDownloadFailureReason(l, state.error!);
     final removeButton = IconButton(

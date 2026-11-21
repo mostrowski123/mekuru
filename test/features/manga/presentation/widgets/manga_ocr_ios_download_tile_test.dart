@@ -113,16 +113,18 @@ void main() {
     late Completer<void> finish;
     late List<bool> wifiOnlyCalls;
     late int removed;
+    late bool removeFails;
     void Function(double)? report;
 
     setUp(() {
       installed = false;
       wifiOnlyCalls = [];
       removed = 0;
+      removeFails = false;
       report = null;
     });
 
-    Future<void> pumpModelTile(WidgetTester tester) async {
+    Future<void> pumpModelTile(WidgetTester tester, {Locale? locale}) async {
       // Made in the test's fake-async zone, which setUp is not.
       finish = Completer<void>();
       await tester.pumpWidget(
@@ -141,12 +143,16 @@ void main() {
               },
               remove: () async {
                 removed++;
+                if (removeFails) {
+                  throw const FileSystemException('locked', '/data/model');
+                }
                 installed = false;
               },
               readyText: 'Models installed · works offline',
               mobileDataBody: (size) => 'The model is $size.',
             ),
           ),
+          locale: locale,
         ),
       );
       await tester.pump();
@@ -245,6 +251,29 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('boom'), findsNothing);
+    });
+
+    testWidgets('in Japanese, a failed remove says so and offers Remove '
+        'again', (tester) async {
+      final ja = lookupAppLocalizations(const Locale('ja'));
+      installed = true;
+      removeFails = true;
+      await pumpModelTile(tester, locale: const Locale('ja'));
+
+      await tester.tap(find.byTooltip(ja.commonRemove));
+      await tester.pumpAndSettle();
+
+      expect(removed, 1);
+      expect(find.text(ja.downloadsDeleteFailed), findsOneWidget);
+      expect(untranslatedDownloadText, findsNothing);
+      expect(find.textContaining('/data/'), findsNothing);
+
+      removeFails = false;
+      await tester.tap(find.byTooltip(ja.commonRemove));
+      await tester.pumpAndSettle();
+      expect(removed, 2);
+      expect(find.text(ja.downloadsDeleteFailed), findsNothing);
+      expect(find.text(ja.commonDownload), findsOneWidget);
     });
   });
 

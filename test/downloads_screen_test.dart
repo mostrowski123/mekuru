@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +14,7 @@ import 'package:mekuru/features/reader/presentation/providers/gemma_download_pro
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 
@@ -37,7 +39,54 @@ class _FailingStandardTranslation implements TranslationEngine {
   Future<String> translate(String text, String target) async => '';
 }
 
+/// Standard translation, downloaded.
+class _InstalledStandardTranslation implements TranslationEngine {
+  @override
+  Future<TranslationStatus> status(String target) async =>
+      TranslationStatus.installed;
+
+  @override
+  Future<void> download(String target, NetworkConsent network) async {}
+
+  @override
+  Future<String> translate(String text, String target) async => '';
+}
+
 void main() {
+  testWidgets('in Japanese, a translation remove that fails says so, not '
+      "that a download didn't finish", (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    debugDeviceLowOnMemory = false;
+    addTearDown(() => debugDeviceLowOnMemory = null);
+    debugTranslationEngine = _InstalledStandardTranslation();
+    addTearDown(() => debugTranslationEngine = null);
+    var deletes = 0;
+    debugDeleteTranslation = () async {
+      deletes++;
+      throw const FileSystemException('locked', '/data/translation_models');
+    };
+    addTearDown(() => debugDeleteTranslation = null);
+    final container = ProviderContainer(
+      overrides: fakeDownloadNotifierOverrides([]),
+    );
+    addTearDown(container.dispose);
+    await pumpInJapanese(tester, container);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(
+        of: find.widgetWithText(ListTile, ja.downloadsSentenceTranslationTitle),
+        matching: find.byIcon(Icons.delete_outline),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(deletes, 1);
+    expect(find.text(ja.downloadsDeleteFailed), findsOneWidget);
+    expect(find.text(ja.downloadNotFinished), findsNothing);
+    expect(untranslatedDownloadText, findsNothing);
+  });
+
   testWidgets('starter pack starts both downloads together', (tester) async {
     SharedPreferences.setMockInitialValues({});
     mockWifiConnected(true);

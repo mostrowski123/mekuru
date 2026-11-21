@@ -12,13 +12,15 @@ final wordAudioProvider = Provider<WordAudio>((ref) {
 });
 
 /// Where the offline pack stands. [fraction] is set while it downloads, and
-/// [waitingForWifi] while its Android job waits for Wi-Fi.
+/// [waitingForWifi] while its Android job waits for Wi-Fi. [error] is why
+/// the last download failed, [deleteFailed] whether the last remove did.
 typedef WordAudioPackState = ({
   bool installed,
   bool hasFiles,
   double? fraction,
   bool waitingForWifi,
   Object? error,
+  bool deleteFailed,
 });
 
 WordAudioPackState _packState({
@@ -27,12 +29,14 @@ WordAudioPackState _packState({
   double? fraction,
   bool waitingForWifi = false,
   Object? error,
+  bool deleteFailed = false,
 }) => (
   installed: installed,
   hasFiles: hasFiles,
   fraction: fraction,
   waitingForWifi: waitingForWifi,
   error: error,
+  deleteFailed: deleteFailed,
 );
 
 /// The offline pack's download, kept here so leaving Downloads doesn't lose it.
@@ -116,9 +120,20 @@ class WordAudioPackNotifier extends Notifier<WordAudioPackState> {
   /// only unlink the open partial file under the running transfer.
   Future<void> remove() async {
     if (state.fraction != null) return;
-    await ref.read(wordAudioProvider).pack.delete();
-    _epoch++;
-    state = _packState();
+    try {
+      await ref.read(wordAudioProvider).pack.delete();
+      state = _packState();
+    } catch (e) {
+      logFailure('word_audio.pack_delete_failed', e);
+      // Its files are still there, so the row keeps Remove to try again.
+      state = _packState(
+        installed: state.installed,
+        hasFiles: state.hasFiles,
+        deleteFailed: true,
+      );
+    } finally {
+      _epoch++;
+    }
   }
 }
 

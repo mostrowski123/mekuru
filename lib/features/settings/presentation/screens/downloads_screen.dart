@@ -19,6 +19,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
@@ -246,7 +247,9 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
   String? _target;
   TranslationStatus? _status;
   bool _busy = false;
-  Object? _error;
+
+  /// The last download or remove, when it failed.
+  TileOutcome? _failed;
 
   @override
   void didChangeDependencies() {
@@ -263,16 +266,19 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
     if (mounted) setState(() => _status = status);
   }
 
-  Future<void> _run(Future<void> Function() action) async {
+  Future<void> _run(TileAction action, Future<void> Function() work) async {
     setState(() {
       _busy = true;
-      _error = null;
+      _failed = null;
     });
     try {
-      await action();
+      await work();
     } catch (e) {
-      logFailure('translation.download_failed', e);
-      _error = e;
+      logFailure(switch (action) {
+        TileAction.download => 'translation.download_failed',
+        TileAction.delete => 'translation.delete_failed',
+      }, e);
+      _failed = (action: action, error: e);
     }
     if (mounted) setState(() => _busy = false);
     await _refresh();
@@ -286,7 +292,10 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
       body: (size) => context.l10n.translationMobileDataBody(size: size),
     );
     if (network == null || !mounted) return;
-    await _run(() => downloadTranslation(_target!, network));
+    await _run(
+      TileAction.download,
+      () => downloadTranslation(_target!, network),
+    );
   }
 
   @override
@@ -298,9 +307,12 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
     final l = context.l10n;
     final theme = Theme.of(context);
     // The pairs keep their partial files, so a Wi-Fi stop says so.
-    final error = _error == null
-        ? null
-        : modelDownloadFailureReason(l, _error!);
+    final error = switch (_failed) {
+      (action: TileAction.download, :final error?) =>
+        modelDownloadFailureReason(l, error),
+      (action: TileAction.delete, error: _) => l.downloadsDeleteFailed,
+      _ => null,
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -327,7 +339,7 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
                     Icons.delete_outline,
                     color: theme.colorScheme.error,
                   ),
-                  onPressed: () => _run(deleteTranslation),
+                  onPressed: () => _run(TileAction.delete, deleteTranslation),
                 )
               : FilledButton.tonal(
                   onPressed: _download,

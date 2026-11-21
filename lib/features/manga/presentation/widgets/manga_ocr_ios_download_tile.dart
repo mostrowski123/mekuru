@@ -1,6 +1,7 @@
 // ignore_for_file: discarded_futures
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/manga/data/services/ndl_text_model.dart';
@@ -105,6 +106,7 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
   bool? _installed;
   double? _progress;
   Object? _error;
+  bool _removeFailed = false;
 
   String get _size => modelFilesSize(widget.files);
 
@@ -130,6 +132,7 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
     setState(() {
       _progress = 0;
       _error = null;
+      _removeFailed = false;
     });
     final network = await askNetwork(
       context,
@@ -155,7 +158,17 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
   }
 
   Future<void> _remove() async {
-    await widget.remove();
+    setState(() {
+      _error = null;
+      _removeFailed = false;
+    });
+    try {
+      await widget.remove();
+    } catch (e) {
+      logFailure('download.delete_failed', e);
+      if (mounted) setState(() => _removeFailed = true);
+    }
+    // Whatever is left decides the button: Remove again, or Download.
     await _refresh();
   }
 
@@ -171,7 +184,9 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
           leading: Icon(widget.icon, color: theme.colorScheme.primary),
           title: Text(widget.title),
           subtitle: Text(
-            _error != null
+            _removeFailed
+                ? l.downloadsDeleteFailed
+                : _error != null
                 ? modelDownloadFailureReason(l, _error!)
                 : _installed == true
                 ? widget.readyText

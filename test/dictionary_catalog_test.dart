@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -6,9 +9,22 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 
+import 'shared/fake_download_notifiers.dart';
 import 'shared/test_database.dart';
+import 'test_app.dart';
+
+/// A database whose dictionary deletes fail, as a full or locked one does.
+class _FailingDeleteRepository extends DictionaryRepository {
+  _FailingDeleteRepository(super.db);
+
+  @override
+  Future<void> deleteDictionary(int dictionaryId) async =>
+      throw const FileSystemException('locked');
+}
 
 void main() {
   test('every entry downloads over https and has a distinct title', () {
@@ -126,6 +142,53 @@ void main() {
     expect(await repo.getAllDictionaries(), isEmpty);
     expect(container.read(download).isDeleting, isFalse);
     expect(container.read(download).deletedId, id);
+  });
+
+  testWidgets('in Japanese, a failed delete says so and keeps Delete', (
+    tester,
+  ) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dictionaryRepositoryProvider.overrideWithValue(
+            _FailingDeleteRepository(db),
+          ),
+          dictionariesProvider.overrideWith(
+            (ref) => Stream.value([
+              DictionaryMeta(
+                id: 1,
+                name: 'Jitendex.org [2026-10-03]',
+                isEnabled: true,
+                dateImported: DateTime(2026, 10, 3),
+                sortOrder: 0,
+                isHidden: false,
+              ),
+            ]),
+          ),
+        ],
+        child: buildLocalizedTestApp(
+          home: const Scaffold(
+            body: CatalogDictionaryTile(entry: CatalogDictionary.jitendex),
+          ),
+          locale: const Locale('ja'),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip(ja.dictionaryManagerDeleteTitle));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ja.commonDelete));
+    await tester.pumpAndSettle();
+
+    expect(find.text(ja.downloadsDeleteFailed), findsOneWidget);
+    expect(untranslatedDownloadText, findsNothing);
+    expect(find.textContaining('locked'), findsNothing);
+    // Still installed, so Delete can be tried again.
+    expect(find.byTooltip(ja.dictionaryManagerDeleteTitle), findsOneWidget);
   });
 
   group('Jitendex replacing JMdict', () {
