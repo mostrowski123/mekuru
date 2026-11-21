@@ -4,22 +4,29 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 /// file names (which users often name after the book title) never leave the
 /// device inside exception messages, log bodies, attributes, or breadcrumbs.
 ///
-/// The battery, in order: URIs, Android roots (which swallow the rest of the
-/// path segment, including spaces, up to a structural delimiter), generic
-/// POSIX/SAF/Windows paths, and bare filenames with book-ish extensions.
+/// The battery, in order: URIs, absolute paths (which swallow everything,
+/// spaces included, up to a structural delimiter), relative paths, and bare
+/// filenames with book-ish extensions. Names may be in any script.
 /// Over-scrubbing trailing prose is acceptable; leaking a file name is not.
 final RegExp _uriPattern = RegExp(r'[a-zA-Z][a-zA-Z0-9+.-]*://\S+');
 
-final RegExp _androidPathPattern = RegExp(
-  r'''/(?:data/(?:user/\d+|data|app)|storage/[^/\s'"]+|sdcard|mnt/[^/\s'"]+)'''
-  r'''(?:/[^'"`()\[\]:;,\n]*)?''',
+/// A POSIX path (`/var/mobile/…`, `/storage/emulated/0/…`, SAF's
+/// `/document/primary:Download/…`) or a Windows one (`C:\…`, `C:/…`), to the
+/// end of the line or the first quote, bracket, `:`, `;` or `,` that is
+/// followed by whitespace. So `Kiki's` and `primary:Download` stay inside,
+/// and `' (OS Error` or `: No such file` end it.
+final RegExp _absolutePathPattern = RegExp(
+  r'''(?:(?<!\w)[A-Za-z]:[\\/]|(?<![^\s'"`(\[=:])/)[^\s<>'"`)\]:;,]'''
+  r'''(?:[^\r\n<>'"`)\]:;,]|['"`)\]:;,](?![.'"`)\]:;,]*(?:\s|$)))*''',
 );
 
-/// Any remaining separator-joined path: POSIX, SAF pseudo-paths like
-/// `/document/primary:Download/…` (`:` is in the segment class), and Windows
-/// drive-letter paths (`C:` matches the leading segment).
-final RegExp _genericPathPattern = RegExp(
-  r'[\w.\-~+%:]*(?:[\\/][\w.\-~+%:]+)+[\\/]?',
+/// A relative path (`books/進撃の巨人/page.jpg`, a SAF document ID
+/// `primary:Download/…`). Group 1 is a Dart stack frame
+/// (`package:mekuru/…dart:12:3`): it names code, not the user's files, so it
+/// is matched only to be kept.
+final RegExp _relativePathPattern = RegExp(
+  r'''((?:package|dart):\S+)|'''
+  r'''[^\s<>'"`()\[\],;\\/]*(?:[\\/][^\s<>'"`()\[\],;\\/]+)+[\\/]?''',
 );
 
 /// Book-ish extensions whose bare filenames get redacted even without a path.
@@ -38,8 +45,12 @@ const String _pathReplacement = '<path>';
 /// Replaces every URI, filesystem path, and bare filename in [input].
 String scrubPaths(String input) => input
     .replaceAll(_uriPattern, '<uri>')
-    .replaceAll(_androidPathPattern, _pathReplacement)
-    .replaceAll(_genericPathPattern, _pathReplacement)
+    .replaceAllMapped(_absolutePathPattern, (m) {
+      final path = m[0]!;
+      final kept = path.trimRight();
+      return '$_pathReplacement${path.substring(kept.length)}';
+    })
+    .replaceAllMapped(_relativePathPattern, (m) => m[1] ?? _pathReplacement)
     .replaceAll(_bareFileNamePattern, '<file>');
 
 /// `beforeSend` hook: scrubs paths from exception values, the event message,

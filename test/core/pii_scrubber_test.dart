@@ -89,6 +89,63 @@ void main() {
     });
   });
 
+  group('scrubPaths on paths as devices and test hosts write them', () {
+    const iosBooks =
+        '/var/mobile/Containers/Data/Application/'
+        '0E984725-C51C-4BF4-9960-E1C80E27ABA0/Documents/books';
+
+    // Each input names a folder or file; the output keeps none of it.
+    final cases = <String, String>{
+      "PathNotFoundException: Cannot open file, path = '/data/user/0/"
+              "moe.matthew.mekuru/app_flutter/books/進撃の巨人 01/page 1.jpg' "
+              '(OS Error: No such file or directory, errno = 2)':
+          "PathNotFoundException: Cannot open file, path = '<path>' "
+          '(OS Error: No such file or directory, errno = 2)',
+      'Import failed: /storage/emulated/0/Download/本 棚/a.epub':
+          'Import failed: <path>',
+      "Cannot open file, path = '/storage/emulated/0/Download/"
+              "Kiki's Delivery Service Vol 1.epub' (OS Error: 2)":
+          "Cannot open file, path = '<path>' (OS Error: 2)",
+      'Permission denied: content://com.android.externalstorage.documents/'
+              'tree/${Uri.encodeComponent('primary:Download/本 棚')}/document/'
+              '${Uri.encodeComponent('primary:Download/本 棚/a.epub')}':
+          'Permission denied: <uri>',
+      "PathNotFoundException: Cannot open file, path = '$iosBooks/"
+              "進撃の巨人 01/page 1.jpg' "
+              '(OS Error: No such file or directory, errno = 2)':
+          "PathNotFoundException: Cannot open file, path = '<path>' "
+          '(OS Error: No such file or directory, errno = 2)',
+      'Opening /private$iosBooks/進撃の巨人 01/page 1.jpg': 'Opening <path>',
+      'Load failed: '
+              '${Uri.file('/private$iosBooks/進撃の巨人 01/page 1.jpg', windows: false)}':
+          'Load failed: <uri>',
+      r"PathNotFoundException: Cannot open file, path = 'C:\Users\runneradmin"
+              r'\AppData\Local\Temp\mekuru_test_8f2a\books\進撃の巨人 01\page 1.jpg'
+              "' (OS Error: The system cannot find the path specified., "
+              'errno = 3)':
+          "PathNotFoundException: Cannot open file, path = '<path>' "
+          '(OS Error: The system cannot find the path specified., errno = 3)',
+      r'Cannot open C:\Users\me\AppData\Local\Temp\abc/books/進撃の巨人 01/page 1.jpg':
+          'Cannot open <path>',
+    };
+
+    for (final MapEntry(key: input, value: scrubbed) in cases.entries) {
+      test(input, () => expect(scrubPaths(input), scrubbed));
+    }
+
+    test('leaves text that names no file unchanged', () {
+      for (final input in [
+        "SocketException: Failed host lookup: 'komga.example.com' "
+            '(OS Error: No address associated with hostname, errno = 7)',
+        '#0      MangaReaderScreen.build (package:mekuru/features/manga/'
+            'presentation/screens/manga_reader_screen.dart:12:3)',
+        '[Reader] Opened 進撃の巨人 01 at page 12',
+      ]) {
+        expect(scrubPaths(input), input);
+      }
+    });
+  });
+
   group('scrubEvent', () {
     test('scrubs exception values, message, and breadcrumbs', () {
       final event = SentryEvent(
