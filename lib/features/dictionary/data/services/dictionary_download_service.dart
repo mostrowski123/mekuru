@@ -40,12 +40,13 @@ class DictionaryDownloadService {
   ///
   /// On iOS it keeps running after the user leaves the app, as background
   /// work; when iOS ends that, it stops with [DownloadStoppedException] and
-  /// imports nothing. A download that starts on Wi-Fi (no mobile-data
-  /// question asked) stops with [WifiLostException] if Wi-Fi goes.
+  /// imports nothing. Unless [network] allows mobile data, it stops with
+  /// [WifiLostException] if Wi-Fi goes.
   static Future<void> downloadAndImportUrl({
     required String url,
     required String asset,
     required DictionaryImporter importer,
+    required NetworkConsent network,
     int? requiredBytes,
     void Function(double progress)? onProgress,
   }) async {
@@ -74,7 +75,6 @@ class DictionaryDownloadService {
         onStopped: () => stopped = true,
       );
       report(0.0);
-      final wifiOnly = await isOnWifi();
       final tempDir = await getTemporaryDirectory();
       await _deleteLeftovers(tempDir);
       // Unique, so two downloads at once never share a file.
@@ -84,7 +84,7 @@ class DictionaryDownloadService {
       await withDownloadedFile(
         url,
         p.join(tempDir.path, fileName),
-        wifiOnly: wifiOnly,
+        network: network,
         onProgress: (fraction) => report(fraction * downloadShare),
         use: (path) async {
           report(downloadShare);

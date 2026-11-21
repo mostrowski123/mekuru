@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 import 'package:path/path.dart' as p;
@@ -65,7 +66,7 @@ void main() {
     await audio.remove();
     expect(await audio.clipFor('学校', 'がっこう'), isNull);
 
-    await audio.download();
+    await audio.download(network: NetworkConsent.mobileData);
     final found = await audio.clipFor('学校', 'がっこう');
     expect(found, clip);
 

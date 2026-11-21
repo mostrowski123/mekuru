@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/model_download_job.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
@@ -359,7 +360,11 @@ void main() {
 
     test('progress from the status file, then installed', () async {
       final fractions = <double>[];
-      final done = gemma.downloadModel(onProgress: fractions.add, every: every);
+      final done = gemma.downloadModel(
+        network: NetworkConsent.wifiOnly,
+        onProgress: (fraction, _) => fractions.add(fraction),
+        every: every,
+      );
       await workmanager.enqueued.future;
       final job = workmanager.registered.single;
       expect(job.name, gemmaDownloadWorkName);
@@ -391,7 +396,10 @@ void main() {
     });
 
     test('a failed job throws', () async {
-      final done = gemma.downloadModel(every: every);
+      final done = gemma.downloadModel(
+        network: NetworkConsent.wifiOnly,
+        every: every,
+      );
       await workmanager.enqueued.future;
       await jobWrites(
         const ServerDownloadWorkStatus(
@@ -403,7 +411,10 @@ void main() {
     });
 
     test('a job that ended without the model throws', () async {
-      final done = gemma.downloadModel(every: every);
+      final done = gemma.downloadModel(
+        network: NetworkConsent.wifiOnly,
+        every: every,
+      );
       await workmanager.enqueued.future;
       workmanager.scheduled = false;
       await expectLater(
@@ -419,7 +430,10 @@ void main() {
     });
 
     test('cancel stops following and cancels the job', () async {
-      final done = gemma.downloadModel(every: every);
+      final done = gemma.downloadModel(
+        network: NetworkConsent.wifiOnly,
+        every: every,
+      );
       await workmanager.enqueued.future;
       expect(gemma.cancelDownload(), isTrue);
       await expectLater(done, throwsA(isA<HttpException>()));
@@ -432,7 +446,10 @@ void main() {
 
     test('the user chose mobile data: any network', () async {
       mockWifiConnected(false);
-      final done = gemma.downloadModel(mobileData: true, every: every);
+      final done = gemma.downloadModel(
+        network: NetworkConsent.mobileData,
+        every: every,
+      );
       await workmanager.enqueued.future;
       expect(workmanager.registered.single.network, NetworkType.connected);
       gemma.cancelDownload();
@@ -443,16 +460,82 @@ void main() {
       // As when a relaunch follows a job that ended meanwhile: queued again
       // without asking, so never over mobile data.
       mockWifiConnected(false);
-      final done = gemma.downloadModel(every: every);
+      final done = gemma.downloadModel(
+        network: NetworkConsent.wifiOnly,
+        every: every,
+      );
       await workmanager.enqueued.future;
       expect(workmanager.registered.single.network, NetworkType.unmetered);
       gemma.cancelDownload();
       await expectLater(done, throwsA(isA<HttpException>()));
     });
 
+    /// Follows a [network] download until [waiting] says whether it waits for
+    /// Wi-Fi, after Wi-Fi went; the last answer.
+    Future<bool> waitingOffWifi(
+      NetworkConsent network, {
+      bool alreadyQueued = false,
+    }) async {
+      final waiting = <bool>[];
+      final done = gemma.downloadModel(
+        network: network,
+        onProgress: (_, waitingForWifi) => waiting.add(waitingForWifi),
+        every: every,
+      );
+      if (!alreadyQueued) await workmanager.enqueued.future;
+      await jobWrites(
+        ServerDownloadWorkStatus(
+          state: ServerDownloadWorkState.running,
+          received: gemmaModelFile.bytes ~/ 4,
+          total: gemmaModelFile.bytes,
+        ),
+      );
+      mockWifiConnected(false);
+      final seenFrom = waiting.length;
+      // About 20 polls.
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final last = waiting.skip(seenFrom).lastOrNull;
+      gemma.cancelDownload();
+      await expectLater(done, throwsA(isA<HttpException>()));
+      return last ?? fail('no progress reported');
+    }
+
+    test('queued for Wi-Fi only, it says it waits once Wi-Fi goes', () async {
+      expect(await waitingOffWifi(NetworkConsent.wifiOnly), isTrue);
+    });
+
+    test('allowed mobile data, it never says it waits for Wi-Fi', () async {
+      expect(await waitingOffWifi(NetworkConsent.mobileData), isFalse);
+    });
+
+    test('a relaunch following a job allowed mobile data does not say it '
+        'waits', () async {
+      // The job was queued with the user's OK, before Mekuru closed.
+      final first = gemma.downloadModel(
+        network: NetworkConsent.mobileData,
+        every: every,
+      );
+      await workmanager.enqueued.future;
+      gemma.cancelDownload();
+      await expectLater(first, throwsA(isA<HttpException>()));
+      workmanager.scheduled = true;
+      await jobWrites(
+        const ServerDownloadWorkStatus(state: ServerDownloadWorkState.running),
+      );
+
+      // Following asks nothing, so it passes Wi-Fi only.
+      expect(
+        await waitingOffWifi(NetworkConsent.wifiOnly, alreadyQueued: true),
+        isFalse,
+      );
+    });
+
     test('a cancel while the job is being queued still cancels it', () async {
       workmanager.holdEnqueue = Completer<void>();
-      final done = gemma.downloadModel(every: every);
+      final done = gemma.downloadModel(
+        network: NetworkConsent.wifiOnly,
+        every: every,
+      );
       await workmanager.enqueued.future;
       gemma.cancelDownload();
       workmanager.holdEnqueue!.complete();
@@ -474,7 +557,11 @@ void main() {
       addTearDown(() => messenger.setMockMethodCallHandler(saf, null));
       Directory(modelDir()).createSync(recursive: true);
       final fractions = <double>[];
-      final done = gemma.downloadModel(onProgress: fractions.add, every: every);
+      final done = gemma.downloadModel(
+        network: NetworkConsent.wifiOnly,
+        onProgress: (fraction, _) => fractions.add(fraction),
+        every: every,
+      );
       await Future<void>.delayed(const Duration(milliseconds: 50));
       expect(workmanager.registered, isEmpty);
       expect(File(p.join(modelDir(), 'status.json')).existsSync(), isFalse);
@@ -497,7 +584,10 @@ void main() {
     });
 
     test('WorkManager is asked about the job only now and then', () async {
-      final done = gemma.downloadModel(every: every);
+      final done = gemma.downloadModel(
+        network: NetworkConsent.wifiOnly,
+        every: every,
+      );
       await workmanager.enqueued.future;
       // About 20 polls.
       await Future<void>.delayed(const Duration(milliseconds: 100));

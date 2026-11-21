@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 import 'package:path/path.dart' as p;
@@ -87,7 +88,7 @@ void main() {
     late String oldClip;
 
     setUp(() async {
-      await audio.download();
+      await audio.download(network: NetworkConsent.mobileData);
       oldClip = (await audio.clipFile(_clip)).path;
       File(oldClip).writeAsBytesSync(const [9]);
       audio.dispose();
@@ -109,7 +110,7 @@ void main() {
       expect(Directory(dir).listSync(), isEmpty);
       expect(File(oldClip).existsSync(), isFalse);
 
-      await next.download();
+      await next.download(network: NetworkConsent.mobileData);
       expect(await next.clipFor('学校', 'がっこう'), _clip);
       expect(File((await next.clipFile(_clip)).path).readAsBytesSync(), [
         1,
@@ -132,7 +133,7 @@ void main() {
     expect(await audio.installed, isFalse);
     expect(await audio.clipFor('学校', 'がっこう'), isNull);
 
-    await audio.download();
+    await audio.download(network: NetworkConsent.mobileData);
 
     expect(await audio.installed, isTrue);
     expect(await audio.clipFor('学校', 'がっこう'), _clip);
@@ -174,7 +175,7 @@ void main() {
   );
 
   test('remove deletes the word list and the fetched clips', () async {
-    await audio.download();
+    await audio.download(network: NetworkConsent.mobileData);
     await audio.clipFor('学校', 'がっこう');
     final clip = await audio.clipFile(_clip);
 

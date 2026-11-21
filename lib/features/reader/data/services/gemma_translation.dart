@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart'
     show ModelFile, modelInstalledMarker;
@@ -100,16 +101,17 @@ class GemmaTranslation implements TranslationEngine {
   }
 
   @override
-  Future<void> download(String target) => downloadModel();
+  Future<void> download(String target, NetworkConsent network) =>
+      downloadModel(network: network);
 
   /// Downloads the model as a WorkManager job ([runGemmaDownloadWork]) and
   /// follows it until the model is installed ([ModelDownloadJob.run], which
   /// also says what happens without room or off Wi-Fi).
   Future<void> downloadModel({
-    void Function(double fraction)? onProgress,
-    bool mobileData = false,
+    required NetworkConsent network,
+    void Function(double fraction, bool waitingForWifi)? onProgress,
     @visibleForTesting Duration every = const Duration(seconds: 1),
-  }) => _job.run(onProgress: onProgress, mobileData: mobileData, every: every);
+  }) => _job.run(network: network, onProgress: onProgress, every: every);
 
   /// Stops the download; the next [downloadModel] resumes from its partial
   /// file. Always reports that something was asked to stop.

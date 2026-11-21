@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/device_memory.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
@@ -40,7 +41,7 @@ void main() {
       },
       download: (onProgress, _) {
         downloads++;
-        report = onProgress;
+        report = (fraction) => onProgress(fraction, false);
         // Made here, in the test's zone, so completing it reaches pump().
         downloadDone = Completer<void>();
         return downloadDone.future;
@@ -185,7 +186,11 @@ void main() {
     tester,
   ) async {
     final container = await pumpSettings(tester);
-    unawaited(container.read(gemmaDownloadProvider.notifier).start());
+    unawaited(
+      container
+          .read(gemmaDownloadProvider.notifier)
+          .start(NetworkConsent.wifiOnly),
+    );
     await tester.pump();
     report(0.42);
 
@@ -294,7 +299,11 @@ void main() {
     final container = await pumpSettings(tester);
     await pick(tester, 'High quality (2.6 GB)');
     // A download that started while the dialog was up.
-    unawaited(container.read(gemmaDownloadProvider.notifier).start());
+    unawaited(
+      container
+          .read(gemmaDownloadProvider.notifier)
+          .start(NetworkConsent.wifiOnly),
+    );
     await tester.pump();
 
     await tester.tap(find.text('Use Standard'));
@@ -307,7 +316,11 @@ void main() {
     tester,
   ) async {
     final container = await pumpSettings(tester);
-    unawaited(container.read(gemmaDownloadProvider.notifier).start());
+    unawaited(
+      container
+          .read(gemmaDownloadProvider.notifier)
+          .start(NetworkConsent.wifiOnly),
+    );
     await tester.pump();
     downloadDone.completeError(Exception('offline'));
     await tester.pump();

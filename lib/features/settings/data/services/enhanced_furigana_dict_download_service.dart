@@ -6,6 +6,7 @@ import 'package:convert/convert.dart' show AccumulatorSink;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
@@ -103,14 +104,16 @@ class EnhancedFuriganaDictDownloadService {
   /// covers the extraction.
   ///
   /// Throws an [HttpException] on network failures, a [FormatException]
-  /// when the SHA-256 doesn't match, or an [Exception] on archive
-  /// decoding failures.
+  /// when the SHA-256 doesn't match, an [Exception] on archive decoding
+  /// failures, or a [WifiLostException] when Wi-Fi goes and [network]
+  /// doesn't allow mobile data.
   static Future<void> downloadAndInstall({
+    required NetworkConsent network,
     void Function(double progress)? onProgress,
   }) async {
     final stopwatch = Stopwatch()..start();
     try {
-      await _downloadAndInstall(onProgress: onProgress);
+      await _downloadAndInstall(network: network, onProgress: onProgress);
       logUsage(
         'download.completed',
         attrs: {
@@ -125,6 +128,7 @@ class EnhancedFuriganaDictDownloadService {
   }
 
   static Future<void> _downloadAndInstall({
+    required NetworkConsent network,
     void Function(double progress)? onProgress,
   }) async {
     onProgress?.call(0.0);
@@ -143,6 +147,7 @@ class EnhancedFuriganaDictDownloadService {
       await withDownloadedFile(
         downloadUrl,
         p.join(tempDir.path, 'unidic_lite_download.tar.gz'),
+        network: network,
         onProgress: (p) => onProgress?.call(p * 0.85),
         use: (archivePath) async {
           onProgress?.call(0.85);

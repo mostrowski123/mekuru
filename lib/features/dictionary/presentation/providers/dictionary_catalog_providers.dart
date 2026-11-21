@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
@@ -38,11 +39,14 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
   @override
   CatalogDownloadState build() => const CatalogDownloadState();
 
-  /// Downloads and imports [entry]. Does nothing while a download runs or
-  /// once the dictionary is installed. [replaceJmdict] deletes JMdict
-  /// English once [entry] is installed, never before, so a failed download
-  /// leaves the user's dictionary in place.
-  Future<void> download({bool replaceJmdict = false}) async {
+  /// Downloads and imports [entry] over [network]. Does nothing while a
+  /// download runs or once the dictionary is installed. [replaceJmdict]
+  /// deletes JMdict English once [entry] is installed, never before, so a
+  /// failed download leaves the user's dictionary in place.
+  Future<void> download(
+    NetworkConsent network, {
+    bool replaceJmdict = false,
+  }) async {
     if (state.isDownloading || state.isDeleting) return;
     state = const CatalogDownloadState(isDownloading: true);
     try {
@@ -52,6 +56,7 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
           url: entry.url,
           asset: entry.name,
           importer: ref.read(dictionaryImporterProvider),
+          network: network,
           requiredBytes: (entry.requiredMb * 1e6).round(),
           onProgress: (progress) => state = CatalogDownloadState(
             isDownloading: true,

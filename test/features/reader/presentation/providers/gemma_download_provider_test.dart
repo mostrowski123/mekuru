@@ -43,9 +43,9 @@ void main() {
     download = Completer<void>();
     debugGemmaModelOps = (
       installed: () async => installed,
-      download: (onProgress, mobileData) {
-        report = onProgress;
-        mobileDataOks.add(mobileData);
+      download: (onProgress, network) {
+        report = (fraction) => onProgress(fraction, false);
+        mobileDataOks.add(network.allowsMobileData);
         return download.future;
       },
       delete: () async {
@@ -66,7 +66,9 @@ void main() {
 
   test('progress, then installed and chosen', () async {
     final c = container();
-    final done = c.read(gemmaDownloadProvider.notifier).start();
+    final done = c
+        .read(gemmaDownloadProvider.notifier)
+        .start(NetworkConsent.wifiOnly);
     await Future<void>.delayed(Duration.zero);
     report(0.45);
     expect(
@@ -87,7 +89,7 @@ void main() {
       final c = container();
       final notifier = c.read(gemmaDownloadProvider.notifier);
       await Future<void>.delayed(Duration.zero);
-      final first = notifier.start(mobileData: true);
+      final first = notifier.start(NetworkConsent.mobileData);
       await Future<void>.delayed(Duration.zero);
       download.completeError(const WifiLostException());
       await first;
@@ -106,14 +108,14 @@ void main() {
     final c = container();
     final notifier = c.read(gemmaDownloadProvider.notifier);
     chooseHigh(c);
-    var done = notifier.start();
+    var done = notifier.start(NetworkConsent.wifiOnly);
     download.completeError(const WifiLostException());
     await done;
     expect(choiceIn(c), TranslationModelChoice.standard);
 
     chooseHigh(c);
     download = Completer<void>();
-    done = notifier.start();
+    done = notifier.start(NetworkConsent.wifiOnly);
     await Future<void>.delayed(Duration.zero);
     notifier.cancel();
     await done;
@@ -153,7 +155,9 @@ void main() {
   test('losing Wi-Fi fails with the reason and can start again', () async {
     final c = ProviderContainer();
     addTearDown(c.dispose);
-    final done = c.read(gemmaDownloadProvider.notifier).start();
+    final done = c
+        .read(gemmaDownloadProvider.notifier)
+        .start(NetworkConsent.wifiOnly);
     download.completeError(const WifiLostException());
     await done;
     expect(
@@ -165,7 +169,9 @@ void main() {
       ),
     );
     download = Completer<void>();
-    unawaited(c.read(gemmaDownloadProvider.notifier).start());
+    unawaited(
+      c.read(gemmaDownloadProvider.notifier).start(NetworkConsent.wifiOnly),
+    );
     await Future<void>.delayed(Duration.zero);
     expect(c.read(gemmaDownloadProvider), isA<GemmaDownloading>());
   });
@@ -185,8 +191,12 @@ void main() {
       cancel: () => false,
       pending: () async => false,
     );
-    unawaited(c.read(gemmaDownloadProvider.notifier).start());
-    unawaited(c.read(gemmaDownloadProvider.notifier).start());
+    unawaited(
+      c.read(gemmaDownloadProvider.notifier).start(NetworkConsent.wifiOnly),
+    );
+    unawaited(
+      c.read(gemmaDownloadProvider.notifier).start(NetworkConsent.wifiOnly),
+    );
     await Future<void>.delayed(Duration.zero);
     expect(starts, 1);
   });
@@ -205,7 +215,9 @@ void main() {
       pending: () async => false,
     );
     final c = container();
-    unawaited(c.read(gemmaDownloadProvider.notifier).start());
+    unawaited(
+      c.read(gemmaDownloadProvider.notifier).start(NetworkConsent.wifiOnly),
+    );
     await Future<void>.delayed(Duration.zero);
     expect(starts, 0);
     expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
@@ -227,7 +239,9 @@ void main() {
       final c = ProviderContainer();
       addTearDown(c.dispose);
       c.read(gemmaDownloadProvider);
-      unawaited(c.read(gemmaDownloadProvider.notifier).start());
+      unawaited(
+        c.read(gemmaDownloadProvider.notifier).start(NetworkConsent.wifiOnly),
+      );
       check.complete(false);
       await Future<void>.delayed(Duration.zero);
       expect(c.read(gemmaDownloadProvider), isA<GemmaDownloading>());
@@ -252,14 +266,18 @@ void main() {
   test('cancel stops the download, which can start again', () async {
     final c = ProviderContainer();
     addTearDown(c.dispose);
-    final done = c.read(gemmaDownloadProvider.notifier).start();
+    final done = c
+        .read(gemmaDownloadProvider.notifier)
+        .start(NetworkConsent.wifiOnly);
     await Future<void>.delayed(Duration.zero);
     c.read(gemmaDownloadProvider.notifier).cancel();
     await done;
     expect(cancels, 1);
     expect(c.read(gemmaDownloadProvider), isA<GemmaNotInstalled>());
     download = Completer<void>();
-    unawaited(c.read(gemmaDownloadProvider.notifier).start());
+    unawaited(
+      c.read(gemmaDownloadProvider.notifier).start(NetworkConsent.wifiOnly),
+    );
     await Future<void>.delayed(Duration.zero);
     expect(c.read(gemmaDownloadProvider), isA<GemmaDownloading>());
   });
@@ -267,7 +285,9 @@ void main() {
   test('a cancelled download leaves its partial file to remove', () async {
     final c = ProviderContainer();
     addTearDown(c.dispose);
-    final done = c.read(gemmaDownloadProvider.notifier).start();
+    final done = c
+        .read(gemmaDownloadProvider.notifier)
+        .start(NetworkConsent.wifiOnly);
     await Future<void>.delayed(Duration.zero);
     hasFiles = true;
     c.read(gemmaDownloadProvider.notifier).cancel();
@@ -309,7 +329,7 @@ void main() {
     );
     final c = container();
     final notifier = c.read(gemmaDownloadProvider.notifier);
-    final done = notifier.start();
+    final done = notifier.start(NetworkConsent.wifiOnly);
     await Future<void>.delayed(Duration.zero);
     notifier.cancel();
     check.complete(false);
@@ -331,7 +351,9 @@ void main() {
   test('remove during a download is ignored', () async {
     final c = ProviderContainer();
     addTearDown(c.dispose);
-    unawaited(c.read(gemmaDownloadProvider.notifier).start());
+    unawaited(
+      c.read(gemmaDownloadProvider.notifier).start(NetworkConsent.wifiOnly),
+    );
     await Future<void>.delayed(Duration.zero);
     await c.read(gemmaDownloadProvider.notifier).remove();
     expect(deletes, 0);
@@ -349,7 +371,9 @@ void main() {
     );
     final c = ProviderContainer();
     addTearDown(c.dispose);
-    final done = c.read(gemmaDownloadProvider.notifier).start();
+    final done = c
+        .read(gemmaDownloadProvider.notifier)
+        .start(NetworkConsent.wifiOnly);
     await Future<void>.delayed(Duration.zero);
     c.read(gemmaDownloadProvider.notifier).cancel();
     download.completeError(const FileSystemException('verification'));
@@ -369,7 +393,7 @@ void main() {
     );
     final c = container();
     final notifier = c.read(gemmaDownloadProvider.notifier);
-    final first = notifier.start();
+    final first = notifier.start(NetworkConsent.wifiOnly);
     await Future<void>.delayed(Duration.zero);
     notifier.cancel();
     installed = true;
@@ -381,7 +405,7 @@ void main() {
     // The next download forgets that cancel.
     await notifier.remove();
     download = Completer<void>();
-    final second = notifier.start();
+    final second = notifier.start(NetworkConsent.wifiOnly);
     await Future<void>.delayed(Duration.zero);
     installed = true;
     download.complete();
@@ -401,7 +425,9 @@ void main() {
     );
     final c = ProviderContainer();
     addTearDown(c.dispose);
-    final first = c.read(gemmaDownloadProvider.notifier).start();
+    final first = c
+        .read(gemmaDownloadProvider.notifier)
+        .start(NetworkConsent.wifiOnly);
     await Future<void>.delayed(Duration.zero);
     c.read(gemmaDownloadProvider.notifier).cancel();
     download.complete();
@@ -409,7 +435,9 @@ void main() {
     expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
     await c.read(gemmaDownloadProvider.notifier).remove();
     download = Completer<void>();
-    final second = c.read(gemmaDownloadProvider.notifier).start();
+    final second = c
+        .read(gemmaDownloadProvider.notifier)
+        .start(NetworkConsent.wifiOnly);
     download.completeError(const WifiLostException());
     await second;
     expect(c.read(gemmaDownloadProvider), isA<GemmaDownloadFailed>());
@@ -432,7 +460,7 @@ void main() {
     // build()'s check is still running when a download finishes; start()'s
     // own check answers at once.
     slow = false;
-    final done = notifier.start();
+    final done = notifier.start(NetworkConsent.wifiOnly);
     download.complete();
     await done;
     check.complete(false);

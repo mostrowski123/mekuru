@@ -10,15 +10,18 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
-/// Downloads the word list if it's missing, asking first off Wi-Fi. False when
-/// the user declined.
+/// Downloads the word list if it's missing, after the mobile-data question
+/// ([askNetwork]). False when the user declined.
 Future<bool> ensureWordAudioList(BuildContext context, WordAudio audio) async {
   if (await audio.installed) return true;
   if (!context.mounted) return false;
-  final size = modelFilesSize([wordAudioIndexFile]);
-  final body = context.l10n.wordAudioMobileBody(size: size);
-  if (!await okToDownload(context, size: size, body: body)) return false;
-  await audio.download();
+  final network = await askNetwork(
+    context,
+    size: modelFilesSize([wordAudioIndexFile]),
+    body: (size) => context.l10n.wordAudioMobileBody(size: size),
+  );
+  if (network == null) return false;
+  await audio.download(network: network);
   return true;
 }
 
@@ -104,7 +107,7 @@ class _WordAudioButtonState extends ConsumerState<WordAudioButton> {
           content: Text(
             e is WordAudioPlaybackException
                 ? l10n.wordAudioFailed
-                : dictionaryDownloadError(l10n, e)!,
+                : downloadErrorWithoutButton(l10n, e),
           ),
           duration: const Duration(seconds: 4),
           behavior: SnackBarBehavior.floating,

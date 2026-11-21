@@ -997,6 +997,7 @@
   "catalogSizes": "ダウンロード {download}・デバイス上で約{installed}",
   "catalogMobileDataBody": "この辞書のサイズは約{size}です。モバイルデータ通信またはテザリングで接続しているため、ダウンロードでデータ通信量を消費する可能性があります。",
   "dictionaryDownloadWifiLost": "Wi-Fiが切断されたため、ダウンロードが停止しました。「ダウンロード」をタップしてもう一度お試しください。",
+  "downloadWifiLostShort": "Wi-Fiが切断されたため、ダウンロードが停止しました。",
   "downloadStoppedInBackground": "Mekuruがバックグラウンドにあったため、ダウンロードが停止しました。「ダウンロード」をタップして再開してください。",
   "catalogFindMoreTitle": "辞書をさらに探す",
   "catalogFindMoreBody": "これらのサイトでは、Mekuruで直接ダウンロードできないものも含め、さらに多くのYomitan辞書が紹介されています。辞書の.zipファイルをダウンロードし、「辞書の管理」の+ボタンからインポートしてください。",

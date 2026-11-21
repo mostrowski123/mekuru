@@ -361,7 +361,7 @@ class _GroupedDictionaryEntryHeaderState
       if (mapped && messenger.mounted) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(dictionaryDownloadError(l10n, e)!),
+            content: Text(downloadErrorWithoutButton(l10n, e)),
             duration: const Duration(seconds: 4),
             behavior: SnackBarBehavior.floating,
           ),

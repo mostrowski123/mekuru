@@ -4813,6 +4813,10 @@
   "@dictionaryDownloadWifiLost": {
     "description": "Shown under a dictionary download that started on Wi-Fi and stopped because the phone left Wi-Fi (mobile data, a hotspot or Low Data Mode). Download is the button label (commonDownload)."
   },
+  "downloadWifiLostShort": "The download stopped because Wi-Fi disconnected.",
+  "@downloadWifiLostShort": {
+    "description": "Shown when a download that started on Wi-Fi stopped because the phone left Wi-Fi, where there is no Download button to tap again: the lookup's speaker, the Anki button and the Sentence tab. The first sentence of dictionaryDownloadWifiLost and localOcrWifiLostIos."
+  },
   "downloadStoppedInBackground": "The download stopped because Mekuru was in the background. Tap Download to resume.",
   "@downloadStoppedInBackground": {
     "description": "Shown under a download (dictionary or translation model) that stopped because Android blocked Mekuru's network while it was in the background. Download is the button label (commonDownload)."

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/background_work.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
@@ -108,18 +109,19 @@ class WordAudioPack {
   /// Downloads the pack, following it until it is installed: a WorkManager job
   /// on Android, which also goes on after Mekuru closes, and in the app on iOS,
   /// which goes on after Mekuru is left ([BackgroundWork]). Mobile data only
-  /// when [mobileData] says the user agreed to it. A stopped download keeps its
-  /// partial file, and the next one resumes it.
+  /// when [network] allows it. A stopped download keeps its partial file, and
+  /// the next one resumes it. [onProgress] gets the fraction downloaded and
+  /// whether the Android job waits for Wi-Fi.
   Future<void> download({
-    void Function(double fraction)? onProgress,
-    bool mobileData = false,
+    required NetworkConsent network,
+    void Function(double fraction, bool waitingForWifi)? onProgress,
   }) => defaultTargetPlatform == TargetPlatform.iOS
-      ? _downloadInApp(onProgress, mobileData)
-      : _job.run(onProgress: onProgress, mobileData: mobileData);
+      ? _downloadInApp(onProgress, network)
+      : _job.run(network: network, onProgress: onProgress);
 
   Future<void> _downloadInApp(
-    void Function(double)? onProgress,
-    bool mobileData,
+    void Function(double, bool)? onProgress,
+    NetworkConsent network,
   ) async {
     final dir = await Directory(await _dir).create(recursive: true);
     await excludeFromIosBackup([dir.path]);
@@ -145,9 +147,9 @@ class WordAudioPack {
         dir,
         [file],
         client: client,
-        wifiOnly: !mobileData,
+        network: network,
         onProgress: (fraction) {
-          onProgress?.call(fraction);
+          onProgress?.call(fraction, false);
           BackgroundWork.instance.progress(_backgroundWorkId, fraction);
         },
       );

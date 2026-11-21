@@ -63,12 +63,12 @@ class MangaOcrIos {
 
   /// Downloads and verifies every file, then marks the pack installed.
   /// [onProgress] is the fraction of all bytes. An interrupted download keeps
-  /// its partial file, and the next one resumes it. With [wifiOnly] the
-  /// download stops with [WifiLostException] when the network stops being
-  /// Wi-Fi.
+  /// its partial file, and the next one resumes it. Unless [network] allows
+  /// mobile data, the download stops with [WifiLostException] when the
+  /// network stops being Wi-Fi.
   Future<void> download({
+    required NetworkConsent network,
     void Function(double)? onProgress,
-    bool wifiOnly = false,
   }) async {
     final dir = await (await _dir()).create(recursive: true);
     // Re-downloadable, so kept out of iCloud and device backups.
@@ -76,8 +76,8 @@ class MangaOcrIos {
     await downloadModelFiles(
       dir,
       mangaOcrIosModelFiles,
+      network: network,
       onProgress: onProgress,
-      wifiOnly: wifiOnly,
     );
   }
 

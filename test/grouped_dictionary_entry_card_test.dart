@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_mobile_service.dart';
 import 'package:mekuru/features/ankidroid/data/services/ankidroid_service.dart';
@@ -910,7 +911,7 @@ class _PendingTranslation implements TranslationEngine {
       TranslationStatus.installed;
 
   @override
-  Future<void> download(String target) async {}
+  Future<void> download(String target, NetworkConsent network) async {}
 
   @override
   Future<String> translate(String text, String target) => result;

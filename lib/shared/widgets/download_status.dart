@@ -207,6 +207,14 @@ String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
       _ => l10n.serverBrowseDownloadFailed(error: '$failure'),
     };
 
+/// [dictionaryDownloadError] for a download with no Download button to tap
+/// again (the lookup's speaker, the Anki button): a stop because Wi-Fi went
+/// says only that.
+String downloadErrorWithoutButton(AppLocalizations l10n, Object failure) =>
+    failure is WifiLostException
+    ? l10n.downloadWifiLostShort
+    : dictionaryDownloadError(l10n, failure)!;
+
 /// A failure a download worker recorded ([ServerDownloadWorkStatus.error]).
 String _recordedDownloadFailure(AppLocalizations l10n, String error) =>
     switch ((error, serverDownloadErrorStatus(error))) {

@@ -1,3 +1,4 @@
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
@@ -33,6 +34,7 @@ class JpdbFreqDownloadService {
   static Future<void> downloadAndImport({
     required DictionaryRepository repository,
     required DictionaryImporter importer,
+    required NetworkConsent network,
     void Function(double progress)? onProgress,
   }) async {
     if (await isImported(repository)) return;
@@ -40,6 +42,7 @@ class JpdbFreqDownloadService {
       url: downloadUrl,
       asset: 'jpdb_freq',
       importer: importer,
+      network: network,
       onProgress: onProgress,
     );
     // Ranking data, not a dictionary to look words up in.

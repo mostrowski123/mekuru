@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:path/path.dart' as p;
@@ -32,8 +33,9 @@ void main() {
   Directory installDir() => Directory(p.join(root.path, 'unidic-lite'));
   EnhancedFuriganaDictState tile() =>
       container.read(enhancedFuriganaDictProvider);
-  Future<void> download() =>
-      container.read(enhancedFuriganaDictProvider.notifier).download();
+  // Unwatched unless a test asks for Wi-Fi only, as a tap on Wi-Fi does.
+  Future<void> download([NetworkConsent network = NetworkConsent.mobileData]) =>
+      container.read(enhancedFuriganaDictProvider.notifier).download(network);
 
   /// No archive, extracted tar or dictionary file is left on disk.
   void expectNothingInstalled() {
@@ -116,18 +118,24 @@ void main() {
     expectNothingInstalled();
   });
 
-  test('a download started on Wi-Fi keeps going when Wi-Fi drops', () async {
-    // 7e changes this (bug 1): UniDic never watches the network, so the
-    // transfer runs to the end over mobile data and only the hash check
-    // stops it. The pause outlasts the 2 s Wi-Fi poll.
+  test('a download started on Wi-Fi stops when Wi-Fi drops, and says '
+      'why', () async {
+    // The pause outlasts the 2 s Wi-Fi poll.
     mockWifiConnected(true);
     http.handler = serveSlowly(archiveBytes, const Duration(seconds: 3));
 
-    final done = EnhancedFuriganaDictDownloadService.downloadAndInstall();
+    final done = download(NetworkConsent.wifiOnly);
     await Future<void>.delayed(const Duration(milliseconds: 300));
     mockWifiConnected(false);
+    await done;
 
-    await expectLater(done, throwsA(isA<FormatException>()));
+    expect(tile().isInstalled, isFalse);
+    expect(
+      tile().error,
+      'The download stopped because Wi-Fi disconnected. Tap Download to try '
+      'again.',
+    );
+    expectNothingInstalled();
   });
 
   test('a download starts with almost no free space', () async {

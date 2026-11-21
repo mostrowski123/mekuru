@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 
 void main() {
@@ -33,7 +34,7 @@ void main() {
         bytes: body.length,
         sha256: sha256.convert(body).toString(),
       ),
-    ]);
+    ], network: NetworkConsent.mobileData);
 
     expect(await modelFilesInstalled(dir), isTrue);
     expect(await File('${dir.path}/NDLmoji.yaml').readAsBytes(), body);
@@ -62,8 +63,8 @@ void main() {
     ];
 
     await Future.wait([
-      downloadModelFiles(dir, files),
-      downloadModelFiles(dir, files),
+      downloadModelFiles(dir, files, network: NetworkConsent.mobileData),
+      downloadModelFiles(dir, files, network: NetworkConsent.mobileData),
     ]);
 
     expect(requests, 1);

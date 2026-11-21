@@ -3654,6 +3654,9 @@ class AppLocalizationsJa extends AppLocalizations {
       'Wi-Fiが切断されたため、ダウンロードが停止しました。「ダウンロード」をタップしてもう一度お試しください。';
 
   @override
+  String get downloadWifiLostShort => 'Wi-Fiが切断されたため、ダウンロードが停止しました。';
+
+  @override
   String get downloadStoppedInBackground =>
       'Mekuruがバックグラウンドにあったため、ダウンロードが停止しました。「ダウンロード」をタップして再開してください。';
 

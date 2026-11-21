@@ -3746,6 +3746,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The download stopped because Wi-Fi disconnected. Tap Download to try again.';
 
   @override
+  String get downloadWifiLostShort =>
+      'The download stopped because Wi-Fi disconnected.';
+
+  @override
   String get downloadStoppedInBackground =>
       'The download stopped because Mekuru was in the background. Tap Download to resume.';
 

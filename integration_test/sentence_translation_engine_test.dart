@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 
 /// Android's Sentence tab engine end to end: Mozilla's models downloaded from
@@ -16,7 +17,7 @@ void main() {
         await deleteTranslation();
         expect(await translationStatus('en'), TranslationStatus.needsDownload);
 
-        await downloadTranslation('en');
+        await downloadTranslation('en', NetworkConsent.mobileData);
         expect(await translationStatus('en'), TranslationStatus.installed);
         expect(await translationStatus('es'), TranslationStatus.needsDownload);
 
@@ -24,7 +25,7 @@ void main() {
         final english = (await translateSentence('猫が好きです。', 'en')).text;
         expect(english.toLowerCase(), contains('cat'));
 
-        await downloadTranslation('es');
+        await downloadTranslation('es', NetworkConsent.mobileData);
         final spanish = (await translateSentence('猫が好きです。', 'es')).text;
         expect(spanish.toLowerCase(), contains('gato'));
 

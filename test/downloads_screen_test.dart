@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/device_memory.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
+import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
@@ -16,6 +18,24 @@ import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dar
 
 import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
+
+/// Standard translation, not downloaded, whose download fails with [error].
+class _FailingStandardTranslation implements TranslationEngine {
+  _FailingStandardTranslation(this.error);
+
+  final Object error;
+
+  @override
+  Future<TranslationStatus> status(String target) async =>
+      TranslationStatus.needsDownload;
+
+  @override
+  Future<void> download(String target, NetworkConsent network) async =>
+      throw error;
+
+  @override
+  Future<String> translate(String text, String target) async => '';
+}
 
 void main() {
   testWidgets('starter pack starts both downloads together', (tester) async {
@@ -203,6 +223,46 @@ void main() {
     expect(started, ['kanjidic', 'kanjivg', 'jpdb', 'enhanced_furigana']);
   });
 
+  testWidgets('the Japanese translation row: Wi-Fi going says what it '
+      'kept', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    mockWifiConnected(true);
+    debugDeviceLowOnMemory = false;
+    addTearDown(() => debugDeviceLowOnMemory = null);
+    debugTranslationEngine = _FailingStandardTranslation(
+      const WifiLostException(),
+    );
+    addTearDown(() => debugTranslationEngine = null);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fakeDownloadNotifierOverrides([]),
+        child: buildLocalizedTestApp(home: const DownloadsScreen()),
+      ),
+    );
+    await tester.pump();
+    const title = 'Japanese translation';
+    await tester.scrollUntilVisible(find.text(title), 200);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(
+        of: find.widgetWithText(ListTile, title),
+        matching: find.text('Download'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The partial files are kept, so the next tap continues them.
+    expect(find.textContaining('try again'), findsNothing);
+    expect(
+      find.text(
+        'The download stopped because Wi-Fi disconnected. Finished files are '
+        'kept. Tap Download to continue.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   group('high-quality translation row', () {
     const title = 'High-quality translation (Gemma 4)';
     var installed = false;
@@ -212,6 +272,7 @@ void main() {
     final calls = <String>[];
     late Completer<void> downloadDone;
     late void Function(double fraction) report;
+    late void Function(double fraction, bool waitingForWifi) progress;
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
@@ -225,7 +286,8 @@ void main() {
         installed: () async => installed,
         download: (onProgress, _) {
           calls.add('download');
-          report = onProgress;
+          progress = onProgress;
+          report = (fraction) => onProgress(fraction, false);
           // Made here, in the test's zone, so completing it reaches pump().
           downloadDone = Completer<void>();
           return downloadDone.future;
@@ -362,6 +424,32 @@ void main() {
         container.read(translationModelProvider),
         TranslationModelChoice.high,
       );
+    });
+
+    testWidgets('a job waiting for Wi-Fi says so and offers Cancel', (
+      tester,
+    ) async {
+      mockWifiConnected(true);
+      await pumpDownloads(tester);
+
+      await tester.tap(inRow(find.text('Download')));
+      await tester.pumpAndSettle();
+      progress(0.3, true);
+      await tester.pump();
+
+      expect(
+        inRow(
+          find.text('Waiting for Wi-Fi. Cancel and resume to use mobile data.'),
+        ),
+        findsOneWidget,
+      );
+      expect(inRow(find.byTooltip('Cancel')), findsOneWidget);
+
+      progress(0.4, false);
+      await tester.pump();
+      expect(inRow(find.text('High quality: downloading 40%')), findsOneWidget);
+      downloadDone.complete();
+      await tester.pumpAndSettle();
     });
 
     testWidgets('a failed download shows the error and offers Download again', (

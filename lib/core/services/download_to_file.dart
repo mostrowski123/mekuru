@@ -93,15 +93,16 @@ Future<void> downloadToFile(
 /// Download [url] to [destinationPath], hand the path to [use], and delete
 /// the file afterwards — also when the download or [use] throws.
 ///
-/// With [wifiOnly], the download stops with [WifiLostException] once the
-/// network is no longer Wi-Fi ([whileOnWifi]); [use] is not watched.
+/// Unless [network] allows mobile data, the download stops with
+/// [WifiLostException] once the network is no longer Wi-Fi ([whileOnWifi]);
+/// [use] is not watched.
 ///
 /// Returns whatever [use] returns.
 Future<T> withDownloadedFile<T>(
   String url,
   String destinationPath, {
+  required NetworkConsent network,
   void Function(double progress)? onProgress,
-  bool wifiOnly = false,
   required Future<T> Function(String path) use,
 }) async {
   try {
@@ -112,7 +113,9 @@ Future<T> withDownloadedFile<T>(
       onProgress: onProgress,
       client: client,
     );
-    await (wifiOnly ? whileOnWifi(client, download) : download());
+    await (network.allowsMobileData
+        ? download()
+        : whileOnWifi(client, download));
     return await use(destinationPath);
   } finally {
     try {

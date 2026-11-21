@@ -98,6 +98,7 @@ void main() {
     await DictionaryDownloadService.downloadAndImportUrl(
       url: urlFor('/JMnedict.zip'),
       asset: 'jmnedict',
+      network: NetworkConsent.mobileData,
       importer: DictionaryImporter(repo),
       onProgress: progress.add,
     );
@@ -121,6 +122,7 @@ void main() {
       DictionaryDownloadService.downloadAndImportUrl(
         url: urlFor('/missing.zip'),
         asset: 'missing',
+        network: NetworkConsent.mobileData,
         importer: DictionaryImporter(repo),
       ),
       throwsA(isA<HttpException>()),
@@ -146,6 +148,7 @@ void main() {
       DictionaryDownloadService.downloadAndImportUrl(
         url: urlFor('/JMnedict.zip'),
         asset: 'jmnedict',
+        network: NetworkConsent.mobileData,
         importer: DictionaryImporter(repo),
         requiredBytes: 100000000,
       ),
@@ -173,6 +176,7 @@ void main() {
     await DictionaryDownloadService.downloadAndImportUrl(
       url: urlFor('/JMnedict.zip'),
       asset: 'jmnedict',
+      network: NetworkConsent.mobileData,
       importer: DictionaryImporter(DictionaryRepository(db)),
     );
 
@@ -189,6 +193,7 @@ void main() {
     final download = DictionaryDownloadService.downloadAndImportUrl(
       url: urlFor('/slow.zip'),
       asset: 'jmnedict',
+      network: NetworkConsent.wifiOnly,
       importer: DictionaryImporter(repo),
     );
     await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -218,6 +223,7 @@ void main() {
     final download = DictionaryDownloadService.downloadAndImportUrl(
       url: urlFor('/JMnedict.zip'),
       asset: 'jmnedict',
+      network: NetworkConsent.mobileData,
       importer: DictionaryImporter(repo),
     );
     // iOS ends the background task before the download gets going.
@@ -250,6 +256,7 @@ void main() {
     await DictionaryDownloadService.downloadAndImportUrl(
       url: urlFor('/JMnedict.zip'),
       asset: 'jmnedict',
+      network: NetworkConsent.mobileData,
       importer: _StopAfterImport(
         repo,
         () => messenger.handlePlatformMessage(

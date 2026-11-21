@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
-import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
@@ -59,29 +58,26 @@ Future<void> installStarterPack(BuildContext context) async {
   final needJpdb = !container.read(_jpdb).isImported;
   if (!needDictionary && !needJpdb) return;
 
-  // Only the mobile-data question needs the caller still on screen.
-  if (!await isOnWifi()) {
-    if (!context.mounted) return;
-    final mb =
-        (needDictionary ? CatalogDictionary.jitendex.downloadMb.ceil() : 0) +
-        (needJpdb ? _jpdbMb : 0);
-    final size = '$mb MB';
-    final confirmed = await confirmMobileData(
-      context,
-      size: size,
-      body: context.l10n.downloadsStarterPackMobileDataBody(size: size),
-    );
-    if (!confirmed) return;
-  }
+  // One question for both, from the caller still on screen.
+  if (!context.mounted) return;
+  final mb =
+      (needDictionary ? CatalogDictionary.jitendex.downloadMb.ceil() : 0) +
+      (needJpdb ? _jpdbMb : 0);
+  final network = await askNetwork(
+    context,
+    size: '$mb MB',
+    body: (size) => context.l10n.downloadsStarterPackMobileDataBody(size: size),
+  );
+  if (network == null) return;
 
   if (needDictionary) {
     unawaited(
       container
           .read(catalogDownloadProvider(CatalogDictionary.jitendex).notifier)
-          .download(),
+          .download(network),
     );
   }
-  if (needJpdb) unawaited(jpdb.download());
+  if (needJpdb) unawaited(jpdb.download(network));
 }
 
 /// One-tap install of the recommended dictionaries: Jitendex plus JPDB word

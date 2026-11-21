@@ -7,6 +7,7 @@ import 'package:convert/convert.dart' show hex;
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
@@ -74,17 +75,18 @@ class WordAudio {
   /// The address of a clip. AnkiMobile downloads a field that links to it.
   String clipUrl(String id) => '$base/clips/${id.substring(0, 2)}/$id.mp3';
 
+  /// Unless [network] allows mobile data, the download stops when Wi-Fi goes.
   Future<void> download({
+    required NetworkConsent network,
     void Function(double)? onProgress,
-    bool wifiOnly = false,
   }) async {
     final dir = await Directory(await _dir).create(recursive: true);
     await excludeFromIosBackup([dir.path]);
     await downloadModelFiles(
       dir,
       [indexFile],
+      network: network,
       onProgress: onProgress,
-      wifiOnly: wifiOnly,
     );
     _installed = true;
   }

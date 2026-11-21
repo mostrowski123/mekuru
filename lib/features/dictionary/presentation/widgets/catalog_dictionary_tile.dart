@@ -11,6 +11,7 @@ import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 /// One downloadable dictionary: what it is, its sizes and license, and a
@@ -116,11 +117,15 @@ class CatalogDictionaryTile extends ConsumerWidget {
         ? await _askReplaceJmdict(context)
         : false;
     if (replaceJmdict == null || !context.mounted) return;
-    await askThenDownload(
+    AppHaptics.light();
+    final network = await askNetwork(
       context,
-      _megabytes(entry.downloadMb),
-      () => notifier.download(replaceJmdict: replaceJmdict),
+      size: _megabytes(entry.downloadMb),
+      body: (size) => context.l10n.catalogMobileDataBody(size: size),
     );
+    if (network != null) {
+      unawaited(notifier.download(network, replaceJmdict: replaceJmdict));
+    }
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref, int id) async {

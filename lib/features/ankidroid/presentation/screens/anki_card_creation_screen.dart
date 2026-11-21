@@ -140,7 +140,7 @@ class _AnkiCardCreationScreenState
       );
     } catch (e) {
       logFailure('word_audio.anki_lookup_failed', e);
-      if (mounted) _error = dictionaryDownloadError(context.l10n, e);
+      if (mounted) _error = downloadErrorWithoutButton(context.l10n, e);
     }
   }
 

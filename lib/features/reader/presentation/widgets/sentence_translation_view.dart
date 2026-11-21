@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
@@ -142,20 +143,19 @@ class _SentenceTranslationViewState
   Future<void> _download() async {
     final target = _target!;
     if (!await confirmTranslationMemory(context) || !mounted) return;
-    final size = translationDownloadSize(target);
-    if (!_isIos &&
-        !await okToDownload(
-          context,
-          size: size,
-          body: context.l10n.translationMobileDataBody(size: size),
-        )) {
-      return;
-    }
-    if (!mounted) return;
+    // iOS asks nothing: Apple's own prompt gets the language packs.
+    final network = _isIos
+        ? NetworkConsent.wifiOnly
+        : await askNetwork(
+            context,
+            size: translationDownloadSize(target),
+            body: (size) => context.l10n.translationMobileDataBody(size: size),
+          );
+    if (network == null || !mounted) return;
     setState(() => _downloading = true);
     Object? failure;
     try {
-      await downloadTranslation(target);
+      await downloadTranslation(target, network);
       logUsage('translation.model_downloaded');
     } catch (e) {
       logFailure('translation.download_failed', e);
@@ -311,7 +311,10 @@ class _SentenceTranslationViewState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.sentenceTranslationFailed,
+              // The tab has no Download button for a stop to point to.
+              snapshot.error is WifiLostException
+                  ? l10n.downloadWifiLostShort
+                  : l10n.sentenceTranslationFailed,
               style: muted?.copyWith(color: theme.colorScheme.error),
             ),
             TextButton(onPressed: _reload, child: Text(l10n.commonRetry)),

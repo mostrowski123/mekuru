@@ -124,7 +124,7 @@ class LocalMangaOcr {
   static Future<OcrModelState> modelState() async => available
       ? OcrModelState(await _map('modelState'))
       : const OcrModelState({'supported': false});
-  static Future<void> download({bool allowMetered = false}) =>
+  static Future<void> download({required bool allowMetered}) =>
       channel.invokeMethod('download', {'allowMetered': allowMetered});
   static Future<bool> isWifiConnected() async =>
       await channel.invokeMethod<bool>('isWifiConnected') ?? false;

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
@@ -146,7 +147,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(download.notifier).download(replaceJmdict: true);
+      await container
+          .read(download.notifier)
+          .download(NetworkConsent.mobileData, replaceJmdict: true);
       final left = await repo.getAllDictionaries();
       return ([for (final d in left) d.name], container.read(download));
     }

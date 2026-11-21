@@ -3767,6 +3767,9 @@ class AppLocalizationsId extends AppLocalizations {
       'Unduhan berhenti karena Wi-Fi terputus. Ketuk Unduh untuk mencoba lagi.';
 
   @override
+  String get downloadWifiLostShort => 'Unduhan berhenti karena Wi-Fi terputus.';
+
+  @override
   String get downloadStoppedInBackground =>
       'Unduhan berhenti karena Mekuru berjalan di latar belakang. Ketuk Unduh untuk melanjutkan.';
 

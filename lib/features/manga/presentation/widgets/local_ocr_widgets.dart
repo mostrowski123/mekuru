@@ -450,18 +450,13 @@ class _LocalOcrDownloadTileState extends ConsumerState<LocalOcrDownloadTile> {
   }
 
   Future<void> _download(OcrModelState model) => _act(() async {
-    final wifi = await LocalMangaOcr.isWifiConnected();
-    if (!mounted) return;
-    if (!wifi) {
-      final size = _bytes(model.totalBytes);
-      final confirmed = await confirmMobileData(
-        context,
-        size: size,
-        body: context.l10n.localOcrMobileDownloadBody(size: size),
-      );
-      if (!confirmed || !mounted) return;
-    }
-    await LocalMangaOcr.download(allowMetered: !wifi);
+    final network = await askNetwork(
+      context,
+      size: _bytes(model.totalBytes),
+      body: (size) => context.l10n.localOcrMobileDownloadBody(size: size),
+    );
+    if (network == null || !mounted) return;
+    await LocalMangaOcr.download(allowMetered: network.allowsMobileData);
   });
 
   @override

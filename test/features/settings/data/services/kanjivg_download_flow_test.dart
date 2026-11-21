@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
@@ -34,8 +35,9 @@ void main() {
   File archive() => inRoot('kanjivg_download.zip');
   File marker() => inRoot(p.join('kanjivg', '.kanjivg_complete'));
   KanjiVgState tile() => container.read(kanjiVgProvider);
-  Future<void> download() =>
-      container.read(kanjiVgProvider.notifier).download();
+  // Unwatched unless a test asks for Wi-Fi only, as a tap on Wi-Fi does.
+  Future<void> download([NetworkConsent network = NetworkConsent.mobileData]) =>
+      container.read(kanjiVgProvider.notifier).download(network);
 
   setUpAll(() async => http = await LoopbackHttp.start());
   tearDownAll(() => http.close());
@@ -113,19 +115,24 @@ void main() {
     expect(marker().existsSync(), isFalse);
   });
 
-  test('a download started on Wi-Fi keeps going when Wi-Fi drops', () async {
-    // 7e changes this (bug 1): KanjiVG never watches the network, so it
-    // goes on over mobile data. The pause outlasts the 2 s Wi-Fi poll.
+  test('a download started on Wi-Fi stops when Wi-Fi drops, and says '
+      'why', () async {
+    // The pause outlasts the 2 s Wi-Fi poll.
     mockWifiConnected(true);
     http.handler = serveSlowly(zip, const Duration(seconds: 3));
 
-    final done = download();
+    final done = download(NetworkConsent.wifiOnly);
     await Future<void>.delayed(const Duration(milliseconds: 300));
     mockWifiConnected(false);
     await done;
 
-    expect(tile().isDownloaded, isTrue);
-    expect(tile().error, isNull);
-    expect(marker().existsSync(), isTrue);
+    expect(tile().isDownloaded, isFalse);
+    expect(
+      tile().error,
+      'The download stopped because Wi-Fi disconnected. Tap Download to try '
+      'again.',
+    );
+    expect(marker().existsSync(), isFalse);
+    expect(archive().existsSync(), isFalse);
   });
 }

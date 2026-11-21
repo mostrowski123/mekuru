@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
@@ -19,8 +20,11 @@ class GemmaNotInstalled extends GemmaDownloadState {
 }
 
 class GemmaDownloading extends GemmaDownloadState {
-  const GemmaDownloading(this.fraction);
+  const GemmaDownloading(this.fraction, {this.waitingForWifi = false});
   final double fraction;
+
+  /// The Android job waits for Wi-Fi: it may not use mobile data.
+  final bool waitingForWifi;
 }
 
 class GemmaInstalled extends GemmaDownloadState {
@@ -34,10 +38,10 @@ class GemmaDownloadFailed extends GemmaDownloadState {
 
 typedef GemmaModelOps = ({
   Future<bool> Function() installed,
-  // Mobile data only when [mobileData] says the user agreed to it.
+  // Mobile data only when [network] allows it.
   Future<void> Function(
-    void Function(double fraction) onProgress,
-    bool mobileData,
+    void Function(double fraction, bool waitingForWifi) onProgress,
+    NetworkConsent network,
   )
   download,
   Future<void> Function() delete,
@@ -57,8 +61,8 @@ GemmaModelOps get _ops =>
       installed: () async =>
           await GemmaTranslation.instance.status('en') ==
           TranslationStatus.installed,
-      download: (onProgress, mobileData) => GemmaTranslation.instance
-          .downloadModel(onProgress: onProgress, mobileData: mobileData),
+      download: (onProgress, network) => GemmaTranslation.instance
+          .downloadModel(network: network, onProgress: onProgress),
       delete: GemmaTranslation.instance.delete,
       hasFiles: GemmaTranslation.instance.hasFiles,
       cancel: GemmaTranslation.instance.cancelDownload,
@@ -96,8 +100,9 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
     if (epoch != _epoch || state is GemmaDownloading) return;
     // The download job outlives the app: follow it, or take the model it
     // installed while Mekuru was closed, choosing High like any download.
+    // Following asks nothing, so it never adds mobile data.
     if (pending) {
-      unawaited(start());
+      unawaited(start(NetworkConsent.wifiOnly));
       return;
     }
     _settle(
@@ -124,9 +129,8 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
 
   /// Downloads the model, or only reports it installed when its files are
   /// still there (Standard keeps them, and build()'s check may not have
-  /// answered yet). Over mobile data only with [mobileData], which the user
-  /// agreed to: following a job after a relaunch never adds it.
-  Future<void> start({bool mobileData = false}) async {
+  /// answered yet). Over mobile data only when [network] allows it.
+  Future<void> start(NetworkConsent network) async {
     if (state is GemmaDownloading) return;
     _cancelling = false;
     _cancelRequested = false;
@@ -144,8 +148,9 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
         return;
       }
       await _ops.download(
-        (fraction) => state = GemmaDownloading(fraction),
-        mobileData,
+        (fraction, waitingForWifi) =>
+            state = GemmaDownloading(fraction, waitingForWifi: waitingForWifi),
+        network,
       );
       logUsage('translation.high_quality_downloaded');
       _settle(const GemmaInstalled(), select: !_cancelRequested);

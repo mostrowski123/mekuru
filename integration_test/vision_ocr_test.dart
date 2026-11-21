@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/data/services/vision_block_grouping.dart';
@@ -218,7 +219,9 @@ void main() {
       final readings = await tester.runAsync(() async {
         // About 200 MB from Hugging Face the first time on a simulator.
         if (!await MangaOcrIos.instance.installed) {
-          await MangaOcrIos.instance.download();
+          await MangaOcrIos.instance.download(
+            network: NetworkConsent.mobileData,
+          );
         }
         final page = await recognizePageWithVision(bytes, 'page.png');
         final direct = await MangaOcrIos.instance.readBlocks(bytes, [
@@ -273,7 +276,9 @@ void main() {
       ];
       final readings = await tester.runAsync(() async {
         if (!await MangaOcrIos.instance.installed) {
-          await MangaOcrIos.instance.download();
+          await MangaOcrIos.instance.download(
+            network: NetworkConsent.mobileData,
+          );
         }
         return Future.wait([
           for (var i = 0; i < 3; i++) ...[

@@ -4,6 +4,7 @@ import 'dart:ui' show Locale;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/mozilla_translation.dart';
@@ -18,9 +19,10 @@ enum TranslationStatus { installed, needsDownload, unsupported }
 abstract interface class TranslationEngine {
   Future<TranslationStatus> status(String target);
 
-  /// Gets what [target] needs. On iOS this shows Apple's own prompt, which
-  /// the user may decline: check [status] afterwards.
-  Future<void> download(String target);
+  /// Gets what [target] needs over [network]. On iOS this shows Apple's own
+  /// prompt, which the user may decline (check [status] afterwards) and
+  /// which decides the network itself.
+  Future<void> download(String target, NetworkConsent network);
 
   Future<String> translate(String text, String target);
 }
@@ -69,7 +71,8 @@ Future<TranslationStatus> translationStatus(
 }
 
 /// The Standard engine's download (Gemma's goes through its notifier).
-Future<void> downloadTranslation(String target) => _engine.download(target);
+Future<void> downloadTranslation(String target, NetworkConsent network) =>
+    _engine.download(target, network);
 
 /// Android only: iOS language packs belong to the system.
 Future<void> deleteTranslation() => MozillaTranslation.instance.delete();
@@ -219,7 +222,7 @@ class _AppleTranslation implements TranslationEngine {
   }
 
   @override
-  Future<void> download(String target) =>
+  Future<void> download(String target, NetworkConsent network) =>
       _channel.invokeMethod<void>('download', {'target': target});
 
   @override

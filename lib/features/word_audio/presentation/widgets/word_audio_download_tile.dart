@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
-import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
@@ -60,22 +59,18 @@ class WordAudioPackTile extends ConsumerWidget {
         ],
       ),
     );
-    if (agreed != true) return;
-    final onWifi = await isOnWifi();
-    if (!onWifi) {
-      if (!context.mounted) return;
-      final ok = await confirmMobileData(
-        context,
-        size: size,
-        body: l10n.wordAudioPackMobileBody(size: size),
-      );
-      if (!ok) return;
-    }
+    if (agreed != true || !context.mounted) return;
+    final network = await askNetwork(
+      context,
+      size: size,
+      body: (size) => l10n.wordAudioPackMobileBody(size: size),
+    );
+    if (network == null) return;
     // Android's job can fail with Mekuru closed, and says so in a notification.
     if (defaultTargetPlatform == TargetPlatform.android) {
       unawaited(const FullBackupJobChannel().requestNotificationPermission());
     }
-    unawaited(notifier.start(mobileData: !onWifi));
+    unawaited(notifier.start(network));
   }
 
   @override
@@ -86,7 +81,10 @@ class WordAudioPackTile extends ConsumerWidget {
     final notifier = ref.read(wordAudioPackProvider.notifier);
     final size = ref.watch(wordAudioProvider).pack.downloadSize;
     final fraction = state.fraction;
-    final error = dictionaryDownloadError(l, state.error);
+    // The pack keeps its partial file, so a Wi-Fi stop (iOS) says so.
+    final error = state.error == null
+        ? null
+        : modelDownloadFailureReason(l, state.error!);
     final removeButton = IconButton(
       tooltip: l.commonRemove,
       icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
@@ -106,7 +104,9 @@ class WordAudioPackTile extends ConsumerWidget {
           ),
           title: Text(l.wordAudioPackTitle),
           subtitle: Text(
-            fraction != null
+            state.waitingForWifi
+                ? l.localOcrWaitingWifi
+                : fraction != null
                 ? l.downloadsDownloadingPercent(
                     percent: (fraction * 100).floor(),
                   )

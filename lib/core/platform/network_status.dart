@@ -38,6 +38,21 @@ Future<bool> isOnVpn() async {
   }
 }
 
+/// The network one add-on download may use: the answer to the mobile-data
+/// question (`askNetwork`, lib/shared/widgets/mobile_data_dialog.dart).
+/// Every add-on download takes one, so none starts without the question.
+enum NetworkConsent {
+  /// On Wi-Fi, so nothing was asked: the download stops when Wi-Fi goes
+  /// ([whileOnWifi]), or, as an Android download job, waits for it.
+  wifiOnly,
+
+  /// The user tapped Download in the question: this one download, its
+  /// retries and its job across relaunches included, may use mobile data.
+  mobileData;
+
+  bool get allowsMobileData => this == mobileData;
+}
+
 /// A transfer stopped by [whileOnWifi] because the network stopped being
 /// Wi-Fi.
 class WifiLostException implements UserSideFailure {

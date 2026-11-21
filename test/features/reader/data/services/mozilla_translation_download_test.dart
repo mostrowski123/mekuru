@@ -73,7 +73,7 @@ void main() {
   test('a target whose pairs are installed fetches nothing', () async {
     markInstalled('ja-en');
 
-    await engine.download('en');
+    await engine.download('en', NetworkConsent.mobileData);
 
     expect(http.requests, isEmpty);
     expect(await engine.status('en'), TranslationStatus.installed);
@@ -84,7 +84,7 @@ void main() {
     markInstalled('ja-en');
 
     await expectLater(
-      engine.download('es'),
+      engine.download('es', NetworkConsent.mobileData),
       throwsA(
         isA<ServerDownloadHttpException>().having(
           (e) => e.statusCode,
@@ -102,7 +102,10 @@ void main() {
       'and the next download resumes it', () async {
     http.handler = cutOff(List.filled(1000, 7), length: firstBytes);
 
-    await expectLater(engine.download('en'), throwsA(isA<HttpException>()));
+    await expectLater(
+      engine.download('en', NetworkConsent.mobileData),
+      throwsA(isA<HttpException>()),
+    );
 
     expect(await engine.status('en'), TranslationStatus.needsDownload);
     expect(partOf('ja-en').lengthSync(), 1000);
@@ -113,7 +116,7 @@ void main() {
 
     http.handler = notFound;
     await expectLater(
-      engine.download('en'),
+      engine.download('en', NetworkConsent.mobileData),
       throwsA(isA<ServerDownloadHttpException>()),
     );
     expect(http.requests, [firstFileOf('ja-en'), firstFileOf('ja-en')]);
@@ -125,7 +128,7 @@ void main() {
     http.handler = serve(List.filled(10, 7));
 
     await expectLater(
-      engine.download('en'),
+      engine.download('en', NetworkConsent.mobileData),
       throwsA(isA<ModelVerificationException>()),
     );
 
@@ -140,8 +143,8 @@ void main() {
       await notFound(request);
     };
 
-    final first = engine.download('en');
-    final second = engine.download('en');
+    final first = engine.download('en', NetworkConsent.mobileData);
+    final second = engine.download('en', NetworkConsent.mobileData);
     while (http.requests.isEmpty) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
@@ -160,7 +163,7 @@ void main() {
     mockWifiConnected(true);
     http.handler = stall(List.filled(1000, 7), length: firstBytes);
 
-    final download = engine.download('en');
+    final download = engine.download('en', NetworkConsent.wifiOnly);
     await Future<void>.delayed(const Duration(milliseconds: 300));
     mockWifiConnected(false);
 

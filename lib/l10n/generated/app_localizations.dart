@@ -6133,6 +6133,12 @@ abstract class AppLocalizations {
   /// **'The download stopped because Wi-Fi disconnected. Tap Download to try again.'**
   String get dictionaryDownloadWifiLost;
 
+  /// Shown when a download that started on Wi-Fi stopped because the phone left Wi-Fi, where there is no Download button to tap again: the lookup's speaker, the Anki button and the Sentence tab. The first sentence of dictionaryDownloadWifiLost and localOcrWifiLostIos.
+  ///
+  /// In en, this message translates to:
+  /// **'The download stopped because Wi-Fi disconnected.'**
+  String get downloadWifiLostShort;
+
   /// Shown under a download (dictionary or translation model) that stopped because Android blocked Mekuru's network while it was in the background. Download is the button label (commonDownload).
   ///
   /// In en, this message translates to:

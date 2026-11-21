@@ -154,6 +154,15 @@ final _rows = [
     },
   ),
   _Row(
+    'NetworkConsent.mobileData, a download allowed mobile data unasked',
+    _matching(r'\bNetworkConsent\.mobileData\b'),
+    'askNetwork(), the one mobile-data question, for the consent '
+        '(lib/shared/widgets/mobile_data_dialog.dart)',
+    allowed: {
+      'lib/shared/widgets/mobile_data_dialog.dart': (1, 'askNetwork itself'),
+    },
+  ),
+  _Row(
     'Image.file or FileImage',
     _matching(r'\bImage\.file\(|\bFileImage\('),
     'fileImage(), which also shows AVIF on iOS and Android 7-11 '

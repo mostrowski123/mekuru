@@ -1,4 +1,6 @@
 // ignore_for_file: discarded_futures
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
@@ -120,12 +122,10 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
               subtitle: Text(ctx.l10n.downloadsJmdictStandardSubtitle),
               onTap: () {
                 Navigator.of(ctx).pop();
-                askThenDownload(
-                  context,
+                _download(
+                  container,
+                  YomitanDictType.jmdictEnglish,
                   _jmdictSize,
-                  () => container
-                      .read(_jmdict.notifier)
-                      .download(YomitanDictType.jmdictEnglish),
                 );
               },
             ),
@@ -135,12 +135,10 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
               subtitle: Text(ctx.l10n.downloadsJmdictExamplesSubtitle),
               onTap: () {
                 Navigator.of(ctx).pop();
-                askThenDownload(
-                  context,
+                _download(
+                  container,
+                  YomitanDictType.jmdictEnglishWithExamples,
                   _jmdictExamplesSize,
-                  () => container
-                      .read(_jmdict.notifier)
-                      .download(YomitanDictType.jmdictEnglishWithExamples),
                 );
               },
             ),
@@ -148,6 +146,25 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
         ),
       ),
     );
+  }
+
+  /// The mobile-data question for [variant], a zip of [size], then its
+  /// download. [container] is resolved before: the tile can unmount while
+  /// the question is up.
+  Future<void> _download(
+    ProviderContainer container,
+    YomitanDictType variant,
+    String size,
+  ) async {
+    AppHaptics.light();
+    final network = await askNetwork(
+      context,
+      size: size,
+      body: (size) => context.l10n.catalogMobileDataBody(size: size),
+    );
+    if (network != null) {
+      unawaited(container.read(_jmdict.notifier).download(network, variant));
+    }
   }
 
   void _confirmDelete(BuildContext context) {

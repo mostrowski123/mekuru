@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/settings/data/services/kanjivg_download_service.dart';
+import 'package:mekuru/main.dart' show appL10n;
 
 /// State for KanjiVG asset management.
 class KanjiVgState {
@@ -59,8 +61,8 @@ class KanjiVgNotifier extends Notifier<KanjiVgState> {
     }
   }
 
-  /// Download and extract KanjiVG SVGs from GitHub.
-  Future<void> download() async {
+  /// Download and extract KanjiVG SVGs from GitHub over [network].
+  Future<void> download(NetworkConsent network) async {
     if (state.isDownloading) return;
     state = state.copyWith(
       isDownloading: true,
@@ -71,6 +73,7 @@ class KanjiVgNotifier extends Notifier<KanjiVgState> {
 
     try {
       final count = await KanjiVgDownloadService.downloadAndExtract(
+        network: network,
         onProgress: (progress) {
           state = state.copyWith(progress: progress);
         },
@@ -84,7 +87,10 @@ class KanjiVgNotifier extends Notifier<KanjiVgState> {
       state = KanjiVgState(
         isDownloaded: state.isDownloaded,
         fileCount: state.fileCount,
-        error: 'Download failed: $e',
+        // The archive goes with the stop, so the next tap starts over.
+        error: e is WifiLostException
+            ? appL10n().dictionaryDownloadWifiLost
+            : 'Download failed: $e',
       );
     }
   }

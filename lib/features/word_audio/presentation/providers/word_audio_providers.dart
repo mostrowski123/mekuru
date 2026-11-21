@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 
@@ -10,11 +11,13 @@ final wordAudioProvider = Provider<WordAudio>((ref) {
   return audio;
 });
 
-/// Where the offline pack stands. [fraction] is set while it downloads.
+/// Where the offline pack stands. [fraction] is set while it downloads, and
+/// [waitingForWifi] while its Android job waits for Wi-Fi.
 typedef WordAudioPackState = ({
   bool installed,
   bool hasFiles,
   double? fraction,
+  bool waitingForWifi,
   Object? error,
 });
 
@@ -22,11 +25,13 @@ WordAudioPackState _packState({
   bool installed = false,
   bool hasFiles = false,
   double? fraction,
+  bool waitingForWifi = false,
   Object? error,
 }) => (
   installed: installed,
   hasFiles: hasFiles,
   fraction: fraction,
+  waitingForWifi: waitingForWifi,
   error: error,
 );
 
@@ -61,28 +66,31 @@ class WordAudioPackNotifier extends Notifier<WordAudioPackState> {
       }
     }();
     if (epoch != _epoch || state.fraction != null) return;
-    // The Android job outlives the app: follow it.
+    // The Android job outlives the app: follow it. Following asks nothing, so
+    // it never adds mobile data.
     if (pending) {
-      unawaited(start());
+      unawaited(start(NetworkConsent.wifiOnly));
       return;
     }
     state = _packState(installed: installed, hasFiles: hasFiles);
   }
 
-  /// Downloads the pack and the word list that goes with it. Over mobile data
-  /// only with [mobileData], which the user agreed to: following a job after a
-  /// relaunch never adds it.
-  Future<void> start({bool mobileData = false}) async {
+  /// Downloads the pack and the word list that goes with it, both over mobile
+  /// data only when [network] allows it.
+  Future<void> start(NetworkConsent network) async {
     if (state.fraction != null) return;
     _cancelling = false;
     final audio = ref.read(wordAudioProvider);
     state = _packState(hasFiles: true, fraction: 0);
     try {
-      if (!await audio.installed) await audio.download(wifiOnly: !mobileData);
+      if (!await audio.installed) await audio.download(network: network);
       await audio.pack.download(
-        mobileData: mobileData,
-        onProgress: (fraction) =>
-            state = _packState(hasFiles: true, fraction: fraction),
+        network: network,
+        onProgress: (fraction, waitingForWifi) => state = _packState(
+          hasFiles: true,
+          fraction: fraction,
+          waitingForWifi: waitingForWifi,
+        ),
       );
       logUsage('word_audio.pack_downloaded');
       state = _packState(installed: true, hasFiles: true);

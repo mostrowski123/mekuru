@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
@@ -100,6 +101,9 @@ _Shown Function(ProviderContainer, [void Function(_Shown)?]) _watch<S>(
 
 final _jmdict = fixedDictionaryProvider(FixedDictionary.jmdict);
 final _kanjidic = fixedDictionaryProvider(FixedDictionary.kanjidic);
+
+/// No Wi-Fi watch, as these downloads had before the consent was passed in.
+const _unwatched = NetworkConsent.mobileData;
 final _jpdb = fixedDictionaryProvider(FixedDictionary.jpdb);
 
 final _tiles = [
@@ -113,8 +117,9 @@ final _tiles = [
     deleted: 'JMdict deleted.',
     watch: _watch(_jmdict, _view),
     checkStatus: (c) => c.read(_jmdict.notifier).checkStatus(),
-    download: (c) =>
-        c.read(_jmdict.notifier).download(YomitanDictType.jmdictEnglish),
+    download: (c) => c
+        .read(_jmdict.notifier)
+        .download(_unwatched, YomitanDictType.jmdictEnglish),
     delete: (c) => c.read(_jmdict.notifier).delete(),
   ),
   _Tile(
@@ -127,7 +132,7 @@ final _tiles = [
     deleted: 'KANJIDIC deleted.',
     watch: _watch(_kanjidic, _view),
     checkStatus: (c) => c.read(_kanjidic.notifier).checkStatus(),
-    download: (c) => c.read(_kanjidic.notifier).download(),
+    download: (c) => c.read(_kanjidic.notifier).download(_unwatched),
     delete: (c) => c.read(_kanjidic.notifier).delete(),
   ),
   _Tile(
@@ -140,7 +145,7 @@ final _tiles = [
     deleted: 'Frequency dictionary deleted.',
     watch: _watch(_jpdb, _view),
     checkStatus: (c) => c.read(_jpdb.notifier).checkStatus(),
-    download: (c) => c.read(_jpdb.notifier).download(),
+    download: (c) => c.read(_jpdb.notifier).download(_unwatched),
     delete: (c) => c.read(_jpdb.notifier).delete(),
   ),
 ];
@@ -358,7 +363,7 @@ void main() {
 
     await container
         .read(_jmdict.notifier)
-        .download(YomitanDictType.jmdictEnglishWithExamples);
+        .download(_unwatched, YomitanDictType.jmdictEnglishWithExamples);
 
     expect(http.requests, [
       'github.com/yomidevs/jmdict-yomitan/releases/latest/download/'

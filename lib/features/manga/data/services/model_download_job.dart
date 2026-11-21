@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
@@ -16,6 +17,9 @@ import 'package:workmanager/workmanager.dart';
 
 /// Status error of a model file that failed its sha256 check.
 const modelJobVerificationError = 'verification';
+
+/// In a [ModelDownloadJob]'s folder while its queued job may use mobile data.
+const _mobileDataMarker = 'mobile_data_ok';
 
 /// One large pinned file downloaded by a WorkManager job on Android
 /// ([runModelDownloadWork]), which goes on when Mekuru is left or closed.
@@ -53,11 +57,12 @@ class ModelDownloadJob {
   /// installed; joins the job when it is already queued or running. Without
   /// room for the rest of the file and [extraBytes] it fails first with
   /// [InsufficientSpaceException]. The job uses mobile data only when
-  /// [mobileData] says the user agreed to it; otherwise it waits for unmetered
-  /// Wi-Fi, also when it is queued again for a download already under way.
+  /// [network] allows it; otherwise it waits for unmetered Wi-Fi, also when it
+  /// is queued again for a download already under way. [onProgress] gets the
+  /// fraction downloaded and whether the job waits for Wi-Fi.
   Future<void> run({
-    void Function(double fraction)? onProgress,
-    bool mobileData = false,
+    required NetworkConsent network,
+    void Function(double fraction, bool waitingForWifi)? onProgress,
     Duration every = const Duration(seconds: 1),
   }) async {
     // Before any await, so a cancel that comes while an earlier one ends
@@ -76,6 +81,9 @@ class ModelDownloadJob {
     final folder = await (await dir()).create(recursive: true);
     final work = ServerDownloadWorkDir(folder.path);
     final marker = File(p.join(folder.path, modelInstalledMarker));
+    // Present while the queued job may use mobile data, so following it
+    // after a relaunch knows whether it waits for Wi-Fi.
+    final mobileDataOk = File(p.join(folder.path, _mobileDataMarker));
     if (await marker.exists()) return work.deleteStatus();
     // Already queued or running (Mekuru restarted mid-download): only
     // follow it. Its partial file and status are the job's.
@@ -88,6 +96,11 @@ class ModelDownloadJob {
         throw InsufficientSpaceException(neededBytes: needed - free);
       }
       await stopIfCancelled();
+      if (network.allowsMobileData) {
+        await mobileDataOk.create();
+      } else if (await mobileDataOk.exists()) {
+        await mobileDataOk.delete();
+      }
       await work.writeStatus(
         ServerDownloadWorkStatus(
           state: ServerDownloadWorkState.running,
@@ -101,7 +114,7 @@ class ModelDownloadJob {
         inputData: {'dir': folder.path},
         tag: workName,
         constraints: Constraints(
-          networkType: mobileData
+          networkType: network.allowsMobileData
               ? NetworkType.connected
               : NetworkType.unmetered,
         ),
@@ -114,6 +127,9 @@ class ModelDownloadJob {
         existingWorkPolicy: ExistingWorkPolicy.keep,
       );
     }
+    // Off Wi-Fi, a job that may not use mobile data waits for it (its
+    // WorkManager constraint), and says so.
+    final waitsForWifi = !await mobileDataOk.exists();
     for (var poll = 0; ; poll++) {
       await stopIfCancelled();
       // WorkManager answers on Android's main thread, so it is asked every
@@ -123,7 +139,7 @@ class ModelDownloadJob {
       final status = await work.readStatus();
       if (status?.state == ServerDownloadWorkState.done ||
           (!scheduled && await marker.exists())) {
-        onProgress?.call(1);
+        onProgress?.call(1, false);
         // Followed to the end, so the next launch doesn't take it for one
         // that finished unseen ([pending]).
         return work.deleteStatus();
@@ -139,7 +155,10 @@ class ModelDownloadJob {
         );
       }
       if (status != null) {
-        onProgress?.call(status.received / file.bytes);
+        onProgress?.call(
+          status.received / file.bytes,
+          waitsForWifi && !await isOnWifi(),
+        );
       }
       await Future<void>.delayed(every);
     }

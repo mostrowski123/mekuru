@@ -280,14 +280,13 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
 
   Future<void> _download() async {
     if (!await confirmTranslationMemory(context) || !mounted) return;
-    final size = translationDownloadSize(_target!);
-    if (await okToDownload(
+    final network = await askNetwork(
       context,
-      size: size,
-      body: context.l10n.translationMobileDataBody(size: size),
-    )) {
-      await _run(() => downloadTranslation(_target!));
-    }
+      size: translationDownloadSize(_target!),
+      body: (size) => context.l10n.translationMobileDataBody(size: size),
+    );
+    if (network == null || !mounted) return;
+    await _run(() => downloadTranslation(_target!, network));
   }
 
   @override
@@ -298,7 +297,10 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
     }
     final l = context.l10n;
     final theme = Theme.of(context);
-    final error = dictionaryDownloadError(l, _error);
+    // The pairs keep their partial files, so a Wi-Fi stop says so.
+    final error = _error == null
+        ? null
+        : modelDownloadFailureReason(l, _error!);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -403,6 +405,7 @@ class _HighQualityTranslationTileState
           ),
           title: Text(l.downloadsHighQualityTitle),
           subtitle: Text(switch (state) {
+            GemmaDownloading(waitingForWifi: true) => l.localOcrWaitingWifi,
             GemmaDownloading(:final fraction) =>
               l.translationHighQualityDownloading(
                 percent: '${(fraction * 100).floor()}',
@@ -496,14 +499,18 @@ class _KanjiVgTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () => askThenDownload(
-        context,
-        _kanjiVgSize,
-        ref.read(kanjiVgProvider.notifier).download,
-        body: context.l10n.downloadsKanjiStrokeOrderMobileDataBody(
+      onPressed: () async {
+        AppHaptics.light();
+        // Read now: the tile can unmount while the question is up.
+        final download = ref.read(kanjiVgProvider.notifier).download;
+        final network = await askNetwork(
+          context,
           size: _kanjiVgSize,
-        ),
-      ),
+          body: (size) =>
+              context.l10n.downloadsKanjiStrokeOrderMobileDataBody(size: size),
+        );
+        if (network != null) unawaited(download(network));
+      },
       child: Text(context.l10n.commonDownload),
     );
   }
@@ -579,11 +586,17 @@ class _JpdbFreqTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () => askThenDownload(
-        context,
-        _jpdbSize,
-        ref.read(_jpdb.notifier).download,
-      ),
+      onPressed: () async {
+        AppHaptics.light();
+        // Read now: the tile can unmount while the question is up.
+        final download = ref.read(_jpdb.notifier).download;
+        final network = await askNetwork(
+          context,
+          size: _jpdbSize,
+          body: (size) => context.l10n.catalogMobileDataBody(size: size),
+        );
+        if (network != null) unawaited(download(network));
+      },
       child: Text(context.l10n.commonDownload),
     );
   }
@@ -662,11 +675,17 @@ class _KanjidicTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () => askThenDownload(
-        context,
-        _kanjidicSize,
-        ref.read(_kanjidic.notifier).download,
-      ),
+      onPressed: () async {
+        AppHaptics.light();
+        // Read now: the tile can unmount while the question is up.
+        final download = ref.read(_kanjidic.notifier).download;
+        final network = await askNetwork(
+          context,
+          size: _kanjidicSize,
+          body: (size) => context.l10n.catalogMobileDataBody(size: size),
+        );
+        if (network != null) unawaited(download(network));
+      },
       child: Text(context.l10n.commonDownload),
     );
   }
@@ -758,11 +777,19 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
     return FilledButton.tonal(
       onPressed: lowRamMode
           ? null
-          : () => askThenDownload(
-              context,
-              _enhancedFuriganaSize,
-              ref.read(enhancedFuriganaDictProvider.notifier).download,
-            ),
+          : () async {
+              AppHaptics.light();
+              // Read now: the tile can unmount while the question is up.
+              final download = ref
+                  .read(enhancedFuriganaDictProvider.notifier)
+                  .download;
+              final network = await askNetwork(
+                context,
+                size: _enhancedFuriganaSize,
+                body: (size) => context.l10n.catalogMobileDataBody(size: size),
+              );
+              if (network != null) unawaited(download(network));
+            },
       child: Text(context.l10n.commonDownload),
     );
   }

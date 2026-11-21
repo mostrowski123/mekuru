@@ -43,21 +43,22 @@ Future<bool> modelFilesInstalled(Directory dir) =>
 /// Downloads and verifies every one of [files] into the existing [dir], then
 /// marks it installed. [onProgress] is the fraction of all bytes. An
 /// interrupted download keeps its partial file, and the next one resumes it.
-/// With [wifiOnly] the download stops with [WifiLostException] when the
-/// network stops being Wi-Fi. Closing [client] with `force: true` stops it too;
-/// it serves one file, and is closed when that ends.
+/// Unless [network] allows mobile data, the download stops with
+/// [WifiLostException] when the network stops being Wi-Fi. Closing [client]
+/// with `force: true` stops it too; it serves one file, and is closed when
+/// that ends.
 Future<void> downloadModelFiles(
   Directory dir,
   List<ModelFile> files, {
+  required NetworkConsent network,
   void Function(double)? onProgress,
-  bool wifiOnly = false,
   HttpClient? client,
 }) => _downloads[dir.path] ??=
     _download(
       dir,
       files,
+      network: network,
       onProgress: onProgress,
-      wifiOnly: wifiOnly,
       client: client,
     ).whenComplete(() {
       _downloads.remove(dir.path);
@@ -72,8 +73,8 @@ final _downloads = <String, Future<void>>{};
 Future<void> _download(
   Directory dir,
   List<ModelFile> files, {
+  required NetworkConsent network,
   void Function(double)? onProgress,
-  bool wifiOnly = false,
   HttpClient? client,
 }) async {
   final total = files.fold<int>(0, (a, f) => a + f.bytes);
@@ -104,7 +105,9 @@ Future<void> _download(
         onProgress: (received, _) => report(done + received),
       );
       try {
-        await (wifiOnly ? whileOnWifi(fileClient, fetch) : fetch());
+        await (network.allowsMobileData
+            ? fetch()
+            : whileOnWifi(fileClient, fetch));
       } finally {
         fileClient.close(force: true);
       }

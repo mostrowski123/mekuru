@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
@@ -65,7 +66,7 @@ void main() {
 
   test('a Gemma download cancelled before its job is queued stops', () async {
     final gemma = GemmaTranslation.instance;
-    final download = gemma.downloadModel();
+    final download = gemma.downloadModel(network: NetworkConsent.wifiOnly);
     expect(gemma.cancelDownload(), isTrue);
 
     // Here a queued job would throw: there is no WorkManager.
@@ -87,7 +88,7 @@ void main() {
       ..writeAsBytesSync(List.filled(1000, 0));
 
     await expectLater(
-      GemmaTranslation.instance.downloadModel(),
+      GemmaTranslation.instance.downloadModel(network: NetworkConsent.wifiOnly),
       throwsA(
         isA<InsufficientSpaceException>().having(
           (e) => e.neededBytes,

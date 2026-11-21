@@ -44,20 +44,20 @@ class NdlTextModel {
 
   /// Downloads and verifies every file, then marks the model installed.
   /// [onProgress] is the fraction of all bytes. An interrupted download keeps
-  /// its partial file, and the next one resumes it. With [wifiOnly] the
-  /// download stops with [WifiLostException] when the network stops being
-  /// Wi-Fi.
+  /// its partial file, and the next one resumes it. Unless [network] allows
+  /// mobile data, the download stops with [WifiLostException] when the
+  /// network stops being Wi-Fi.
   Future<void> download({
+    required NetworkConsent network,
     void Function(double)? onProgress,
-    bool wifiOnly = false,
   }) async {
     final dir = await Directory(await path).create(recursive: true);
     await excludeFromIosBackup([dir.path]);
     await downloadModelFiles(
       dir,
       ndlTextModelFiles,
+      network: network,
       onProgress: onProgress,
-      wifiOnly: wifiOnly,
     );
   }
 

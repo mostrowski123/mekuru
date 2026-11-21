@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
@@ -28,9 +29,11 @@ class _FakeWordAudio extends WordAudio {
   String? afterDownload;
   Object? lookupError;
   Object? playError;
+  Object? downloadError;
   Completer<void>? playGate;
   Completer<void>? downloadGate;
   final plays = <String>[];
+  final networks = <NetworkConsent>[];
   var downloads = 0;
 
   @override
@@ -48,11 +51,13 @@ class _FakeWordAudio extends WordAudio {
 
   @override
   Future<void> download({
+    required NetworkConsent network,
     void Function(double)? onProgress,
-    bool wifiOnly = false,
   }) async {
+    networks.add(network);
     downloads++;
     await downloadGate?.future;
+    if (downloadError case final error?) throw error;
     isInstalled = true;
     clip = afterDownload;
   }
@@ -200,6 +205,24 @@ void main() {
     expect(speaker, findsOneWidget);
   });
 
+  // The speaker, the Anki button and the card have no Download button to tap
+  // again, so the stop is said without one.
+  const wifiLost = 'The download stopped because Wi-Fi disconnected.';
+
+  testWidgets('Wi-Fi going mid-download: a snackbar says so', (tester) async {
+    final audio = _FakeWordAudio(isInstalled: false)
+      ..downloadError = const WifiLostException();
+    await pump(tester, audio);
+
+    await tester.tap(speaker);
+    await tester.pump();
+
+    // Started on Wi-Fi without asking, so it stopped when Wi-Fi went.
+    expect(audio.networks, [NetworkConsent.wifiOnly]);
+    expect(find.textContaining('Tap Download'), findsNothing);
+    expect(find.text(wifiLost), findsOneWidget);
+  });
+
   testWidgets('a spinner while it fetches', (tester) async {
     final audio = _FakeWordAudio(clip: 'abc')..playGate = Completer<void>();
     await pump(tester, audio);
@@ -326,6 +349,35 @@ void main() {
         expect(find.text('[sound:mekuru_abc.mp3]'), findsNothing);
       },
     );
+
+    testWidgets('a mapped field: Wi-Fi going mid-download says so', (
+      tester,
+    ) async {
+      final audio = _FakeWordAudio(isInstalled: false)
+        ..downloadError = const WifiLostException();
+      await pump(tester, audio, ankiFields: mapped);
+
+      await tester.tap(anki);
+      await tester.pump();
+
+      expect(audio.downloads, 1);
+      expect(find.textContaining('Tap Download'), findsNothing);
+      expect(find.text(wifiLost), findsOneWidget);
+    });
+
+    testWidgets('mapped from the card: Wi-Fi going mid-download says so', (
+      tester,
+    ) async {
+      final audio = _FakeWordAudio(isInstalled: false)
+        ..downloadError = const WifiLostException();
+      await mapWordAudioFromCard(tester, audio);
+      await tester.pumpAndSettle();
+
+      expect(audio.downloads, 1);
+      expect(find.textContaining('Tap Download'), findsNothing);
+      expect(find.text(wifiLost), findsOneWidget);
+      expect(find.text('Add to Anki'), findsOneWidget);
+    });
 
     testWidgets('mapped from the card: a failure shows and keeps the card', (
       tester,

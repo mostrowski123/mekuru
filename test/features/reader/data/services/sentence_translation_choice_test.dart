@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 
@@ -16,7 +17,7 @@ class _Engine implements TranslationEngine {
   @override
   Future<TranslationStatus> status(String target) async => state;
   @override
-  Future<void> download(String target) async {}
+  Future<void> download(String target, NetworkConsent network) async {}
   @override
   Future<String> translate(String text, String target) async {
     calls++;

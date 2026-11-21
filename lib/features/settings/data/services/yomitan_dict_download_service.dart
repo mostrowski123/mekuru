@@ -1,4 +1,5 @@
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart'
     show jmdictYomitanReleases;
@@ -97,6 +98,7 @@ class YomitanDictDownloadService {
     required YomitanDictType type,
     required DictionaryRepository repository,
     required DictionaryImporter importer,
+    required NetworkConsent network,
     void Function(double progress)? onProgress,
   }) async {
     if (await isImported(type, repository)) return;
@@ -104,6 +106,7 @@ class YomitanDictDownloadService {
       url: assetUrl(type),
       asset: 'yomitan_collection',
       importer: importer,
+      network: network,
       onProgress: onProgress,
     );
   }

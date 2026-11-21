@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/main.dart' show appL10n;
 
 class EnhancedFuriganaDictState {
   final bool isInstalled;
@@ -52,7 +54,7 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
     }
   }
 
-  Future<void> download() async {
+  Future<void> download(NetworkConsent network) async {
     if (state.isDownloading) return;
     state = state.copyWith(
       isDownloading: true,
@@ -63,6 +65,7 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
 
     try {
       await EnhancedFuriganaDictDownloadService.downloadAndInstall(
+        network: network,
         onProgress: (p) {
           state = state.copyWith(progress: p);
         },
@@ -80,7 +83,10 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
     } catch (e) {
       state = EnhancedFuriganaDictState(
         isInstalled: state.isInstalled,
-        error: 'Download failed: $e',
+        // The archive goes with the stop, so the next tap starts over.
+        error: e is WifiLostException
+            ? appL10n().dictionaryDownloadWifiLost
+            : 'Download failed: $e',
       );
     }
   }

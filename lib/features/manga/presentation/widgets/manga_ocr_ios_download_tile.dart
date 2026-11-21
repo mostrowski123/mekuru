@@ -86,8 +86,8 @@ class ModelDownloadTile extends StatefulWidget {
   final List<ModelFile> files;
   final Future<bool> Function() installed;
   final Future<void> Function({
+    required NetworkConsent network,
     void Function(double)? onProgress,
-    bool wifiOnly,
   })
   download;
   final Future<void> Function() remove;
@@ -126,31 +126,24 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
   }
 
   Future<void> _download() async {
-    // Busy before the Wi-Fi check, so a second tap can't start a second
+    // Busy before the question, so a second tap can't start a second
     // download.
     setState(() {
       _progress = 0;
       _error = null;
     });
-    final wifi = await isOnWifi();
-    if (!wifi) {
-      if (!mounted) return;
-      final confirmed = await confirmMobileData(
-        context,
-        size: _size,
-        body: widget.mobileDataBody(_size),
-      );
-      if (!mounted) return;
-      if (!confirmed) {
-        setState(() => _progress = null);
-        return;
-      }
+    final network = await askNetwork(
+      context,
+      size: _size,
+      body: widget.mobileDataBody,
+    );
+    if (network == null) {
+      if (mounted) setState(() => _progress = null);
+      return;
     }
     try {
-      // Started on Wi-Fi without asking, so it must not go on over mobile
-      // data.
       await widget.download(
-        wifiOnly: wifi,
+        network: network,
         onProgress: (f) {
           if (mounted) setState(() => _progress = f);
         },

@@ -125,9 +125,9 @@ void main() {
               description: 'Optional test model.',
               files: ndlTextModelFiles,
               installed: () async => installed,
-              download: ({onProgress, wifiOnly = false}) {
+              download: ({required NetworkConsent network, onProgress}) {
                 report = onProgress;
-                wifiOnlyCalls.add(wifiOnly);
+                wifiOnlyCalls.add(network == NetworkConsent.wifiOnly);
                 return finish.future;
               },
               remove: () async {

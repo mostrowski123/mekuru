@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
@@ -34,7 +35,10 @@ void main() {
         // Like the notifier's callback, this one holds something an isolate
         // can't take (a Future); it must never reach one.
         final notSendable = Completer<void>();
-        await gemma.downloadModel(onProgress: (_) => notSendable.isCompleted);
+        await gemma.downloadModel(
+          network: NetworkConsent.mobileData,
+          onProgress: (_, _) => notSendable.isCompleted,
+        );
         debugPrint('Gemma download + verify: ${clock.elapsed}');
         expect(await gemma.status('en'), TranslationStatus.installed);
 
@@ -73,7 +77,7 @@ void main() {
         // A model that won't load falls back to Standard. The INSTALLED
         // marker stays, so Gemma is still tried first. A new sentence:
         // the last one is cached.
-        await downloadTranslation('en');
+        await downloadTranslation('en', NetworkConsent.mobileData);
         await model.rename('${model.path}.moved');
         await gemma.close();
         expect(await gemma.status('en'), TranslationStatus.installed);

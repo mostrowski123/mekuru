@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:path/path.dart' as p;
 
@@ -194,6 +195,7 @@ void main() {
         final length = await withDownloadedFile(
           urlFor('/asset'),
           destination,
+          network: NetworkConsent.mobileData,
           use: (path) async {
             expect(path, destination);
             return File(path).lengthSync();
@@ -212,6 +214,7 @@ void main() {
         withDownloadedFile<void>(
           urlFor('/asset'),
           destination,
+          network: NetworkConsent.mobileData,
           use: (_) async => throw StateError('use failed'),
         ),
         throwsStateError,
@@ -227,6 +230,7 @@ void main() {
         withDownloadedFile<void>(
           urlFor('/missing'),
           destination,
+          network: NetworkConsent.mobileData,
           use: (_) async => useCalled = true,
         ),
         throwsA(isA<HttpException>()),

@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/device_memory.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
@@ -22,6 +23,7 @@ import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'shared/fake_download_notifiers.dart' show mockWifiConnected;
 import 'test_app.dart';
 
 DictionaryEntry _buildEntry({
@@ -105,6 +107,9 @@ class _FakeTranslationEngine implements TranslationEngine {
   final downloaded = <String>[];
   bool fails = false;
 
+  /// What a download throws, once recorded.
+  Object? downloadError;
+
   /// Holds every translation until completed.
   Completer<void>? hold;
 
@@ -112,7 +117,10 @@ class _FakeTranslationEngine implements TranslationEngine {
   Future<TranslationStatus> status(String target) async => state;
 
   @override
-  Future<void> download(String target) async => downloaded.add(target);
+  Future<void> download(String target, NetworkConsent network) async {
+    downloaded.add(target);
+    if (downloadError case final error?) throw error;
+  }
 
   @override
   Future<String> translate(String text, String target) async {
@@ -137,8 +145,8 @@ _FakeTranslationEngine _fakeTranslation({
 _FakeTranslationEngine _fakeHighQuality({
   TranslationStatus state = TranslationStatus.installed,
   Future<void> Function(
-    void Function(double fraction) onProgress,
-    bool mobileData,
+    void Function(double fraction, bool waitingForWifi) onProgress,
+    NetworkConsent network,
   )?
   download,
 }) {
@@ -748,6 +756,32 @@ void main() {
       expect(engine.downloaded, isEmpty);
     });
 
+    testWidgets('a download stopped by Wi-Fi going says so', (tester) async {
+      // Started on Wi-Fi, so nothing was asked; the tab has no Download
+      // button to tap again, only Retry.
+      mockWifiConnected(true);
+      debugDeviceLowOnMemory = false;
+      addTearDown(() => debugDeviceLowOnMemory = null);
+      final engine = _fakeTranslation(state: TranslationStatus.needsDownload)
+        ..downloadError = const WifiLostException();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '豆を食べる。'),
+      );
+      await openSentenceTab(tester);
+
+      await tester.tap(find.text('Download'));
+      await tester.pumpAndSettle();
+
+      expect(engine.downloaded, ['en']);
+      expect(find.text("Couldn't translate this sentence."), findsNothing);
+      expect(
+        find.text('The download stopped because Wi-Fi disconnected.'),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
     testWidgets('a new word opens on the Dictionary tab', (tester) async {
       _fakeTranslation();
       await pumpSheet(
@@ -845,7 +879,7 @@ void main() {
       unawaited(
         ProviderScope.containerOf(
           tester.element(find.byType(LookupSheet)),
-        ).read(gemmaDownloadProvider.notifier).start(),
+        ).read(gemmaDownloadProvider.notifier).start(NetworkConsent.wifiOnly),
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));

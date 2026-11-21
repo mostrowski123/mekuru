@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -107,8 +108,10 @@ class FakeFixedDictionaryNotifier extends FixedDictionaryNotifier {
   Future<void> checkStatus() async {}
 
   @override
-  Future<void> download([YomitanDictType? variant]) async =>
-      onDownload(variant);
+  Future<void> download(
+    NetworkConsent network, [
+    YomitanDictType? variant,
+  ]) async => onDownload(variant);
 }
 
 /// Records [download] calls instead of downloading, then shows [result];
@@ -129,7 +132,10 @@ class FakeCatalogDownloadNotifier extends CatalogDownloadNotifier {
   final void Function(CatalogDictionary entry)? onReplaceJmdict;
 
   @override
-  Future<void> download({bool replaceJmdict = false}) async {
+  Future<void> download(
+    NetworkConsent network, {
+    bool replaceJmdict = false,
+  }) async {
     onDownload(entry);
     if (replaceJmdict) onReplaceJmdict?.call(entry);
     state = result;
@@ -151,7 +157,7 @@ class _FakeKanjiVgNotifier extends KanjiVgNotifier {
   Future<void> checkStatus() async {}
 
   @override
-  Future<void> download() async => onDownload();
+  Future<void> download(NetworkConsent network) async => onDownload();
 }
 
 class _FakeEnhancedFuriganaDictNotifier extends EnhancedFuriganaDictNotifier {
@@ -163,5 +169,5 @@ class _FakeEnhancedFuriganaDictNotifier extends EnhancedFuriganaDictNotifier {
   Future<void> checkStatus() async {}
 
   @override
-  Future<void> download() async => onDownload();
+  Future<void> download(NetworkConsent network) async => onDownload();
 }

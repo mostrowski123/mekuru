@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/manga/data/services/model_download.dart';
@@ -18,6 +19,8 @@ import 'package:mekuru/features/word_audio/presentation/widgets/word_audio_downl
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:sqlite3/sqlite3.dart';
+// ignore: depend_on_referenced_packages
+import 'package:workmanager_platform_interface/workmanager_platform_interface.dart';
 
 import '../../shared/fake_download_notifiers.dart';
 import '../../shared/fake_path_provider.dart';
@@ -35,6 +38,7 @@ class _FakePack extends WordAudioPack {
   var deletes = 0;
   bool? lastMobileData;
   void Function(double)? report;
+  void Function(double fraction, bool waitingForWifi)? progress;
   Completer<void>? transfer;
 
   @override
@@ -51,11 +55,12 @@ class _FakePack extends WordAudioPack {
 
   @override
   Future<void> download({
-    void Function(double fraction)? onProgress,
-    bool mobileData = false,
+    required NetworkConsent network,
+    void Function(double fraction, bool waitingForWifi)? onProgress,
   }) {
-    lastMobileData = mobileData;
-    report = onProgress;
+    lastMobileData = network.allowsMobileData;
+    progress = onProgress;
+    report = onProgress == null ? null : (f) => onProgress(f, false);
     filesThere = true;
     return (transfer = Completer<void>()).future;
   }
@@ -75,6 +80,35 @@ class _FakePack extends WordAudioPack {
   }
 }
 
+/// WorkManager that only keeps whether the pack's job is queued.
+class _QueuedWorkmanager extends WorkmanagerPlatform {
+  var scheduled = false;
+  final queued = Completer<void>();
+
+  @override
+  Future<void> registerOneOffTask(
+    String uniqueName,
+    String taskName, {
+    Map<String, dynamic>? inputData,
+    Duration? initialDelay,
+    Constraints? constraints,
+    ExistingWorkPolicy? existingWorkPolicy,
+    BackoffPolicy? backoffPolicy,
+    Duration? backoffPolicyDelay,
+    String? tag,
+    OutOfQuotaPolicy? outOfQuotaPolicy,
+  }) async {
+    scheduled = true;
+    if (!queued.isCompleted) queued.complete();
+  }
+
+  @override
+  Future<void> cancelByUniqueName(String uniqueName) async => scheduled = false;
+
+  @override
+  Future<bool> isScheduledByUniqueName(String uniqueName) async => scheduled;
+}
+
 class _FakeAudio extends WordAudio {
   _FakeAudio(_FakePack pack) : super(pack: pack);
 
@@ -86,11 +120,11 @@ class _FakeAudio extends WordAudio {
 
   @override
   Future<void> download({
+    required NetworkConsent network,
     void Function(double)? onProgress,
-    bool wifiOnly = false,
   }) async {
     wordListThere = true;
-    wordListWifiOnly = wifiOnly;
+    wordListWifiOnly = network == NetworkConsent.wifiOnly;
   }
 }
 
@@ -315,7 +349,10 @@ void main() {
       onIos();
       final seen = <double>[];
 
-      await pack.download(onProgress: seen.add);
+      await pack.download(
+        network: NetworkConsent.wifiOnly,
+        onProgress: (fraction, _) => seen.add(fraction),
+      );
 
       expect(await pack.installed, isTrue);
       expect(seen.last, 1);
@@ -324,7 +361,7 @@ void main() {
     test('iOS: no room says how much more it needs', () async {
       onIos(free: 10);
       await expectLater(
-        pack.download(),
+        pack.download(network: NetworkConsent.wifiOnly),
         throwsA(
           isA<InsufficientSpaceException>().having(
             (e) => e.neededBytes,
@@ -341,7 +378,7 @@ void main() {
       () async {
         onIos();
         gate = Completer<void>();
-        final download = pack.download();
+        final download = pack.download(network: NetworkConsent.wifiOnly);
         final failed = expectLater(download, throwsA(anything));
         await waitForPartial();
 
@@ -351,7 +388,7 @@ void main() {
         expect(await pack.hasFiles(), isTrue);
 
         gate = null;
-        await pack.download();
+        await pack.download(network: NetworkConsent.wifiOnly);
 
         expect(await pack.installed, isTrue);
         expect(ranges.last, startsWith('bytes='));
@@ -364,7 +401,7 @@ void main() {
         onIos();
         gate = Completer<void>();
         final failed = expectLater(
-          pack.download(),
+          pack.download(network: NetworkConsent.wifiOnly),
           throwsA(
             isA<ServerDownloadFailedException>().having(
               (e) => e.error,
@@ -387,6 +424,27 @@ void main() {
         expect(await pack.hasFiles(), isTrue);
       },
     );
+
+    test('Android: a job queued for Wi-Fi only says it waits once Wi-Fi '
+        'goes', () async {
+      mockWifiConnected(true);
+      final workmanager = _QueuedWorkmanager();
+      WorkmanagerPlatform.instance = workmanager;
+      final waiting = <bool>[];
+
+      final done = pack.download(
+        network: NetworkConsent.wifiOnly,
+        onProgress: (_, waitingForWifi) => waiting.add(waitingForWifi),
+      );
+      await workmanager.queued.future;
+      mockWifiConnected(false);
+      // The app looks at the job once a second.
+      await Future<void>.delayed(const Duration(milliseconds: 2500));
+
+      expect(waiting.last, isTrue);
+      pack.cancel();
+      await expectLater(done, throwsA(isA<HttpException>()));
+    });
 
     test('Android: the worker installs what the app queued', () async {
       final dir = await Directory(
@@ -448,7 +506,7 @@ void main() {
 
     test('progress, then installed', () async {
       read();
-      final start = notifier().start();
+      final start = notifier().start(NetworkConsent.wifiOnly);
       await pumpEventQueue();
       pack.report!(0.5);
       expect(read().fraction, 0.5);
@@ -464,7 +522,7 @@ void main() {
     test('brings the word list along, on the same terms', () async {
       audio.wordListThere = false;
       read();
-      final start = notifier().start(mobileData: true);
+      final start = notifier().start(NetworkConsent.mobileData);
       await pumpEventQueue();
 
       expect(audio.wordListWifiOnly, isFalse);
@@ -475,7 +533,7 @@ void main() {
 
     test('a cancel is no error, and the partial file can go', () async {
       read();
-      final start = notifier().start();
+      final start = notifier().start(NetworkConsent.wifiOnly);
       await pumpEventQueue();
 
       notifier().cancel();
@@ -492,7 +550,7 @@ void main() {
 
     test('a failure is kept for the row', () async {
       read();
-      final start = notifier().start();
+      final start = notifier().start(NetworkConsent.wifiOnly);
       await pumpEventQueue();
 
       pack.transfer!.completeError(const SocketException('offline'));
@@ -504,7 +562,7 @@ void main() {
 
     test('removing is ignored while it downloads', () async {
       read();
-      final start = notifier().start();
+      final start = notifier().start(NetworkConsent.wifiOnly);
       await pumpEventQueue();
 
       await notifier().remove();
@@ -589,6 +647,60 @@ void main() {
 
       expect(pack.deletes, 1);
       expect(find.text('Download'), findsOneWidget);
+    });
+
+    testWidgets('Android: a job waiting for Wi-Fi says so and offers Cancel', (
+      tester,
+    ) async {
+      await pump(tester);
+      await tester.tap(find.text('Download'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Download').last);
+      await tester.pump();
+      await tester.pump();
+
+      pack.progress!(0.2, true);
+      await tester.pump();
+
+      expect(
+        find.text('Waiting for Wi-Fi. Cancel and resume to use mobile data.'),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.close), findsOneWidget);
+      pack.cancel();
+      await tester.pump();
+      await tester.pump();
+    });
+
+    testWidgets('iOS: Wi-Fi going mid-download says what it kept', (
+      tester,
+    ) async {
+      // On Android the job waits for Wi-Fi instead.
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        await pump(tester);
+        await tester.tap(find.text('Download'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Download').last);
+        await tester.pump();
+        await tester.pump();
+
+        pack.transfer!.completeError(const WifiLostException());
+        await tester.pump();
+        await tester.pump();
+
+        // The partial file is kept, so the next tap continues it.
+        expect(find.textContaining('try again'), findsNothing);
+        expect(
+          find.text(
+            'The download stopped because Wi-Fi disconnected. Finished files '
+            'are kept. Tap Download to continue.',
+          ),
+          findsOneWidget,
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
     });
 
     testWidgets('a partial download offers both Remove and Download', (

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:path/path.dart' as p;
@@ -70,13 +71,19 @@ class KanjiVgDownloadService {
   /// [onProgress] is called with a value between 0.0 and 1.0 during download.
   /// The extraction phase reports progress as 0.9–1.0.
   ///
-  /// Throws on network errors, invalid archive, or disk write failures.
+  /// Throws on network errors, invalid archive, or disk write failures, and
+  /// with [WifiLostException] when Wi-Fi goes and [network] doesn't allow
+  /// mobile data.
   static Future<int> downloadAndExtract({
+    required NetworkConsent network,
     void Function(double progress)? onProgress,
   }) async {
     final stopwatch = Stopwatch()..start();
     try {
-      final count = await _downloadAndExtract(onProgress: onProgress);
+      final count = await _downloadAndExtract(
+        network: network,
+        onProgress: onProgress,
+      );
       logUsage(
         'download.completed',
         attrs: {
@@ -92,6 +99,7 @@ class KanjiVgDownloadService {
   }
 
   static Future<int> _downloadAndExtract({
+    required NetworkConsent network,
     void Function(double progress)? onProgress,
   }) async {
     final dir = await getStorageDir();
@@ -107,6 +115,7 @@ class KanjiVgDownloadService {
     final count = await withDownloadedFile(
       downloadUrl,
       p.join(tempDir.path, 'kanjivg_download.zip'),
+      network: network,
       onProgress: (p) => onProgress?.call(p * 0.9), // 0–90% for download
       use: (zipPath) {
         // Phase 2: Extract SVGs (runs on isolate to avoid blocking UI)

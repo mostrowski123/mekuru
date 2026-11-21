@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/data/services/jpdb_freq_download_service.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
@@ -106,9 +107,12 @@ class FixedDictionaryNotifier extends Notifier<FixedDictionaryState> {
     }
   }
 
-  /// Download and import the dictionary. [variant] picks JMdict's edition,
-  /// English when not given; the other two have one.
-  Future<void> download([YomitanDictType? variant]) async {
+  /// Download and import the dictionary over [network]. [variant] picks
+  /// JMdict's edition, English when not given; the other two have one.
+  Future<void> download(
+    NetworkConsent network, [
+    YomitanDictType? variant,
+  ]) async {
     assert(variant == null || dictionary == FixedDictionary.jmdict);
     if (state.isDownloading) return;
     state = state.copyWith(
@@ -128,6 +132,7 @@ class FixedDictionaryNotifier extends Notifier<FixedDictionaryState> {
         await JpdbFreqDownloadService.downloadAndImport(
           repository: repository,
           importer: importer,
+          network: network,
           onProgress: onProgress,
         );
       } else {
@@ -135,6 +140,7 @@ class FixedDictionaryNotifier extends Notifier<FixedDictionaryState> {
           type: variant ?? type,
           repository: repository,
           importer: importer,
+          network: network,
           onProgress: onProgress,
         );
       }

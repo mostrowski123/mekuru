@@ -175,13 +175,12 @@ class MozillaTranslation implements TranslationEngine {
   }
 
   /// Downloads and verifies each pair [target] needs. An interrupted
-  /// download keeps its partial file and the next one resumes it. One that
-  /// starts on Wi-Fi stops with [WifiLostException] when Wi-Fi goes, rather
-  /// than go on over mobile data unasked. A pair already downloading (the
-  /// Sentence tab and Downloads both offer it) is joined, not fetched twice.
+  /// download keeps its partial file and the next one resumes it. Unless
+  /// [network] allows mobile data, it stops with [WifiLostException] when
+  /// Wi-Fi goes. A pair already downloading (the Sentence tab and Downloads
+  /// both offer it) is joined, not fetched twice.
   @override
-  Future<void> download(String target) async {
-    final wifiOnly = await isOnWifi();
+  Future<void> download(String target, NetworkConsent network) async {
     final root = await _root;
     for (final pair in mozillaPairsFor(target)) {
       final dir = Directory(p.join(root.path, pair));
@@ -190,7 +189,7 @@ class MozillaTranslation implements TranslationEngine {
       await downloadModelFiles(
         dir,
         mozillaTranslationModels[pair]!,
-        wifiOnly: wifiOnly,
+        network: network,
       );
     }
   }

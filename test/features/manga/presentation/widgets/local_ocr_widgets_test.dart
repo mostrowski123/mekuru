@@ -248,16 +248,18 @@ void main() {
     },
   );
 
-  testWidgets('network check failure reports error and never starts transfer', (
-    tester,
-  ) async {
+  testWidgets('a failed network check asks, as off Wi-Fi, and never starts '
+      'transfer', (tester) async {
     failNetworkCheck = true;
     await tester.pumpWidget(modelDownload());
     await tester.pumpAndSettle();
     await tester.tap(find.text('Download'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Download over mobile data?'), findsOneWidget);
+    Navigator.of(tester.element(find.byType(AlertDialog))).pop();
     await tester.pumpAndSettle();
-    expect(find.textContaining('network_check_failed'), findsOneWidget);
-    expect(calls.map((c) => c.method), ['isWifiConnected']);
+    expect(calls.map((c) => c.method), ['isWifiConnected', 'isVpnActive']);
   });
 
   testWidgets('unsupported device does not offer download', (tester) async {
