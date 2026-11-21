@@ -33,7 +33,7 @@ const dartCalls = matches(
 // A phone's pixel ratio. Only the launch flag makes scroll offsets land on
 // device pixels, as Android's WebView does; deviceScaleFactor alone does not.
 const browser = await chromium.launch({ channel: 'chrome', args: ['--force-device-scale-factor=2.625'] });
-const page = await browser.newPage({ viewport: { width: 412, height: 800 }, deviceScaleFactor: 2.625 });
+let page = await browser.newPage({ viewport: { width: 412, height: 800 }, deviceScaleFactor: 2.625 });
 const pageErrors = [];
 page.on('pageerror', (e) => pageErrors.push(e.message));
 await page.route('http://viewer.localhost/**', (route) => {
@@ -246,6 +246,62 @@ const checks = [
     const fwd = argOf(await calls(at), 'relocated');
     expect(fwd.startCfi.startsWith('epubcfi(/6/4!'),
       `previous() landed before chapter 1's last page: one next() from ${chars.pageKey} went to ${fwd.startCfi}, still in chapter 1`);
+  }],
+
+  ['a book whose links do not percent-decode opens and pages through', async () => {
+    // bad_href.epub (make_epub.py), on a page of its own. Chapter two's link
+    // escapes a byte that is not UTF-8 (c%FF.xhtml, and its picture
+    // i%FF.png), chapter three's has a '%' that starts no escape
+    // (100%.xhtml). Each names its zip entry as it is written.
+    const main = page;
+    const errors = [];
+    page = await browser.newPage({ viewport: { width: 412, height: 800 } });
+    try {
+      page.on('pageerror', (e) => errors.push(e.message));
+      page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+      await page.route('http://viewer.localhost/**', (route) => {
+        const file = path.join(viewer, new URL(route.request().url()).pathname);
+        return fs.existsSync(file) ? route.fulfill({ path: file }) : route.fulfill({ status: 404 });
+      });
+      await page.addInitScript({ path: path.join(here, 'stub.js') });
+      await page.goto('http://viewer.localhost/reader.html');
+      await until(0, `c.name === 'readyToLoad'`);
+      const bytes = fs.readFileSync(path.join(here, 'bad_href.epub'));
+      await page.evaluate(`beginEpubTransfer(${bytes.length})`);
+      await page.evaluate(`appendEpubChunk('${bytes.toString('base64')}')`);
+      await page.evaluate('loadBook("", "rtl", "paginated", false, "18", "#000000", null, 28, 28, false, "book", 1, null)');
+      await until(0, `c.name === 'pageChars'`, 15000).catch((e) => {
+        throw new Error(`the book showed no page: ${errors.join(' | ') || e.message}`);
+      });
+      const chapters = argOf(await calls(0), 'chapters');
+      const hrefs = chapters.map((c) => c.href).join();
+      expect(hrefs === 'c1.xhtml,c%FF.xhtml#top,100%.xhtml', `the chapters link ${hrefs}`);
+
+      // Dart's chapter list shows a chapter with toCfi(its href).
+      let at = await mark();
+      await page.evaluate(`toCfi(${JSON.stringify(chapters[1].href)})`);
+      await until(at, `c.name === 'pageChars'`, 5000, 'the link to chapter two showed no page');
+      const href = argOf(await calls(at), 'relocated').href;
+      expect(href === 'c%FF.xhtml', `the link to chapter two went to ${href}`);
+      const shown = await page.evaluate(() => {
+        const doc = rendition.getContents()[0].document;
+        const img = doc.querySelector('img');
+        return { title: doc.querySelector('h1').textContent, picture: img.complete && img.naturalWidth > 0 };
+      });
+      expect(shown.title === '第二章' && shown.picture, `chapter two shows ${JSON.stringify(shown)}`);
+
+      for (let turns = 0; ; turns++) {
+        expect(turns < 10, 'next() did not reach chapter three in 10 turns');
+        at = await mark();
+        await page.evaluate('next()');
+        await until(at, `c.name === 'pageChars'`);
+        if (argOf(await calls(at), 'relocated').href === '100%.xhtml') break;
+      }
+      expect(errors.length === 0, errors.join(' | '));
+    } finally {
+      await page.close();
+      page = main;
+    }
   }],
 
   ['every handler the page calls is registered in Dart', async () => {

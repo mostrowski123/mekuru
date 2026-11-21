@@ -80,6 +80,16 @@ void main() {
     expect(await zoom('text/s0.xhtml', 0), ['a.png 30x40']);
   });
 
+  test('an image whose link does not percent-decode', () async {
+    // The zip entry is named as the link is written.
+    await _writeBook(
+      dir,
+      [(_img('a%FF.png'), null)],
+      sizes: {'a%FF.png': (30, 40)},
+    );
+    expect(await zoom('text/s0.xhtml', 0), ['a%FF.png 30x40']);
+  });
+
   test('the image at the index on a page with several', () async {
     await _writeBook(
       dir,

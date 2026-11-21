@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/core/utils/xhtml.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:path/path.dart' as p;
 
@@ -431,18 +432,8 @@ class MokuroParser {
 
       final imageFiles = <String>[];
       for (final match in regex.allMatches(content)) {
-        final fullPath = match.group(1)!;
-        // URL-decode the path. A malformed escape (stray '%' or non-UTF-8
-        // bytes) means the HTML carries the literal on-disk name, so fall
-        // back to the raw text rather than dropping the page.
-        String decoded;
-        try {
-          decoded = Uri.decodeFull(fullPath);
-        } on ArgumentError {
-          decoded = fullPath;
-        } on FormatException {
-          decoded = fullPath;
-        }
+        // A path that does not decode is the literal on-disk name.
+        final decoded = decodeHref(match.group(1)!);
         // The URL is STEM/<page>, and the image folder is STEM: keep the
         // page's path below it, chapter subfolders included.
         final relative = _pageRelativePath(decoded);

@@ -30,6 +30,38 @@ void main() {
     tempDirs.clear();
   });
 
+  group('resolveEpubHref', () {
+    test('takes a link that does not percent-decode as its literal text', () {
+      // Bytes that are not UTF-8, and a '%' that starts no escape: a browser
+      // takes such a link as it is, and the zip entry is named so.
+      for (final ref in ['page_%FF.xhtml', 'a%E3%81.xhtml', '100%.xhtml']) {
+        expect(resolveEpubHref('OEBPS', ref), 'OEBPS/$ref', reason: ref);
+      }
+    });
+
+    test('drops a fragment or query after a bad escape', () {
+      expect(
+        resolveEpubHref('OEBPS', 'page_%FF.xhtml#p1'),
+        'OEBPS/page_%FF.xhtml',
+      );
+      expect(
+        resolveEpubHref('OEBPS', 'page_%FF.xhtml?v=1'),
+        'OEBPS/page_%FF.xhtml',
+      );
+    });
+
+    test('decodes a link that does percent-decode', () {
+      expect(
+        resolveEpubHref('OEBPS', '%E8%A1%A8%E7%B4%99.xhtml'),
+        'OEBPS/表紙.xhtml',
+      );
+      expect(
+        resolveEpubHref('OEBPS/text', '../a%20b.xhtml#x'),
+        'OEBPS/a b.xhtml',
+      );
+    });
+  });
+
   group('EpubParser — parseMetadataOnly', () {
     test('extracts title from dc:title', () async {
       final epubPath = await createTestEpub(title: '吾輩は猫である');
@@ -223,6 +255,24 @@ void main() {
       // The extracted bytes must be the intact fixture JPEG — a cleared or
       // truncated archive entry would write empty/partial content.
       expect(await coverFile.readAsBytes(), testCoverJpegBytes);
+    });
+
+    test('finds a cover whose href is percent-encoded', () async {
+      final epubPath = await createTestEpub(
+        customOpfContent:
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<package xmlns="http://www.idpf.org/2007/opf" version="3.0">'
+            '<metadata/><manifest><item id="c" href="images/%63over.jpg" '
+            'media-type="image/jpeg" properties="cover-image"/></manifest>'
+            '</package>',
+      );
+      trackTempFile(epubPath);
+      final extractDir = await Directory.systemTemp.createTemp('epub_cover_');
+      trackTempDir(extractDir.path);
+
+      final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
+
+      expect(metadata.coverImageRelativePath, 'OEBPS/images/cover.jpg');
     });
   });
 

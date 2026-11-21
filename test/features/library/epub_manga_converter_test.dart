@@ -168,6 +168,34 @@ void main() {
     });
 
     test(
+      'takes links that do not percent-decode as their literal text',
+      () async {
+        // Page and image links whose zip entries are named as written: bytes
+        // that are not UTF-8, and a '%' that starts no escape.
+        final book = await importFixture(
+          await createFixedLayoutMangaEpub(
+            imageNames: ['p0.png', 'p%FF.png', 'p2.png', '100%.png'],
+            pageDocNames: {
+              1: 'page_%FF.xhtml',
+              2: 'a%E3%81.xhtml',
+              3: '100%.xhtml',
+            },
+          ),
+        );
+
+        final converted = await repo.convertEpubToManga(book);
+
+        expect(converted.totalPages, 4);
+        expect(
+          (await readPagesCache(
+            converted.filePath,
+          )).pages.map((pg) => '${pg.imgWidth}x${pg.imgHeight}'),
+          ['10x100', '11x101', '12x102', '13x103'],
+        );
+      },
+    );
+
+    test(
       'deduplicates a cover page that reuses the first page image',
       () async {
         final book = await importFixture(

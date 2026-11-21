@@ -913,13 +913,13 @@ function anchorIsAfter(href, doc, at) {
   var hash = href.indexOf('#');
   if (hash === -1) return false; // the file's own start
   try {
-    var el = doc.getElementById(decodeURIComponent(href.slice(hash + 1)));
+    var el = doc.getElementById(ePub.utils.decodeHref(href.slice(hash + 1)));
     if (!el) return null;
     var anchor = doc.createRange();
     anchor.setStartBefore(el);
     return anchor.compareBoundaryPoints(Range.START_TO_START, at) > 0;
   } catch (e) {
-    return null; // section not on screen, CFI not found, bad fragment
+    return null; // section not on screen, CFI not found
   }
 }
 

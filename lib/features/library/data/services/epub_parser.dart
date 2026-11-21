@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:mekuru/core/utils/xhtml.dart';
 import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
 
@@ -68,19 +69,13 @@ bool _declaresVerticalWritingMode(List<int> bytes) =>
 
 /// Resolves an EPUB-internal href [ref] against [baseDir] (both root-relative
 /// POSIX paths inside the EPUB), returning null for refs that are unusable —
-/// empty, scheme'd (http:, data:), or carrying malformed percent-escapes —
-/// or that escape the EPUB root.
+/// empty or scheme'd (http:, data:) — or that escape the EPUB root. A ref
+/// that does not percent-decode is taken as written, see [decodeHref].
 String? resolveEpubHref(String baseDir, String ref) {
   final bare = ref.split('#').first.split('?').first;
   if (bare.isEmpty || bare.startsWith('data:')) return null;
   if (Uri.tryParse(bare)?.hasScheme ?? false) return null;
-  final String decoded;
-  try {
-    decoded = Uri.decodeFull(bare);
-  } on ArgumentError {
-    return null;
-  }
-  final resolved = p.posix.normalize(p.posix.join(baseDir, decoded));
+  final resolved = p.posix.normalize(p.posix.join(baseDir, decodeHref(bare)));
   if (resolved.startsWith('..')) return null;
   return resolved;
 }
@@ -376,13 +371,13 @@ class EpubParser {
 
       // Match by cover id from meta
       if (coverId != null && itemId == coverId) {
-        coverRelativePath = p.join(opfDir, href);
+        coverRelativePath = resolveEpubHref(opfDir, href);
         break;
       }
 
       // Match by properties="cover-image" (EPUB 3)
       if (properties.contains('cover-image')) {
-        coverRelativePath = p.join(opfDir, href);
+        coverRelativePath = resolveEpubHref(opfDir, href);
         break;
       }
     }
@@ -397,7 +392,7 @@ class EpubParser {
         if (href != null &&
             itemId.contains('cover') &&
             mediaType.startsWith('image/')) {
-          coverRelativePath = p.join(opfDir, href);
+          coverRelativePath = resolveEpubHref(opfDir, href);
           break;
         }
       }

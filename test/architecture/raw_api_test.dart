@@ -72,24 +72,10 @@ final _rows = [
     'Uri.decodeFull, decodeComponent or decodeQueryComponent',
     _matching(r'\bUri\.decode(Full|Component|QueryComponent)\('),
     'resolveEpubHref for an EPUB href '
-        '(lib/features/library/data/services/epub_parser.dart). Elsewhere '
-        'catch the ArgumentError and FormatException a malformed escape '
-        'throws, as MokuroParser does '
-        '(lib/features/manga/data/services/mokuro_parser.dart)',
-    allowed: {
-      'lib/features/library/data/services/epub_parser.dart': (
-        1,
-        'resolveEpubHref itself',
-      ),
-      'lib/features/manga/data/services/mokuro_parser.dart': (
-        1,
-        'catches both errors and keeps the raw file name',
-      ),
-      'lib/features/sync/data/services/komga_client.dart': (
-        1,
-        '_plainHref catches every error and keeps the raw path',
-      ),
-    },
+        '(lib/features/library/data/services/epub_parser.dart), decodeHref '
+        'for any other link (lib/core/utils/xhtml.dart): a link that does '
+        'not decode keeps its literal text instead of throwing',
+    allowed: {'lib/core/utils/xhtml.dart': (1, 'decodeHref itself')},
   ),
   // Counted as found at e3e39d7d, not judged use by use.
   _Row(

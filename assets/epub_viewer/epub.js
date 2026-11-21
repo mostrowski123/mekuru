@@ -139,6 +139,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "parents", function() { return parents; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "filterChildren", function() { return filterChildren; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getParentByTagName", function() { return getParentByTagName; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "decodeHref", function() { return decodeHref; }); // [MEKURU PATCH]
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "RangeObject", function() { return RangeObject; });
 /* harmony import */ var _xmldom_xmldom__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(15);
 /* harmony import */ var _xmldom_xmldom__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_xmldom_xmldom__WEBPACK_IMPORTED_MODULE_0__);
@@ -876,6 +877,27 @@ function getParentByTagName(node, tagname) {
       return parent;
     }
     parent = parent.parentNode;
+  }
+}
+
+/**
+ * [MEKURU PATCH] Percent-decodes an href from the book with `decode`
+ * (decodeURIComponent unless given, or decodeURI), or returns it as it is
+ * when it does not decode: a '%' that starts no escape ("100%.xhtml"), or
+ * escapes of bytes that are not UTF-8 ("a%FF.xhtml"). Upstream let the
+ * URIError through and such a book never opened. A browser takes such a
+ * link as its literal text, so the zip entry is looked up by that name.
+ * Dart's decodeHref (lib/core/utils/xhtml.dart) does the same.
+ * @param {string} href
+ * @param {function} [decode]
+ * @returns {string}
+ * @memberof Core
+ */
+function decodeHref(href, decode) {
+  try {
+    return (decode || decodeURIComponent)(href);
+  } catch (e) {
+    return href;
   }
 }
 
@@ -14188,7 +14210,7 @@ class spine_Spine {
 
     // Encode and Decode href lookups
     // see pr for details: https://github.com/futurepress/epub.js/pull/358
-    this.spineByHref[decodeURI(section.href)] = index;
+    this.spineByHref[Object(core["decodeHref"])(section.href, decodeURI)] = index; // [MEKURU PATCH] see decodeHref()
     this.spineByHref[encodeURI(section.href)] = index;
     this.spineByHref[section.href] = index;
     this.spineById[section.idref] = index;
@@ -16277,7 +16299,7 @@ class archive_Archive {
    * @return {Blob}
    */
   getBlob(url, mimeType) {
-    var decodededUrl = window.decodeURIComponent(url.substr(1)); // Remove first slash
+    var decodededUrl = Object(core["decodeHref"])(url.substr(1)); // Remove first slash. [MEKURU PATCH] see decodeHref()
     var entry = this.zip.file(decodededUrl);
     if (entry) {
       mimeType = mimeType || mime.lookup(entry.name);
@@ -16296,7 +16318,7 @@ class archive_Archive {
    * @return {string}
    */
   getText(url, encoding) {
-    var decodededUrl = window.decodeURIComponent(url.substr(1)); // Remove first slash
+    var decodededUrl = Object(core["decodeHref"])(url.substr(1)); // Remove first slash. [MEKURU PATCH] see decodeHref()
     var entry = this.zip.file(decodededUrl);
     if (entry) {
       return entry.async("string").then(function (text) {
@@ -16312,7 +16334,7 @@ class archive_Archive {
    * @return {string} base64 encoded
    */
   getBase64(url, mimeType) {
-    var decodededUrl = window.decodeURIComponent(url.substr(1)); // Remove first slash
+    var decodededUrl = Object(core["decodeHref"])(url.substr(1)); // Remove first slash. [MEKURU PATCH] see decodeHref()
     var entry = this.zip.file(decodededUrl);
     if (entry) {
       mimeType = mimeType || mime.lookup(entry.name);

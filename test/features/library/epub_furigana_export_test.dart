@@ -399,6 +399,32 @@ void main() {
       },
     );
 
+    test('rewrites a chapter whose link does not percent-decode', () async {
+      // Bytes that are not UTF-8: the zip entry is named as the href is
+      // written.
+      final archive =
+          ZipDecoder().decodeBytes(
+            buildTestEpub(
+              chapter('<p>本文</p>'),
+              opf: _contentOpf.replaceFirst('chapter1.xhtml', 'ch%FF.xhtml'),
+            ),
+          )..addFile(
+            ArchiveFile.bytes(
+              'OEBPS/ch%FF.xhtml',
+              utf8.encode(chapter('<p><ruby>既存<rt>きそん</rt></ruby></p>')),
+            ),
+          );
+      final path = await writeEpub(ZipEncoder().encodeBytes(archive));
+
+      final out = await buildFuriganaEpub(path, mode: FuriganaMode.hide);
+
+      final rewritten = ZipDecoder()
+          .decodeBytes(out!)
+          .findFile('OEBPS/ch%FF.xhtml')!
+          .readBytes()!;
+      expect(utf8.decode(rewritten), isNot(contains('<rt>')));
+    });
+
     test(
       'malformed chapter is copied unmodified and export continues',
       () async {

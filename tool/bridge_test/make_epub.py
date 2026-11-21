@@ -1,11 +1,14 @@
-# Writes book.epub, the fixture run.mjs loads: two vertical-rl Japanese
+# Writes the fixtures run.mjs loads. book.epub: two vertical-rl Japanese
 # chapters (the first two pages long at run.mjs's viewport, with one
-# authored ruby), and a nav. Entries carry a fixed date, so a rerun
-# writes the same bytes. Run it only to change the fixture; commit both.
+# authored ruby), and a nav. bad_href.epub: three chapters whose links
+# carry a '%' that does not decode, see bad_href_entries. Entries carry a
+# fixed date, so a rerun writes the same bytes. Run it only to change a
+# fixture; commit it with the script.
+import base64
 import pathlib
 import zipfile
 
-out = pathlib.Path(__file__).with_name('book.epub')
+here = pathlib.Path(__file__).parent
 para = ('吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。'
         '何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。') * 4
 
@@ -45,9 +48,37 @@ entries = [
     ('OEBPS/c1.xhtml', chapter('第一章', 6, ruby=True), zipfile.ZIP_DEFLATED),
     ('OEBPS/c2.xhtml', chapter('第二章', 2), zipfile.ZIP_DEFLATED),
 ]
-with zipfile.ZipFile(out, 'w') as z:
-    for name, text, method in entries:
-        info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
-        info.compress_type = method
-        z.writestr(info, text)
-print(out, out.stat().st_size)
+
+# bad_href.epub. The zip entries are named with the links' literal text:
+# 'c%FF.xhtml' escapes a byte that is not UTF-8, '100%.xhtml' has a '%'
+# that starts no escape, and chapter two's picture is 'i%FF.png'. The nav
+# links chapter two with a fragment after the bad escape.
+bad_opf = opf.replace('bridge-test-1', 'bridge-test-2').replace(
+    '<item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/>',
+    '<item id="c2" href="c%FF.xhtml" media-type="application/xhtml+xml"/>'
+    '<item id="c3" href="100%.xhtml" media-type="application/xhtml+xml"/>'
+    '<item id="i" href="i%FF.png" media-type="image/png"/>',
+).replace('<itemref idref="c2"/>', '<itemref idref="c2"/><itemref idref="c3"/>')
+bad_nav = nav.replace(
+    '<a href="c2.xhtml">第二章</a></li>',
+    '<a href="c%FF.xhtml#top">第二章</a></li><li><a href="100%.xhtml">第三章</a></li>',
+)
+png = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==')
+bad_href_entries = entries[:2] + [
+    ('OEBPS/content.opf', bad_opf, zipfile.ZIP_DEFLATED),
+    ('OEBPS/nav.xhtml', bad_nav, zipfile.ZIP_DEFLATED),
+    ('OEBPS/c1.xhtml', chapter('第一章', 1), zipfile.ZIP_DEFLATED),
+    ('OEBPS/c%FF.xhtml', chapter('第二章', 2).replace(
+        '<h1>', '<h1 id="top"><img src="i%FF.png" alt=""/>'), zipfile.ZIP_DEFLATED),
+    ('OEBPS/100%.xhtml', chapter('第三章', 1), zipfile.ZIP_DEFLATED),
+    ('OEBPS/i%FF.png', png, zipfile.ZIP_STORED),
+]
+
+for file, files in [('book.epub', entries), ('bad_href.epub', bad_href_entries)]:
+    out = here / file
+    with zipfile.ZipFile(out, 'w') as z:
+        for name, data, method in files:
+            info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
+            info.compress_type = method
+            z.writestr(info, data)
+    print(out, out.stat().st_size)

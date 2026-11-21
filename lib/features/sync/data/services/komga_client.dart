@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:mekuru/core/services/http_transport.dart';
+import 'package:mekuru/core/utils/xhtml.dart';
 
 import '../models/remote_models.dart';
 import 'http_server_client.dart';
@@ -386,12 +387,4 @@ Map<String, dynamic> _atOrBefore(
 );
 
 /// [href] as Komga lists paths: without a fragment, percent-decoded.
-String _plainHref(String href) {
-  final path = href.split('#').first;
-  try {
-    return Uri.decodeFull(path);
-  } catch (_) {
-    // A file name with a literal '%'.
-    return path;
-  }
-}
+String _plainHref(String href) => decodeHref(href.split('#').first);

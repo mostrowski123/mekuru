@@ -15,3 +15,17 @@ XmlDocument? parseXhtml(String xhtml) {
     return null;
   }
 }
+
+/// [href] percent-decoded, or as it is when it does not decode: a '%' that
+/// starts no escape (`100%.xhtml`), or escapes of bytes that are not UTF-8
+/// (`a%FF.xhtml`). A browser takes such a link as its literal text, and so
+/// does the reader (`decodeHref` in assets/epub_viewer/epub.js).
+String decodeHref(String href) {
+  try {
+    return Uri.decodeFull(href);
+  } on ArgumentError {
+    return href;
+  } on FormatException {
+    return href;
+  }
+}

@@ -149,7 +149,9 @@ $bodyTag<p>これはテストです。</p></body>
 /// mapping when parsed.
 ///
 /// [itemrefProperties] sets a page's spine `properties` (e.g.
-/// `rendition:page-spread-left`). [prePaginated] declares a fixed layout, with
+/// `rendition:page-spread-left`). [pageDocNames] names a page's XHTML
+/// document instead of `page_<i>.xhtml`; its zip entry and its manifest href
+/// are both written as given. [prePaginated] declares a fixed layout, with
 /// a viewport the size of each page's image; its pages are for a browser,
 /// whose XML parser rejects `&nbsp;`, so they spell it `&#160;`.
 ///
@@ -164,6 +166,7 @@ Future<String> createFixedLayoutMangaEpub({
   bool urlEncodedHrefs = false,
   bool coverPageReusesFirstImage = false,
   Map<int, String> itemrefProperties = const {},
+  Map<int, String> pageDocNames = const {},
   Set<int> landscapePages = const {},
   bool prePaginated = false,
 }) async {
@@ -228,13 +231,14 @@ Future<String> createFixedLayoutMangaEpub({
       'OEBPS/images/${names[i]}',
       img.encodePng(img.Image(width: width, height: height)),
     );
-    addText('OEBPS/${docDir}page_$i.xhtml', pageDoc(names[i], i));
+    final doc = pageDocNames[i] ?? 'page_$i.xhtml';
+    addText('OEBPS/$docDir$doc', pageDoc(names[i], i));
     manifestItems
       ..add(
         '<item id="img$i" href="images/${names[i]}" media-type="image/png"/>',
       )
       ..add(
-        '<item id="page$i" href="${docDir}page_$i.xhtml" media-type="application/xhtml+xml"/>',
+        '<item id="page$i" href="$docDir$doc" media-type="application/xhtml+xml"/>',
       );
     final properties = itemrefProperties[i];
     spineRefs.add(
