@@ -90,6 +90,9 @@ class ViewerSession {
   /// A new viewer is being prepared to take this one's place.
   bool get isReplacing => _replacing;
 
+  /// The book's highlights are drawn on this viewer's page.
+  bool highlightsRestored = false;
+
   bool get _reports =>
       _phase == ViewerPhase.loading || _phase == ViewerPhase.ready;
 

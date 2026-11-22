@@ -19,6 +19,7 @@ import 'package:mekuru/features/manga/presentation/providers/pro_access_provider
 import 'package:mekuru/features/reader/data/models/epub_models.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/repositories/bookmark_repository.dart';
+import 'package:mekuru/features/reader/data/repositories/highlight_repository.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/providers/user_font_providers.dart';
@@ -87,6 +88,30 @@ class _RecordingBookRepository extends BookRepository {
   }
 }
 
+/// The book's one highlight, looked up only once [found] completes.
+class _HeldHighlights extends HighlightRepository {
+  _HeldHighlights(super.db);
+
+  static const range = 'epubcfi(/6/4!/4/2,/1:0,/1:2)';
+  final found = Completer<void>();
+
+  @override
+  Future<List<Highlight>> getAllHighlightsForBook(int bookId) async {
+    await found.future;
+    return [
+      Highlight(
+        id: 1,
+        bookId: bookId,
+        cfiRange: range,
+        selectedText: '本を',
+        color: 'yellow',
+        userNote: '',
+        dateAdded: DateTime(2026, 11, 22),
+      ),
+    ];
+  }
+}
+
 class _DefaultSettingsStorage implements ReaderSettingsStorage {
   @override
   Future<ReaderSettings?> load() async => const ReaderSettings();
@@ -142,11 +167,14 @@ void main() {
   final spinner = find.byKey(const Key('reader-loading-overlay'));
 
   /// Opens [opened] (the test's book when null), and waits for its viewer
-  /// unless [viewerExpected] is false.
+  /// unless [viewerExpected] is false. [highlights] stands in for the
+  /// book's saved highlights, which only a Pro reader ([proUnlocked]) shows.
   Future<void> openReader(
     WidgetTester tester, {
     Book? opened,
     bool viewerExpected = true,
+    bool proUnlocked = false,
+    HighlightRepository? highlights,
   }) async {
     // Answered at once: the settings screen opens only after the bars show.
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -161,7 +189,11 @@ void main() {
           _DefaultSettingsStorage(),
         ),
         readerBrightnessProvider.overrideWith(FakeReaderBrightnessNotifier.new),
-        proUnlockedProvider.overrideWith(() => FakeProUnlockedNotifier(false)),
+        proUnlockedProvider.overrideWith(
+          () => FakeProUnlockedNotifier(proUnlocked),
+        ),
+        if (highlights != null)
+          highlightRepositoryProvider.overrideWithValue(highlights),
         userFontStoreProvider.overrideWithValue(FakeUserFontStore()),
         wanikaniKnownKanjiProvider.overrideWithValue(const {}),
       ],
@@ -465,6 +497,43 @@ void main() {
     relocate(tester, _pageC, 0);
     await flushSaves(tester);
     expect(books.saves.last, (cfi: _pageC, progress: 0.5));
+    await closeReader(tester);
+  });
+
+  testWidgets('a new reading mode chosen while the highlights are still being '
+      'looked up shows them on the new page', (tester) async {
+    final webView = RecordingWebViewPlatform();
+    InAppWebViewPlatform.instance = webView;
+    addTearDown(() => InAppWebViewPlatform.instance = _BlankWebViewPlatform());
+    List<String> drawn() => [
+      for (final js in webView.sent)
+        if (js.startsWith('addHighlight(')) js,
+    ];
+    final highlights = _HeldHighlights(db);
+    await openReader(tester, proUnlocked: true, highlights: highlights);
+    readerViewer(tester).onLoaded!();
+    await tester.pump();
+    final oldKey = readerViewer(tester).key;
+
+    container.read(readerSettingsProvider.notifier).setScrollView(true);
+    await settle(tester);
+    expect(readerViewer(tester).key, isNot(oldKey));
+
+    // The old page's lookup ends after the new viewer took its place.
+    highlights.found.complete();
+    await settle(tester);
+    final beforeShown = drawn();
+
+    readerViewer(tester).onLoaded!();
+    await settle(tester);
+    expect(drawn().sublist(beforeShown.length), [
+      contains(_HeldHighlights.range),
+    ], reason: 'the new page shows the highlight');
+    expect(
+      beforeShown,
+      isEmpty,
+      reason: 'nothing is drawn on a page before it shows the book',
+    );
     await closeReader(tester);
   });
 

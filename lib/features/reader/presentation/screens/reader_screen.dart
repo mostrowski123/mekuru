@@ -179,7 +179,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   String _pageStartCfi = '';
   bool _isCurrentPageBookmarked = false;
   int _bookmarkCheckGeneration = 0;
-  bool _hasRestoredHighlights = false;
   String? _initialCfi;
 
   /// Why the book is not showing, worded by [_buildErrorState]; null while
@@ -776,7 +775,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       // and none shows until the book file is found again.
       _viewer?.retire();
       _viewer = null;
-      _hasRestoredHighlights = false;
       _failure = null;
       _chapters = const [];
       _progress = 0;
@@ -1051,7 +1049,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (_isEpubCfi(_currentCfi)) _initialCfi = _currentCfi;
       _isLoading = true;
       _failure = null;
-      _hasRestoredHighlights = false;
       _startViewer();
     });
   }
@@ -1726,17 +1723,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   // ── Highlights ──────────────────────────────────────────────────
 
+  /// Draws the book's highlights on the current viewer's page, once. A
+  /// viewer replaced while they are looked up gets none: its page is gone.
   Future<void> _restoreHighlights() async {
-    if (_hasRestoredHighlights) return;
+    final viewer = _viewer;
+    if (viewer == null || viewer.highlightsRestored) return;
 
     final isProUnlocked = await ref.read(proUnlockedProvider.future);
-    if (!mounted) return;
+    if (!mounted || _viewer != viewer) return;
     if (!isProUnlocked) return;
 
     final highlights = await ref
         .read(highlightRepositoryProvider)
         .getAllHighlightsForBook(widget.book.id);
-    if (!mounted) return;
+    if (!mounted || _viewer != viewer) return;
 
     for (final h in highlights) {
       final color = HighlightColor.fromName(h.color);
@@ -1749,7 +1749,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (highlights.isNotEmpty) {
       debugPrint('[READER] restored ${highlights.length} highlights');
     }
-    _hasRestoredHighlights = true;
+    viewer.highlightsRestored = true;
   }
 
   /// Returns the new highlight's id, or null when none was made.
