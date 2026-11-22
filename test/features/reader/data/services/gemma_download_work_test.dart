@@ -192,21 +192,22 @@ void main() {
       pause = true;
       // The worker writes status.json.tmp and renames it over status.json.
       // On Windows a read of status.json during that rename makes the rename
-      // fail, so the test reads it once: after the folder watch has seen the
-      // first progress write land, while the paused server holds the worker.
-      final seen = <String>{};
+      // fail, so the test reads it only after the folder watch has seen a
+      // write of it land, while the paused server holds the worker.
+      final seen = <String, int>{};
       final changed = StreamController<void>.broadcast();
       final watch = dir.watch().listen((event) {
         final path = event is FileSystemMoveEvent
             ? event.destination ?? event.path
             : event.path;
-        seen.add(p.basename(path));
+        seen.update(p.basename(path), (n) => n + 1, ifAbsent: () => 1);
         changed.add(null);
       });
       addTearDown(watch.cancel);
-      Future<bool> saw(String name, Duration within) async {
+      // Whether the watch reported [name] more than [times] times, [within].
+      Future<bool> saw(String name, Duration within, {int times = 0}) async {
         final deadline = DateTime.now().add(within);
-        while (!seen.contains(name)) {
+        while ((seen[name] ?? 0) <= times) {
           final left = deadline.difference(DateTime.now());
           if (left <= Duration.zero) return false;
           await changed.stream.first.timeout(left, onTimeout: () {});
@@ -229,13 +230,28 @@ void main() {
         await done;
       });
       await halfSent.future;
-      expect(await saw('status.json', const Duration(seconds: 30)), isTrue);
-      // A later progress write can still land during the read, which then
-      // fails. Both files in that rename are whole, so read again.
+      // macOS's watch also reports the status setUp wrote before the watch
+      // began, so a report of status.json is not yet the worker's progress
+      // write: read after each report until the status has bytes.
       ServerDownloadWorkStatus? midway;
-      for (var i = 0; i < 20 && midway == null; i++) {
-        if (i > 0) await Future<void>.delayed(const Duration(milliseconds: 50));
-        midway = await work().readStatus();
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      var reports = 0;
+      while ((midway?.received ?? 0) == 0) {
+        final left = deadline.difference(DateTime.now());
+        if (!await saw('status.json', left, times: reports)) break;
+        // Counted before the read, so a write that lands during it is seen.
+        reports = seen['status.json']!;
+        // A later progress write can still land during the read, which then
+        // fails. Both files in that rename are whole, so read again.
+        for (var i = 0; i < 20; i++) {
+          if (i > 0) {
+            await Future<void>.delayed(const Duration(milliseconds: 50));
+          }
+          final read = await work().readStatus();
+          if (read == null) continue;
+          midway = read;
+          break;
+        }
       }
       expect(midway?.state, ServerDownloadWorkState.running);
       expect(midway?.received, greaterThan(0));
