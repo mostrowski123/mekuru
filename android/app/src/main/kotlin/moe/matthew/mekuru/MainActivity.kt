@@ -427,16 +427,21 @@ class MainActivity : FlutterActivity() {
             return
         }
         runIo(callback) {
-            try {
-                val output = contentResolver.openOutputStream(uri) ?: throw IllegalStateException("open_failed")
-                output.use { out -> source.inputStream().use { it.copyTo(out) } }
-            } catch (e: Exception) {
-                // No half-written book left where the user asked for one.
+            source.inputStream().use { input ->
+                // "wt": "w" does not truncate on Android 10+, which left an older,
+                // longer file's tail after the new bytes. Opened after the source
+                // so a failure before writing leaves an existing file as it was.
+                val output = contentResolver.openOutputStream(uri, "wt") ?: throw IllegalStateException("open_failed")
                 try {
-                    DocumentsContract.deleteDocument(contentResolver, uri)
-                } catch (_: Exception) {
+                    output.use { input.copyTo(it) }
+                } catch (e: Exception) {
+                    // Its old content is gone: no half-written book left where the user asked for one.
+                    try {
+                        DocumentsContract.deleteDocument(contentResolver, uri)
+                    } catch (_: Exception) {
+                    }
+                    throw e
                 }
-                throw e
             }
             true
         }
