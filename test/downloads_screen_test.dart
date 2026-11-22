@@ -792,6 +792,51 @@ void main() {
       expect(untranslatedDownloadText, findsNothing);
     });
 
+    testWidgets('a download that fails while another screen covers Downloads '
+        'shows on return, in place of what the row said before', (
+      tester,
+    ) async {
+      final ja = lookupAppLocalizations(const Locale('ja'));
+      final container = ProviderContainer(
+        overrides: fakeDownloadNotifierOverrides([]),
+      );
+      addTearDown(container.dispose);
+      installed = true;
+      await pumpInJapanese(tester, container);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.widgetWithText(ListTile, ja.downloadsHighQualityTitle),
+          matching: find.byTooltip(ja.commonRemove),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(ja.downloadsDeleted), findsOneWidget);
+
+      // A covered screen's rows hear only the last change when it shows again.
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      final covering = MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(),
+      );
+      unawaited(navigator.push(covering));
+      await tester.pumpAndSettle();
+      installed = false;
+      unawaited(
+        container
+            .read(gemmaDownloadProvider.notifier)
+            .start(NetworkConsent.wifiOnly),
+      );
+      await tester.pump();
+      downloadDone.completeError(Exception('boom'));
+      await tester.pumpAndSettle();
+      expect(container.read(gemmaDownloadProvider), isA<GemmaDownloadFailed>());
+      navigator.pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text(ja.downloadNotFinished), findsOneWidget);
+      expect(find.text(ja.downloadsDeleted), findsNothing);
+    });
+
     testWidgets('a cancelled download offers to remove its partial file', (
       tester,
     ) async {
