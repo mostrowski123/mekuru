@@ -85,11 +85,7 @@ Future<void> runFuriganaExport(
 
     if (failure != null) {
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.commonErrorWithDetails(details: failure.toString()),
-          ),
-        ),
+        SnackBar(content: Text(l10n.commonExportFailed(format: 'EPUB'))),
       );
       return;
     }
@@ -119,9 +115,7 @@ Future<void> runFuriganaExport(
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.commonErrorWithDetails(details: e.toString())),
-        ),
+        SnackBar(content: Text(l10n.commonExportFailed(format: 'EPUB'))),
       );
     }
   } finally {

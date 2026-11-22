@@ -75,11 +75,7 @@ Future<void> runEpubMangaConversion(
     default:
       Sentry.captureException(failure, stackTrace: failureStack);
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.commonErrorWithDetails(details: failure.toString()),
-          ),
-        ),
+        SnackBar(content: Text(l10n.libraryConvertToMangaFailed)),
       );
   }
 }

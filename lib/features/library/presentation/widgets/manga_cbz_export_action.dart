@@ -63,7 +63,7 @@ Future<void> runMangaCbzExport(
       EmptyMangaExportException() => l10n.libraryExportCbzEmpty,
       SafMangaExportUnsupportedException() =>
         l10n.libraryExportCbzSafUnsupported,
-      _ => l10n.commonErrorWithDetails(details: failure.toString()),
+      _ => l10n.commonExportFailed(format: 'CBZ'),
     };
     if (failure is! EmptyMangaExportException &&
         failure is! SafMangaExportUnsupportedException) {
@@ -101,7 +101,7 @@ Future<void> runMangaCbzExport(
   } catch (e, st) {
     Sentry.captureException(e, stackTrace: st);
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.commonErrorWithDetails(details: '$e'))),
+      SnackBar(content: Text(l10n.commonExportFailed(format: 'CBZ'))),
     );
   } finally {
     try {
