@@ -51,7 +51,10 @@ void main() {
     // Settled: epub.js has put its page step back to the column width.
     await tester.pump(const Duration(seconds: 2));
 
-    await controller.debugEvaluateJavascript("snapToLastPage('test'); true");
+    // No other navigation runs here, so the snap always goes ahead.
+    await controller.debugEvaluateJavascript(
+      "snapToLastPage('test', function () { return true; }); true",
+    );
     await tester.pump(const Duration(seconds: 1));
 
     final at = await evalJson(
