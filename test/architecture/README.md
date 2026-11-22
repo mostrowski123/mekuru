@@ -97,3 +97,9 @@ Each rule in `CLAUDE.md`, and what fails when it is broken. "nothing" marks wher
 | An EPUB href is decoded with `decodeHref` | `test/architecture/raw_api_test.dart` |
 | The reader scripts are checked in a browser | `tool/bridge_test/run.mjs` in `bridge-test.yml` |
 | The EPUB viewer is replaced only through `ViewerSession.beginReplacement` | partly: `test/features/reader/presentation/viewer_session_test.dart` |
+| An EPUB page turns at once, with no setting; a manga page slides only while Animations is on | `test/features/reader/presentation/reader_screen_page_turn_test.dart`, `test/features/manga/presentation/screens/manga_reader_page_turn_test.dart` |
+| Reader input, the seek bar and statistics read the layout on screen, not the settings | partly: `test/features/reader/presentation/reader_screen_shown_layout_test.dart` (existing inputs) |
+| A download row is a `DownloadTile` over a `DownloadTileNotifier` | partly: `test/features/settings/download_tiles_test.dart` (the five rows that are); nothing stops a new hand-built row |
+| A worker's recorded failure is read by `RecordedDownloadFailure.parse` and worded without a default | the compiler (two switches with no default), `test/download_status_test.dart` (the strings on disk keep their meaning) |
+| A folder a download installs is filled beside the old one with `fillInstallFolder` | partly: `test/core/utils/install_folder_test.dart`, `test/features/settings/data/services/kanjivg_download_flow_test.dart`, `test/features/settings/data/services/unidic_download_flow_test.dart` (the two that do) |
+| A manga's page data is read through `MangaCacheStore` | partly: `test/features/manga/data/services/manga_cache_store_test.dart`, `test/features/library/manga_pages_missing_test.dart`; nothing stops a second reader |
