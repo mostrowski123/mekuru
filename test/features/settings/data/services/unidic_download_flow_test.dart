@@ -182,6 +182,36 @@ void main() {
     expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
   });
 
+  test('a half unpack that 1.74.5 left, with no marker, is freed before the '
+      'room check, as 1.74.5 freed it', () async {
+    // Up to 250 MB on a real phone, with only Download on its row.
+    installDir().createSync();
+    File(p.join(installDir().path, 'sys.dic')).writeAsBytesSync([1, 2, 3]);
+    mockFreeBytes(1000);
+
+    await download();
+
+    expect(failure(), isA<InsufficientSpaceException>());
+    expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
+  });
+
+  test('Delete also removes what a stopped download left beside the '
+      'install', () async {
+    for (final (dir, name) in [
+      ('unidic-lite', '.install_complete'),
+      ('unidic-lite.new', 'sys.dic'),
+      ('unidic-lite.old', 'char.bin'),
+    ]) {
+      inRoot(p.join(dir, name))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('{}');
+    }
+
+    await EnhancedFuriganaDictDownloadService.uninstall();
+
+    expect(root.listSync(), isEmpty);
+  });
+
   test('a web page in place of the archive fails as damaged and installs '
       'nothing', () async {
     // A captive portal or a proxy answers 200 with its own page.

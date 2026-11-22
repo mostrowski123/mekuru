@@ -218,6 +218,37 @@ void main() {
     );
   });
 
+  test('a half unpack an earlier version left, with no marker, is freed '
+      'before the room check', () async {
+    inRoot(p.join('kanjivg', '04e00.svg'))
+      ..createSync(recursive: true)
+      ..writeAsStringSync('HALF');
+    mockFreeBytes(1000);
+    http.handler = serve(zip);
+
+    await download();
+
+    expect(failure(), isA<InsufficientSpaceException>());
+    expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
+  });
+
+  test('Delete also removes what a stopped download left beside the '
+      'install', () async {
+    marker()
+      ..createSync(recursive: true)
+      ..writeAsStringSync('KanjiVG\n');
+    for (final dir in ['kanjivg.new', 'kanjivg.old']) {
+      inRoot(p.join(dir, '04e00.svg'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('HALF');
+    }
+
+    await container.read(kanjiVgProvider.notifier).delete();
+
+    expect(tile().outcome, (action: TileAction.delete, error: null));
+    expect(root.listSync(), isEmpty);
+  });
+
   test('without room for the zip and its SVGs it fetches nothing and says '
       'how much more it needs', () async {
     mockFreeBytes(1000);

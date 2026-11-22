@@ -86,8 +86,13 @@ void main() {
     expect(files(), {'unidic-lite/a': 'NEW'});
   });
 
-  test('an install a killed swap had moved aside comes back', () async {
+  test('an install that a swap killed between its two renames had moved '
+      'aside comes back', () async {
+    // The app died after the old install moved aside and before the new one
+    // took its place: both are whole, neither is in place.
     write('$install.old', '.install_complete', '{}');
+    write('$install.new', '.install_complete', '{}');
+    write('$install.new', 'sys.dic', 'NEW');
 
     await expectLater(
       fillInstallFolder(install, diskFull),
@@ -95,5 +100,67 @@ void main() {
     );
 
     expect(files(), {'unidic-lite/.install_complete': '{}'});
+  });
+
+  test('an old copy the app was killed deleting never comes back', () async {
+    // The swap was done and the new install has since been deleted: what is
+    // left of the old copy is its marker and half its files.
+    write('$install.old', '.install_complete', '{}');
+    write('$install.old', 'char.bin', 'HALF');
+
+    await expectLater(
+      fillInstallFolder(install, diskFull),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    expect(root.listSync(), isEmpty);
+  });
+
+  group('before a download asks how much room there is', () {
+    test('a half unpack with no marker, and what a killed download left '
+        'beside it, are freed', () async {
+      // What 1.74.5 left when an unpack stopped on a full disk.
+      write(install, 'sys.dic', 'HALF');
+      write('$install.new', 'sys.dic', 'HALF');
+      write('$install.old', 'char.bin', 'HALF');
+
+      await clearInstallLeftovers(install, marker: '.install_complete');
+
+      expect(root.listSync(), isEmpty);
+    });
+
+    test('a whole install stays, and only what is beside it goes', () async {
+      write(install, 'sys.dic', 'OLD');
+      write(install, '.install_complete', '{}');
+      write('$install.new', 'sys.dic', 'HALF');
+
+      await clearInstallLeftovers(install, marker: '.install_complete');
+
+      expect(files(), {
+        'unidic-lite/sys.dic': 'OLD',
+        'unidic-lite/.install_complete': '{}',
+      });
+    });
+
+    test('an install a killed swap had moved aside comes back and '
+        'stays', () async {
+      write('$install.old', '.install_complete', '{}');
+      write('$install.new', 'sys.dic', 'NEW');
+
+      await clearInstallLeftovers(install, marker: '.install_complete');
+
+      expect(files(), {'unidic-lite/.install_complete': '{}'});
+    });
+  });
+
+  test('deleting an install deletes what a download left beside it', () async {
+    write(install, '.install_complete', '{}');
+    write('$install.new', 'sys.dic', 'HALF');
+    write('$install.old', 'char.bin', 'HALF');
+
+    expect(await deleteInstallFolder(install), isTrue);
+
+    expect(root.listSync(), isEmpty);
+    expect(await deleteInstallFolder(install), isFalse);
   });
 }

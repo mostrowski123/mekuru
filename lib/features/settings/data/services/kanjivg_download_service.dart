@@ -101,6 +101,8 @@ class KanjiVgDownloadService {
     void Function(double progress)? onProgress,
   }) async {
     final dir = await getStorageDir();
+    // Before the room check: a half unpack takes room and is no install.
+    await clearInstallLeftovers(dir, marker: _markerFileName);
     final count = await runDownload(
       const DownloadSpec(
         DownloadKind.kanjiVg,
@@ -139,9 +141,7 @@ class KanjiVgDownloadService {
 
   /// Delete all downloaded KanjiVG files.
   static Future<void> delete() async {
-    final dir = Directory(await getStorageDir());
-    if (await dir.exists()) {
-      await dir.delete(recursive: true);
+    if (await deleteInstallFolder(await getStorageDir())) {
       logUsage('download.uninstalled', attrs: {'asset': 'kanjivg'});
     }
   }

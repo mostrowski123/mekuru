@@ -93,9 +93,7 @@ class EnhancedFuriganaDictDownloadService {
   /// Delete the installed unidic-lite files. Safe to call when the dict is
   /// not installed.
   static Future<void> uninstall() async {
-    final dir = Directory(await getStorageDir());
-    if (await dir.exists()) {
-      await dir.delete(recursive: true);
+    if (await deleteInstallFolder(await getStorageDir())) {
       logUsage('download.uninstalled', attrs: {'asset': 'unidic'});
     }
   }
@@ -129,6 +127,8 @@ class EnhancedFuriganaDictDownloadService {
     required NetworkConsent network,
     void Function(double progress)? onProgress,
   }) async {
+    // Before the room check: a half unpack can hold 250 MB.
+    await clearInstallLeftovers(await getStorageDir(), marker: _markerFileName);
     await runDownload<void>(
       const DownloadSpec(
         DownloadKind.uniDic,
