@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +14,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/shared/downloads/download.dart';
+import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -177,6 +180,76 @@ void main() {
       ),
     );
     expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
+  });
+
+  test('a web page in place of the archive fails as damaged and installs '
+      'nothing', () async {
+    // A captive portal or a proxy answers 200 with its own page.
+    http.handler = serve('<html><body>Sign in</body></html>'.codeUnits);
+
+    await download();
+
+    expect(failure(), isA<FormatException>());
+    expect(
+      dictionaryDownloadError(
+        lookupAppLocalizations(const Locale('ja')),
+        failure(),
+      ),
+      lookupAppLocalizations(const Locale('ja')).localOcrDownloadDamaged,
+    );
+    expect(installDir().existsSync(), isFalse);
+    expectNothingInstalled();
+    expect(await EnhancedFuriganaDictDownloadService.isInstalled(), isFalse);
+  });
+
+  test('an install already there survives a download that fails', () async {
+    installDir().createSync();
+    File(p.join(installDir().path, 'sys.dic')).writeAsStringSync('OLD');
+    File(
+      p.join(installDir().path, '.install_complete'),
+    ).writeAsStringSync('{}');
+    http.handler = serve('<html><body>Sign in</body></html>'.codeUnits);
+
+    await download();
+
+    expect(failure(), isA<FormatException>());
+    expect(await EnhancedFuriganaDictDownloadService.isInstalled(), isTrue);
+    expect(
+      File(p.join(installDir().path, 'sys.dic')).readAsStringSync(),
+      'OLD',
+    );
+  });
+
+  test('an unpack that fails partway, as on a full disk, leaves no folder '
+      'and no marker', () async {
+    // The second file can't be written, a FileSystemException like the one
+    // a full disk throws; no test machine can be made to run out of room.
+    final tarGz = GZipEncoder().encode(
+      TarEncoder().encode(
+        Archive()
+          ..addFile(ArchiveFile('unidic-lite-2.1.2/sys.dic', 3, [1, 2, 3]))
+          ..addFile(
+            ArchiveFile('unidic-lite-2.1.2/${'a' * 300}.dic', 3, [4, 5, 6]),
+          ),
+      ),
+    );
+    final fake = inRoot('fake.tar.gz')..writeAsBytesSync(tarGz);
+
+    await expectLater(
+      EnhancedFuriganaDictDownloadService.installFrom(
+        fake.path,
+        hash: sha256.convert(tarGz).toString(),
+      ),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    // Was: sys.dic left in unidic-lite/, without the marker.
+    expect(installDir().existsSync(), isFalse);
+    expect(await EnhancedFuriganaDictDownloadService.isInstalled(), isFalse);
+    expect(
+      root.listSync(recursive: true).whereType<File>().map((f) => f.path),
+      [fake.path],
+    );
   });
 
   test('an install from an earlier version shows as installed', () async {

@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/core/utils/install_folder.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
@@ -128,52 +129,50 @@ class EnhancedFuriganaDictDownloadService {
     required NetworkConsent network,
     void Function(double progress)? onProgress,
   }) async {
-    final dir = await getStorageDir();
-    final outputDir = Directory(dir);
-    // MeCab memory-maps these files: delete them, never rewrite in place.
-    if (await outputDir.exists()) {
-      await outputDir.delete(recursive: true);
-    }
-    await outputDir.create(recursive: true);
-    await excludeFromIosBackup([dir]);
+    await runDownload<void>(
+      const DownloadSpec(
+        DownloadKind.uniDic,
+        id: 'unidic',
+        parts: [
+          (
+            name: 'unidic_lite_download.tar.gz',
+            url: downloadUrl,
+            bytes: null,
+            sha256: null,
+          ),
+        ],
+      ),
+      network,
+      share: 0.85,
+      onProgress: onProgress,
+      install: (archivePath, _) => installFrom(archivePath),
+    );
+  }
 
-    try {
-      await runDownload<void>(
-        const DownloadSpec(
-          DownloadKind.uniDic,
-          id: 'unidic',
-          parts: [
-            (
-              name: 'unidic_lite_download.tar.gz',
-              url: downloadUrl,
-              bytes: null,
-              sha256: null,
-            ),
-          ],
-        ),
-        network,
-        share: 0.85,
-        onProgress: onProgress,
-        install: (archivePath, _) async {
-          await compute(verifyAndExtractTarGz, (
-            archivePath: archivePath,
-            outputDir: dir,
-            expectedSha256: expectedSha256,
-          ));
-          await File(p.join(dir, _markerFileName)).writeAsString(
-            jsonEncode({
-              'sha256': expectedSha256,
-              'installed_at': DateTime.now().toIso8601String(),
-            }),
-          );
-        },
+  /// Installs the downloaded archive at [archivePath], which must hash to
+  /// [hash]. Tests pass the hash of an archive of their own. MeCab maps the
+  /// installed files, so they are replaced as a folder, never rewritten.
+  @visibleForTesting
+  static Future<void> installFrom(
+    String archivePath, {
+    String hash = expectedSha256,
+  }) async {
+    final dir = await getStorageDir();
+    await fillInstallFolder(dir, (into) async {
+      await excludeFromIosBackup([into]);
+      await compute(verifyAndExtractTarGz, (
+        archivePath: archivePath,
+        outputDir: into,
+        expectedSha256: hash,
+      ));
+      await File(p.join(into, _markerFileName)).writeAsString(
+        jsonEncode({
+          'sha256': hash,
+          'installed_at': DateTime.now().toIso8601String(),
+        }),
       );
-    } on FormatException {
-      // Hash mismatch or corrupt archive: don't leave a half-installed
-      // directory behind.
-      await outputDir.delete(recursive: true);
-      rethrow;
-    }
+    });
+    await excludeFromIosBackup([dir]);
   }
 
   /// Runs on a background isolate via [compute]: verifies the archive's

@@ -191,6 +191,32 @@ void main() {
     expect(tile().isDownloaded, isFalse);
   });
 
+  test('an install already there survives a download that breaks partway, '
+      'unchanged', () async {
+    final old = inRoot(p.join('kanjivg', '04e00.svg'))
+      ..createSync(recursive: true)
+      ..writeAsStringSync('OLD');
+    marker().writeAsStringSync('KanjiVG\n');
+    final big = ('<svg>${'x' * 2000}</svg>').codeUnits;
+    final whole = ZipEncoder().encode(
+      Archive()
+        ..addFile(ArchiveFile('kanjivg/kanji/04e00.svg', big.length, big))
+        ..addFile(ArchiveFile('kanjivg/kanji/04e8c.svg', big.length, big)),
+    );
+    http.handler = serve(_damageEntry(whole, 'kanjivg/kanji/04e8c.svg'));
+
+    await download();
+
+    expect(failure(), isA<FormatException>());
+    expect(marker().existsSync(), isTrue);
+    // Was: 04e00.svg rewritten from the broken download.
+    expect(old.readAsStringSync(), 'OLD');
+    expect(
+      root.listSync(recursive: true).whereType<File>().map((f) => f.path),
+      unorderedEquals([old.path, marker().path]),
+    );
+  });
+
   test('without room for the zip and its SVGs it fetches nothing and says '
       'how much more it needs', () async {
     mockFreeBytes(1000);

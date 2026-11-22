@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/core/utils/install_folder.dart';
+import 'package:mekuru/core/utils/zip_decode.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -99,13 +101,7 @@ class KanjiVgDownloadService {
     void Function(double progress)? onProgress,
   }) async {
     final dir = await getStorageDir();
-    final outputDir = Directory(dir);
-    if (!await outputDir.exists()) {
-      await outputDir.create(recursive: true);
-    }
-    await excludeFromIosBackup([dir]);
-
-    return runDownload(
+    final count = await runDownload(
       const DownloadSpec(
         DownloadKind.kanjiVg,
         id: 'kanjivg',
@@ -121,35 +117,24 @@ class KanjiVgDownloadService {
       network,
       share: 0.9,
       onProgress: onProgress,
-      install: (zipPath, _) async {
-        try {
-          // Extract SVGs (runs on isolate to avoid blocking UI)
-          final count = await compute(extractSvgsFromArchive, (
-            zipPath: zipPath,
-            outputDir: dir,
-          ));
-          // Write completion marker
-          await File(p.join(dir, _markerFileName)).writeAsString(
-            'KanjiVG kanjivg-20220427\n'
-            'Files: $count\n'
-            'Downloaded: ${DateTime.now().toIso8601String()}\n',
-          );
-          return count;
-        } catch (_) {
-          // Without the marker the folder is no install, only what this
-          // extraction got through: it goes, so nothing looks half there. A
-          // marked folder is a whole install this run rewrote in place.
-          if (!await isDownloaded()) {
-            try {
-              await outputDir.delete(recursive: true);
-            } on FileSystemException {
-              // The next download overwrites them; the user hears the cause.
-            }
-          }
-          rethrow;
-        }
-      },
+      install: (zipPath, _) => fillInstallFolder(dir, (into) async {
+        await excludeFromIosBackup([into]);
+        // Extract SVGs (runs on isolate to avoid blocking UI)
+        final count = await compute(extractSvgsFromArchive, (
+          zipPath: zipPath,
+          outputDir: into,
+        ));
+        // Write completion marker
+        await File(p.join(into, _markerFileName)).writeAsString(
+          'KanjiVG kanjivg-20220427\n'
+          'Files: $count\n'
+          'Downloaded: ${DateTime.now().toIso8601String()}\n',
+        );
+        return count;
+      }),
     );
+    await excludeFromIosBackup([dir]);
+    return count;
   }
 
   /// Delete all downloaded KanjiVG files.
@@ -170,7 +155,7 @@ class KanjiVgDownloadService {
   ) {
     final input = InputFileStream(payload.zipPath);
     try {
-      final archive = ZipDecoder().decodeStream(input);
+      final archive = decodeZip(input);
       var count = 0;
 
       for (final file in archive.files) {
@@ -189,8 +174,8 @@ class KanjiVgDownloadService {
         }
       }
 
-      // ZipDecoder reads anything that isn't a zip (an error page served
-      // with 200) as an empty archive.
+      // A zip, but not the stroke-order one: an empty install would look
+      // downloaded.
       if (count == 0) {
         throw const FormatException('No stroke order files in the download');
       }

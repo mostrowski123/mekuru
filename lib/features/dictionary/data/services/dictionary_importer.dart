@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart'
 import 'package:json_events/json_events.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/image_convert.dart';
+import 'package:mekuru/core/utils/zip_decode.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
@@ -1145,11 +1146,8 @@ class DictionaryImporter {
 
     try {
       input = InputFileStream(filePath);
-      final archive = ZipDecoder().decodeStream(input);
-      // ZipDecoder reads anything that isn't a zip (an error page served
-      // with 200) as an empty archive, which would import as an empty
-      // "Unknown Dictionary".
-      if (archive.isEmpty) throw const FormatException('Not a zip file');
+      // Not a zip would import as an empty "Unknown Dictionary".
+      final archive = decodeZip(input);
 
       final index = _readZipIndex(archive);
       final termBankFiles = archive.files
