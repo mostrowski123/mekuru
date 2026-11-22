@@ -321,24 +321,25 @@ class _FullBackupJobScreenState extends ConsumerState<FullBackupJobScreen> {
           button(l10n.backupFullJobDone, notifier.dismiss),
         ];
       case FullBackupJobLifecycle.done:
-        // iOS reloads in place; everywhere else the process ends.
-        final reloads = defaultTargetPlatform == TargetPlatform.iOS;
+        // iOS reloads in place; Android ends the process.
+        final (title, body, action) = switch (wording) {
+          Wording.android => (
+            l10n.backupFullRestartTitle,
+            l10n.backupFullRestartBody,
+            l10n.backupFullRestartButton,
+          ),
+          Wording.ios => (
+            l10n.backupFullReloadTitle,
+            l10n.backupFullReloadBody,
+            l10n.backupFullReloadButton,
+          ),
+        };
         return [
-          Text(
-            reloads ? l10n.backupFullReloadTitle : l10n.backupFullRestartTitle,
-            style: theme.textTheme.titleMedium,
-          ),
+          Text(title, style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
-          Text(
-            reloads ? l10n.backupFullReloadBody : l10n.backupFullRestartBody,
-          ),
+          Text(body),
           const SizedBox(height: 24),
-          button(
-            reloads
-                ? l10n.backupFullReloadButton
-                : l10n.backupFullRestartButton,
-            notifier.exitApp,
-          ),
+          button(action, notifier.exitApp),
         ];
       case FullBackupJobLifecycle.cancelled:
         return [
