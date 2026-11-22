@@ -6,6 +6,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -86,6 +87,30 @@ void main() {
         reason: '$what: $ink on $behind',
       );
     }
+    // The system bars are over the same surface when the controls were up:
+    // their icons take the colour that shows on it.
+    final surface = _behind(tester, find.text(message));
+    final bars = tester
+        .widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+          find
+              .ancestor(
+                of: find.text(message),
+                matching: find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+              )
+              .first,
+        )
+        .value;
+    final icons = surface.computeLuminance() > 0.5
+        ? Brightness.dark
+        : Brightness.light;
+    expect(bars.statusBarIconBrightness, icons, reason: 'on $surface');
+    expect(
+      bars.systemNavigationBarIconBrightness,
+      icons,
+      reason: 'on $surface',
+    );
+    // iOS is told how bright the bar is, not its icons.
+    expect(bars.statusBarBrightness, isNot(icons), reason: 'on $surface');
   }
 
   for (final (app, theme) in [

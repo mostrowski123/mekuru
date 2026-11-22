@@ -480,14 +480,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final viewer = _viewer;
     final shown = _shownLayout;
 
+    // The bars are over the dark control bars, except beside the control bar
+    // on iPhone Duo (the status bar, over the page) and on the screen of a
+    // book that did not open (both bars, over its surface).
+    final failed = _failure != null;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      // iPhone Duo's status bar sits beside the control bar, over the page.
       value:
-          GlassVerticalBar.maybeOf(context) != null &&
+          (failed || GlassVerticalBar.maybeOf(context) != null) &&
               background.computeLuminance() > 0.5
           ? readerSystemBarsOverlayStyle.copyWith(
               statusBarIconBrightness: Brightness.dark,
               statusBarBrightness: Brightness.light,
+              systemNavigationBarIconBrightness: failed
+                  ? Brightness.dark
+                  : null,
             )
           : readerSystemBarsOverlayStyle,
       child: Scaffold(
