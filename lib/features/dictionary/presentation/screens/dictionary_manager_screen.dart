@@ -9,6 +9,7 @@ import 'package:mekuru/core/database/database_provider.dart'
     show DictionaryMeta;
 import 'package:mekuru/core/platform/file_pick.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/core/utils/storage_full.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
@@ -28,7 +29,6 @@ import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
-import 'package:mekuru/shared/widgets/download_status.dart' show isStorageFull;
 import 'package:mekuru/shared/widgets/load_failed_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 

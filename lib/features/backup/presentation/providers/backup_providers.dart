@@ -95,7 +95,6 @@ enum BackupMessageKind {
   noBackupsToExport,
   backupExported,
   exportFailed,
-  invalidBackupFile,
   restoreSummary,
   restoreFailed,
   // A reading data backup from a newer Mekuru, and one that doesn't parse.
@@ -153,9 +152,6 @@ class BackupMessage {
 
   const BackupMessage.exportFailed()
     : this._(kind: BackupMessageKind.exportFailed);
-
-  const BackupMessage.invalidBackupFile()
-    : this._(kind: BackupMessageKind.invalidBackupFile);
 
   const BackupMessage.restoreSummary(RestoreResult result)
     : this._(kind: BackupMessageKind.restoreSummary, result: result);
@@ -299,20 +295,12 @@ class RestoreNotifier extends Notifier<RestoreState> {
   @override
   RestoreState build() => const RestoreState();
 
-  /// Restore from a backup file path (internal backups list).
+  /// Restore the reading data backup at [filePath]: settings, dictionary
+  /// preferences (queued when [queueDictionaryPreferences]), saved words,
+  /// stats and books.
   Future<void> restoreFromPath(
     String filePath, {
     bool queueDictionaryPreferences = true,
-  }) async {
-    await _restoreFromPath(
-      filePath,
-      queueDictionaryPreferences: queueDictionaryPreferences,
-    );
-  }
-
-  Future<void> _restoreFromPath(
-    String filePath, {
-    required bool queueDictionaryPreferences,
   }) async {
     state = const RestoreState(isWorking: true);
     try {

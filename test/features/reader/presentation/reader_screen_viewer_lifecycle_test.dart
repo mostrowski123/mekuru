@@ -23,7 +23,6 @@ import 'package:mekuru/features/reader/data/services/reader_settings_storage.dar
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/providers/user_font_providers.dart';
 import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
-import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
 import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations_en.dart';
@@ -37,6 +36,7 @@ import '../../../shared/fake_user_font_store.dart';
 import '../../../shared/reader_settings_test_helpers.dart';
 import '../../../shared/test_database.dart';
 import '../../../test_app.dart';
+import 'recording_reader.dart';
 
 const _openedAt = 'epubcfi(/6/4!/4/2/1:0)';
 const _pageA = 'epubcfi(/6/6!/4/2/1:0)';
@@ -95,17 +95,6 @@ class _DefaultSettingsStorage implements ReaderSettingsStorage {
   Future<void> save(ReaderSettings settings) async {}
 }
 
-class _NoWakelock extends WakelockPlusPlatformInterface {
-  @override
-  bool get isMock => true;
-
-  @override
-  Future<bool> get enabled async => false;
-
-  @override
-  Future<void> toggle({required bool enable}) async {}
-}
-
 void main() {
   late Directory tempDir;
   late Book book;
@@ -124,7 +113,7 @@ void main() {
         logs.add((message: message, attributes: attributes));
     SharedPreferences.setMockInitialValues({});
     originalWakelock = WakelockPlusPlatformInterface.instance;
-    WakelockPlusPlatformInterface.instance = _NoWakelock();
+    WakelockPlusPlatformInterface.instance = NoWakelock();
     tempDir = Directory.systemTemp.createTempSync('reader_viewer_');
     final epub = File('${tempDir.path}/book.epub')..writeAsBytesSync([0]);
     book = Book(
@@ -150,21 +139,7 @@ void main() {
     tempDir.deleteSync(recursive: true);
   });
 
-  Finder viewerFinder() => find.byType(CustomEpubViewer, skipOffstage: false);
-  CustomEpubViewer viewer(WidgetTester tester) => tester.widget(viewerFinder());
   final spinner = find.byKey(const Key('reader-loading-overlay'));
-
-  /// Pumps until the reader has resolved the book file and built a viewer.
-  Future<void> pumpUntilViewerBuilt(WidgetTester tester) async {
-    for (var i = 0; i < 50 && viewerFinder().evaluate().isEmpty; i++) {
-      // The book file is resolved with real file IO.
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 10)),
-      );
-      await tester.pump();
-    }
-    expect(viewerFinder(), findsOneWidget, reason: 'no viewer was built');
-  }
 
   /// Opens [opened] (the test's book when null), and waits for its viewer
   /// unless [viewerExpected] is false.
@@ -230,9 +205,10 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }
 
-  void relocate(WidgetTester tester, String cfi, double progress) => viewer(
-    tester,
-  ).onRelocated!(EpubLocation(startCfi: cfi, endCfi: cfi, progress: progress));
+  void relocate(WidgetTester tester, String cfi, double progress) =>
+      readerViewer(tester).onRelocated!(
+        EpubLocation(startCfi: cfi, endCfi: cfi, progress: progress),
+      );
 
   testWidgets('the spinner stays until the viewer reports the book shown', (
     tester,
@@ -240,14 +216,14 @@ void main() {
     await openReader(tester);
     expect(spinner, findsOneWidget);
 
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
     expect(spinner, findsNothing);
 
     // A loaded book does not time out later.
     await tester.pump(const Duration(seconds: 16));
     expect(find.textContaining('took too long'), findsNothing);
-    expect(viewerFinder(), findsOneWidget);
+    expect(readerViewerFinder(), findsOneWidget);
     await closeReader(tester);
   });
 
@@ -261,7 +237,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(find.textContaining('took too long'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
-    expect(viewerFinder(), findsNothing);
+    expect(readerViewerFinder(), findsNothing);
     await closeReader(tester);
   });
 
@@ -269,7 +245,7 @@ void main() {
     tester,
   ) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
 
     container.read(readerSettingsProvider.notifier).setScrollView(true);
@@ -290,7 +266,7 @@ void main() {
     final built = <Key?>{};
     for (var i = 0; i < 30; i++) {
       await tester.pump();
-      built.addAll(viewerFinder().evaluate().map((e) => e.widget.key));
+      built.addAll(readerViewerFinder().evaluate().map((e) => e.widget.key));
       // The book file is found again with real file IO.
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 10)),
@@ -304,7 +280,7 @@ void main() {
   testWidgets('the timeout does not replace a load error', (tester) async {
     await openReader(tester);
 
-    viewer(tester).onLoadError!('net::ERR_FAILED');
+    readerViewer(tester).onLoadError!('net::ERR_FAILED');
     await tester.pump();
     expect(find.text(_en.readerCouldNotOpen), findsOneWidget);
 
@@ -346,7 +322,7 @@ void main() {
       await openReader(tester);
 
       // What the viewer passes when reading the book's file fails.
-      viewer(tester).onLoadError!(
+      readerViewer(tester).onLoadError!(
         FileSystemException('Cannot open file', book.filePath),
       );
       await tester.pump();
@@ -374,7 +350,7 @@ void main() {
           '$detail', (tester) async {
         await openReader(tester);
 
-        viewer(tester).onLoadError!(detail);
+        readerViewer(tester).onLoadError!(detail);
         await tester.pump();
         expect(find.text(_en.readerCouldNotOpen), findsOneWidget);
         expect(find.text('Retry'), findsOneWidget);
@@ -389,7 +365,7 @@ void main() {
     tester,
   ) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
 
     // Before locations epub.js reports every page at 0%.
@@ -397,7 +373,7 @@ void main() {
     await flushSaves(tester);
     expect(books.saves.last, (cfi: _pageA, progress: 0.42));
 
-    viewer(tester).onLocationsReady!();
+    readerViewer(tester).onLocationsReady!();
     relocate(tester, _pageB, 0.5);
     await flushSaves(tester);
     expect(books.saves.last, (cfi: _pageB, progress: 0.5));
@@ -407,16 +383,20 @@ void main() {
   testWidgets('a new reading mode builds a viewer that waits for its own '
       'locations', (tester) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
-    viewer(tester).onLocationsReady!();
+    readerViewer(tester).onLoaded!();
+    readerViewer(tester).onLocationsReady!();
     relocate(tester, _pageB, 0.5);
     await flushSaves(tester);
-    final oldKey = viewer(tester).key;
+    final oldKey = readerViewer(tester).key;
 
     container.read(readerSettingsProvider.notifier).setScrollView(true);
     await settle(tester);
-    expect(viewer(tester).key, isNot(oldKey));
-    expect(viewer(tester).initialCfi, _pageB, reason: 'the last page shown');
+    expect(readerViewer(tester).key, isNot(oldKey));
+    expect(
+      readerViewer(tester).initialCfi,
+      _pageB,
+      reason: 'the last page shown',
+    );
     expect(spinner, findsOneWidget);
 
     // The new viewer's first page arrives before its locations.
@@ -424,7 +404,7 @@ void main() {
     await flushSaves(tester);
     expect(books.saves.last, (cfi: _pageC, progress: 0.5));
 
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
     expect(spinner, findsNothing);
     await closeReader(tester);
@@ -433,22 +413,26 @@ void main() {
   testWidgets('a reading-mode change while a new viewer loads is applied '
       'once it loads', (tester) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
 
     container.read(readerSettingsProvider.notifier).setScrollView(true);
     await settle(tester);
-    final loading = viewer(tester);
+    final loading = readerViewer(tester);
     expect(loading.scrollView, isTrue);
 
     container.read(readerSettingsProvider.notifier).setScrollView(false);
     await settle(tester);
-    expect(viewer(tester).key, loading.key, reason: 'left to finish loading');
+    expect(
+      readerViewer(tester).key,
+      loading.key,
+      reason: 'left to finish loading',
+    );
 
     loading.onLoaded!();
     await settle(tester);
-    expect(viewer(tester).key, isNot(loading.key));
-    expect(viewer(tester).scrollView, isFalse);
+    expect(readerViewer(tester).key, isNot(loading.key));
+    expect(readerViewer(tester).scrollView, isFalse);
     expect(spinner, findsOneWidget);
     await closeReader(tester);
   });
@@ -457,7 +441,7 @@ void main() {
     tester,
   ) async {
     await openReader(tester);
-    final replaced = viewer(tester);
+    final replaced = readerViewer(tester);
     replaced.onLoaded!();
     replaced.onLocationsReady!();
     relocate(tester, _pageB, 0.5);
@@ -465,7 +449,7 @@ void main() {
 
     container.read(readerSettingsProvider.notifier).setScrollView(true);
     await settle(tester);
-    expect(viewer(tester).key, isNot(replaced.key));
+    expect(readerViewer(tester).key, isNot(replaced.key));
 
     // Messages the old web view sent before it went.
     replaced.onLoaded!();
@@ -488,16 +472,16 @@ void main() {
     tester,
   ) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
     relocate(tester, _pageB, 0.5);
     await tester.pump();
-    final oldKey = viewer(tester).key;
+    final oldKey = readerViewer(tester).key;
 
-    viewer(tester).onRendererGone!();
+    readerViewer(tester).onRendererGone!();
     await settle(tester);
-    expect(viewer(tester).key, isNot(oldKey));
-    expect(viewer(tester).initialCfi, _pageB);
+    expect(readerViewer(tester).key, isNot(oldKey));
+    expect(readerViewer(tester).initialCfi, _pageB);
     expect(spinner, findsOneWidget);
     await closeReader(tester);
   });
@@ -505,11 +489,11 @@ void main() {
   testWidgets('a renderer that dies while the app is away is replaced on '
       'return, and its load is timed from then', (tester) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
     relocate(tester, _pageB, 0.5);
     await tester.pump();
-    final oldKey = viewer(tester).key;
+    final oldKey = readerViewer(tester).key;
 
     // Killed for memory in the background, where no frame is built.
     addTearDown(
@@ -518,18 +502,22 @@ void main() {
       ),
     );
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    viewer(tester).onRendererGone!();
+    readerViewer(tester).onRendererGone!();
     await tester.pump(const Duration(seconds: 20));
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await settle(tester);
     expect(find.textContaining('took too long'), findsNothing);
-    expect(viewer(tester).key, isNot(oldKey));
-    expect(viewer(tester).initialCfi, _pageB, reason: 'the place it showed');
+    expect(readerViewer(tester).key, isNot(oldKey));
+    expect(
+      readerViewer(tester).initialCfi,
+      _pageB,
+      reason: 'the place it showed',
+    );
     expect(spinner, findsOneWidget);
 
     await tester.pump(const Duration(seconds: 10));
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
     expect(spinner, findsNothing);
     expect(find.textContaining('took too long'), findsNothing);
@@ -539,9 +527,9 @@ void main() {
   testWidgets('a renderer that dies while the app shows unfocused (split '
       'screen) is replaced at once', (tester) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
-    final oldKey = viewer(tester).key;
+    final oldKey = readerViewer(tester).key;
 
     // Frames are still built.
     addTearDown(
@@ -550,25 +538,25 @@ void main() {
       ),
     );
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-    viewer(tester).onRendererGone!();
+    readerViewer(tester).onRendererGone!();
     await settle(tester);
-    expect(viewer(tester).key, isNot(oldKey));
+    expect(readerViewer(tester).key, isNot(oldKey));
     await closeReader(tester);
   });
 
   testWidgets('Retry opens at the place the reader had got to, not the one '
       'the book was opened at', (tester) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
     relocate(tester, _pageB, 0.5);
     await tester.pump();
 
-    viewer(tester).onLoadError!('net::ERR_FAILED');
+    readerViewer(tester).onLoadError!('net::ERR_FAILED');
     await tester.pump();
     await tester.tap(find.text('Retry'));
     await pumpUntilViewerBuilt(tester);
-    expect(viewer(tester).initialCfi, _pageB);
+    expect(readerViewer(tester).initialCfi, _pageB);
     await closeReader(tester);
   });
 
@@ -578,10 +566,10 @@ void main() {
     const pageStart = 'epubcfi(/6/4!/4/8/1:231)';
     const pageEnd = 'epubcfi(/6/4!/4/12/1:20)';
     await openReader(tester);
-    viewer(tester).onLoaded!();
-    viewer(tester).onLocationsReady!();
+    readerViewer(tester).onLoaded!();
+    readerViewer(tester).onLocationsReady!();
     // What the bridge reports after a re-layout that holds the place.
-    viewer(tester).onRelocated!(
+    readerViewer(tester).onRelocated!(
       const EpubLocation(
         startCfi: held,
         pageStartCfi: pageStart,
@@ -593,8 +581,8 @@ void main() {
     expect(books.saves.last, (cfi: held, progress: 0.3));
 
     // A tap in the middle of the page brings up the controls.
-    viewer(tester).onTouchDown!(0.5, 0.5, null);
-    viewer(tester).onTouchUp!(0.5, 0.5, false, false, null);
+    readerViewer(tester).onTouchDown!(0.5, 0.5, null);
+    readerViewer(tester).onTouchUp!(0.5, 0.5, false, false, null);
     await settle(tester);
     await tester.tap(find.byTooltip(_en.readerBookmarkPageTooltip));
     await settle(tester);
@@ -615,7 +603,7 @@ void main() {
   ) async {
     await openReader(tester);
 
-    viewer(tester).onRendererGone!();
+    readerViewer(tester).onRendererGone!();
     await tester.pump();
     expect(
       find.text(
@@ -639,35 +627,35 @@ void main() {
     tester,
   ) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
-    final oldKey = viewer(tester).key;
+    final oldKey = readerViewer(tester).key;
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
 
     unawaited(
       navigator.push(MaterialPageRoute<void>(builder: (_) => const Text('x'))),
     );
     await settle(tester);
-    viewer(tester).onRendererGone!();
+    readerViewer(tester).onRendererGone!();
     await settle(tester);
-    expect(viewer(tester).key, oldKey);
+    expect(readerViewer(tester).key, oldKey);
 
     navigator.pop();
     await settle(tester);
-    expect(viewer(tester).key, isNot(oldKey));
+    expect(readerViewer(tester).key, isNot(oldKey));
     await closeReader(tester);
   });
 
   testWidgets('a reading-mode change under the full settings screen waits '
       'until it closes', (tester) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
-    final oldKey = viewer(tester).key;
+    final oldKey = readerViewer(tester).key;
 
     // A tap in the middle of the page brings up the controls.
-    viewer(tester).onTouchDown!(0.5, 0.5, null);
-    viewer(tester).onTouchUp!(0.5, 0.5, false, false, null);
+    readerViewer(tester).onTouchDown!(0.5, 0.5, null);
+    readerViewer(tester).onTouchUp!(0.5, 0.5, false, false, null);
     await settle(tester);
     await tester.tap(find.byTooltip('Settings'));
     await settle(tester);
@@ -677,11 +665,11 @@ void main() {
 
     container.read(readerSettingsProvider.notifier).setScrollView(true);
     await settle(tester);
-    expect(viewer(tester).key, oldKey);
+    expect(readerViewer(tester).key, oldKey);
 
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
     await settle(tester);
-    expect(viewer(tester).key, isNot(oldKey));
+    expect(readerViewer(tester).key, isNot(oldKey));
     expect(spinner, findsOneWidget);
     await closeReader(tester);
   });
@@ -689,19 +677,19 @@ void main() {
   testWidgets('a reading-mode change under the full settings screen while a '
       'new viewer loads is applied once it loads', (tester) async {
     await openReader(tester);
-    viewer(tester).onLoaded!();
+    readerViewer(tester).onLoaded!();
     await tester.pump();
 
     // The quick settings sheet stays open over the reader while the new
     // viewer loads; its "All settings" button opens the full screen.
-    viewer(tester).onTouchDown!(0.5, 0.5, null);
-    viewer(tester).onTouchUp!(0.5, 0.5, false, false, null);
+    readerViewer(tester).onTouchDown!(0.5, 0.5, null);
+    readerViewer(tester).onTouchUp!(0.5, 0.5, false, false, null);
     await settle(tester);
     await tester.tap(find.byTooltip('Settings'));
     await settle(tester);
     container.read(readerSettingsProvider.notifier).setScrollView(true);
     await settle(tester);
-    final loading = viewer(tester);
+    final loading = readerViewer(tester);
     expect(loading.scrollView, isTrue);
 
     await tester.tap(find.byIcon(Icons.tune));
@@ -711,12 +699,16 @@ void main() {
     await settle(tester);
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
     await settle(tester);
-    expect(viewer(tester).key, loading.key, reason: 'left to finish loading');
+    expect(
+      readerViewer(tester).key,
+      loading.key,
+      reason: 'left to finish loading',
+    );
 
     loading.onLoaded!();
     await settle(tester);
-    expect(viewer(tester).key, isNot(loading.key));
-    expect(viewer(tester).scrollView, isFalse);
+    expect(readerViewer(tester).key, isNot(loading.key));
+    expect(readerViewer(tester).scrollView, isFalse);
     await closeReader(tester);
   });
 }

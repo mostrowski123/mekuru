@@ -153,17 +153,11 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
     ProviderContainer container,
     YomitanDictType variant,
     String size,
-  ) async {
-    AppHaptics.light();
-    final network = await askNetwork(
-      context,
-      size: size,
-      body: (size) => context.l10n.catalogMobileDataBody(size: size),
-    );
-    if (network != null) {
-      unawaited(container.read(_jmdict.notifier).download(network, variant));
-    }
-  }
+  ) => askThenDownload(
+    context,
+    size,
+    (network) => container.read(_jmdict.notifier).download(network, variant),
+  );
 
   void _confirmDelete(BuildContext context) {
     // Resolved before the dialog opens: the tile can unmount while it's up.

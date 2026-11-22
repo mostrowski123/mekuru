@@ -35,17 +35,6 @@ class _NeverLoadedReaderSettings implements ReaderSettingsStorage {
   Future<void> save(ReaderSettings settings) async {}
 }
 
-class _NoWakelock extends WakelockPlusPlatformInterface {
-  @override
-  bool get isMock => true;
-
-  @override
-  Future<bool> get enabled async => false;
-
-  @override
-  Future<void> toggle({required bool enable}) async {}
-}
-
 /// `tester.restartAndRestore()` stands in for the system killing Mekuru in
 /// the background: the tree goes, and comes back from the restoration data
 /// the engine kept. The database (the file on disk) survives.
@@ -57,7 +46,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     db = createTestDatabase();
     originalWakelock = WakelockPlusPlatformInterface.instance;
-    WakelockPlusPlatformInterface.instance = _NoWakelock();
+    WakelockPlusPlatformInterface.instance = NoWakelock();
   });
 
   tearDown(() async {

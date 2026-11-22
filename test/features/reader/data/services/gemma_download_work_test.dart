@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/platform/network_status.dart';
@@ -19,6 +18,7 @@ import 'package:workmanager_platform_interface/workmanager_platform_interface.da
 
 import '../../../../shared/fake_download_notifiers.dart';
 import '../../../../shared/fake_path_provider.dart';
+import '../../../../shared/free_space_fakes.dart';
 
 class _FakeWorkmanager extends WorkmanagerPlatform {
   final registered =
@@ -690,15 +690,8 @@ void main() {
     test('a job already queued is only followed', () async {
       // Mekuru restarted mid-download: the job holds the folder.
       workmanager.scheduled = true;
-      const saf = MethodChannel('mekuru/android_saf');
-      final messenger =
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       // A space check now would fail: the running job already uses it.
-      messenger.setMockMethodCallHandler(
-        saf,
-        (call) async => call.method == 'getFreeBytes' ? 1 : null,
-      );
-      addTearDown(() => messenger.setMockMethodCallHandler(saf, null));
+      mockFreeBytes(1);
       Directory(modelDir()).createSync(recursive: true);
       final fractions = <double>[];
       final done = gemma.downloadModel(

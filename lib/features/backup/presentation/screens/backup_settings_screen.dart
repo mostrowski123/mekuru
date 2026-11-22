@@ -363,7 +363,6 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       BackupMessageKind.noBackupsToExport => l10n.backupNoBackupsToExport,
       BackupMessageKind.backupExported => l10n.backupExportedSuccess,
       BackupMessageKind.exportFailed => l10n.backupExportNotFinished,
-      BackupMessageKind.invalidBackupFile => l10n.backupInvalidFile,
       BackupMessageKind.restoreSummary => _buildRestoreSummary(
         message.result ??
             const RestoreResult(

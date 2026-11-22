@@ -26,17 +26,6 @@ import '../../../../shared/reader_settings_test_helpers.dart';
 import '../../../../shared/test_database.dart';
 import '../../../../test_app.dart';
 
-class _NoWakelock extends WakelockPlusPlatformInterface {
-  @override
-  bool get isMock => true;
-
-  @override
-  Future<bool> get enabled async => false;
-
-  @override
-  Future<void> toggle({required bool enable}) async {}
-}
-
 /// Keeps the reader's saves out of the test database.
 class _NoProgress extends BookRepository {
   _NoProgress(super.db);
@@ -145,7 +134,7 @@ void main() {
   late WakelockPlusPlatformInterface originalWakelock;
   setUp(() {
     originalWakelock = WakelockPlusPlatformInterface.instance;
-    WakelockPlusPlatformInterface.instance = _NoWakelock();
+    WakelockPlusPlatformInterface.instance = NoWakelock();
   });
   tearDown(() => WakelockPlusPlatformInterface.instance = originalWakelock);
 

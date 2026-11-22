@@ -11,6 +11,7 @@ import 'dart:io';
 
 import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
+import 'package:mekuru/core/utils/storage_full.dart';
 import 'package:path/path.dart' as p;
 
 import 'server_client.dart';
@@ -365,7 +366,7 @@ Future<bool> runWorkerDownload(
   } catch (e) {
     await writes;
     if (!Directory(work.path).existsSync()) return true;
-    if (e case FileSystemException(osError: OSError(errorCode: 28))) {
+    if (isStorageFull(e)) {
       // ENOSPC: a retry can't fit either. Room goes first, or not even the
       // status that says so could be written. A server book's part goes; a
       // pinned-size one (gigabytes) only loses a tail, and the next run

@@ -12,7 +12,6 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:mekuru/core/utils/japanese_text.dart';
@@ -140,7 +139,7 @@ void _unwrapRuby(XmlElement ruby, List<XmlNode> base) {
 
 /// [xhtml] with generated ruby spliced in. Null when the document does not
 /// parse, nothing changed, or the tokenizer went away (the caller
-/// keeps the original entry — [buildFuriganaEpub] probes tokenizer
+/// keeps the original entry — [writeFuriganaEpub] probes tokenizer
 /// availability up front so that last case cannot silently skip a book).
 ///
 /// [stripRubyWhere] (aboveLevel mode) unwraps authored ruby whose base text
@@ -314,30 +313,6 @@ Future<bool> writeFuriganaEpub(
     await input.close();
   }
   return true;
-}
-
-/// [writeFuriganaEpub]'s output as bytes, for tests. The app never calls
-/// this: it holds the whole book in memory.
-Future<Uint8List?> buildFuriganaEpub(
-  String epubPath, {
-  required FuriganaMode mode,
-  FuriganaGenerator? generator,
-  bool Function(String baseText)? stripRubyWhere,
-}) async {
-  final dir = await Directory.systemTemp.createTemp('furigana_export_');
-  try {
-    final outPath = p.join(dir.path, 'out.epub');
-    final written = await writeFuriganaEpub(
-      epubPath,
-      outPath,
-      mode: mode,
-      generator: generator,
-      stripRubyWhere: stripRubyWhere,
-    );
-    return written ? await File(outPath).readAsBytes() : null;
-  } finally {
-    await dir.delete(recursive: true);
-  }
 }
 
 /// Worker-isolate entry point: builds the right generator for [mode] and

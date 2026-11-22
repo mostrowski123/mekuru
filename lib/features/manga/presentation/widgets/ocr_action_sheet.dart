@@ -16,6 +16,7 @@ import 'package:mekuru/features/library/presentation/providers/library_providers
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/own_messenger.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/mokuro_models.dart';
@@ -39,25 +40,14 @@ Future<void> showOcrActionSheet(
     isScrollControlled: true,
     useSafeArea: true,
     // Messages from inside the sheet appear on it. The app-wide messenger would
-    // put them on the page's Scaffold, underneath this route. A Scaffold fills
-    // the height it is given, so it lies over the sheet instead of holding it:
-    // the sheet keeps the height of its content and the barrier stays tappable.
-    builder: (_) => ScaffoldMessenger(
-      child: Stack(
-        children: [
-          OcrActionSheet(
-            book: book,
-            visiblePages: visiblePages,
-            initialManga: initialManga,
-          ),
-          // shortcut: touches pass through to the sheet, so a SnackBarAction
-          // would not work here; none of this sheet's messages has one.
-          const Positioned.fill(
-            child: IgnorePointer(
-              child: Scaffold(backgroundColor: Colors.transparent),
-            ),
-          ),
-        ],
+    // put them on the page's Scaffold, underneath this route.
+    // shortcut: touches pass through to the sheet, so a SnackBarAction would
+    // not work here; none of this sheet's messages has one.
+    builder: (_) => withOwnMessenger(
+      OcrActionSheet(
+        book: book,
+        visiblePages: visiblePages,
+        initialManga: initialManga,
       ),
     ),
   );

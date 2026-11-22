@@ -9,6 +9,7 @@ import 'package:mekuru/features/reader/data/models/highlight_color.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/load_failed_text.dart';
+import 'package:mekuru/shared/widgets/own_messenger.dart';
 
 /// Bottom sheet listing all highlights for a book.
 ///

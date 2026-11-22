@@ -28,7 +28,7 @@ final mangaPagesProvider = FutureProvider.autoDispose.family<MokuroBook, int>(
     final book = await bookRepo.getBookById(bookId);
     if (book == null) throw MangaPagesUnavailable.bookGone;
 
-    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) throw MangaPagesUnavailable.pagesMissing;
     final content = await cacheFile.readAsString();
     final mokuroBook = await decodeMangaCache(content);

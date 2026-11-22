@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -21,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/fake_download_notifiers.dart';
 import '../../../../shared/fake_path_provider.dart';
+import '../../../../shared/free_space_fakes.dart';
 import '../../../../shared/loopback_http.dart';
 import '../../../../test_app.dart';
 
@@ -283,16 +283,9 @@ void main() {
     PathProviderPlatform.instance = FakePathProviderPlatform(
       p.join(root.path, 'app'),
     );
-    const saf = MethodChannel('mekuru/android_saf');
-    final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(
-      saf,
-      (call) async => call.method == 'getFreeBytes' ? 1 : null,
-    );
+    mockFreeBytes(1);
     final http = (await tester.runAsync(LoopbackHttp.start))!;
     addTearDown(() async {
-      messenger.setMockMethodCallHandler(saf, null);
       await tester.runAsync(http.close);
       root.deleteSync(recursive: true);
     });

@@ -102,12 +102,14 @@ extension MangaBackgroundStorage on MangaBackground {
 const kEpubTwoPageMinWidth = 600.0;
 
 /// [kEpubTwoPageMinWidth] while the EPUB reader may lay out two pages side
-/// by side, else null: the switch is off, or scroll view has no pages. The
+/// by side, else null: [twoPage] is off, or [scrollView] has no pages. The
 /// page applies the width itself, to each size it lays out at
 /// (`syncTwoPage()` in reader_bridge.js), and can still say no: a
 /// fixed-layout book, or vertical text in a web view that cannot do it.
-double? epubTwoPageMinWidth(ReaderSettings settings) =>
-    settings.epubTwoPage && !settings.scrollView ? kEpubTwoPageMinWidth : null;
+double? epubTwoPageMinWidth({
+  required bool twoPage,
+  required bool scrollView,
+}) => twoPage && !scrollView ? kEpubTwoPageMinWidth : null;
 
 /// What the volume buttons do while a reader is open. Android only: iOS
 /// doesn't let apps take over the volume buttons.

@@ -7,9 +7,9 @@ import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/manga/data/services/ocr_failure.dart';
 import 'package:mekuru/features/manga/data/services/vision_page_ocr.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
-import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/widgets/download_status.dart';
 
 import '../../test_app.dart';
 

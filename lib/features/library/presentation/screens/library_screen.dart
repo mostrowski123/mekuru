@@ -885,10 +885,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   void _showFileDialogFailure(FileDialogFailure failure) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(failure.message(context.l10n))));
+    if (mounted) _showFileDialogFailureSnackBar(context, failure);
   }
 
   Future<void> _importEpub(BuildContext context, WidgetRef ref) async {
@@ -1137,6 +1134,18 @@ enum _DeleteOcr {
 
   /// Restores a PDF's own text; never clears it.
   restorePdf,
+}
+
+/// Says in a snack bar why a system file dialog did not open, while
+/// [context] is still mounted.
+void _showFileDialogFailureSnackBar(
+  BuildContext context,
+  FileDialogFailure failure,
+) {
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(failure.message(context.l10n))));
 }
 
 /// Individual book tile for the grid.
@@ -1679,11 +1688,7 @@ class _BookTileState extends ConsumerState<_BookTile>
       case FileDialogDone(:final value):
         pickedPath = value.first;
       case FileDialogFailed(:final failure):
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(failure.message(context.l10n))));
-        return;
+        return _showFileDialogFailureSnackBar(context, failure);
       case FileDialogCancelled():
         return;
     }

@@ -10,6 +10,7 @@ import 'package:mekuru/features/library/presentation/widgets/furigana_export_act
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/furigana_generator.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
+import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
 
 class _FakeTokenizer implements FuriganaTokenizer {
@@ -32,6 +33,30 @@ TokenInfo _tok(String surface, String reading, int start) => TokenInfo(
   pos: '',
   startInText: start,
 );
+
+/// [writeFuriganaEpub]'s output as bytes. The app never reads it this way:
+/// it would hold the whole book in memory.
+Future<Uint8List?> buildFuriganaEpub(
+  String epubPath, {
+  required FuriganaMode mode,
+  FuriganaGenerator? generator,
+  bool Function(String baseText)? stripRubyWhere,
+}) async {
+  final dir = await Directory.systemTemp.createTemp('furigana_export_');
+  try {
+    final outPath = p.join(dir.path, 'out.epub');
+    final written = await writeFuriganaEpub(
+      epubPath,
+      outPath,
+      mode: mode,
+      generator: generator,
+      stripRubyWhere: stripRubyWhere,
+    );
+    return written ? await File(outPath).readAsBytes() : null;
+  } finally {
+    await dir.delete(recursive: true);
+  }
+}
 
 const _containerXml =
     '<?xml version="1.0" encoding="UTF-8"?>'

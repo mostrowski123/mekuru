@@ -42,17 +42,6 @@ class _CropRepository extends BookRepository {
   }
 }
 
-class _NoWakelock extends WakelockPlusPlatformInterface {
-  @override
-  bool get isMock => true;
-
-  @override
-  Future<bool> get enabled async => false;
-
-  @override
-  Future<void> toggle({required bool enable}) async {}
-}
-
 final _en = AppLocalizationsEn();
 final _offer = find.text(_en.mangaAutoCropComputeTitle);
 
@@ -138,7 +127,7 @@ void main() {
   late WakelockPlusPlatformInterface originalWakelock;
   setUp(() {
     originalWakelock = WakelockPlusPlatformInterface.instance;
-    WakelockPlusPlatformInterface.instance = _NoWakelock();
+    WakelockPlusPlatformInterface.instance = NoWakelock();
   });
   tearDown(() => WakelockPlusPlatformInterface.instance = originalWakelock);
 

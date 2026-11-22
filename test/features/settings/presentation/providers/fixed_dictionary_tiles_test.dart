@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -27,6 +26,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 
 import '../../../../shared/fake_download_notifiers.dart';
 import '../../../../shared/fake_path_provider.dart';
+import '../../../../shared/free_space_fakes.dart';
 import '../../../../shared/loopback_http.dart';
 import '../../../../shared/test_database.dart';
 
@@ -366,14 +366,7 @@ void main() {
 
       test('without room for the dictionary it fetches nothing and says how '
           'much more it needs', () async {
-        const saf = MethodChannel('mekuru/android_saf');
-        final messenger =
-            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-        messenger.setMockMethodCallHandler(
-          saf,
-          (call) async => call.method == 'getFreeBytes' ? 1000 : null,
-        );
-        addTearDown(() => messenger.setMockMethodCallHandler(saf, null));
+        mockFreeBytes(1000);
         http.handler = serve(_zip(tile.title));
 
         await tile.download(container);

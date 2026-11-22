@@ -7,6 +7,7 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/own_messenger.dart';
 
 /// Awaits [write], a change to the library's database. When it fails,
 /// [messenger] shows [failure] and telemetry gets [event]. The library draws
@@ -35,22 +36,6 @@ Future<bool> saveLibraryChange(
     return false;
   }
 }
-
-/// [sheet] with a messenger of its own, so its messages show on it rather
-/// than on the page underneath. A Scaffold fills the height it is given, so
-/// it lies over the sheet instead of holding it, as in showOcrActionSheet.
-Widget withOwnMessenger(Widget sheet) => ScaffoldMessenger(
-  child: Stack(
-    children: [
-      sheet,
-      const Positioned.fill(
-        child: IgnorePointer(
-          child: Scaffold(backgroundColor: Colors.transparent),
-        ),
-      ),
-    ],
-  ),
-);
 
 /// Opens the membership sheet for [book].
 Future<void> showCollectionAssignSheet(BuildContext context, Book book) {

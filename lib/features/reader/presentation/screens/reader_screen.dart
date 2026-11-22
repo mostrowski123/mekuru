@@ -538,9 +538,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                 : 1,
                             scrollView: viewer.layout.scrollView,
                             twoPageMinWidth: epubTwoPageMinWidth(
-                              settings.copyWith(
-                                scrollView: viewer.layout.scrollView,
-                              ),
+                              twoPage: settings.epubTwoPage,
+                              scrollView: viewer.layout.scrollView,
                             ),
                             furiganaMode: settings.furiganaMode,
                             furiganaJlptLevel: settings.furiganaJlptLevel,

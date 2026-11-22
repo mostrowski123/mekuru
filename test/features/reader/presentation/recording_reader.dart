@@ -137,22 +137,23 @@ class _SettingsStorage implements ReaderSettingsStorage {
   Future<void> save(ReaderSettings settings) async {}
 }
 
-class _NoWakelock extends WakelockPlusPlatformInterface {
-  @override
-  bool get isMock => true;
-
-  @override
-  Future<bool> get enabled async => false;
-
-  @override
-  Future<void> toggle({required bool enable}) async {}
-}
-
 Finder readerViewerFinder() =>
     find.byType(CustomEpubViewer, skipOffstage: false);
 
 CustomEpubViewer readerViewer(WidgetTester tester) =>
     tester.widget(readerViewerFinder());
+
+/// Pumps until the reader has resolved the book file and built a viewer.
+Future<void> pumpUntilViewerBuilt(WidgetTester tester) async {
+  for (var i = 0; i < 50 && readerViewerFinder().evaluate().isEmpty; i++) {
+    // The book file is resolved with real file IO.
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump();
+  }
+  expect(readerViewerFinder(), findsOneWidget, reason: 'no viewer was built');
+}
 
 /// A Japanese book (right to left, horizontal text), read [direction] when
 /// given, its file in [dir].
@@ -180,7 +181,7 @@ Future<ProviderContainer> openRecordedReader(
 }) async {
   // Left in place: a reader a failed test leaves open still turns the
   // wakelock off when the next test tears it down.
-  WakelockPlusPlatformInterface.instance = _NoWakelock();
+  WakelockPlusPlatformInterface.instance = NoWakelock();
   tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
     const MethodChannel('mekuru/android_system_ui'),
     (_) async => null,
@@ -207,14 +208,7 @@ Future<ProviderContainer> openRecordedReader(
       ),
     ),
   );
-  for (var i = 0; i < 50 && readerViewerFinder().evaluate().isEmpty; i++) {
-    // The book file is resolved with real file IO.
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
-    );
-    await tester.pump();
-  }
-  expect(readerViewerFinder(), findsOneWidget, reason: 'no viewer was built');
+  await pumpUntilViewerBuilt(tester);
   readerViewer(tester).onLoaded!();
   await tester.pump();
   return container;

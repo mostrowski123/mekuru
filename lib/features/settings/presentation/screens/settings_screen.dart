@@ -32,7 +32,8 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
-import 'package:mekuru/shared/widgets/download_status.dart' show jobWaitText;
+import 'package:mekuru/shared/widgets/download_status.dart'
+    show highQualityDownloadText;
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -339,11 +340,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               )) {
                 // While the job waits its percentage stands still: say why.
-                (:final percent, :final wait) =>
-                  jobWaitText(l10n, wait) ??
-                      l10n.translationHighQualityDownloading(
-                        percent: '$percent',
-                      ),
+                (:final percent, :final wait) => highQualityDownloadText(
+                  l10n,
+                  percent: percent,
+                  wait: wait,
+                ),
                 null => switch (ref.watch(translationModelProvider)) {
                   TranslationModelChoice.standard =>
                     l10n.translationModelStandard,
@@ -775,15 +776,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  static String _gemmaDownloading(
-    AppLocalizations l10n,
-    GemmaDownloading download,
-  ) =>
-      jobWaitText(l10n, download.wait) ??
-      l10n.translationHighQualityDownloading(
-        percent: '${(download.fraction * 100).floor()}',
-      );
-
   /// Set from the tap until the sheet closes: the disk check before the
   /// sheet leaves time for a second tap.
   var _modelPickerOpen = false;
@@ -828,10 +820,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ? null
           : switch (download) {
               GemmaInstalled() => null,
-              final GemmaDownloading downloading => _gemmaDownloading(
-                l10n,
-                downloading,
-              ),
+              GemmaDownloading(:final fraction, :final wait) =>
+                highQualityDownloadText(
+                  l10n,
+                  percent: (fraction * 100).floor(),
+                  wait: wait,
+                ),
               _ => l10n.translationModelHighDownloadFirst(
                 size: GemmaTranslation.downloadSize(),
               ),

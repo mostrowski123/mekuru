@@ -25,12 +25,19 @@ void main() {
 
   test('two pages are offered only when switched on and paginated', () {
     const on = ReaderSettings(epubTwoPage: true);
+    const off = ReaderSettings();
     // Tablets, unfolded foldables and phones held sideways are this wide; a
     // phone held upright is not. The page applies it to its own width.
-    expect(epubTwoPageMinWidth(on), 600);
-    expect(epubTwoPageMinWidth(const ReaderSettings()), isNull);
     expect(
-      epubTwoPageMinWidth(on.copyWith(scrollView: true)),
+      epubTwoPageMinWidth(twoPage: on.epubTwoPage, scrollView: on.scrollView),
+      600,
+    );
+    expect(
+      epubTwoPageMinWidth(twoPage: off.epubTwoPage, scrollView: off.scrollView),
+      isNull,
+    );
+    expect(
+      epubTwoPageMinWidth(twoPage: on.epubTwoPage, scrollView: true),
       isNull,
       reason: 'scroll view has no pages',
     );

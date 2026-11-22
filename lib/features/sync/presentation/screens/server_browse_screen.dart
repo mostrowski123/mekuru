@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
@@ -450,9 +449,7 @@ class _ErrorRetryState extends State<_ErrorRetry> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              isUntrustedCertificateError(error)
-                  ? context.l10n.serverCertificateUntrusted
-                  : serverErrorReason(context.l10n, error),
+              serverErrorReason(context.l10n, error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

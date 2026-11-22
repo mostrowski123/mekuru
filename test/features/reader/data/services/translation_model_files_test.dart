@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
@@ -13,6 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../../../../shared/fake_path_provider.dart';
+import '../../../../shared/free_space_fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -75,14 +75,7 @@ void main() {
 
   test('a Gemma download without room for the model and its cache fails '
       'before fetching', () async {
-    const saf = MethodChannel('mekuru/android_saf');
-    final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(
-      saf,
-      (call) async => call.method == 'getFreeBytes' ? 1000000000 : null,
-    );
-    addTearDown(() => messenger.setMockMethodCallHandler(saf, null));
+    mockFreeBytes(1000000000);
     File(p.join(support.path, 'gemma-4-e2b', '${gemmaModelFile.name}.part'))
       ..createSync(recursive: true)
       ..writeAsBytesSync(List.filled(1000, 0));

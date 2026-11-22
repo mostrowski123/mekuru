@@ -23,7 +23,7 @@ class DictionaryRepository {
     _db.dictionaryMetas,
   )..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])).watch();
 
-  /// Watch user-visible dictionaries (excludes hidden system dictionaries).
+  /// Watch the dictionaries whose `isHidden` is false, ordered by sort order.
   Stream<List<DictionaryMeta>> watchVisibleDictionaries() =>
       (_db.select(_db.dictionaryMetas)
             ..where((t) => t.isHidden.equals(false))

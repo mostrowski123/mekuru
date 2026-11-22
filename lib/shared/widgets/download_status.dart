@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:drift/drift.dart' show CouldNotRollBackException;
-import 'package:drift/isolate.dart' show DriftRemoteException;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
+import 'package:mekuru/core/utils/storage_full.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
@@ -20,7 +19,6 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
-import 'package:sqlite3/sqlite3.dart' show SqliteException;
 import 'package:url_launcher/url_launcher.dart';
 
 // Rows shown under a download tile: progress, an error, an attribution.
@@ -226,6 +224,16 @@ String? jobWaitText(AppLocalizations l10n, JobWait wait) => switch (wait) {
   JobWait.retry => l10n.downloadRetrying,
 };
 
+/// The High quality translation model's download row: why it waits
+/// ([jobWaitText]), else the [percent] it has reached.
+String highQualityDownloadText(
+  AppLocalizations l10n, {
+  required int percent,
+  required JobWait wait,
+}) =>
+    jobWaitText(l10n, wait) ??
+    l10n.translationHighQualityDownloading(percent: '$percent');
+
 /// Why a download (dictionary, translation or OCR model) failed, worded for
 /// the user; null when it did not. Every way one ends has its own words, and
 /// anything else says only that it didn't finish: an exception's own text
@@ -264,19 +272,6 @@ String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
       _ => l10n.downloadNotFinished,
     };
 
-/// Whether [error] is the device running out of room: ENOSPC from a file
-/// write, or SQLITE_FULL from the database.
-bool isStorageFull(Object? error) => switch (error) {
-  FileSystemException(osError: OSError(errorCode: 28)) => true,
-  SqliteException(resultCode: 13) => true,
-  // The database runs on drift's background isolate, which wraps what it
-  // throws. SQLite rolls a transaction back itself on SQLITE_FULL, so drift's
-  // own ROLLBACK fails and wraps it again.
-  DriftRemoteException(remoteCause: final cause) ||
-  CouldNotRollBackException(:final cause) => isStorageFull(cause),
-  _ => false,
-};
-
 /// [dictionaryDownloadError] for a download with no Download button to tap
 /// again (the lookup's speaker, the Anki button): a stop because Wi-Fi went
 /// says only that.
@@ -284,6 +279,12 @@ String downloadErrorWithoutButton(AppLocalizations l10n, Object failure) =>
     failure is WifiLostException
     ? l10n.downloadWifiLostShort
     : dictionaryDownloadError(l10n, failure)!;
+
+/// Why a model download (`runDownload`) failed, in the user's language.
+String modelDownloadFailureReason(AppLocalizations l, Object error) =>
+    error is WifiLostException
+    ? l.localOcrWifiLostIos
+    : dictionaryDownloadError(l, error)!;
 
 /// A failure a download worker recorded ([ServerDownloadWorkStatus.error]).
 String _recordedDownloadFailure(AppLocalizations l10n, String error) =>

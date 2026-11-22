@@ -74,6 +74,11 @@ class _MetasCache {
     required this.names,
     required this.sortOrders,
   });
+
+  /// Dictionary [a] against dictionary [b] by their place in the user's
+  /// list, 0 when they share it. Callers break the tie themselves.
+  int compare(int a, int b) =>
+      (sortOrders[a] ?? 0).compareTo(sortOrders[b] ?? 0);
 }
 
 /// Service for querying dictionary entries.
@@ -124,9 +129,7 @@ class DictionaryQueryService {
   void _sortBySortOrder(List<DictionaryEntry> entries, _MetasCache cache) {
     if (entries.length < 2) return;
     entries.sort((a, b) {
-      final orderA = cache.sortOrders[a.dictionaryId] ?? 0;
-      final orderB = cache.sortOrders[b.dictionaryId] ?? 0;
-      final cmp = orderA.compareTo(orderB);
+      final cmp = cache.compare(a.dictionaryId, b.dictionaryId);
       if (cmp != 0) return cmp;
       return a.id.compareTo(b.id);
     });
@@ -155,9 +158,7 @@ class DictionaryQueryService {
         return priorityA.compareTo(priorityB);
       }
 
-      final orderA = cache.sortOrders[a.dictionaryId] ?? 0;
-      final orderB = cache.sortOrders[b.dictionaryId] ?? 0;
-      final cmp = orderA.compareTo(orderB);
+      final cmp = cache.compare(a.dictionaryId, b.dictionaryId);
       if (cmp != 0) return cmp;
       return a.id.compareTo(b.id);
     });
@@ -171,9 +172,7 @@ class DictionaryQueryService {
   ) {
     if (entries.length < 2) return;
     entries.sort((a, b) {
-      final orderA = cache.sortOrders[a.entry.dictionaryId] ?? 0;
-      final orderB = cache.sortOrders[b.entry.dictionaryId] ?? 0;
-      final cmp = orderA.compareTo(orderB);
+      final cmp = cache.compare(a.entry.dictionaryId, b.entry.dictionaryId);
       if (cmp != 0) return cmp;
       return a.entry.id.compareTo(b.entry.id);
     });
@@ -471,9 +470,7 @@ class DictionaryQueryService {
     // Highest in the user's list first.
     final dictionaryIds = {...pairRanks.keys, ...surfaceRanks.keys}.toList()
       ..sort((a, b) {
-        final orderA = cache.sortOrders[a] ?? 0;
-        final orderB = cache.sortOrders[b] ?? 0;
-        final cmp = orderA.compareTo(orderB);
+        final cmp = cache.compare(a, b);
         return cmp != 0 ? cmp : a.compareTo(b);
       });
 
@@ -1389,9 +1386,7 @@ class DictionaryQueryService {
         return expressionCompare;
       }
 
-      final orderA = cache.sortOrders[a.dictionaryId] ?? 0;
-      final orderB = cache.sortOrders[b.dictionaryId] ?? 0;
-      return orderA.compareTo(orderB);
+      return cache.compare(a.dictionaryId, b.dictionaryId);
     });
 
     final results = <String, List<PitchAccentResult>>{};

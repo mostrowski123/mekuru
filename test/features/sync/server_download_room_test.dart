@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
@@ -13,13 +12,13 @@ import 'package:mekuru/main.dart' show databaseProvider, scaffoldMessengerKey;
 import 'package:mekuru/shared/utils/format_bytes.dart';
 
 import '../../shared/fake_path_provider.dart';
+import '../../shared/free_space_fakes.dart';
 import '../../shared/test_database.dart';
 import '../../test_app.dart';
 
 /// A Komga book that the server says won't fit, with the import's copy: the
 /// download never starts, and the user is told how much more room it needs.
 void main() {
-  const saf = MethodChannel('mekuru/android_saf');
   const ja = Locale('ja');
 
   // The import writes the book again before the download goes: an EPUB
@@ -40,12 +39,7 @@ void main() {
         requests.add(request.uri.path);
         await request.response.close();
       });
-      final messenger =
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-      messenger.setMockMethodCallHandler(
-        saf,
-        (call) async => call.method == 'getFreeBytes' ? 1000 : null,
-      );
+      mockFreeBytes(1000);
       final db = createTestDatabase();
       final container = ProviderContainer(
         overrides: [databaseProvider.overrideWithValue(db)],
@@ -53,7 +47,6 @@ void main() {
       final base = 'http://127.0.0.1:${server.port}';
       final client = KomgaClient(baseUrl: base, getSecret: () => 'key');
       addTearDown(() async {
-        messenger.setMockMethodCallHandler(saf, null);
         container.dispose();
         client.dispose();
         await tester.runAsync(() async {

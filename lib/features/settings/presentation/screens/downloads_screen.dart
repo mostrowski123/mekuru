@@ -423,10 +423,11 @@ class _HighQualityTranslationTileState
           title: Text(l.downloadsHighQualityTitle),
           subtitle: Text(switch (state) {
             GemmaDownloading(:final fraction, :final wait) =>
-              jobWaitText(l, wait) ??
-                  l.translationHighQualityDownloading(
-                    percent: '${(fraction * 100).floor()}',
-                  ),
+              highQualityDownloadText(
+                l,
+                percent: (fraction * 100).floor(),
+                wait: wait,
+              ),
             _ =>
               '${l.downloadsHighQualitySubtitle} '
                   '(${GemmaTranslation.downloadSize()})',
@@ -516,18 +517,13 @@ class _KanjiVgTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () async {
-        AppHaptics.light();
-        // Read now: the tile can unmount while the question is up.
-        final download = ref.read(kanjiVgProvider.notifier).download;
-        final network = await askNetwork(
-          context,
-          size: _kanjiVgSize,
-          body: (size) =>
-              context.l10n.downloadsKanjiStrokeOrderMobileDataBody(size: size),
-        );
-        if (network != null) unawaited(download(network));
-      },
+      onPressed: () => askThenDownload(
+        context,
+        _kanjiVgSize,
+        ref.read(kanjiVgProvider.notifier).download,
+        body: (size) =>
+            context.l10n.downloadsKanjiStrokeOrderMobileDataBody(size: size),
+      ),
       child: Text(context.l10n.commonDownload),
     );
   }
@@ -622,17 +618,11 @@ class _JpdbFreqTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () async {
-        AppHaptics.light();
-        // Read now: the tile can unmount while the question is up.
-        final download = ref.read(_jpdb.notifier).download;
-        final network = await askNetwork(
-          context,
-          size: _jpdbSize,
-          body: (size) => context.l10n.catalogMobileDataBody(size: size),
-        );
-        if (network != null) unawaited(download(network));
-      },
+      onPressed: () => askThenDownload(
+        context,
+        _jpdbSize,
+        ref.read(_jpdb.notifier).download,
+      ),
       child: Text(context.l10n.commonDownload),
     );
   }
@@ -711,17 +701,11 @@ class _KanjidicTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () async {
-        AppHaptics.light();
-        // Read now: the tile can unmount while the question is up.
-        final download = ref.read(_kanjidic.notifier).download;
-        final network = await askNetwork(
-          context,
-          size: _kanjidicSize,
-          body: (size) => context.l10n.catalogMobileDataBody(size: size),
-        );
-        if (network != null) unawaited(download(network));
-      },
+      onPressed: () => askThenDownload(
+        context,
+        _kanjidicSize,
+        ref.read(_kanjidic.notifier).download,
+      ),
       child: Text(context.l10n.commonDownload),
     );
   }
@@ -813,19 +797,11 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
     return FilledButton.tonal(
       onPressed: lowRamMode
           ? null
-          : () async {
-              AppHaptics.light();
-              // Read now: the tile can unmount while the question is up.
-              final download = ref
-                  .read(enhancedFuriganaDictProvider.notifier)
-                  .download;
-              final network = await askNetwork(
-                context,
-                size: _enhancedFuriganaSize,
-                body: (size) => context.l10n.catalogMobileDataBody(size: size),
-              );
-              if (network != null) unawaited(download(network));
-            },
+          : () => askThenDownload(
+              context,
+              _enhancedFuriganaSize,
+              ref.read(enhancedFuriganaDictProvider.notifier).download,
+            ),
       child: Text(context.l10n.commonDownload),
     );
   }

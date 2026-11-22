@@ -12,8 +12,8 @@ class HeroStatTile extends StatelessWidget {
   final String label;
   final int value;
 
-  /// Formats the animated value (e.g. minutes → "3h 20m"). Defaults to
-  /// plain grouping.
+  /// Formats the animated value (e.g. minutes → "3h 20m"). Defaults to the
+  /// bare number, with no grouping.
   final String Function(int value)? formatter;
 
   String _format(int shown) => formatter?.call(shown) ?? '$shown';
