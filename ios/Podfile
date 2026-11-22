@@ -33,8 +33,11 @@ target 'Runner' do
   use_frameworks!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-  # Runs the manga-ocr model for on-device OCR (AppDelegate.swift).
-  pod 'onnxruntime-objc', '~> 1.30'
+  # Runs the manga-ocr model for on-device OCR (AppDelegate.swift). The C
+  # library comes from Microsoft's NuGet package and the Objective-C wrapper is
+  # vendored: the CocoaPods archives are gone (see the READMEs beside them).
+  pod 'onnxruntime-c', :podspec => 'podspecs/onnxruntime-c.podspec.json'
+  pod 'onnxruntime-objc', :path => 'Vendor/onnxruntime-objc'
   target 'RunnerTests' do
     inherit! :search_paths
   end

@@ -19,13 +19,12 @@ PODS:
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_inappwebview_ios (from `.symlinks/plugins/flutter_inappwebview_ios/ios`)
-  - onnxruntime-objc (~> 1.30)
+  - onnxruntime-c (from `podspecs/onnxruntime-c.podspec.json`)
+  - onnxruntime-objc (from `Vendor/onnxruntime-objc`)
   - workmanager_apple (from `.symlinks/plugins/workmanager_apple/ios`)
 
 SPEC REPOS:
   trunk:
-    - onnxruntime-c
-    - onnxruntime-objc
     - OrderedSet
 
 EXTERNAL SOURCES:
@@ -33,17 +32,21 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_inappwebview_ios:
     :path: ".symlinks/plugins/flutter_inappwebview_ios/ios"
+  onnxruntime-c:
+    :podspec: podspecs/onnxruntime-c.podspec.json
+  onnxruntime-objc:
+    :path: Vendor/onnxruntime-objc
   workmanager_apple:
     :path: ".symlinks/plugins/workmanager_apple/ios"
 
 SPEC CHECKSUMS:
   Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   flutter_inappwebview_ios: 6f63631e2c62a7c350263b13fa5427aedefe81d4
-  onnxruntime-c: 36ca0f2cdbc89c6b330ec5287c3faf5ca6ed394d
-  onnxruntime-objc: b5edf18cf57daebe2ee59a7866aab12c8eeff940
+  onnxruntime-c: a00d22cb37592d241e391ee40222d815c4718e71
+  onnxruntime-objc: bd9e1b036ddc0021799d61ba582933692fc6bd2e
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   workmanager_apple: 7bac258335c310689a641e2d66e88d4845d372e9
 
-PODFILE CHECKSUM: ca8cd9306d0b4e68ba9b5641400121c147f6fa0e
+PODFILE CHECKSUM: 4df17e1c7bf0c0132d39b761442fc57f0301dabc
 
 COCOAPODS: 1.16.2
