@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// License text is installed with the app, even before downloading any weights.
@@ -104,10 +105,9 @@ class OcrLicenseScreen extends StatelessWidget {
                   builder: (context, snapshot) => snapshot.hasData
                       ? Text(snapshot.data!)
                       : snapshot.hasError
-                      ? Text(
-                          context.l10n.localOcrError(
-                            details: snapshot.error.toString(),
-                          ),
+                      ? LoadFailedText(
+                          snapshot.error!,
+                          event: 'settings.ocr_licence_load_failed',
                         )
                       : const LinearProgressIndicator(),
                 ),

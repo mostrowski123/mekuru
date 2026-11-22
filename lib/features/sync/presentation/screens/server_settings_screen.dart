@@ -11,6 +11,7 @@ import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart'
 import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// Manage Komga/Kavita server connections: add, edit, test, delete.
@@ -35,7 +36,9 @@ class ServerSettingsScreen extends ConsumerWidget {
       ),
       body: connections.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('$error')),
+        error: (error, _) => Center(
+          child: LoadFailedText(error, event: 'sync.connections_load_failed'),
+        ),
         data: (list) => ListView(
           children: [
             for (final connection in list)

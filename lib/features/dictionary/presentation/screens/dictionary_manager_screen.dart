@@ -29,6 +29,7 @@ import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
 import 'package:mekuru/shared/widgets/download_status.dart' show isStorageFull;
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen for managing imported Yomitan dictionaries.
@@ -116,7 +117,10 @@ class _DictionaryManagerScreenState
             child: dictionariesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(
-                child: Text(l10n.commonErrorWithDetails(details: '$err')),
+                child: LoadFailedText(
+                  err,
+                  event: 'dictionary.manager_load_failed',
+                ),
               ),
               data: (streamed) {
                 _deleted.retainWhere((id) => streamed.any((d) => d.id == id));
@@ -507,9 +511,10 @@ class _DictionaryManagerScreenState
         );
       }
     } catch (e) {
+      logFailure('dictionary.pending_restore_failed', e);
       if (!mounted) return;
       _showMessage(
-        context.l10n.commonErrorWithDetails(details: '$e'),
+        context.l10n.dictionaryManagerPendingBackupFailed,
         isError: true,
       );
     } finally {
