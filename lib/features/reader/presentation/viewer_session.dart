@@ -58,21 +58,27 @@ typedef ViewerReactions = ({
 /// viewer's callbacks are this session's methods: once it is retired, what
 /// its viewer still sends reaches nothing.
 class ViewerSession {
-  /// A new viewer for [layout]. It has [loadTimeout] to show the book, or
-  /// the load fails ([ViewerReactions.timedOut]).
-  ViewerSession(this.layout, this._reactions, {required Duration loadTimeout}) {
-    _watchdog = Timer(loadTimeout, () {
-      _phase = ViewerPhase.failed;
-      _reactions.timedOut();
-    });
+  /// A new viewer for [layout]. It has [loadTimeout] of drawn frames to show
+  /// the book, or the load fails ([ViewerReactions.timedOut]).
+  /// [framesDrawn]: whether frames are drawn now (see [framesChanged]).
+  ViewerSession(
+    this.layout,
+    this._reactions, {
+    required Duration loadTimeout,
+    required bool framesDrawn,
+  }) : _loadTimeout = loadTimeout {
+    framesChanged(drawn: framesDrawn);
   }
 
   /// The reading mode this viewer lays the book out in.
   final ViewerLayout layout;
   final ViewerReactions _reactions;
+  final Duration _loadTimeout;
 
-  // Runs only while loading: showing the book, failing and retiring stop it.
-  late final Timer _watchdog;
+  // Runs only while loading with frames drawn: showing the book, failing,
+  // retiring and the app going away stop it.
+  Timer? _watchdog;
+  bool _framesDrawn = false;
   ViewerPhase _phase = ViewerPhase.loading;
   bool _locationsReady = false;
   bool _replacing = false;
@@ -97,8 +103,22 @@ class ViewerSession {
       _phase == ViewerPhase.loading || _phase == ViewerPhase.ready;
 
   void retire() {
-    _watchdog.cancel();
+    _watchdog?.cancel();
     _phase = ViewerPhase.retired;
+  }
+
+  /// Frames are drawn, or no longer are (the app went away). The page
+  /// cannot load without them, so the load is timed only while they are;
+  /// each return gives it its whole load timeout again.
+  void framesChanged({required bool drawn}) {
+    if (drawn == _framesDrawn) return;
+    _framesDrawn = drawn;
+    _watchdog?.cancel();
+    if (!drawn || _phase != ViewerPhase.loading) return;
+    _watchdog = Timer(_loadTimeout, () {
+      _phase = ViewerPhase.failed;
+      _reactions.timedOut();
+    });
   }
 
   /// Starts replacing this viewer when it no longer serves: its renderer
@@ -119,7 +139,7 @@ class ViewerSession {
   /// The page shows the book; epub.js says so again after every display.
   void loaded() {
     if (_phase == ViewerPhase.loading) {
-      _watchdog.cancel();
+      _watchdog?.cancel();
       _phase = ViewerPhase.ready;
     }
     if (_phase == ViewerPhase.ready) _reactions.loaded();
@@ -158,7 +178,7 @@ class ViewerSession {
   }
 
   void _fail(Object? error) {
-    _watchdog.cancel();
+    _watchdog?.cancel();
     _phase = ViewerPhase.failed;
     _reactions.failed(error);
   }

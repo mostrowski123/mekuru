@@ -613,6 +613,31 @@ void main() {
     await closeReader(tester);
   });
 
+  testWidgets('a book sent to the background before it shows is given its '
+      'time to load on return', (tester) async {
+    await openReader(tester);
+
+    // Away for longer than a load may take, where no frame is built.
+    addTearDown(
+      () => tester.binding.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      ),
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump(const Duration(seconds: 20));
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await settle(tester);
+    expect(find.textContaining('took too long'), findsNothing);
+    expect(spinner, findsOneWidget);
+
+    readerViewer(tester).onLoaded!();
+    await tester.pump();
+    expect(spinner, findsNothing);
+    expect(find.textContaining('took too long'), findsNothing);
+    await closeReader(tester);
+  });
+
   testWidgets('Retry opens at the place the reader had got to, not the one '
       'the book was opened at', (tester) async {
     await openReader(tester);

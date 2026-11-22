@@ -333,8 +333,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     } else if (state == AppLifecycleState.resumed) {
       _sessionTracker.resume();
     }
-    // A renderer that died while the app was away is replaced on return.
-    if (WidgetsBinding.instance.framesEnabled) _syncViewer();
+    _viewer?.framesChanged(drawn: WidgetsBinding.instance.framesEnabled);
   }
 
   void _emitSessionSummary(String endReason) {
@@ -1012,14 +1011,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _viewer?.retire();
     // It starts knowing nothing: until its own locations arrive, its
     // relocations report progress 0 and are not trusted.
-    _viewer = ViewerSession(viewerLayoutOf(ref.read(readerSettingsProvider)), (
-      loaded: _onViewerLoaded,
-      locationsReady: _maybeApplyRemoteProgress,
-      relocated: _onRelocated,
-      failed: _onViewerFailed,
-      timedOut: _onViewerTimedOut,
-      rendererGone: _onRendererGone,
-    ), loadTimeout: _kReaderLoadTimeout);
+    _viewer = ViewerSession(
+      viewerLayoutOf(ref.read(readerSettingsProvider)),
+      (
+        loaded: _onViewerLoaded,
+        locationsReady: _maybeApplyRemoteProgress,
+        relocated: _onRelocated,
+        failed: _onViewerFailed,
+        timedOut: _onViewerTimedOut,
+        rendererGone: _onRendererGone,
+      ),
+      loadTimeout: _kReaderLoadTimeout,
+      framesDrawn: WidgetsBinding.instance.framesEnabled,
+    );
   }
 
   /// Replaces the viewer when it no longer serves (see
@@ -1033,12 +1037,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         _suppressViewerRebuilds ||
         // A dead renderer's replacement also waits for sheets to close.
         // Reading isCurrent here brings its change to didChangeDependencies.
-        // And for the app to come back ([didChangeAppLifecycleState]): no
-        // frame is built while it is away, so the new viewer could not load
-        // and its 15 s would run out.
         (viewer.phase == ViewerPhase.rendererGone &&
-            (!(ModalRoute.isCurrentOf(context) ?? true) ||
-                !WidgetsBinding.instance.framesEnabled));
+            !(ModalRoute.isCurrentOf(context) ?? true));
     if (!covered &&
         viewer.beginReplacement(
           viewerLayoutOf(ref.read(readerSettingsProvider)),

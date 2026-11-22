@@ -11,20 +11,28 @@ final _scrolled = viewerLayoutOf(const ReaderSettings(scrollView: true));
 void main() {
   late List<String> heard;
 
-  /// A new viewer for [_paged]; its watchdog fires after [loadTimeout].
+  /// A new viewer for [_paged]; its watchdog fires after [loadTimeout] of
+  /// drawn frames, which are drawn from the start unless [framesDrawn] is
+  /// false.
   ViewerSession newSession({
     Duration loadTimeout = const Duration(minutes: 1),
+    bool framesDrawn = true,
   }) {
-    final session = ViewerSession(_paged, (
-      loaded: () => heard.add('loaded'),
-      locationsReady: () => heard.add('locationsReady'),
-      relocated: (EpubLocation location, {required bool trusted}) =>
-          heard.add(trusted ? 'relocated trusted' : 'relocated untrusted'),
-      failed: (Object? error) =>
-          heard.add('failed: ${error ?? 'web view stopped'}'),
-      timedOut: () => heard.add('timedOut'),
-      rendererGone: () => heard.add('rendererGone'),
-    ), loadTimeout: loadTimeout);
+    final session = ViewerSession(
+      _paged,
+      (
+        loaded: () => heard.add('loaded'),
+        locationsReady: () => heard.add('locationsReady'),
+        relocated: (EpubLocation location, {required bool trusted}) =>
+            heard.add(trusted ? 'relocated trusted' : 'relocated untrusted'),
+        failed: (Object? error) =>
+            heard.add('failed: ${error ?? 'web view stopped'}'),
+        timedOut: () => heard.add('timedOut'),
+        rendererGone: () => heard.add('rendererGone'),
+      ),
+      loadTimeout: loadTimeout,
+      framesDrawn: framesDrawn,
+    );
     addTearDown(session.retire);
     return session;
   }
@@ -89,6 +97,27 @@ void main() {
 
     // A late load changes nothing.
     session.loaded();
+    expect(heard, ['timedOut']);
+  });
+
+  test('a load is timed only while frames are drawn', () async {
+    // Built while the app was away; it comes back, then goes again.
+    final session = newSession(
+      loadTimeout: const Duration(milliseconds: 1),
+      framesDrawn: false,
+    );
+    await afterTimeout();
+    expect(heard, isEmpty);
+
+    session
+      ..framesChanged(drawn: true)
+      ..framesChanged(drawn: false);
+    await afterTimeout();
+    expect(heard, isEmpty);
+    expect(session.phase, ViewerPhase.loading);
+
+    session.framesChanged(drawn: true);
+    await afterTimeout();
     expect(heard, ['timedOut']);
   });
 
