@@ -91,7 +91,7 @@ Each rule in `CLAUDE.md`, and what fails when it is broken. "nothing" marks wher
 | A save passes a file's path, never its bytes | `test/architecture/raw_api_test.dart` (no other file can reach a save dialog), `test/core/platform/file_pick_test.dart` |
 | A download goes through `runDownload` with a `NetworkConsent` | partly: `test/architecture/raw_api_test.dart` (raw HTTP clients and mobile-data consent are counted), `test/shared/downloads/download_kinds_test.dart` |
 | A provider's state holds what happened, never user-facing text | `test/architecture/raw_api_test.dart` (a String error or message field in a provider file) |
-| An exception's own text never reaches the user | partly: screen tests in Japanese for downloads, deletes, imports and server errors; nothing for a new screen |
+| An exception's own text never reaches the user | partly: `test/architecture/raw_api_test.dart` for an error passed as details: '$e' or e.toString(), or shown with Text('$error'); screen tests in Japanese for downloads, deletes, imports, lists and server errors; nothing for other shapes |
 | Long work and platform wording are read from `lib/core/platform/capabilities.dart` | partly: `test/core/platform/capabilities_test.dart`; a new inline platform check is caught only when it picks an Ios key |
 | A library write from the UI is awaited and its failure shown | partly: `test/features/library/presentation/library_write_failure_test.dart` (existing actions) |
 | An EPUB href is decoded with `decodeHref` | `test/architecture/raw_api_test.dart` |

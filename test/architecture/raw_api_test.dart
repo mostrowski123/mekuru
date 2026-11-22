@@ -164,6 +164,29 @@ final _rows = [
       'lib/features/manga/presentation/providers/local_ocr_providers.dart': 1,
     },
   ),
+  // The uses left in files other work held when this row came in.
+  _Row(
+    "An exception's own text handed to the user: details: '\$e', "
+        "details: e.toString() or Text('\$error')",
+    _matching(
+      r"\bdetails:\s*('\$\{?\w|\w+(\.error)?\.toString\(\))|"
+      r"\bText\(\s*'\$\{?(e|err|error)\b",
+    ),
+    'words for what did not happen and what to do, as dictionaryDownloadError '
+        'does (lib/shared/widgets/download_status.dart), or LoadFailedText for '
+        'a list that cannot load (lib/shared/widgets/load_failed_text.dart); '
+        'the error itself goes to logFailure '
+        '(lib/core/services/usage_telemetry.dart)',
+    counts: {
+      // The message leaves {details} out in every language.
+      'lib/features/manga/presentation/screens/manga_reader_screen.dart': 1,
+      // Signed-in cloud OCR only; no test reaches it yet.
+      'lib/features/manga/presentation/screens/pro_upgrade_screen.dart': 1,
+      'lib/features/reader/presentation/screens/reader_screen.dart': 1,
+      'lib/features/settings/presentation/widgets/ocr_server_url_dialog.dart':
+          1,
+    },
+  ),
   _Row(
     'NetworkConsent.mobileData, a download allowed mobile data unasked',
     _matching(r'\bNetworkConsent\.mobileData\b'),
