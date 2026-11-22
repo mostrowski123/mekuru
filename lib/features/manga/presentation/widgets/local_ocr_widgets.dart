@@ -67,11 +67,11 @@ String localOcrReason(BuildContext context, String? code) {
 }
 
 /// [errorMessage] of a failed remote or iOS OCR run (or OCR server test) in
-/// the user's language
-/// (see [OcrFailure]). Text an older version stored is shown as it is.
+/// the user's language (see [OcrFailure]). An exception's own text, which an
+/// unexpected or a network failure stores, is never shown.
 String describeOcrFailure(AppLocalizations l, String errorMessage) {
   final parsed = OcrFailure.parse(errorMessage);
-  if (parsed == null) return errorMessage;
+  if (parsed == null) return _legacyOcrFailure(l, errorMessage);
   final detail = parsed.detail;
   return switch (parsed.failure) {
     OcrFailure.certificateUntrusted => l.ocrErrorCertificateUntrusted,
@@ -87,7 +87,7 @@ String describeOcrFailure(AppLocalizations l, String errorMessage) {
     OcrFailure.connectFailed => l.ocrErrorConnectFailed,
     OcrFailure.timedOut => l.ocrErrorTimedOut,
     OcrFailure.hostNotFound => l.ocrErrorHostNotFound,
-    OcrFailure.network => l.ocrErrorNetwork(details: detail),
+    OcrFailure.network => l.ocrErrorConnectFailed,
     OcrFailure.status => switch ((
       int.tryParse(detail.split(':').first) ?? 0,
       detail.substring(detail.indexOf(':') + 1),
@@ -99,7 +99,7 @@ String describeOcrFailure(AppLocalizations l, String errorMessage) {
       ),
     },
     OcrFailure.malformedResponse => l.ocrErrorMalformedResponse,
-    OcrFailure.unexpected => l.commonErrorWithDetails(details: detail),
+    OcrFailure.unexpected => l.localOcrCouldNotContinue,
     OcrFailure.serverUrlMissing => l.ocrCustomServerRequiredBody,
     OcrFailure.serverUrlInvalid => l.ocrErrorServerUrlInvalid,
     OcrFailure.keyMissing => l.ocrCustomServerKeyRequiredBody,
@@ -112,6 +112,34 @@ String describeOcrFailure(AppLocalizations l, String errorMessage) {
     OcrFailure.unhealthy => l.settingsCustomOcrServerUnhealthy(status: detail),
   };
 }
+
+/// English text a version before [OcrFailure] stored (until 2026-10-08), by
+/// how it starts. What followed the start could be an exception's text.
+String _legacyOcrFailure(AppLocalizations l, String text) => switch (text) {
+  _ when text.startsWith("The OCR server's certificate") =>
+    l.ocrErrorCertificateUntrusted,
+  _ when text.startsWith('Authentication failed') => l.ocrErrorAuthFailed,
+  _ when text.startsWith('This OCR job belongs') => l.ocrErrorJobForbidden,
+  _ when text.startsWith('Not enough OCR credits') => l.ocrErrorNoCredits,
+  _ when text.startsWith('The OCR job was not found') => l.ocrErrorJobNotFound,
+  _ when text.startsWith('The OCR job is no longer active') =>
+    l.ocrErrorJobInactive,
+  _ when text.startsWith('OCR server error (') => l.ocrErrorServer(
+    status: int.tryParse(RegExp(r'\d+').stringMatch(text) ?? '') ?? 0,
+  ),
+  _ when text.startsWith('Could not connect to OCR server') =>
+    l.ocrErrorConnectFailed,
+  _ when text.startsWith('OCR server is not responding') => l.ocrErrorTimedOut,
+  _ when text.startsWith('Could not resolve OCR server address') =>
+    l.ocrErrorHostNotFound,
+  _ when text.startsWith('OCR server returned a malformed') =>
+    l.ocrErrorMalformedResponse,
+  'OCR server URL is not configured.' => l.ocrCustomServerRequiredBody,
+  'No bearer key configured for custom OCR server.' =>
+    l.ocrCustomServerKeyRequiredBody,
+  'Could not authenticate with OCR service.' => l.ocrErrorSignInFailed,
+  _ => l.localOcrCouldNotContinue,
+};
 
 String localOcrEta(BuildContext context, OcrJobProgress job) {
   final seconds = job.etaSeconds;
@@ -144,7 +172,8 @@ String localOcrPhase(BuildContext context, OcrJobProgress job) {
     'completed' => l.localOcrCompleted,
     'completedWithErrors' => l.localOcrCompletedErrors,
     'failed' => l.localOcrFailed,
-    _ => job.status,
+    // A phase or status with no words of its own: never its code.
+    _ => job.status == 'running' ? l.localOcrRecognizing : '',
   };
 }
 

@@ -49,9 +49,10 @@ void main() {
         ),
         es.ocrErrorConnectFailed,
       );
+      // The socket's own text ("Broken pipe") is not shown.
       expect(
         describe(const OcrServerException(0, 'Network error: Broken pipe')),
-        'Error de red: Broken pipe',
+        es.ocrErrorConnectFailed,
       );
     });
 
@@ -84,10 +85,27 @@ void main() {
       );
     });
 
-    test('text saved by an older version is shown as it is', () {
+    test('English saved by an older version is worded by how it starts', () {
       expect(
         describeOcrFailure(es, 'Could not connect to OCR server.'),
-        'Could not connect to OCR server.',
+        es.ocrErrorConnectFailed,
+      );
+      expect(
+        describeOcrFailure(es, 'OCR server URL is not configured.'),
+        es.ocrCustomServerRequiredBody,
+      );
+      expect(
+        describeOcrFailure(es, 'OCR server error (502). The server may be '),
+        es.ocrErrorServer(status: 502),
+      );
+      // An exception's text followed these; none of it is shown.
+      expect(
+        describeOcrFailure(es, 'Unexpected error: Exception: 秘密.zip'),
+        es.localOcrCouldNotContinue,
+      );
+      expect(
+        describeOcrFailure(es, 'Network error: Broken pipe'),
+        es.localOcrCouldNotContinue,
       );
     });
   });
