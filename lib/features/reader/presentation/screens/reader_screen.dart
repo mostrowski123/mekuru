@@ -1,5 +1,7 @@
 // ignore_for_file: discarded_futures, unawaited_futures
 import 'dart:async';
+import 'dart:io' show IOException;
+
 import 'package:flutter/foundation.dart'
     show TargetPlatform, compute, defaultTargetPlatform, setEquals;
 import 'package:flutter/gestures.dart'
@@ -176,7 +178,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   int _bookmarkCheckGeneration = 0;
   bool _hasRestoredHighlights = false;
   String? _initialCfi;
-  String? _errorMessage;
+
+  /// Why the book is not showing, worded by [_buildErrorState]; null while
+  /// it opens or shows.
+  _OpenFailure? _failure;
 
   // Safety net for the JS-bridge load handshake — if `onLoaded` doesn't fire
   // within this window we surface the existing error+retry UI rather than
@@ -498,8 +503,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           : readerSystemBarsOverlayStyle,
       child: Scaffold(
         backgroundColor: readerTheme.backgroundColor,
-        body: _errorMessage != null
-            ? _buildErrorState(context)
+        body: _failure != null
+            ? _buildErrorState(context, _failure!)
             : ReaderKeyNavigation(
                 focusNode: _keyFocus,
                 direction: settings.readingDirection,
@@ -802,7 +807,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       _viewer?.retire();
       _viewer = null;
       _hasRestoredHighlights = false;
-      _errorMessage = null;
+      _failure = null;
       _chapters = const [];
       _progress = 0;
     });
@@ -885,13 +890,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         _progress = latestBook?.readProgress ?? widget.book.readProgress;
         _startViewer();
       });
-    } catch (error) {
+    } catch (error, stackTrace) {
+      // The book's file gone or unreadable is the user's to fix; anything
+      // else is a bug, and files an issue.
+      final unreadable = error is IOException;
+      logFailure(
+        'reader.open_failed',
+        error,
+        stackTrace: unreadable ? null : stackTrace,
+      );
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = context.l10n.readerFailedToLoad(
-          details: error.toString(),
-        );
+        _failure = unreadable
+            ? _OpenFailure.fileUnreadable
+            : _OpenFailure.other;
       });
     }
   }
@@ -1058,28 +1071,32 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       // never showed the book has no position to give and never answers.
       if (_isEpubCfi(_currentCfi)) _initialCfi = _currentCfi;
       _isLoading = true;
-      _errorMessage = null;
+      _failure = null;
       _hasRestoredHighlights = false;
       _startViewer();
     });
   }
 
-  void _onViewerFailed(String? description) => _showViewerError(
-    description == null
-        ? context.l10n.readerStoppedWhileOpening
-        : context.l10n.readerFailedToLoadContent(details: description),
-  );
+  /// [error] is null when the web view stopped before the book showed.
+  void _onViewerFailed(Object? error) {
+    if (error != null) logFailure('reader.open_failed', error);
+    _showViewerError(switch (error) {
+      null => _OpenFailure.stopped,
+      IOException() => _OpenFailure.fileUnreadable,
+      _ => _OpenFailure.other,
+    });
+  }
 
   /// The book did not show within [_kReaderLoadTimeout].
-  void _onViewerTimedOut() => _showViewerError(context.l10n.readerLoadTimeout);
+  void _onViewerTimedOut() => _showViewerError(_OpenFailure.timedOut);
 
-  /// Shows [message] in place of the book, unless a viewer for the layout
+  /// Shows [failure] in place of the book, unless a viewer for the layout
   /// now wanted takes the failed one's place.
-  void _showViewerError(String message) {
+  void _showViewerError(_OpenFailure failure) {
     if (_syncViewer()) return;
     setState(() {
       _isLoading = false;
-      _errorMessage = message;
+      _failure = failure;
     });
   }
 
@@ -2074,7 +2091,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  Widget _buildErrorState(BuildContext context) {
+  Widget _buildErrorState(BuildContext context, _OpenFailure failure) {
     final l10n = context.l10n;
 
     return SafeArea(
@@ -2085,10 +2102,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           children: [
             const Icon(Icons.error_outline, size: 48),
             const SizedBox(height: 12),
-            Text(
-              _errorMessage ?? l10n.readerUnknownError,
-              textAlign: TextAlign.center,
-            ),
+            // What the error said is in telemetry, never here.
+            Text(switch (failure) {
+              _OpenFailure.fileUnreadable => l10n.readerBookFileUnreadable,
+              _OpenFailure.timedOut => l10n.readerLoadTimeout,
+              _OpenFailure.stopped => l10n.readerStoppedWhileOpening,
+              _OpenFailure.other => l10n.readerCouldNotOpen,
+            }, textAlign: TextAlign.center),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -2169,6 +2189,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       ),
     );
   }
+}
+
+/// Why the book did not open.
+enum _OpenFailure {
+  /// The book's file is gone, or could not be read.
+  fileUnreadable,
+
+  /// The book did not show in time.
+  timedOut,
+
+  /// The web view stopped before the book showed.
+  stopped,
+
+  /// Anything else; the user can only try again.
+  other,
 }
 
 class _FlattenedChapter {

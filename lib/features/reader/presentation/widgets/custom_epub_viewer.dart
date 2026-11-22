@@ -196,7 +196,10 @@ class CustomEpubViewer extends StatefulWidget {
 
   /// A long press on an image.
   final ValueChanged<EpubImageRef>? onImageLongPressed;
-  final void Function(String description)? onLoadError;
+
+  /// The book could not be shown: the page's own description of the error
+  /// (a String), or the [IOException] reading the book's file.
+  final void Function(Object error)? onLoadError;
 
   /// The web view's renderer died: Android killed it for memory (or it
   /// crashed), or iOS ended its web content process. The page went with it
@@ -769,7 +772,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       );
       if (!sent) return;
     } on IOException catch (error) {
-      widget.onLoadError?.call('$error');
+      widget.onLoadError?.call(error);
       return;
     }
 

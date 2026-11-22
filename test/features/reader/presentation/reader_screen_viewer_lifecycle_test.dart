@@ -13,6 +13,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/reader/data/models/epub_models.dart';
@@ -24,7 +25,9 @@ import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
 import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
+import 'package:mekuru/l10n/generated/app_localizations_en.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
+import 'package:sentry_flutter/sentry_flutter.dart' show SentryAttribute;
 import 'package:shared_preferences/shared_preferences.dart';
 // ignore: depend_on_referenced_packages
 import 'package:wakelock_plus_platform_interface/wakelock_plus_platform_interface.dart';
@@ -38,6 +41,7 @@ const _openedAt = 'epubcfi(/6/4!/4/2/1:0)';
 const _pageA = 'epubcfi(/6/6!/4/2/1:0)';
 const _pageB = 'epubcfi(/6/8!/4/2/1:0)';
 const _pageC = 'epubcfi(/6/10!/4/2/1:0)';
+final _en = AppLocalizationsEn();
 
 /// A web view that shows nothing and never reports back.
 class _BlankWebViewPlatform extends InAppWebViewPlatform {
@@ -109,9 +113,14 @@ void main() {
   late ProviderContainer container;
   late WakelockPlusPlatformInterface originalWakelock;
 
+  late List<({String message, Map<String, SentryAttribute> attributes})> logs;
+
   setUpAll(() => InAppWebViewPlatform.instance = _BlankWebViewPlatform());
 
   setUp(() {
+    logs = [];
+    usageLogSinkOverride = (message, attributes, {required isWarning}) =>
+        logs.add((message: message, attributes: attributes));
     SharedPreferences.setMockInitialValues({});
     originalWakelock = WakelockPlusPlatformInterface.instance;
     WakelockPlusPlatformInterface.instance = _NoWakelock();
@@ -134,6 +143,7 @@ void main() {
   });
 
   tearDown(() async {
+    usageLogSinkOverride = null;
     WakelockPlusPlatformInterface.instance = originalWakelock;
     await db.close();
     tempDir.deleteSync(recursive: true);
@@ -155,7 +165,13 @@ void main() {
     expect(viewerFinder(), findsOneWidget, reason: 'no viewer was built');
   }
 
-  Future<void> openReader(WidgetTester tester) async {
+  /// Opens [opened] (the test's book when null), and waits for its viewer
+  /// unless [viewerExpected] is false.
+  Future<void> openReader(
+    WidgetTester tester, {
+    Book? opened,
+    bool viewerExpected = true,
+  }) async {
     // Answered at once: the settings screen opens only after the bars show.
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('mekuru/android_system_ui'),
@@ -180,11 +196,21 @@ void main() {
         container: container,
         child: buildLocalizedTestApp(
           // An open at a picked position skips the server progress pull.
-          home: ReaderScreen(book: book, initialCfi: _openedAt),
+          home: ReaderScreen(book: opened ?? book, initialCfi: _openedAt),
         ),
       ),
     );
-    await pumpUntilViewerBuilt(tester);
+    if (viewerExpected) {
+      await pumpUntilViewerBuilt(tester);
+      return;
+    }
+    for (var i = 0; i < 50 && find.text('Retry').evaluate().isEmpty; i++) {
+      // The book file is looked for with real file IO.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
   }
 
   /// Lets the reader react (and an async viewer rebuild finish).
@@ -279,12 +305,83 @@ void main() {
 
     viewer(tester).onLoadError!('net::ERR_FAILED');
     await tester.pump();
-    expect(find.textContaining('net::ERR_FAILED'), findsOneWidget);
+    expect(find.text(_en.readerCouldNotOpen), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 16));
-    expect(find.textContaining('net::ERR_FAILED'), findsOneWidget);
+    expect(find.text(_en.readerCouldNotOpen), findsOneWidget);
     expect(find.textContaining('took too long'), findsNothing);
     await closeReader(tester);
+  });
+
+  group('a book that does not open says so in plain words', () {
+    /// What the reader sent to telemetry about it.
+    List<Map<String, Object?>> openFailures() => [
+      for (final log in logs)
+        if (log.message == 'reader.open_failed')
+          {for (final a in log.attributes.entries) a.key: a.value.value},
+    ];
+
+    testWidgets('a book file that is gone', (tester) async {
+      final gone = '${tempDir.path}${Platform.pathSeparator}gone.epub';
+      await openReader(
+        tester,
+        opened: book.copyWith(filePath: gone),
+        viewerExpected: false,
+      );
+
+      expect(find.text(_en.readerBookFileUnreadable), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.textContaining('FileSystemException'), findsNothing);
+      expect(find.textContaining('gone'), findsNothing);
+      // What happened is in telemetry, its path is not.
+      final failure = openFailures().single;
+      expect(failure['error_type'], 'FileSystemException');
+      expect(failure.values.join(' '), isNot(contains('gone')));
+      expect(failure.values.join(' '), isNot(contains(tempDir.path)));
+      await closeReader(tester);
+    });
+
+    testWidgets('a book file the page could not read', (tester) async {
+      await openReader(tester);
+
+      // What the viewer passes when reading the book's file fails.
+      viewer(tester).onLoadError!(
+        FileSystemException('Cannot open file', book.filePath),
+      );
+      await tester.pump();
+      expect(find.text(_en.readerBookFileUnreadable), findsOneWidget);
+      expect(find.textContaining('Cannot open file'), findsNothing);
+      final failure = openFailures().single;
+      expect(failure['error_type'], 'FileSystemException');
+      expect(failure.values.join(' '), isNot(contains(tempDir.path)));
+
+      // Retry opens the book again.
+      await tester.tap(find.text('Retry'));
+      await pumpUntilViewerBuilt(tester);
+      expect(find.text(_en.readerBookFileUnreadable), findsNothing);
+      expect(spinner, findsOneWidget);
+      await closeReader(tester);
+    });
+
+    for (final detail in [
+      'net::ERR_FAILED',
+      'HTTP 404',
+      'display error',
+      "TypeError: Cannot read properties of undefined (reading 'href')",
+    ]) {
+      testWidgets('what the page reports goes to telemetry, not on screen: '
+          '$detail', (tester) async {
+        await openReader(tester);
+
+        viewer(tester).onLoadError!(detail);
+        await tester.pump();
+        expect(find.text(_en.readerCouldNotOpen), findsOneWidget);
+        expect(find.text('Retry'), findsOneWidget);
+        expect(find.textContaining(detail), findsNothing);
+        expect(openFailures().single['error_message'], detail);
+        await closeReader(tester);
+      });
+    }
   });
 
   testWidgets('until locations exist a page keeps the saved progress', (

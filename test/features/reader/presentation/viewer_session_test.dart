@@ -20,8 +20,8 @@ void main() {
       locationsReady: () => heard.add('locationsReady'),
       relocated: (EpubLocation location, {required bool trusted}) =>
           heard.add(trusted ? 'relocated trusted' : 'relocated untrusted'),
-      failed: (String? description) =>
-          heard.add('failed: ${description ?? 'web view stopped'}'),
+      failed: (Object? error) =>
+          heard.add('failed: ${error ?? 'web view stopped'}'),
       timedOut: () => heard.add('timedOut'),
       rendererGone: () => heard.add('rendererGone'),
     ), loadTimeout: loadTimeout);

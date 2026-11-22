@@ -40,13 +40,14 @@ ViewerLayout viewerLayoutOf(ReaderSettings settings) => (
 );
 
 /// What the reader does when its current viewer reports in. [failed] gets
-/// the load error's own text, or null when the web view stopped before the
-/// book showed; the reader words that one itself.
+/// the load error (the page's own description of it, or the exception
+/// reading the book's file), or null when the web view stopped before the
+/// book showed.
 typedef ViewerReactions = ({
   void Function() loaded,
   void Function() locationsReady,
   void Function(EpubLocation location, {required bool trusted}) relocated,
-  void Function(String? description) failed,
+  void Function(Object? error) failed,
   void Function() timedOut,
   void Function() rendererGone,
 });
@@ -134,8 +135,8 @@ class ViewerSession {
     _reactions.relocated(location, trusted: _locationsReady);
   }
 
-  void loadFailed(String description) {
-    if (_phase != ViewerPhase.retired) _fail(description);
+  void loadFailed(Object error) {
+    if (_phase != ViewerPhase.retired) _fail(error);
   }
 
   /// A book that showed gets a new viewer; one still opening fails, so a
@@ -153,9 +154,9 @@ class ViewerSession {
     }
   }
 
-  void _fail(String? description) {
+  void _fail(Object? error) {
     _watchdog.cancel();
     _phase = ViewerPhase.failed;
-    _reactions.failed(description);
+    _reactions.failed(error);
   }
 }
