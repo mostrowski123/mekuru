@@ -146,6 +146,73 @@ void main() {
     });
   });
 
+  group('scrubPaths on iOS file errors, which name a file in quotes', () {
+    // Foundation's NSCocoaErrorDomain messages, as `localizedDescription`
+    // hands them to a PlatformException: the file or folder name in quotes,
+    // no path and often no extension. English and Japanese system languages,
+    // straight quotes, and German and French.
+    final cases = <String, String>{
+      'PlatformException(exclude_failed, The file “進撃の巨人 01” '
+              'couldn’t be opened because there is no such file., null, null)':
+          'PlatformException(exclude_failed, The file “<file>” '
+          'couldn’t be opened because there is no such file., null, null)',
+      'The file “Clinic Notes” couldn’t be opened because you don’t '
+              'have permission to view it.':
+          'The file “<file>” couldn’t be opened because you don’t '
+          'have permission to view it.',
+      'The file “Sample Vol 01” couldn’t be opened because it isn’t '
+              'in the correct format.':
+          'The file “<file>” couldn’t be opened because it isn’t '
+          'in the correct format.',
+      '“My Book.epub” couldn’t be moved to “books” because an item '
+              'with the same name already exists.':
+          '“<file>” couldn’t be moved to “<file>” because an item '
+          'with the same name already exists.',
+      'You don’t have permission to save the file “Sample Vol 01” in '
+              'the folder “Tax Return 2025”.':
+          'You don’t have permission to save the file “<file>” in '
+          'the folder “<file>”.',
+      'The folder “Doctor Letters” doesn’t exist.':
+          'The folder “<file>” doesn’t exist.',
+      'The file "進撃の巨人 01" couldn\'t be opened because there is no such '
+              'file.':
+          'The file "<file>" couldn\'t be opened because there is no such '
+          'file.',
+      '"My Book.epub" couldn\'t be moved to "Manga" because an item with the '
+              'same name already exists.':
+          '"<file>" couldn\'t be moved to "<file>" because an item with the '
+          'same name already exists.',
+      'ファイル“進撃の巨人 01”は存在しないため開けませんでした。': 'ファイル“<file>”は存在しないため開けませんでした。',
+      'ファイル“My Book.epub”を開けませんでした。': 'ファイル“<file>”を開けませんでした。',
+      '“進撃の巨人 01”を“本棚”に移動できませんでした。': '“<file>”を“<file>”に移動できませんでした。',
+      'ファイル"進撃の巨人 01"を開けませんでした。': 'ファイル"<file>"を開けませんでした。',
+      'Die Datei „Sample Vol 01“ konnte nicht geöffnet werden.':
+          'Die Datei „<file>“ konnte nicht geöffnet werden.',
+      'Le fichier « Sample Vol 01 » n’a pas pu être ouvert.':
+          'Le fichier «<file>» n’a pas pu être ouvert.',
+    };
+
+    for (final MapEntry(key: input, value: scrubbed) in cases.entries) {
+      test(input, () => expect(scrubPaths(input), scrubbed));
+    }
+
+    test('keeps what the app itself quotes readable', () {
+      for (final input in [
+        // BackupFormatException names the JSON field that failed.
+        'Not a valid Mekuru backup file: missing or invalid "version" field',
+        'Not a valid Mekuru backup file: invalid "savedWords" field',
+        'The operation couldn’t be completed. (NSCocoaErrorDomain error 4.)',
+      ]) {
+        expect(scrubPaths(input), input);
+      }
+      // A book's title in a debugPrint breadcrumb goes; the line stays.
+      expect(
+        scrubPaths('[MokuroParser] Parsed "Sample Vol 01" — 12 pages'),
+        '[MokuroParser] Parsed "<file>" — 12 pages',
+      );
+    });
+  });
+
   group('scrubEvent', () {
     test('scrubs exception values, message, and breadcrumbs', () {
       final event = SentryEvent(

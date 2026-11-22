@@ -4,9 +4,10 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 /// file names (which users often name after the book title) never leave the
 /// device inside exception messages, log bodies, attributes, or breadcrumbs.
 ///
-/// The battery, in order: URIs, absolute paths (which swallow everything,
-/// spaces included, up to a structural delimiter), relative paths, and bare
-/// filenames with book-ish extensions. Names may be in any script.
+/// The battery, in order: URIs, quoted names, absolute paths (which swallow
+/// everything, spaces included, up to a structural delimiter), relative
+/// paths, and bare filenames with book-ish extensions. Names may be in any
+/// script.
 /// Over-scrubbing trailing prose is acceptable; leaking a file name is not.
 final RegExp _uriPattern = RegExp(r'[a-zA-Z][a-zA-Z0-9+.-]*://\S+');
 
@@ -18,6 +19,16 @@ final RegExp _uriPattern = RegExp(r'[a-zA-Z][a-zA-Z0-9+.-]*://\S+');
 final RegExp _absolutePathPattern = RegExp(
   r'''(?:(?<!\w)[A-Za-z]:[\\/]|(?<![^\s'"`(\[=:])/)[^\s<>'"`)\]:;,]'''
   r'''(?:[^\r\n<>'"`)\]:;,]|['"`)\]:;,](?![.'"`)\]:;,]*(?:\s|$)))*''',
+);
+
+/// A name in quotes, as iOS file errors give one (`The file “進撃の巨人 01”
+/// couldn’t be opened`, `ファイル“…”を開けませんでした`): no path, often no
+/// extension. Curly, straight, German and French quotes. Group 1 is a
+/// lowercase identifier in straight quotes, such as the JSON field a
+/// BackupFormatException names: it is matched only to be kept.
+final RegExp _quotedNamePattern = RegExp(
+  r'("[a-z][A-Za-z0-9_]*")|"[^"\r\n]+"|“[^“”\r\n]+”|'
+  r'„[^„“”\r\n]+[“”]|«[^«»\r\n]+»',
 );
 
 /// A relative path (`books/進撃の巨人/page.jpg`, a SAF document ID
@@ -42,9 +53,14 @@ final RegExp _bareFileNamePattern = RegExp(
 
 const String _pathReplacement = '<path>';
 
-/// Replaces every URI, filesystem path, and bare filename in [input].
+/// Replaces every URI, quoted name, filesystem path, and bare filename in
+/// [input].
 String scrubPaths(String input) => input
     .replaceAll(_uriPattern, '<uri>')
+    .replaceAllMapped(_quotedNamePattern, (m) {
+      final quoted = m[0]!;
+      return m[1] ?? '${quoted[0]}<file>${quoted[quoted.length - 1]}';
+    })
     .replaceAllMapped(_absolutePathPattern, (m) {
       final path = m[0]!;
       final kept = path.trimRight();
