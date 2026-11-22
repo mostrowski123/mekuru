@@ -148,6 +148,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// The book shows (see [ViewerSession.isLoaded]).
   bool get _bookShown => _viewer?.isLoaded ?? false;
 
+  /// The layout of the page on screen, which taps, swipes and keys are read
+  /// by: a layout the settings ask for shows only once its viewer is built.
+  ViewerLayout get _shownLayout =>
+      _viewer?.layout ?? viewerLayoutOf(ref.read(readerSettingsProvider));
+
   // Viewer rebuilds tear down and recreate the WebView, which never completes
   // its load handshake while the reader is covered by an opaque route (e.g.
   // the Reading settings screen). Suppress rebuilds while covered and check
@@ -474,6 +479,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         ? MediaQuery.viewPaddingOf(context)
         : EdgeInsets.zero;
     final viewer = _viewer;
+    final shown = _shownLayout;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       // iPhone Duo's status bar sits beside the control bar, over the page.
@@ -491,7 +497,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             ? _buildErrorState(context, _failure!)
             : ReaderKeyNavigation(
                 focusNode: _keyFocus,
-                direction: settings.readingDirection,
+                direction: shown.readingDirection,
                 volumeKeys: settings.volumeKeyPageTurn,
                 onIntent: _executeNavigationIntent,
                 child: Stack(
@@ -621,8 +627,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                     inTopOrBottomMargin,
                                     scrolledStrip,
                                     image,
-                                    settings.scrollView,
-                                    settings.readingDirection,
+                                    shown.scrollView,
+                                    shown.readingDirection,
                                     settings.swipeSensitivity,
                                   );
                                 },
@@ -656,7 +662,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                     tappedChar,
                                     x,
                                     y,
-                                    settings.readingDirection,
+                                    shown.readingDirection,
                                     settings.swipeSensitivity,
                                   );
                                 },
@@ -664,7 +670,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                               if (_consumeSwipe(
                                 x,
                                 y,
-                                settings.readingDirection,
+                                shown.readingDirection,
                                 settings.swipeSensitivity,
                               )) {
                                 return;
@@ -693,7 +699,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        child: _buildBottomBar(settings),
+                        child: _buildBottomBar(shown),
                       ),
                     // Highlight speed-dial FAB — appears when text is selected
                     if (_selectionData != null)
@@ -797,11 +803,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (!mounted) return;
 
       final savedProgress = latestBook?.lastReadCfi ?? widget.book.lastReadCfi;
-      // A retry opens where the reader had got to, before the place the
-      // book was opened at.
-      final initialCfi = readerStartCfi(
-        _isEpubCfi(_currentCfi) ? _currentCfi : widget.initialCfi,
-        savedProgress,
+      final initialCfi = _reopenAt(
+        readerStartCfi(widget.initialCfi, savedProgress),
       );
 
       // Re-parse legacy books without language metadata to detect language.
@@ -887,6 +890,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       });
     }
   }
+
+  /// Where a new viewer opens, after a retry or in another viewer's place:
+  /// where the reader got to, else [otherwise]. That is the last place a
+  /// viewer reported, not a question to the page: a page that never showed
+  /// the book has no position to give and never answers.
+  String? _reopenAt(String? otherwise) =>
+      _isEpubCfi(_currentCfi) ? _currentCfi : otherwise;
 
   /// The added font [s] asks for, by file name; null for a built-in font.
   String? _fontChoice(ReaderSettings s) =>
@@ -1050,9 +1060,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     // runs it again.
     _search.markInterrupted();
     setState(() {
-      // The viewer's own last report, not a question to the page: one that
-      // never showed the book has no position to give and never answers.
-      if (_isEpubCfi(_currentCfi)) _initialCfi = _currentCfi;
+      _initialCfi = _reopenAt(_initialCfi);
       _isLoading = true;
       _failure = null;
       _startViewer();
@@ -1230,13 +1238,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         // As _handleTouchUp does for a tap on the page.
         _imageTap?.cancel();
         if (_hasActiveSelection) return;
-        final settings = ref.read(readerSettingsProvider);
+        final shown = _shownLayout;
         _executeNavigationIntent(
           resolveTapIntent(
             normalizedX: left ? 0 : 1,
             normalizedY: 0.5,
-            readingDirection: settings.readingDirection,
-            scrollView: settings.scrollView,
+            readingDirection: shown.readingDirection,
+            scrollView: shown.scrollView,
           ),
         );
       },
@@ -1478,7 +1486,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _executeNavigationIntent(
       readerKeyIntent(
         logicalKey,
-        direction: ref.read(readerSettingsProvider).readingDirection,
+        direction: _shownLayout.readingDirection,
         volumeKeys: VolumeKeyPageTurn.off,
         shift: shift,
       ),
@@ -1495,7 +1503,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
     debugPrint('[READER] goForward executing');
     // Scroll view counts pages by screens scrolled (onPageCharacters).
-    if (!ref.read(readerSettingsProvider).scrollView) {
+    if (!_shownLayout.scrollView) {
       _sessionTracker.recordPageTurn();
     }
     countUsage(
@@ -1515,7 +1523,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
     debugPrint('[READER] goBackward executing');
     // Scroll view counts pages by screens scrolled (onPageCharacters).
-    if (!ref.read(readerSettingsProvider).scrollView) {
+    if (!_shownLayout.scrollView) {
       _sessionTracker.recordPageTurn();
     }
     countUsage(
@@ -1901,10 +1909,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  Widget _buildBottomBar(ReaderSettings settings) {
+  Widget _buildBottomBar(ViewerLayout shown) {
     return ReaderSeekBar(
       value: _progress.clamp(0.0, 1.0),
-      isRtl: settings.readingDirection == ReaderDirection.rtl,
+      isRtl: shown.readingDirection == ReaderDirection.rtl,
       leadingLabel: (value) => '${(value * 100).toInt()}%',
       // Live page preview while scrubbing; [_seekToProgress] coalesces the
       // bridge traffic.
