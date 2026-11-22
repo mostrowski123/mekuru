@@ -189,4 +189,67 @@ void main() {
     expect(find.text(ja.dictionaryNoResultsFound), findsOneWidget);
     expect(find.text(ja.commonSearchFailed), findsNothing);
   });
+
+  testWidgets('a check that failed before the lookup, as on the search '
+      'screen, is asked again and the lookup does not say it failed', (
+    tester,
+  ) async {
+    final jmdict = DictionaryMeta(
+      id: 1,
+      name: 'JMdict',
+      isEnabled: true,
+      dateImported: DateTime(2026, 10, 3),
+      sortOrder: 0,
+      isHidden: false,
+    );
+    final lookingUp = ValueNotifier(false);
+    addTearDown(lookingUp.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          dictionaryQueryServiceProvider.overrideWithValue(
+            _EmptyQueryService(db),
+          ),
+          dictionaryRepositoryProvider.overrideWithValue(
+            _BrokenCheckRepository(db),
+          ),
+          dictionariesProvider.overrideWith((ref) => Stream.value([jmdict])),
+        ],
+        child: buildLocalizedTestApp(
+          locale: const Locale('ja'),
+          home: Scaffold(
+            body: ValueListenableBuilder(
+              valueListenable: lookingUp,
+              builder: (_, shown, _) => shown
+                  ? const SizedBox.expand(
+                      child: LookupSheet(selectedText: _word),
+                    )
+                  // The search screen watches the check from its tab.
+                  : Consumer(
+                      builder: (_, ref, _) {
+                        ref.watch(lookupDictionariesProvider);
+                        return const SizedBox();
+                      },
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(Scaffold)),
+    );
+    expect(container.read(lookupDictionariesProvider).hasError, isTrue);
+
+    lookingUp.value = true;
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(ja.dictionaryNoResultsFound), findsOneWidget);
+    expect(find.text(ja.commonSearchFailed), findsNothing);
+    expect(logs.where((log) => log.$1 == 'lookup.search_failed'), isEmpty);
+  });
 }

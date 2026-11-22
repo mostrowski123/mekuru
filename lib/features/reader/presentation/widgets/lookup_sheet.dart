@@ -202,6 +202,11 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
       );
       _noDictionaries = false;
       if (results.isEmpty && mounted) {
+        // A check that failed earlier, here or on the search screen, is
+        // asked again: this search worked.
+        if (ref.read(lookupDictionariesProvider).hasError) {
+          ref.invalidate(lookupDictionariesProvider);
+        }
         _noDictionaries =
             await ref.read(lookupDictionariesProvider.future) ==
             LookupDictionaries.none;
