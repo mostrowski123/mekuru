@@ -16,6 +16,29 @@ class HeroStatTile extends StatelessWidget {
   /// plain grouping.
   final String Function(int value)? formatter;
 
+  String _format(int shown) => formatter?.call(shown) ?? '$shown';
+
+  TextStyle? _numberStyle(BuildContext context) => Theme.of(
+    context,
+  ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700);
+
+  /// Whether every word of the final number fits [width] at the user's text
+  /// size, so the number never breaks inside a word ("12.3" over "K").
+  bool fitsWidth(BuildContext context, double width) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: _format(value),
+        style: DefaultTextStyle.of(context).style.merge(_numberStyle(context)),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      locale: Localizations.maybeLocaleOf(context),
+    )..layout();
+    final fits = painter.minIntrinsicWidth <= width;
+    painter.dispose();
+    return fits;
+  }
+
   @override
   Widget build(BuildContext context) {
     final disableAnimations = MediaQuery.of(context).disableAnimations;
@@ -31,14 +54,13 @@ class HeroStatTile extends StatelessWidget {
         return Column(
           children: [
             // A long duration ("120h 45m") or a large text scale can outgrow
-            // a third of a phone screen. The number wraps then, at the size
-            // the user chose.
+            // a third of a phone screen. The number wraps between its words
+            // then, at the size the user chose; a row whose numbers would
+            // break inside a word stacks its tiles (see [fitsWidth]).
             Text(
-              formatter?.call(shown) ?? '$shown',
+              _format(shown),
               textAlign: TextAlign.center,
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: _numberStyle(context),
             ),
             Text(
               label,

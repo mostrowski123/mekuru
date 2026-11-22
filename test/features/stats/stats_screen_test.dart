@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -181,6 +182,85 @@ void main() {
           moreOrLessEquals(tester.getCenter(texts.last).dx, epsilon: 1),
         );
       }
+    });
+
+    /// A 360-wide phone at the user's [textScale]: each third is 328 / 3.
+    void phone(WidgetTester tester, {required double textScale}) {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = textScale;
+      addTearDown(tester.view.reset);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    }
+
+    /// Whether the hero figure [text] has a line break inside one of its
+    /// words ("12.3" over "K").
+    bool breaksInsideAWord(WidgetTester tester, String text) {
+      final paragraph = tester.renderObject<RenderParagraph>(inHero(text));
+      return RegExp(r'\S+').allMatches(text).any((word) {
+        final boxes = paragraph.getBoxesForSelection(
+          TextSelection(baseOffset: word.start, extentOffset: word.end),
+        );
+        return boxes.map((box) => box.top).toSet().length > 1;
+      });
+    }
+
+    testWidgets('never breaks a figure inside a word at text scale 2', (
+      tester,
+    ) async {
+      phone(tester, textScale: 2);
+      final now = DateTime.now();
+      await pumpScreen(
+        tester,
+        sessions: [
+          session(
+            id: 1,
+            startedAt: now,
+            durationMs: (3 * 60 + 20) * 60 * 1000,
+            charactersRead: 12345,
+          ),
+        ],
+        events: [wordEvent(id: 1, expression: '本', createdAt: now)],
+      );
+
+      for (final figure in ['3h 20m', '12.3K', '1']) {
+        expect(breaksInsideAWord(tester, figure), isFalse, reason: figure);
+      }
+      // Painted at the size it was laid out at: nothing scaled it down.
+      final number = inHero('12.3K');
+      expect(tester.getRect(number).size, tester.getSize(number));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('keeps three tiles across, in even thirds, at text scale 1', (
+      tester,
+    ) async {
+      phone(tester, textScale: 1);
+      final now = DateTime.now();
+      await pumpScreen(
+        tester,
+        sessions: [
+          session(
+            id: 1,
+            startedAt: now,
+            durationMs: (3 * 60 + 20) * 60 * 1000,
+            charactersRead: 512,
+          ),
+        ],
+        events: [wordEvent(id: 1, expression: '本', createdAt: now)],
+      );
+
+      final tiles = find.byType(HeroStatTile);
+      const third = (360 - 2 * 16) / 3;
+      final first = tester.getRect(tiles.at(0));
+      for (var i = 0; i < 3; i++) {
+        final rect = tester.getRect(tiles.at(i));
+        expect(rect.top, first.top, reason: 'tile $i');
+        expect(rect.left, moreOrLessEquals(16 + i * third), reason: 'tile $i');
+        expect(rect.width, moreOrLessEquals(third), reason: 'tile $i');
+      }
+      // Too long for its third, the duration wraps between its words.
+      expect(breaksInsideAWord(tester, '3h 20m'), isFalse);
     });
 
     testWidgets('renders zeroed tiles with no data at all', (tester) async {

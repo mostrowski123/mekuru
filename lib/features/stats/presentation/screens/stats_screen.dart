@@ -227,39 +227,40 @@ class _HeroStatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).toLanguageTag();
+    final tiles = [
+      HeroStatTile(
+        label: l10n.statsHeroReadingTime,
+        value: totals.durationMs,
+        formatter: (ms) => formatDuration(l10n, ms),
+      ),
+      HeroStatTile(
+        label: l10n.statsHeroCharactersRead,
+        value: totals.charactersRead,
+        formatter: compactCountFormatter(locale, totals.charactersRead),
+      ),
+      HeroStatTile(
+        label: l10n.statsHeroWordsAdded,
+        value: totals.wordsAdded,
+        formatter: compactCountFormatter(locale, totals.wordsAdded),
+      ),
+    ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _heroTile(
-            label: l10n.statsHeroReadingTime,
-            value: totals.durationMs,
-            formatter: (ms) => formatDuration(l10n, ms),
-          ),
-          _heroTile(
-            label: l10n.statsHeroCharactersRead,
-            value: totals.charactersRead,
-            formatter: compactCountFormatter(locale, totals.charactersRead),
-          ),
-          _heroTile(
-            label: l10n.statsHeroWordsAdded,
-            value: totals.wordsAdded,
-            formatter: compactCountFormatter(locale, totals.wordsAdded),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Three across in even thirds while each number fits its third
+          // without breaking inside a word. At a text size where one would
+          // not, the tiles stack, each the full width.
+          final third = constraints.maxWidth / 3;
+          if (tiles.every((tile) => tile.fitsWidth(context, third))) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [for (final tile in tiles) Expanded(child: tile)],
+            );
+          }
+          return Column(spacing: 12, children: tiles);
+        },
       ),
-    );
-  }
-
-  /// One third of the row. The tile wraps its own number to fit.
-  Widget _heroTile({
-    required String label,
-    required int value,
-    required String Function(int) formatter,
-  }) {
-    return Expanded(
-      child: HeroStatTile(label: label, value: value, formatter: formatter),
     );
   }
 }
