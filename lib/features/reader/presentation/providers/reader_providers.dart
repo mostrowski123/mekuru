@@ -38,7 +38,8 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
 
   /// The current book's native vertical-text default as computed by
   /// [applyBookDefaults] (ignoring any per-book override). `null` when no
-  /// book is open. Lets UI (e.g. the quick-settings sheet) flag non-native
+  /// book is open, or when the default comes from the spine alone (see
+  /// there). Lets UI (e.g. the quick-settings sheet) flag non-native
   /// display modes without re-deriving the default from book metadata.
   bool? _nativeVerticalText;
 
@@ -255,7 +256,14 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
       primaryWritingMode: primaryWritingMode,
       hasVerticalCss: hasVerticalCss,
     );
-    _nativeVerticalText = nativeVerticalText;
+    // A book whose own styling has no vertical text gets it by default only
+    // for its right-to-left spine. The settings sheet would then say it was
+    // formatted for vertical text, so it says nothing.
+    final spineOnly =
+        nativeVerticalText &&
+        primaryWritingMode == null &&
+        hasVerticalCss == false;
+    _nativeVerticalText = spineOnly ? null : nativeVerticalText;
     final effectiveVerticalText = overrideVerticalText ?? nativeVerticalText;
 
     final effectiveDirection = overrideReadingDirection != null

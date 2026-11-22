@@ -7,6 +7,7 @@ import 'package:mekuru/features/reader/presentation/providers/user_font_provider
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/epub_reader_settings_sheet.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
+import 'package:mekuru/l10n/generated/app_localizations_en.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -188,6 +189,59 @@ void main() {
     );
     expect(row.onChanged, isNull);
   });
+
+  // A book's own formatting, the reader's choice, and the line shown under
+  // the switch (null: none).
+  final en = AppLocalizationsEn();
+  for (final (label, ppd, verticalCss, verticalText, line) in [
+    // Vertical text is the default for its right-to-left spine, but none of
+    // the book's own styling is vertical.
+    (
+      'an rtl spine and no vertical CSS, vertical off',
+      'rtl',
+      false,
+      false,
+      null,
+    ),
+    ('an rtl spine and no vertical CSS, vertical on', 'rtl', false, true, null),
+    (
+      'vertical CSS, vertical off',
+      null,
+      true,
+      false,
+      en.readerHorizontalTextNonNativeWarning,
+    ),
+    (
+      'an ltr spine and no vertical CSS, vertical on',
+      'ltr',
+      false,
+      true,
+      en.readerVerticalTextNonNativeWarning,
+    ),
+  ]) {
+    testWidgets('the line under Vertical text is true to the book: $label', (
+      tester,
+    ) async {
+      final container = await _pumpSheet(tester);
+      container
+          .read(readerSettingsProvider.notifier)
+          .applyBookDefaults(
+            bookId: 1,
+            language: 'ja',
+            pageProgressionDirection: ppd,
+            hasVerticalCss: verticalCss,
+            overrideVerticalText: verticalText,
+          );
+      await tester.pumpAndSettle();
+
+      expect(container.read(readerSettingsProvider).verticalText, verticalText);
+      expect(
+        find.textContaining('originally formatted'),
+        findsNWidgets(line == null ? 0 : 1),
+      );
+      if (line != null) expect(find.text(line), findsOneWidget);
+    });
+  }
 
   testWidgets('split vertical text is disabled when vertical text is off', (
     tester,
