@@ -388,6 +388,49 @@ void main() {
     expect(seen, orderedEquals(seen.toSet().toList()..sort()));
   });
 
+  test('a resumed download needs no room for a part already in place, only '
+      'for what is left to fetch', () async {
+    // The manga-ocr pack with its encoder done and its decoder half there.
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final encoder = List<int>.generate(6000, (i) => i % 251);
+    final decoder = List<int>.generate(4000, (i) => i % 241);
+    DownloadPart part(String name, List<int> body) => (
+      name: name,
+      url: 'https://example.org/$name',
+      bytes: body.length,
+      sha256: sha256.convert(body).toString(),
+    );
+    final dir = Directory(p.join(root, 'manga_ocr_models'))..createSync();
+    File(p.join(dir.path, 'encoder.onnx')).writeAsBytesSync(encoder);
+    File(
+      p.join(dir.path, 'decoder.onnx.part'),
+    ).writeAsBytesSync(decoder.sublist(0, 2000));
+    free = 2000 + 100;
+    http.handler = (request) async {
+      final response = request.response
+        ..statusCode = HttpStatus.partialContent
+        ..headers.set(HttpHeaders.contentRangeHeader, 'bytes 2000-3999/4000')
+        ..contentLength = 2000
+        ..add(decoder.sublist(2000));
+      await response.close();
+    };
+
+    await runDownload<void>(
+      DownloadSpec(
+        DownloadKind.mangaOcrIos,
+        id: 'two parts, one done',
+        parts: [part('encoder.onnx', encoder), part('decoder.onnx', decoder)],
+        dir: dir.path,
+      ),
+      NetworkConsent.mobileData,
+    );
+
+    expect(http.requests, ['example.org/decoder.onnx']);
+    expect(http.ranges, ['bytes=2000-']);
+    expect(File(p.join(dir.path, 'decoder.onnx')).readAsBytesSync(), decoder);
+    expect(File(p.join(dir.path, 'encoder.onnx')).readAsBytesSync(), encoder);
+  });
+
   for (final kind in kinds) {
     test('${kind.name}: a download started on Wi-Fi stops when Wi-Fi '
         'drops', () async {

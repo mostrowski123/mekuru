@@ -232,11 +232,14 @@ Future<T> _run<T>(
 Future<void> _checkRoom(DownloadSpec spec) async {
   var needed = spec.kind.room + spec.extraBytes;
   for (final part in spec.parts) {
-    needed += part.bytes ?? 0;
     if (spec.kind.resume) {
-      final partial = File(p.join(spec.dir!, '${part.name}.part'));
+      final target = File(p.join(spec.dir!, part.name));
+      // A part [_toFolder] skips needs no room.
+      if (await _matches(target, part)) continue;
+      final partial = File('${target.path}.part');
       if (await partial.exists()) needed -= await partial.length();
     }
+    needed += part.bytes ?? 0;
   }
   await requireRoom(needed);
 }
