@@ -638,6 +638,38 @@ const checks = [
     expect(blank.length === 0, `a re-layout did not show the reader's page after ${blank.join(', ')}`);
   }],
 
+  ["a jump made as a page back crosses into the chapter before goes to the jump's target", async () => {
+    // previous() from a chapter's first page shows the chapter before, then
+    // pins it to its last page (snapToLastPage()). A jump made while that
+    // chapter loaded had the pin put on the jump's own chapter.
+    const p = await openBook('book.epub', `"", "rtl", "paginated", false, "28", "#000000", null, 28, 28, false, "book", 1, null`);
+    try {
+      const where = () => p.evaluate(() => {
+        const { start } = rendition.currentLocation();
+        return [start.index, start.displayed.page, start.displayed.total];
+      });
+      const wrong = [];
+      // In the same tick, and once the chapter gone back into is loading.
+      for (const jump of ['toCfi("c2.xhtml")', 'requestAnimationFrame(() => toCfi("c2.xhtml"))']) {
+        await turned(p, 'toCfi("c2.xhtml")');
+        const [, , total] = await where();
+        expect(total > 1, `chapter 2 is ${total} page long, so this checks nothing`);
+        await turned(p, `previous(); ${jump}`);
+        let [index, page] = await where();
+        if (index !== 1 || page !== 1) wrong.push(`previous(); ${jump}: chapter ${index + 1}, page ${page} of ${total}`);
+        await p.setViewportSize({ width: 800, height: 412 });
+        await settle(p);
+        await p.setViewportSize({ width: 412, height: 800 });
+        await settle(p);
+        [index, page] = await where();
+        if (index !== 1 || page !== 1) wrong.push(`then turning the phone: chapter ${index + 1}, page ${page}`);
+      }
+      expect(wrong.length === 0, `not on chapter 2's first page: ${wrong.join('; ')}`);
+    } finally {
+      await p.close();
+    }
+  }],
+
   ['a first chapter named in Japanese opens from the chapter list, a link and a saved place', async () => {
     // japanese_name.epub (make_epub.py): chapter 1 is 第一章.xhtml, and
     // chapter 2 links to it as written and percent-encoded.

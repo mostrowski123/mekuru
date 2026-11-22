@@ -20,6 +20,10 @@ var _furiganaProcessedDocs = new WeakSet(); // iframe documents already processe
 // size, margins, rotation → resize + re-display of the same page) never arm
 // it, so they cannot inflate the reading-stats character count.
 var _pendingNavChars = false;
+// Counts the reader's navigations (page turns, jumps, links), so what one
+// leaves for later (previous()'s snap to a chapter's last page) can tell
+// that another has started since. Re-layouts are not navigations.
+var _navigations = 0;
 // The reader's place is rendition.place: the start last reported to Dart,
 // which Dart saves and reopens at. Only the reader moves it (a page turn, a
 // jump, scrolling). Anything else that lays the book out again (a resize or
@@ -450,7 +454,10 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     // epub.js follows a link itself (Rendition.handleLinks()). A tap has
     // already let go through its touch; a keyboard or a screen reader sends
     // none, and a place still held would take the next re-layout back.
-    contents.on('linkClicked', unpinScroll);
+    contents.on('linkClicked', function () {
+      _navigations++;
+      unpinScroll();
+    });
 
     // Furigana: inject visibility style and (lazily) generate ruby for kanji.
     applyFuriganaStyleToDoc(doc);
@@ -763,6 +770,7 @@ function currentStart() {
 }
 
 function next() {
+  _navigations++;
   unpinScroll();
   var start = currentStart();
   if (!start) {
@@ -813,6 +821,7 @@ function next() {
 }
 
 function previous() {
+  var turn = ++_navigations;
   unpinScroll();
   var start = currentStart();
   if (!start) {
@@ -850,7 +859,11 @@ function previous() {
         // For vertical Japanese text (writing-mode: vertical-rl), the axis
         // is "vertical" and pages scroll top-to-bottom.
         _pendingNavChars = true;
+        // The snap is this turn's: once another navigation has started, the
+        // view on screen is that one's, or soon will be.
+        var current = function () { return turn === _navigations; };
         rendition.display(prevItem.href).then(function () {
+          if (!current()) return;
           // Scroll view: display() shows the new view in the same promise
           // chain, so it is moved to its end before anything is painted.
           if (_scrollView) {
@@ -862,7 +875,7 @@ function previous() {
           // whose height isn't known until the image loads).
           requestAnimationFrame(function () {
             setTimeout(function () {
-              snapToLastPage('previous');
+              snapToLastPage('previous', current);
             }, 0);
           });
         });
@@ -893,6 +906,7 @@ function _displayCfi(cfi) {
     console.log('[EPUB_BRIDGE] toCfi: no such place in the book');
     return Promise.resolve();
   }
+  _navigations++;
   unpinScroll();
   if (!rendition) return Promise.resolve();
   _pendingNavChars = true;
@@ -2596,9 +2610,10 @@ function expandSelectionToSentence(doc, contents) {
  * epub.js's location data: offset = (totalPages - 1) * delta.
  *
  * This function is called after a rAF + setTimeout so the browser
- * has had at least one frame to lay out the new section.
+ * has had at least one frame to lay out the new section. It snaps only
+ * while current() holds: no other navigation has started.
  */
-function snapToLastPage(caller) {
+function snapToLastPage(caller, current) {
   if (!rendition || !rendition.manager) {
     console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage: no manager');
     return;
@@ -2692,7 +2707,7 @@ function snapToLastPage(caller) {
   // further on: snap again on every resize until the reader moves on
   // (epub.js pinScroll()).
   function snap() {
-    manager.pinScroll(view, doSnap);
+    if (current()) manager.pinScroll(view, doSnap);
   }
 
   // Check if there are any images in the current view that haven't loaded yet.
