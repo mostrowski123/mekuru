@@ -559,7 +559,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                               verticalTextBlocks:
                                   viewer.layout.splitVerticalText ? 2 : 1,
                               scrollView: viewer.layout.scrollView,
-                              twoPageMinWidth: epubTwoPageMinWidth(settings),
+                              twoPageMinWidth: epubTwoPageMinWidth(
+                                settings.copyWith(
+                                  scrollView: viewer.layout.scrollView,
+                                ),
+                              ),
                               furiganaMode: settings.furiganaMode,
                               furiganaJlptLevel: settings.furiganaJlptLevel,
                               furiganaKnownKanji: wanikaniKnownKanji,
@@ -1664,8 +1668,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  /// How pages turn right now. Scroll view has no pages to turn.
-  PageTurnStyle _pageTurnStyle(ReaderSettings settings) => settings.scrollView
+  /// How pages turn right now, on the viewer on screen: the settings may
+  /// already want the layout of one still to be built. Scroll view has no
+  /// pages to turn.
+  PageTurnStyle _pageTurnStyle(ReaderSettings settings) =>
+      (_viewer?.layout.scrollView ?? settings.scrollView)
       ? PageTurnStyle.none
       : effectivePageTurnStyle(
           settings,
