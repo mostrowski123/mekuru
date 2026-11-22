@@ -66,11 +66,11 @@ void registerChapterEndScenario({required bool vertical, bool rtl = false}) {
       // made the whole content right-to-left, which right-aligned Japanese
       // and put each full stop at the line's left end.
       if (rtl) {
-        final steps = await evalJson(controller, _textStepsJs);
+        final stop = await evalJson(controller, _fullStopJs);
         expect(
-          (steps['steps'] as List).every((s) => (s as num) > 0),
+          stop['sameLine'] == true && (stop['step'] as num) > 0,
           isTrue,
-          reason: 'rightward steps between the last characters: $steps',
+          reason: 'the full stop against the character before it: $stop',
         );
       }
 
@@ -239,23 +239,25 @@ const _locationJs =
     '    total: s.displayed.total, cfi: s.cfi, progress: s.percentage});'
     '})()';
 
-// How far right each of the first paragraph's last two characters (す and
-// 。) sits from the one before it.
-const _textStepsJs =
+// How far right the first paragraph's full stop sits from the character
+// before it (す), and whether the two share a line. A line never starts
+// with a full stop, so they do wherever the paragraph wraps on the screen.
+const _fullStopJs =
     '(function () {'
     '  var doc = rendition.getContents()[0].document;'
     '  var p = doc.querySelector("p");'
     '  var walk = doc.createTreeWalker(p, NodeFilter.SHOW_TEXT), text, n;'
     '  while ((n = walk.nextNode())) text = n;'
-    '  function x(i) {'
+    '  function box(i) {'
     '    var r = doc.createRange();'
     '    r.setStart(text, i);'
     '    r.setEnd(text, i + 1);'
-    '    return r.getBoundingClientRect().left;'
+    '    return r.getBoundingClientRect();'
     '  }'
-    '  var end = text.length - 1;'
-    '  return JSON.stringify({text: text.data.slice(-3),'
-    '    steps: [x(end - 1) - x(end - 2), x(end) - x(end - 1)]});'
+    '  var end = text.length - 1, before = box(end - 1), stop = box(end);'
+    '  return JSON.stringify({text: text.data.slice(-2),'
+    '    step: stop.left - before.left,'
+    '    sameLine: Math.abs(stop.top - before.top) < before.height / 2});'
     '})()';
 
 /// Polls until the location reads the same twice, 400 ms apart.
