@@ -555,6 +555,22 @@ void main() {
     await closeReader(tester);
   });
 
+  testWidgets('Retry opens at the place the reader had got to, not the one '
+      'the book was opened at', (tester) async {
+    await openReader(tester);
+    viewer(tester).onLoaded!();
+    await tester.pump();
+    relocate(tester, _pageB, 0.5);
+    await tester.pump();
+
+    viewer(tester).onLoadError!('net::ERR_FAILED');
+    await tester.pump();
+    await tester.tap(find.text('Retry'));
+    await pumpUntilViewerBuilt(tester);
+    expect(viewer(tester).initialCfi, _pageB);
+    await closeReader(tester);
+  });
+
   testWidgets('a renderer that dies while the book opens offers Retry', (
     tester,
   ) async {

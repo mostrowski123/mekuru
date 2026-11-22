@@ -788,7 +788,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (!mounted) return;
 
       final savedProgress = latestBook?.lastReadCfi ?? widget.book.lastReadCfi;
-      final initialCfi = readerStartCfi(widget.initialCfi, savedProgress);
+      // A retry opens where the reader had got to, before the place the
+      // book was opened at.
+      final initialCfi = readerStartCfi(
+        _isEpubCfi(_currentCfi) ? _currentCfi : widget.initialCfi,
+        savedProgress,
+      );
 
       // Re-parse legacy books without language metadata to detect language.
       // hasVerticalCss doubles as the "parsed by this app version" marker:
