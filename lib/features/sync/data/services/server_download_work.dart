@@ -267,6 +267,7 @@ Future<bool> runServerDownloadWork(
           allowSelfSigned: input['allowSelfSigned'] as bool? ?? false,
         ),
     untrustedCertificateIsFinal: true,
+    keepsPartOnFullDisk: false,
   );
 }
 
@@ -284,12 +285,18 @@ Future<bool> runServerDownloadWork(
 /// [marker] (written once the file is in place) and [onGiveUp]. A server book
 /// learns its size from the server, and only the user can trust a certificate
 /// it rejects ([untrustedCertificateIsFinal]).
+///
+/// A full disk ends the download. With [keepsPartOnFullDisk] (a model's
+/// part, gigabytes) all but a tail of the part stays for the next run to
+/// continue; without it (a server book) the part is deleted, so the space it
+/// took is free again.
 Future<bool> runWorkerDownload(
   ServerDownloadWorkDir work, {
   required ServerDownloadWorkStatus? previous,
   required String name,
   required String url,
   required HttpClient Function() client,
+  required bool keepsPartOnFullDisk,
   Map<String, String>? headers,
   int? bytes,
   Future<String?> Function(String path)? verify,
@@ -368,17 +375,15 @@ Future<bool> runWorkerDownload(
     if (!Directory(work.path).existsSync()) return true;
     if (isStorageFull(e)) {
       // ENOSPC: a retry can't fit either. Room goes first, or not even the
-      // status that says so could be written. A server book's part goes; a
-      // pinned-size one (gigabytes) only loses a tail, and the next run
-      // continues from what is left.
+      // status that says so could be written.
       var kept = 0;
-      if (bytes == null) {
+      if (keepsPartOnFullDisk) {
+        kept = await _cutTail(partPath);
+      } else {
         for (final path in [partPath, '$partPath.validator']) {
           final file = File(path);
           if (await file.exists()) await file.delete();
         }
-      } else {
-        kept = await _cutTail(partPath);
       }
       await work.writeStatus(
         ServerDownloadWorkStatus(

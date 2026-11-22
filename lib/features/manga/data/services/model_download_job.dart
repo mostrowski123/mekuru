@@ -274,6 +274,7 @@ Future<bool> runModelDownloadWork(
     name: file.name,
     url: file.url,
     client: HttpClient.new,
+    keepsPartOnFullDisk: true,
     bytes: file.bytes,
     verify: (path) async => await fileSha256(path) == file.sha256
         ? null
