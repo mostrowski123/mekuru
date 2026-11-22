@@ -1,10 +1,14 @@
 // ignore_for_file: discarded_futures
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/library/presentation/widgets/collection_widgets.dart';
 import 'package:mekuru/features/reader/data/models/highlight_color.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 
 /// Bottom sheet listing all highlights for a book.
 ///
@@ -22,8 +26,12 @@ class HighlightsSheet extends ConsumerWidget {
     this.onRemoveHighlight,
   });
 
+  // A failed delete says so on the sheet, which stays open.
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      withOwnMessenger(Builder(builder: (context) => _sheet(context, ref)));
+
+  Widget _sheet(BuildContext context, WidgetRef ref) {
     final highlightsAsync = ref.watch(highlightsForBookProvider(bookId));
 
     return DraggableScrollableSheet(
@@ -67,8 +75,12 @@ class HighlightsSheet extends ConsumerWidget {
                           onNavigate!(highlight.cfiRange);
                         }
                       },
-                      onDelete: () =>
-                          _deleteHighlight(ref, highlight, onRemoveHighlight),
+                      onDelete: () => _deleteHighlight(
+                        context,
+                        ref,
+                        highlight,
+                        onRemoveHighlight,
+                      ),
                       onEditNote: () => showHighlightNoteEditor(
                         context,
                         highlightId: highlight.id,
@@ -80,7 +92,10 @@ class HighlightsSheet extends ConsumerWidget {
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
-                child: Text(context.l10n.commonErrorWithDetails(details: '$e')),
+                child: LoadFailedText(
+                  e,
+                  event: 'reader.highlights_load_failed',
+                ),
               ),
             ),
           ),
@@ -99,6 +114,7 @@ Future<void> showHighlightNoteEditor(
 }) {
   // Resolved before the dialog opens: the sheet can unmount while it's up.
   final container = ProviderScope.containerOf(context, listen: false);
+  final messenger = ScaffoldMessenger.of(context);
   final controller = TextEditingController(text: note);
   return showDialog(
     context: context,
@@ -120,9 +136,16 @@ Future<void> showHighlightNoteEditor(
         ),
         FilledButton(
           onPressed: () {
-            container
-                .read(highlightRepositoryProvider)
-                .updateHighlightNote(highlightId, controller.text);
+            final note = controller.text;
+            final repo = container.read(highlightRepositoryProvider);
+            unawaited(
+              saveLibraryChange(
+                messenger,
+                () => repo.updateHighlightNote(highlightId, note),
+                failure: context.l10n.readerNoteSaveFailed,
+                event: 'reader.note_save_failed',
+              ),
+            );
             Navigator.pop(context);
           },
           child: Text(context.l10n.commonSave),
@@ -132,13 +155,23 @@ Future<void> showHighlightNoteEditor(
   );
 }
 
-void _deleteHighlight(
+/// True once the highlight is gone, and then no longer drawn. When the delete
+/// fails the sheet says so and the highlight stays.
+Future<bool> _deleteHighlight(
+  BuildContext context,
   WidgetRef ref,
   Highlight highlight,
   void Function(String cfiRange)? onRemoveHighlight,
-) {
-  ref.read(highlightRepositoryProvider).deleteHighlight(highlight.id);
-  onRemoveHighlight?.call(highlight.cfiRange);
+) async {
+  final repo = ref.read(highlightRepositoryProvider);
+  final deleted = await saveLibraryChange(
+    ScaffoldMessenger.of(context),
+    () => repo.deleteHighlight(highlight.id),
+    failure: context.l10n.readerHighlightDeleteFailed,
+    event: 'reader.highlight_delete_failed',
+  );
+  if (deleted) onRemoveHighlight?.call(highlight.cfiRange);
+  return deleted;
 }
 
 /// Bottom sheet for the highlight drawn at [cfiRange], tapped on the page:
@@ -156,8 +189,12 @@ class HighlightDetailsSheet extends ConsumerWidget {
     this.onRemoveHighlight,
   });
 
+  // A failed delete says so on the sheet, which stays open to try again.
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      withOwnMessenger(Builder(builder: (context) => _details(context, ref)));
+
+  Widget _details(BuildContext context, WidgetRef ref) {
     // Watched, so a note saved from here shows at once.
     final highlight = ref
         .watch(highlightsForBookProvider(bookId))
@@ -212,9 +249,15 @@ class HighlightDetailsSheet extends ConsumerWidget {
                 TextButton.icon(
                   icon: const Icon(Icons.delete_outline),
                   label: Text(l10n.commonDelete),
-                  onPressed: () {
-                    _deleteHighlight(ref, highlight, onRemoveHighlight);
-                    Navigator.pop(context);
+                  onPressed: () async {
+                    final deleted = await _deleteHighlight(
+                      context,
+                      ref,
+                      highlight,
+                      onRemoveHighlight,
+                    );
+                    // Not when the sheet was closed while it deleted.
+                    if (deleted && context.mounted) Navigator.pop(context);
                   },
                 ),
                 TextButton.icon(
@@ -240,7 +283,7 @@ class HighlightDetailsSheet extends ConsumerWidget {
 class _HighlightTile extends StatelessWidget {
   final Highlight highlight;
   final VoidCallback onTap;
-  final VoidCallback onDelete;
+  final Future<bool> Function() onDelete;
   final VoidCallback onEditNote;
 
   const _HighlightTile({
@@ -267,7 +310,8 @@ class _HighlightTile extends StatelessWidget {
         color: Colors.red,
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onDismissed: (_) => onDelete(),
+      // Deleted before the row leaves: a failed delete slides it back.
+      confirmDismiss: (_) => onDelete(),
       child: ListTile(
         leading: Container(
           width: 12,

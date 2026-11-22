@@ -2,8 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/library/presentation/widgets/collection_widgets.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 
 /// Bottom sheet listing all bookmarks for a book.
 ///
@@ -21,8 +23,12 @@ class BookmarksSheet extends ConsumerWidget {
     this.onBookmarkDeleted,
   });
 
+  // A failed delete says so on the sheet, which stays open.
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) =>
+      withOwnMessenger(Builder(builder: (context) => _sheet(context, ref)));
+
+  Widget _sheet(BuildContext context, WidgetRef ref) {
     final bookmarksAsync = ref.watch(bookmarksForBookProvider(bookId));
     final l10n = context.l10n;
 
@@ -74,7 +80,7 @@ class BookmarksSheet extends ConsumerWidget {
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
-                child: Text(l10n.commonErrorWithDetails(details: '$e')),
+                child: LoadFailedText(e, event: 'reader.bookmarks_load_failed'),
               ),
             ),
           ),
@@ -83,16 +89,29 @@ class BookmarksSheet extends ConsumerWidget {
     );
   }
 
-  void _deleteBookmark(BuildContext context, WidgetRef ref, Bookmark bookmark) {
-    ref.read(bookmarkRepositoryProvider).deleteBookmark(bookmark.id);
-    onBookmarkDeleted?.call();
+  /// True once the bookmark is gone. When the delete fails the sheet says so
+  /// and the row comes back.
+  Future<bool> _deleteBookmark(
+    BuildContext context,
+    WidgetRef ref,
+    Bookmark bookmark,
+  ) async {
+    final repo = ref.read(bookmarkRepositoryProvider);
+    final deleted = await saveLibraryChange(
+      ScaffoldMessenger.of(context),
+      () => repo.deleteBookmark(bookmark.id),
+      failure: context.l10n.readerBookmarkDeleteFailed,
+      event: 'reader.bookmark_delete_failed',
+    );
+    if (deleted) onBookmarkDeleted?.call();
+    return deleted;
   }
 }
 
 class _BookmarkTile extends StatelessWidget {
   final Bookmark bookmark;
   final VoidCallback onTap;
-  final VoidCallback onDelete;
+  final Future<bool> Function() onDelete;
 
   const _BookmarkTile({
     required this.bookmark,
@@ -116,7 +135,8 @@ class _BookmarkTile extends StatelessWidget {
         color: Colors.red,
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onDismissed: (_) => onDelete(),
+      // Deleted before the row leaves: a failed delete slides it back.
+      confirmDismiss: (_) => onDelete(),
       child: ListTile(
         leading: const Icon(Icons.bookmark, color: Colors.amber),
         title: Text(

@@ -39,7 +39,7 @@ Future<bool> saveLibraryChange(
 /// [sheet] with a messenger of its own, so its messages show on it rather
 /// than on the page underneath. A Scaffold fills the height it is given, so
 /// it lies over the sheet instead of holding it, as in showOcrActionSheet.
-Widget _withOwnMessenger(Widget sheet) => ScaffoldMessenger(
+Widget withOwnMessenger(Widget sheet) => ScaffoldMessenger(
   child: Stack(
     children: [
       sheet,
@@ -57,7 +57,7 @@ Future<void> showCollectionAssignSheet(BuildContext context, Book book) {
   return showModalBottomSheet(
     context: context,
     showDragHandle: true,
-    builder: (_) => _withOwnMessenger(CollectionAssignSheet(book: book)),
+    builder: (_) => withOwnMessenger(CollectionAssignSheet(book: book)),
   );
 }
 
@@ -176,7 +176,7 @@ Future<void> showCollectionPickSheet(BuildContext context, Set<int> bookIds) {
   return showModalBottomSheet(
     context: context,
     showDragHandle: true,
-    builder: (_) => _withOwnMessenger(CollectionPickSheet(bookIds: bookIds)),
+    builder: (_) => withOwnMessenger(CollectionPickSheet(bookIds: bookIds)),
   );
 }
 
