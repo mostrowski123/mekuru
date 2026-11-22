@@ -153,15 +153,6 @@
   "@commonGotIt": {
     "description": "Acknowledgement action label."
   },
-  "commonErrorWithDetails": "Error: {details}",
-  "@commonErrorWithDetails": {
-    "description": "Generic error message with details.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "commonNoFilePicker": "This device has no file picker, so Mekuru can't open files from storage here.",
   "@commonNoFilePicker": {
     "description": "Shown when the user tries to import a book, dictionary or font from a file on an Android device that has no system file picker (some e-readers)."
@@ -1719,15 +1710,6 @@
   "@backupCreatedSuccess": {
     "description": "Snackbar shown after a backup is created."
   },
-  "backupFailed": "Backup failed: {details}",
-  "@backupFailed": {
-    "description": "Snackbar shown when backup creation fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "backupNoBackupsToExport": "No reading data backups to export. Create one first.",
   "@backupNoBackupsToExport": {
     "description": "Snackbar shown when there are no backups to export."
@@ -2747,12 +2729,7 @@
   },
   "mangaAutoCropSetupFailed": "Couldn't set up auto-crop. Try again.",
   "@mangaAutoCropSetupFailed": {
-    "description": "Snackbar shown when auto-crop setup fails. {details} is the error's text: the caller still passes it, but it is never shown, so leave it out of the translation.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
+    "description": "Snackbar shown when auto-crop setup fails."
   },
   "ocrRunActionTitle": "Run OCR",
   "@ocrRunActionTitle": {
@@ -3621,23 +3598,37 @@
   "@backupFullPendingRestore": {
     "description": "Error when a staged restore already exists."
   },
-  "backupFullFailed": "Full backup failed: {details}",
+  "backupFullFailed": "The full backup stopped before it finished.",
   "@backupFullFailed": {
-    "description": "Generic export failure snackbar.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
+    "description": "Full backup page: a backup that stopped, when there is nothing more specific to say. Shown on its own, or as the first sentence of backupFullJobPaused."
   },
-  "backupFullRestoreFailed": "Full restore failed: {details}",
+  "backupFullRestoreFailed": "The full restore stopped before it finished.",
   "@backupFullRestoreFailed": {
-    "description": "Generic restore failure snackbar.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
+    "description": "Full backup page: a restore that stopped, when there is nothing more specific to say. Shown on its own, or as the first sentence of backupFullJobPaused or backupFullRestoreBootFailed."
+  },
+  "backupFullFailedFolder": "Mekuru can no longer write to the folder you chose. Start the backup again and pick a folder.",
+  "@backupFullFailedFolder": {
+    "description": "Full backup page: the backup stopped because Mekuru can no longer write to the folder the user picked for it (it was removed, or access to it was taken away)."
+  },
+  "backupFullFailedFileMoved": "The unfinished backup file was moved or deleted. Start the backup again and leave the file where it is until it finishes.",
+  "@backupFullFailedFileMoved": {
+    "description": "Full backup page: the half-written backup file (its name ends in .partial) disappeared from the chosen folder before the backup finished."
+  },
+  "backupFullFailedStorage": "Mekuru couldn't read or write a file on this device. Make sure there is enough free space, then try again.",
+  "@backupFullFailedStorage": {
+    "description": "Full backup page: reading or writing a file on the device failed during a backup or restore, most often because storage is full."
+  },
+  "backupFullFailedSource": "Mekuru can no longer open the backup file. Check that it is still where you picked it from, then start the restore again.",
+  "@backupFullFailedSource": {
+    "description": "Full backup page: the restore stopped because the backup .zip the user picked can no longer be opened (moved, deleted, or access to it taken away)."
+  },
+  "backupFullFailedStuck": "It kept stopping without getting any further, so Mekuru ended it. Try again.",
+  "@backupFullFailedStuck": {
+    "description": "Full backup page: the backup or restore was interrupted several times in a row without making progress (for example the system kept closing Mekuru), so Mekuru ended it. 'It' is the backup or the restore; the page title says which."
+  },
+  "backupFullFailedStaging": "Some of the files copied for the restore were missing. Restore the backup again.",
+  "@backupFullFailedStaging": {
+    "description": "First sentence of backupFullRestoreBootFailed: files a full restore had already copied were missing when Mekuru started to apply it."
   },
   "backupFullReviewTitle": "Review full backup",
   "@backupFullReviewTitle": {
@@ -3766,11 +3757,11 @@
   "@backupFullRestoreComplete": {
     "description": "Snackbar on the first launch after a successful full restore."
   },
-  "backupFullRestoreBootFailed": "The full restore could not be completed and your previous data was kept. ({details})",
+  "backupFullRestoreBootFailed": "{reason} Your previous data was kept.",
   "@backupFullRestoreBootFailed": {
-    "description": "Snackbar on the first launch after a failed full restore.",
+    "description": "Snackbar on the first launch after a full restore that could not be applied; everything from before the restore is still there. {reason} is a whole sentence with its own full stop saying what went wrong, such as backupFullFailedStaging or backupFullRestoreFailed.",
     "placeholders": {
-      "details": {
+      "reason": {
         "type": "String"
       }
     }
@@ -3803,11 +3794,11 @@
   "@backupFullJobPhaseResuming": {
     "description": "Phase line on the job page while a paused job is being restarted."
   },
-  "backupFullJobPaused": "Paused: {details}. Mekuru will try again when you reopen it.",
+  "backupFullJobPaused": "{reason} Mekuru will try again when you reopen it.",
   "@backupFullJobPaused": {
-    "description": "Phase line on the job page when the last run stopped with an error.",
+    "description": "Full backup page: the backup or restore stopped and starts again on the next launch. {reason} is a whole sentence with its own full stop saying what went wrong, such as backupFullFailed or backupFullFailedStorage.",
     "placeholders": {
-      "details": {
+      "reason": {
         "type": "String"
       }
     }
@@ -5468,14 +5459,9 @@
   "@localOcrModelInstallFailed": {
     "description": "OCR model download finished but the files could not be moved into place."
   },
-  "proErrorLoadAccess": "Couldn't check your Pro access: {details}",
+  "proErrorLoadAccess": "Couldn't check your Pro access. Try again later.",
   "@proErrorLoadAccess": {
-    "description": "Pro screen: whether the user owns Pro could not be checked. {details} says why.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
+    "description": "Pro screen: whether the user owns Pro could not be checked, and there is no more specific reason to give."
   },
   "proErrorOffline": "No internet connection. Check your connection and try again.",
   "@proErrorOffline": {
@@ -5614,7 +5600,7 @@
   },
   "serverErrorUnknown": "The request couldn't be completed. Try again.",
   "@serverErrorUnknown": {
-    "description": "Why a Komga or Kavita request (browsing, a connection test, linking books) failed, when it has no message of its own. Shown on its own or as {error} in serverSettingsLinkFailed and serverDialogConnectionFailed."
+    "description": "Why a Komga or Kavita request (browsing, a connection test, linking books), or a custom OCR server connection test, failed when it has no message of its own. Shown on its own or as {error} in serverSettingsLinkFailed and serverDialogConnectionFailed."
   },
   "serverErrorSecureConnection": "Couldn't make a secure connection to the server. If it doesn't use https, start its address with http://.",
   "@serverErrorSecureConnection": {

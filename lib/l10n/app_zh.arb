@@ -100,15 +100,6 @@
   "@commonGotIt": {
     "description": "Acknowledgement action label."
   },
-  "commonErrorWithDetails": "错误：{details}",
-  "@commonErrorWithDetails": {
-    "description": "Generic error message with details.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "commonNoFilePicker": "此设备没有文件选择器，因此 Mekuru 无法在此打开存储中的文件。",
   "ankidroidAlreadyInDeck": "已存在于“{deck}”",
   "@ankidroidAlreadyInDeck": {
@@ -1444,15 +1435,6 @@
   "@backupCreatedSuccess": {
     "description": "Snackbar shown after a backup is created."
   },
-  "backupFailed": "备份失败：{details}",
-  "@backupFailed": {
-    "description": "Snackbar shown when backup creation fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "backupNoBackupsToExport": "没有可导出的阅读数据备份，请先创建。",
   "@backupNoBackupsToExport": {
     "description": "Snackbar shown when there are no backups to export."
@@ -2231,12 +2213,7 @@
   },
   "mangaAutoCropSetupFailed": "无法设置自动裁边。请重试。",
   "@mangaAutoCropSetupFailed": {
-    "description": "Snackbar shown when auto-crop setup fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
+    "description": "Snackbar shown when auto-crop setup fails."
   },
   "ocrRunActionTitle": "运行 OCR",
   "@ocrRunActionTitle": {
@@ -2590,8 +2567,14 @@
   "backupFullTooNew": "此完整备份由 Mekuru {version} 创建。请更新 Mekuru 后再试。",
   "backupFullInvalid": "此文件不是 Mekuru 的完整备份。",
   "backupFullPendingRestore": "上一次完整恢复仍在等待完成。请先完全关闭 Mekuru 并重新打开。",
-  "backupFullFailed": "完整备份失败：{details}",
-  "backupFullRestoreFailed": "完整恢复失败：{details}",
+  "backupFullFailed": "完整备份在完成前停止了。",
+  "backupFullRestoreFailed": "完整恢复在完成前停止了。",
+  "backupFullFailedFolder": "Mekuru 无法再写入你选择的文件夹。请重新开始备份并选择一个文件夹。",
+  "backupFullFailedFileMoved": "未完成的备份文件被移动或删除了。请重新开始备份，并在完成前不要移动该文件。",
+  "backupFullFailedStorage": "Mekuru 无法在此设备上读写文件。请确认有足够的可用空间，然后重试。",
+  "backupFullFailedSource": "Mekuru 无法再打开备份文件。请确认它仍在你选择它的位置，然后重新开始恢复。",
+  "backupFullFailedStuck": "它多次停止且没有任何进展，因此 Mekuru 已将其结束。请重试。",
+  "backupFullFailedStaging": "为恢复而复制的部分文件丢失了。请重新恢复备份。",
   "backupFullReviewTitle": "查看完整备份",
   "backupFullReviewInFile": "此文件中",
   "backupFullReviewCreated": "由 Mekuru {version} 创建于 {date}",
@@ -2614,7 +2597,7 @@
   "backupFullReloadBody": "完整备份已就绪。Mekuru 将重新加载以完成恢复，然后打开已恢复的书库。",
   "backupFullReloadButton": "重新加载 Mekuru",
   "backupFullRestoreComplete": "完整恢复已完成",
-  "backupFullRestoreBootFailed": "完整恢复未能完成，已保留您之前的数据。（{details}）",
+  "backupFullRestoreBootFailed": "{reason}已保留你之前的数据。",
   "backupFullJobExportTitle": "正在备份",
   "backupFullJobRestoreTitle": "正在恢复",
   "backupFullJobPhaseWriting": "正在写入备份…",
@@ -2622,7 +2605,7 @@
   "backupFullJobPhaseExtracting": "正在复制文件…",
   "backupFullJobPhaseFinishing": "正在完成…",
   "backupFullJobPhaseResuming": "正在继续…",
-  "backupFullJobPaused": "已暂停：{details}。重新打开 Mekuru 时会再次尝试。",
+  "backupFullJobPaused": "{reason}重新打开 Mekuru 时会再次尝试。",
   "backupFullJobBackgroundHint": "即使离开 Mekuru，此操作也会继续运行。进度也会显示在通知中。",
   "backupFullJobBackgroundHintIos": "在此操作完成前，请保持 Mekuru 在屏幕上打开。运行期间屏幕会保持常亮。",
   "backupFullJobCancelConfirmExport": "停止备份？目前已写入的内容将被删除。",
@@ -2968,7 +2951,7 @@
   "localOcrDownloadNetwork": "下载无法连接。请检查网络连接后重试。",
   "localOcrDownloadDamaged": "下载的文件已损坏。请重新下载。",
   "localOcrModelInstallFailed": "无法安装下载的模型。请重试。",
-  "proErrorLoadAccess": "无法检查你的 Pro 权限：{details}",
+  "proErrorLoadAccess": "无法检查你的 Pro 权限。请稍后再试。",
   "proErrorOffline": "没有网络连接。请检查网络连接后重试。",
   "proErrorSignInRequired": "使用 OCR 付费功能前，请先使用 Google 登录。",
   "proErrorAppCheck": "Mekuru 无法向服务器完成验证。请等待几分钟后重试。",

@@ -66,6 +66,11 @@ String? describeBillingError(AppLocalizations l, Object error) {
   };
 }
 
+/// The Pro screen's line when whether the user owns Pro could not be
+/// checked: why, when [describeBillingError] knows, else that it could not.
+String proAccessCheckFailed(AppLocalizations l, Object error) =>
+    describeBillingError(l, error) ?? l.proErrorLoadAccess;
+
 class ProUpgradeSnapshot {
   final bool isUnlocked;
   final String? priceLabel;
@@ -223,10 +228,8 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         );
         unlocked = status?.ocrUnlocked ?? unlocked;
       } catch (e) {
-        if (!unlocked) {
-          errorMessage ??= (l) =>
-              describeBillingError(l, e) ?? l.proErrorLoadAccess(details: '$e');
-        }
+        logFailure('pro.access_check_failed', e);
+        if (!unlocked) errorMessage ??= (l) => proAccessCheckFailed(l, e);
       }
 
       try {

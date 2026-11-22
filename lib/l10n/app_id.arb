@@ -100,15 +100,6 @@
   "@commonGotIt": {
     "description": "Acknowledgement action label."
   },
-  "commonErrorWithDetails": "Kesalahan: {details}",
-  "@commonErrorWithDetails": {
-    "description": "Generic error message with details.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "commonNoFilePicker": "Perangkat ini tidak memiliki pemilih file, sehingga Mekuru tidak dapat membuka file dari penyimpanan di sini.",
   "ankidroidAlreadyInDeck": "Sudah ada di “{deck}”",
   "@ankidroidAlreadyInDeck": {
@@ -1444,15 +1435,6 @@
   "@backupCreatedSuccess": {
     "description": "Snackbar shown after a backup is created."
   },
-  "backupFailed": "Cadangan gagal: {details}",
-  "@backupFailed": {
-    "description": "Snackbar shown when backup creation fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "backupNoBackupsToExport": "Tidak ada cadangan data bacaan untuk diekspor. Buat satu terlebih dahulu.",
   "@backupNoBackupsToExport": {
     "description": "Snackbar shown when there are no backups to export."
@@ -2231,12 +2213,7 @@
   },
   "mangaAutoCropSetupFailed": "Tidak dapat menyiapkan pemotongan otomatis. Coba lagi.",
   "@mangaAutoCropSetupFailed": {
-    "description": "Snackbar shown when auto-crop setup fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
+    "description": "Snackbar shown when auto-crop setup fails."
   },
   "ocrRunActionTitle": "Jalankan OCR",
   "@ocrRunActionTitle": {
@@ -2590,8 +2567,14 @@
   "backupFullTooNew": "Cadangan lengkap ini dibuat dengan Mekuru {version}. Perbarui Mekuru, lalu coba lagi.",
   "backupFullInvalid": "File ini bukan cadangan lengkap Mekuru.",
   "backupFullPendingRestore": "Pemulihan lengkap sebelumnya masih menunggu untuk diselesaikan. Tutup Mekuru sepenuhnya dan buka kembali terlebih dahulu.",
-  "backupFullFailed": "Cadangan lengkap gagal: {details}",
-  "backupFullRestoreFailed": "Pemulihan lengkap gagal: {details}",
+  "backupFullFailed": "Cadangan lengkap berhenti sebelum selesai.",
+  "backupFullRestoreFailed": "Pemulihan lengkap berhenti sebelum selesai.",
+  "backupFullFailedFolder": "Mekuru tidak bisa lagi menulis ke folder yang Anda pilih. Mulai cadangan lagi dan pilih folder.",
+  "backupFullFailedFileMoved": "File cadangan yang belum selesai dipindahkan atau dihapus. Mulai cadangan lagi dan biarkan file itu di tempatnya sampai selesai.",
+  "backupFullFailedStorage": "Mekuru tidak dapat membaca atau menulis file di perangkat ini. Pastikan ruang kosongnya cukup, lalu coba lagi.",
+  "backupFullFailedSource": "Mekuru tidak bisa lagi membuka file cadangan. Pastikan file masih ada di tempat Anda memilihnya, lalu mulai pemulihan lagi.",
+  "backupFullFailedStuck": "Prosesnya terus berhenti tanpa ada kemajuan, jadi Mekuru menghentikannya. Coba lagi.",
+  "backupFullFailedStaging": "Sebagian file yang disalin untuk pemulihan hilang. Pulihkan cadangan lagi.",
   "backupFullReviewTitle": "Tinjau cadangan lengkap",
   "backupFullReviewInFile": "Dalam file ini",
   "backupFullReviewCreated": "Dibuat {date} dengan Mekuru {version}",
@@ -2614,7 +2597,7 @@
   "backupFullReloadBody": "Cadangan lengkap sudah siap. Mekuru dimuat ulang untuk menyelesaikan pemulihan, lalu membuka perpustakaan Anda yang telah dipulihkan.",
   "backupFullReloadButton": "Muat ulang Mekuru",
   "backupFullRestoreComplete": "Pemulihan lengkap selesai",
-  "backupFullRestoreBootFailed": "Pemulihan lengkap tidak dapat diselesaikan dan data Anda sebelumnya tetap dipertahankan. ({details})",
+  "backupFullRestoreBootFailed": "{reason} Data Anda sebelumnya tetap dipertahankan.",
   "backupFullJobExportTitle": "Mencadangkan",
   "backupFullJobRestoreTitle": "Memulihkan",
   "backupFullJobPhaseWriting": "Menulis cadangan…",
@@ -2622,7 +2605,7 @@
   "backupFullJobPhaseExtracting": "Menyalin file…",
   "backupFullJobPhaseFinishing": "Menyelesaikan…",
   "backupFullJobPhaseResuming": "Melanjutkan…",
-  "backupFullJobPaused": "Dijeda: {details}. Mekuru akan mencoba lagi saat Anda membukanya kembali.",
+  "backupFullJobPaused": "{reason} Mekuru akan mencoba lagi saat Anda membukanya kembali.",
   "backupFullJobBackgroundHint": "Ini tetap berjalan jika Anda meninggalkan Mekuru. Kemajuannya juga ditampilkan di notifikasi Anda.",
   "backupFullJobBackgroundHintIos": "Biarkan Mekuru tetap terbuka di layar sampai proses ini selesai. Layar tetap menyala selama proses berjalan.",
   "backupFullJobCancelConfirmExport": "Hentikan pencadangan? Apa yang sudah ditulis sejauh ini akan dihapus.",
@@ -2968,7 +2951,7 @@
   "localOcrDownloadNetwork": "Unduhan tidak dapat terhubung. Periksa koneksi internet Anda lalu coba lagi.",
   "localOcrDownloadDamaged": "Berkas yang diunduh rusak. Unduh lagi.",
   "localOcrModelInstallFailed": "Model yang diunduh tidak dapat dipasang. Coba lagi.",
-  "proErrorLoadAccess": "Tidak dapat memeriksa akses Pro Anda: {details}",
+  "proErrorLoadAccess": "Tidak dapat memeriksa akses Pro Anda. Coba lagi nanti.",
   "proErrorOffline": "Tidak ada koneksi internet. Periksa koneksi Anda lalu coba lagi.",
   "proErrorSignInRequired": "Masuk dengan Google sebelum memakai fitur penagihan OCR.",
   "proErrorAppCheck": "Mekuru tidak dapat memverifikasi dirinya ke server. Tunggu beberapa menit lalu coba lagi.",

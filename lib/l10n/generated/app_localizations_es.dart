@@ -131,11 +131,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get commonGotIt => 'Entendido';
 
   @override
-  String commonErrorWithDetails({required String details}) {
-    return 'Error: $details';
-  }
-
-  @override
   String get commonNoFilePicker =>
       'Este dispositivo no tiene selector de archivos, así que Mekuru no puede abrir archivos del almacenamiento aquí.';
 
@@ -1349,11 +1344,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupCreatedSuccess => 'Copia de datos de lectura creada';
 
   @override
-  String backupFailed({required String details}) {
-    return 'Error de copia de seguridad: $details';
-  }
-
-  @override
   String get backupNoBackupsToExport =>
       'No hay copias de datos de lectura para exportar. Crea una primero.';
 
@@ -2163,9 +2153,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'Límites del auto-recorte actualizados.';
 
   @override
-  String mangaAutoCropSetupFailed({required String details}) {
-    return 'No se pudo configurar el auto-recorte. Vuelve a intentarlo.';
-  }
+  String get mangaAutoCropSetupFailed =>
+      'No se pudo configurar el auto-recorte. Vuelve a intentarlo.';
 
   @override
   String get ocrRunActionTitle => 'Ejecutar OCR';
@@ -2865,14 +2854,36 @@ class AppLocalizationsEs extends AppLocalizations {
       'Una restauración completa anterior aún está pendiente de terminar. Cierra Mekuru por completo y vuelve a abrirlo primero.';
 
   @override
-  String backupFullFailed({required String details}) {
-    return 'Error de copia completa: $details';
-  }
+  String get backupFullFailed =>
+      'La copia completa se detuvo antes de terminar.';
 
   @override
-  String backupFullRestoreFailed({required String details}) {
-    return 'Error de restauración completa: $details';
-  }
+  String get backupFullRestoreFailed =>
+      'La restauración completa se detuvo antes de terminar.';
+
+  @override
+  String get backupFullFailedFolder =>
+      'Mekuru ya no puede escribir en la carpeta que elegiste. Vuelve a iniciar la copia y elige una carpeta.';
+
+  @override
+  String get backupFullFailedFileMoved =>
+      'El archivo de la copia sin terminar se movió o se eliminó. Vuelve a iniciar la copia y deja el archivo donde está hasta que termine.';
+
+  @override
+  String get backupFullFailedStorage =>
+      'Mekuru no pudo leer ni escribir un archivo en este dispositivo. Asegúrate de que haya suficiente espacio libre y vuelve a intentarlo.';
+
+  @override
+  String get backupFullFailedSource =>
+      'Mekuru ya no puede abrir el archivo de la copia. Comprueba que sigue donde lo elegiste y vuelve a iniciar la restauración.';
+
+  @override
+  String get backupFullFailedStuck =>
+      'Se detuvo una y otra vez sin avanzar, así que Mekuru lo terminó. Vuelve a intentarlo.';
+
+  @override
+  String get backupFullFailedStaging =>
+      'Faltaban algunos de los archivos copiados para la restauración. Vuelve a restaurar la copia.';
 
   @override
   String get backupFullReviewTitle => 'Revisar copia completa';
@@ -2989,8 +3000,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupFullRestoreComplete => 'Restauración completa finalizada';
 
   @override
-  String backupFullRestoreBootFailed({required String details}) {
-    return 'No se pudo completar la restauración completa y se conservaron tus datos anteriores. ($details)';
+  String backupFullRestoreBootFailed({required String reason}) {
+    return '$reason Se conservaron tus datos anteriores.';
   }
 
   @override
@@ -3016,8 +3027,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupFullJobPhaseResuming => 'Reanudando…';
 
   @override
-  String backupFullJobPaused({required String details}) {
-    return 'En pausa: $details. Mekuru lo volverá a intentar cuando lo abras de nuevo.';
+  String backupFullJobPaused({required String reason}) {
+    return '$reason Mekuru lo volverá a intentar cuando lo abras de nuevo.';
   }
 
   @override
@@ -4335,9 +4346,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudieron instalar los modelos descargados. Vuelve a intentarlo.';
 
   @override
-  String proErrorLoadAccess({required String details}) {
-    return 'No se pudo comprobar tu acceso a Pro: $details';
-  }
+  String get proErrorLoadAccess =>
+      'No se pudo comprobar tu acceso a Pro. Vuelve a intentarlo más tarde.';
 
   @override
   String get proErrorOffline =>

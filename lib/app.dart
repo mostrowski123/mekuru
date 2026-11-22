@@ -208,7 +208,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
       final code = result.replaceFirst(StagedFullRestore.resultErrorPrefix, '');
       messenger.showSnackBar(
         SnackBar(
-          content: Text(l10n.backupFullRestoreBootFailed(details: code)),
+          content: Text(fullRestoreBootFailure(l10n, code)),
           duration: const Duration(seconds: 8),
         ),
       );

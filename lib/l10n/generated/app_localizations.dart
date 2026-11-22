@@ -327,12 +327,6 @@ abstract class AppLocalizations {
   /// **'Got it'**
   String get commonGotIt;
 
-  /// Generic error message with details.
-  ///
-  /// In en, this message translates to:
-  /// **'Error: {details}'**
-  String commonErrorWithDetails({required String details});
-
   /// Shown when the user tries to import a book, dictionary or font from a file on an Android device that has no system file picker (some e-readers).
   ///
   /// In en, this message translates to:
@@ -2343,12 +2337,6 @@ abstract class AppLocalizations {
   /// **'Reading data backup created'**
   String get backupCreatedSuccess;
 
-  /// Snackbar shown when backup creation fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Backup failed: {details}'**
-  String backupFailed({required String details});
-
   /// Snackbar shown when there are no backups to export.
   ///
   /// In en, this message translates to:
@@ -3648,11 +3636,11 @@ abstract class AppLocalizations {
   /// **'Auto-crop bounds refreshed.'**
   String get mangaAutoCropBoundsRefreshed;
 
-  /// Snackbar shown when auto-crop setup fails. {details} is the error's text: the caller still passes it, but it is never shown, so leave it out of the translation.
+  /// Snackbar shown when auto-crop setup fails.
   ///
   /// In en, this message translates to:
   /// **'Couldn\'t set up auto-crop. Try again.'**
-  String mangaAutoCropSetupFailed({required String details});
+  String get mangaAutoCropSetupFailed;
 
   /// Action title for starting OCR.
   ///
@@ -4731,17 +4719,53 @@ abstract class AppLocalizations {
   /// **'A previous full restore is still waiting to finish. Close Mekuru completely and reopen it first.'**
   String get backupFullPendingRestore;
 
-  /// Generic export failure snackbar.
+  /// Full backup page: a backup that stopped, when there is nothing more specific to say. Shown on its own, or as the first sentence of backupFullJobPaused.
   ///
   /// In en, this message translates to:
-  /// **'Full backup failed: {details}'**
-  String backupFullFailed({required String details});
+  /// **'The full backup stopped before it finished.'**
+  String get backupFullFailed;
 
-  /// Generic restore failure snackbar.
+  /// Full backup page: a restore that stopped, when there is nothing more specific to say. Shown on its own, or as the first sentence of backupFullJobPaused or backupFullRestoreBootFailed.
   ///
   /// In en, this message translates to:
-  /// **'Full restore failed: {details}'**
-  String backupFullRestoreFailed({required String details});
+  /// **'The full restore stopped before it finished.'**
+  String get backupFullRestoreFailed;
+
+  /// Full backup page: the backup stopped because Mekuru can no longer write to the folder the user picked for it (it was removed, or access to it was taken away).
+  ///
+  /// In en, this message translates to:
+  /// **'Mekuru can no longer write to the folder you chose. Start the backup again and pick a folder.'**
+  String get backupFullFailedFolder;
+
+  /// Full backup page: the half-written backup file (its name ends in .partial) disappeared from the chosen folder before the backup finished.
+  ///
+  /// In en, this message translates to:
+  /// **'The unfinished backup file was moved or deleted. Start the backup again and leave the file where it is until it finishes.'**
+  String get backupFullFailedFileMoved;
+
+  /// Full backup page: reading or writing a file on the device failed during a backup or restore, most often because storage is full.
+  ///
+  /// In en, this message translates to:
+  /// **'Mekuru couldn\'t read or write a file on this device. Make sure there is enough free space, then try again.'**
+  String get backupFullFailedStorage;
+
+  /// Full backup page: the restore stopped because the backup .zip the user picked can no longer be opened (moved, deleted, or access to it taken away).
+  ///
+  /// In en, this message translates to:
+  /// **'Mekuru can no longer open the backup file. Check that it is still where you picked it from, then start the restore again.'**
+  String get backupFullFailedSource;
+
+  /// Full backup page: the backup or restore was interrupted several times in a row without making progress (for example the system kept closing Mekuru), so Mekuru ended it. 'It' is the backup or the restore; the page title says which.
+  ///
+  /// In en, this message translates to:
+  /// **'It kept stopping without getting any further, so Mekuru ended it. Try again.'**
+  String get backupFullFailedStuck;
+
+  /// First sentence of backupFullRestoreBootFailed: files a full restore had already copied were missing when Mekuru started to apply it.
+  ///
+  /// In en, this message translates to:
+  /// **'Some of the files copied for the restore were missing. Restore the backup again.'**
+  String get backupFullFailedStaging;
 
   /// Title of the first restore confirmation dialog.
   ///
@@ -4884,11 +4908,11 @@ abstract class AppLocalizations {
   /// **'Full restore complete'**
   String get backupFullRestoreComplete;
 
-  /// Snackbar on the first launch after a failed full restore.
+  /// Snackbar on the first launch after a full restore that could not be applied; everything from before the restore is still there. {reason} is a whole sentence with its own full stop saying what went wrong, such as backupFullFailedStaging or backupFullRestoreFailed.
   ///
   /// In en, this message translates to:
-  /// **'The full restore could not be completed and your previous data was kept. ({details})'**
-  String backupFullRestoreBootFailed({required String details});
+  /// **'{reason} Your previous data was kept.'**
+  String backupFullRestoreBootFailed({required String reason});
 
   /// Title of the full-screen page shown while a full backup runs.
   ///
@@ -4932,11 +4956,11 @@ abstract class AppLocalizations {
   /// **'Resuming…'**
   String get backupFullJobPhaseResuming;
 
-  /// Phase line on the job page when the last run stopped with an error.
+  /// Full backup page: the backup or restore stopped and starts again on the next launch. {reason} is a whole sentence with its own full stop saying what went wrong, such as backupFullFailed or backupFullFailedStorage.
   ///
   /// In en, this message translates to:
-  /// **'Paused: {details}. Mekuru will try again when you reopen it.'**
-  String backupFullJobPaused({required String details});
+  /// **'{reason} Mekuru will try again when you reopen it.'**
+  String backupFullJobPaused({required String reason});
 
   /// Explains on the job page that the job survives leaving the app.
   ///
@@ -6968,11 +6992,11 @@ abstract class AppLocalizations {
   /// **'The downloaded models couldn\'t be installed. Try again.'**
   String get localOcrModelInstallFailed;
 
-  /// Pro screen: whether the user owns Pro could not be checked. {details} says why.
+  /// Pro screen: whether the user owns Pro could not be checked, and there is no more specific reason to give.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t check your Pro access: {details}'**
-  String proErrorLoadAccess({required String details});
+  /// **'Couldn\'t check your Pro access. Try again later.'**
+  String get proErrorLoadAccess;
 
   /// Pro purchase or check failed: the device has no internet connection.
   ///
@@ -7154,7 +7178,7 @@ abstract class AppLocalizations {
   /// **'The server sent an answer Mekuru can\'t read. Make sure the URL points to your Komga or Kavita server.'**
   String get serverErrorUnreadable;
 
-  /// Why a Komga or Kavita request (browsing, a connection test, linking books) failed, when it has no message of its own. Shown on its own or as {error} in serverSettingsLinkFailed and serverDialogConnectionFailed.
+  /// Why a Komga or Kavita request (browsing, a connection test, linking books), or a custom OCR server connection test, failed when it has no message of its own. Shown on its own or as {error} in serverSettingsLinkFailed and serverDialogConnectionFailed.
   ///
   /// In en, this message translates to:
   /// **'The request couldn\'t be completed. Try again.'**

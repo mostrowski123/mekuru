@@ -131,11 +131,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonGotIt => 'Got it';
 
   @override
-  String commonErrorWithDetails({required String details}) {
-    return 'Error: $details';
-  }
-
-  @override
   String get commonNoFilePicker =>
       'This device has no file picker, so Mekuru can\'t open files from storage here.';
 
@@ -1330,11 +1325,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupCreatedSuccess => 'Reading data backup created';
 
   @override
-  String backupFailed({required String details}) {
-    return 'Backup failed: $details';
-  }
-
-  @override
   String get backupNoBackupsToExport =>
       'No reading data backups to export. Create one first.';
 
@@ -2137,9 +2127,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mangaAutoCropBoundsRefreshed => 'Auto-crop bounds refreshed.';
 
   @override
-  String mangaAutoCropSetupFailed({required String details}) {
-    return 'Couldn\'t set up auto-crop. Try again.';
-  }
+  String get mangaAutoCropSetupFailed =>
+      'Couldn\'t set up auto-crop. Try again.';
 
   @override
   String get ocrRunActionTitle => 'Run OCR';
@@ -2832,14 +2821,35 @@ class AppLocalizationsEn extends AppLocalizations {
       'A previous full restore is still waiting to finish. Close Mekuru completely and reopen it first.';
 
   @override
-  String backupFullFailed({required String details}) {
-    return 'Full backup failed: $details';
-  }
+  String get backupFullFailed => 'The full backup stopped before it finished.';
 
   @override
-  String backupFullRestoreFailed({required String details}) {
-    return 'Full restore failed: $details';
-  }
+  String get backupFullRestoreFailed =>
+      'The full restore stopped before it finished.';
+
+  @override
+  String get backupFullFailedFolder =>
+      'Mekuru can no longer write to the folder you chose. Start the backup again and pick a folder.';
+
+  @override
+  String get backupFullFailedFileMoved =>
+      'The unfinished backup file was moved or deleted. Start the backup again and leave the file where it is until it finishes.';
+
+  @override
+  String get backupFullFailedStorage =>
+      'Mekuru couldn\'t read or write a file on this device. Make sure there is enough free space, then try again.';
+
+  @override
+  String get backupFullFailedSource =>
+      'Mekuru can no longer open the backup file. Check that it is still where you picked it from, then start the restore again.';
+
+  @override
+  String get backupFullFailedStuck =>
+      'It kept stopping without getting any further, so Mekuru ended it. Try again.';
+
+  @override
+  String get backupFullFailedStaging =>
+      'Some of the files copied for the restore were missing. Restore the backup again.';
 
   @override
   String get backupFullReviewTitle => 'Review full backup';
@@ -2954,8 +2964,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupFullRestoreComplete => 'Full restore complete';
 
   @override
-  String backupFullRestoreBootFailed({required String details}) {
-    return 'The full restore could not be completed and your previous data was kept. ($details)';
+  String backupFullRestoreBootFailed({required String reason}) {
+    return '$reason Your previous data was kept.';
   }
 
   @override
@@ -2980,8 +2990,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupFullJobPhaseResuming => 'Resuming…';
 
   @override
-  String backupFullJobPaused({required String details}) {
-    return 'Paused: $details. Mekuru will try again when you reopen it.';
+  String backupFullJobPaused({required String reason}) {
+    return '$reason Mekuru will try again when you reopen it.';
   }
 
   @override
@@ -4284,9 +4294,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'The downloaded models couldn\'t be installed. Try again.';
 
   @override
-  String proErrorLoadAccess({required String details}) {
-    return 'Couldn\'t check your Pro access: $details';
-  }
+  String get proErrorLoadAccess =>
+      'Couldn\'t check your Pro access. Try again later.';
 
   @override
   String get proErrorOffline =>

@@ -98,10 +98,8 @@ void main() {
   void expectNoRawError() {
     expect(find.textContaining('Exception'), findsNothing);
     expect(find.textContaining('database is locked'), findsNothing);
-    expect(
-      find.textContaining(ja.commonErrorWithDetails(details: '')),
-      findsNothing,
-    );
+    // The start of the generic error line the app once had.
+    expect(find.textContaining('エラー：'), findsNothing);
   }
 
   Future<void> unmount(WidgetTester tester) async {

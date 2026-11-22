@@ -129,11 +129,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonGotIt => '知道了';
 
   @override
-  String commonErrorWithDetails({required String details}) {
-    return '错误：$details';
-  }
-
-  @override
   String get commonNoFilePicker => '此设备没有文件选择器，因此 Mekuru 无法在此打开存储中的文件。';
 
   @override
@@ -1274,11 +1269,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupCreatedSuccess => '阅读数据备份已创建';
 
   @override
-  String backupFailed({required String details}) {
-    return '备份失败：$details';
-  }
-
-  @override
   String get backupNoBackupsToExport => '没有可导出的阅读数据备份，请先创建。';
 
   @override
@@ -2042,9 +2032,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mangaAutoCropBoundsRefreshed => '自动裁边范围已刷新。';
 
   @override
-  String mangaAutoCropSetupFailed({required String details}) {
-    return '无法设置自动裁边。请重试。';
-  }
+  String get mangaAutoCropSetupFailed => '无法设置自动裁边。请重试。';
 
   @override
   String get ocrRunActionTitle => '运行 OCR';
@@ -2717,14 +2705,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupFullPendingRestore => '上一次完整恢复仍在等待完成。请先完全关闭 Mekuru 并重新打开。';
 
   @override
-  String backupFullFailed({required String details}) {
-    return '完整备份失败：$details';
-  }
+  String get backupFullFailed => '完整备份在完成前停止了。';
 
   @override
-  String backupFullRestoreFailed({required String details}) {
-    return '完整恢复失败：$details';
-  }
+  String get backupFullRestoreFailed => '完整恢复在完成前停止了。';
+
+  @override
+  String get backupFullFailedFolder => 'Mekuru 无法再写入你选择的文件夹。请重新开始备份并选择一个文件夹。';
+
+  @override
+  String get backupFullFailedFileMoved =>
+      '未完成的备份文件被移动或删除了。请重新开始备份，并在完成前不要移动该文件。';
+
+  @override
+  String get backupFullFailedStorage => 'Mekuru 无法在此设备上读写文件。请确认有足够的可用空间，然后重试。';
+
+  @override
+  String get backupFullFailedSource =>
+      'Mekuru 无法再打开备份文件。请确认它仍在你选择它的位置，然后重新开始恢复。';
+
+  @override
+  String get backupFullFailedStuck => '它多次停止且没有任何进展，因此 Mekuru 已将其结束。请重试。';
+
+  @override
+  String get backupFullFailedStaging => '为恢复而复制的部分文件丢失了。请重新恢复备份。';
 
   @override
   String get backupFullReviewTitle => '查看完整备份';
@@ -2835,8 +2839,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupFullRestoreComplete => '完整恢复已完成';
 
   @override
-  String backupFullRestoreBootFailed({required String details}) {
-    return '完整恢复未能完成，已保留您之前的数据。（$details）';
+  String backupFullRestoreBootFailed({required String reason}) {
+    return '$reason已保留你之前的数据。';
   }
 
   @override
@@ -2861,8 +2865,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupFullJobPhaseResuming => '正在继续…';
 
   @override
-  String backupFullJobPaused({required String details}) {
-    return '已暂停：$details。重新打开 Mekuru 时会再次尝试。';
+  String backupFullJobPaused({required String reason}) {
+    return '$reason重新打开 Mekuru 时会再次尝试。';
   }
 
   @override
@@ -4090,9 +4094,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrModelInstallFailed => '无法安装下载的模型。请重试。';
 
   @override
-  String proErrorLoadAccess({required String details}) {
-    return '无法检查你的 Pro 权限：$details';
-  }
+  String get proErrorLoadAccess => '无法检查你的 Pro 权限。请稍后再试。';
 
   @override
   String get proErrorOffline => '没有网络连接。请检查网络连接后重试。';
@@ -4632,11 +4634,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get commonGotIt => '知道了';
 
   @override
-  String commonErrorWithDetails({required String details}) {
-    return '错误：$details';
-  }
-
-  @override
   String get commonNoFilePicker => '此设备没有文件选择器，因此 Mekuru 无法在此打开存储中的文件。';
 
   @override
@@ -5777,11 +5774,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupCreatedSuccess => '阅读数据备份已创建';
 
   @override
-  String backupFailed({required String details}) {
-    return '备份失败：$details';
-  }
-
-  @override
   String get backupNoBackupsToExport => '没有可导出的阅读数据备份，请先创建。';
 
   @override
@@ -6545,9 +6537,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get mangaAutoCropBoundsRefreshed => '自动裁边范围已刷新。';
 
   @override
-  String mangaAutoCropSetupFailed({required String details}) {
-    return '无法设置自动裁边。请重试。';
-  }
+  String get mangaAutoCropSetupFailed => '无法设置自动裁边。请重试。';
 
   @override
   String get ocrRunActionTitle => '运行 OCR';
@@ -7220,14 +7210,30 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupFullPendingRestore => '上一次完整恢复仍在等待完成。请先完全关闭 Mekuru 并重新打开。';
 
   @override
-  String backupFullFailed({required String details}) {
-    return '完整备份失败：$details';
-  }
+  String get backupFullFailed => '完整备份在完成前停止了。';
 
   @override
-  String backupFullRestoreFailed({required String details}) {
-    return '完整恢复失败：$details';
-  }
+  String get backupFullRestoreFailed => '完整恢复在完成前停止了。';
+
+  @override
+  String get backupFullFailedFolder => 'Mekuru 无法再写入你选择的文件夹。请重新开始备份并选择一个文件夹。';
+
+  @override
+  String get backupFullFailedFileMoved =>
+      '未完成的备份文件被移动或删除了。请重新开始备份，并在完成前不要移动该文件。';
+
+  @override
+  String get backupFullFailedStorage => 'Mekuru 无法在此设备上读写文件。请确认有足够的可用空间，然后重试。';
+
+  @override
+  String get backupFullFailedSource =>
+      'Mekuru 无法再打开备份文件。请确认它仍在你选择它的位置，然后重新开始恢复。';
+
+  @override
+  String get backupFullFailedStuck => '它多次停止且没有任何进展，因此 Mekuru 已将其结束。请重试。';
+
+  @override
+  String get backupFullFailedStaging => '为恢复而复制的部分文件丢失了。请重新恢复备份。';
 
   @override
   String get backupFullReviewTitle => '查看完整备份';
@@ -7338,8 +7344,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupFullRestoreComplete => '完整恢复已完成';
 
   @override
-  String backupFullRestoreBootFailed({required String details}) {
-    return '完整恢复未能完成，已保留您之前的数据。（$details）';
+  String backupFullRestoreBootFailed({required String reason}) {
+    return '$reason已保留你之前的数据。';
   }
 
   @override
@@ -7364,8 +7370,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupFullJobPhaseResuming => '正在继续…';
 
   @override
-  String backupFullJobPaused({required String details}) {
-    return '已暂停：$details。重新打开 Mekuru 时会再次尝试。';
+  String backupFullJobPaused({required String reason}) {
+    return '$reason重新打开 Mekuru 时会再次尝试。';
   }
 
   @override
@@ -8593,9 +8599,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get localOcrModelInstallFailed => '无法安装下载的模型。请重试。';
 
   @override
-  String proErrorLoadAccess({required String details}) {
-    return '无法检查你的 Pro 权限：$details';
-  }
+  String get proErrorLoadAccess => '无法检查你的 Pro 权限。请稍后再试。';
 
   @override
   String get proErrorOffline => '没有网络连接。请检查网络连接后重试。';

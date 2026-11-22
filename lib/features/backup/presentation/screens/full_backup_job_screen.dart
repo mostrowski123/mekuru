@@ -11,6 +11,45 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
 
+/// What a full backup or restore that stopped with [code] did not do, and
+/// what to do about it. The codes are the Android service's
+/// (`FullBackupJobRunner`, `SafJobIo`, `JobStore`), the iOS job's
+/// (`DartFullBackupJob`) and the boot-time apply's (`StagedFullRestore`). A
+/// paused Android job records the name of what stopped it instead, and the
+/// boot can record a runtime type: those, and any code this version does not
+/// know, say only that it stopped, never the code.
+String fullBackupFailureText(
+  AppLocalizations l10n,
+  FullBackupJobKind kind,
+  String? code,
+) {
+  final restore = kind == FullBackupJobKind.restore;
+  return switch (code) {
+    // unsafe_archive while writing is a SecurityException: the folder's
+    // access was taken away.
+    'target_unavailable' ||
+    'create_failed' ||
+    'open_failed' ||
+    'unsafe_archive' when !restore => l10n.backupFullFailedFolder,
+    'partial_missing' => l10n.backupFullFailedFileMoved,
+    'write_failed' || 'io_error' => l10n.backupFullFailedStorage,
+    'source_missing' => l10n.backupFullFailedSource,
+    'corrupt_archive' when restore => l10n.backupFullIncomplete,
+    // An entry that would land outside the restore's folder.
+    'unsafe_archive' => l10n.backupFullInvalid,
+    'crash_loop' => l10n.backupFullFailedStuck,
+    'incomplete_staging' => l10n.backupFullFailedStaging,
+    _ => restore ? l10n.backupFullRestoreFailed : l10n.backupFullFailed,
+  };
+}
+
+/// The snack bar on the first launch after a full restore that could not be
+/// applied, for the [code] `StagedFullRestore` recorded.
+String fullRestoreBootFailure(AppLocalizations l10n, String code) =>
+    l10n.backupFullRestoreBootFailed(
+      reason: fullBackupFailureText(l10n, FullBackupJobKind.restore, code),
+    );
+
 /// Wraps the whole app: while a full backup or restore is in flight (or its
 /// outcome has not been acknowledged) [FullBackupJobScreen] covers it. Lives
 /// in `MaterialApp.builder`, above the Navigator, so pushed routes and
@@ -308,12 +347,9 @@ class _FullBackupJobScreenState extends ConsumerState<FullBackupJobScreen> {
           button(l10n.backupFullJobClose, notifier.dismiss),
         ];
       case FullBackupJobLifecycle.failed:
-        final details = status.error ?? '';
         return [
           line(
-            isExport
-                ? l10n.backupFullFailed(details: details)
-                : l10n.backupFullRestoreFailed(details: details),
+            fullBackupFailureText(l10n, state.kind, status.error),
             icon: Icons.error_outline,
             color: theme.colorScheme.error,
           ),
@@ -332,7 +368,9 @@ class _FullBackupJobScreenState extends ConsumerState<FullBackupJobScreen> {
       final error = status.error;
       return error == null
           ? l10n.backupFullJobPhaseResuming
-          : l10n.backupFullJobPaused(details: error);
+          : l10n.backupFullJobPaused(
+              reason: fullBackupFailureText(l10n, status.kind, error),
+            );
     }
     return switch (status.phase) {
       'writing' => l10n.backupFullJobPhaseWriting,

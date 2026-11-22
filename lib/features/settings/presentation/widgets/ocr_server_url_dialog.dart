@@ -135,7 +135,7 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
           ? l10n.serverCertificateUntrusted
           : e is OcrServerHealthException
           ? describeOcrFailure(l10n, e.failure)
-          : l10n.commonErrorWithDetails(details: '$e');
+          : l10n.serverErrorUnknown;
       setState(() {
         _isTestingConnection = false;
         _testSucceeded = false;

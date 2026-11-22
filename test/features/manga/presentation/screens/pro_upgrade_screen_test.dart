@@ -157,6 +157,30 @@ void main() {
       );
       expect(describeBillingError(es, StateError('boom')), isNull);
     });
+
+    // The check needs a signed-in cloud user to fail on screen, so this
+    // tests the line it shows.
+    test('a Pro access check that failed, in Japanese, without the error', () {
+      final ja = lookupAppLocalizations(const Locale('ja'));
+      final line = proAccessCheckFailed(
+        ja,
+        const OcrBillingException(500, 'x', code: 'server_code'),
+      );
+      expect(line, 'Proの利用状況を確認できませんでした。しばらくしてから、もう一度お試しください。');
+      expect(line, isNot(contains('server_code')));
+      expect(
+        proAccessCheckFailed(ja, StateError('/data/user/0/秘密')),
+        isNot(contains('秘密')),
+      );
+      // A reason the billing errors know comes first.
+      expect(
+        proAccessCheckFailed(
+          ja,
+          const OcrBillingException(0, 'x', code: 'network_unavailable'),
+        ),
+        ja.proErrorOffline,
+      );
+    });
   });
 
   setUp(() => SharedPreferences.setMockInitialValues({}));

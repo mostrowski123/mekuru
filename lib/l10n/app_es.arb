@@ -100,15 +100,6 @@
   "@commonGotIt": {
     "description": "Acknowledgement action label."
   },
-  "commonErrorWithDetails": "Error: {details}",
-  "@commonErrorWithDetails": {
-    "description": "Generic error message with details.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "commonNoFilePicker": "Este dispositivo no tiene selector de archivos, así que Mekuru no puede abrir archivos del almacenamiento aquí.",
   "ankidroidAlreadyInDeck": "Ya está en “{deck}”",
   "@ankidroidAlreadyInDeck": {
@@ -1444,15 +1435,6 @@
   "@backupCreatedSuccess": {
     "description": "Snackbar shown after a backup is created."
   },
-  "backupFailed": "Error de copia de seguridad: {details}",
-  "@backupFailed": {
-    "description": "Snackbar shown when backup creation fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "backupNoBackupsToExport": "No hay copias de datos de lectura para exportar. Crea una primero.",
   "@backupNoBackupsToExport": {
     "description": "Snackbar shown when there are no backups to export."
@@ -2231,12 +2213,7 @@
   },
   "mangaAutoCropSetupFailed": "No se pudo configurar el auto-recorte. Vuelve a intentarlo.",
   "@mangaAutoCropSetupFailed": {
-    "description": "Snackbar shown when auto-crop setup fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
+    "description": "Snackbar shown when auto-crop setup fails."
   },
   "ocrRunActionTitle": "Ejecutar OCR",
   "@ocrRunActionTitle": {
@@ -2590,8 +2567,14 @@
   "backupFullTooNew": "Esta copia completa se creó con Mekuru {version}. Actualiza Mekuru y vuelve a intentarlo.",
   "backupFullInvalid": "Este archivo no es una copia completa de Mekuru.",
   "backupFullPendingRestore": "Una restauración completa anterior aún está pendiente de terminar. Cierra Mekuru por completo y vuelve a abrirlo primero.",
-  "backupFullFailed": "Error de copia completa: {details}",
-  "backupFullRestoreFailed": "Error de restauración completa: {details}",
+  "backupFullFailed": "La copia completa se detuvo antes de terminar.",
+  "backupFullRestoreFailed": "La restauración completa se detuvo antes de terminar.",
+  "backupFullFailedFolder": "Mekuru ya no puede escribir en la carpeta que elegiste. Vuelve a iniciar la copia y elige una carpeta.",
+  "backupFullFailedFileMoved": "El archivo de la copia sin terminar se movió o se eliminó. Vuelve a iniciar la copia y deja el archivo donde está hasta que termine.",
+  "backupFullFailedStorage": "Mekuru no pudo leer ni escribir un archivo en este dispositivo. Asegúrate de que haya suficiente espacio libre y vuelve a intentarlo.",
+  "backupFullFailedSource": "Mekuru ya no puede abrir el archivo de la copia. Comprueba que sigue donde lo elegiste y vuelve a iniciar la restauración.",
+  "backupFullFailedStuck": "Se detuvo una y otra vez sin avanzar, así que Mekuru lo terminó. Vuelve a intentarlo.",
+  "backupFullFailedStaging": "Faltaban algunos de los archivos copiados para la restauración. Vuelve a restaurar la copia.",
   "backupFullReviewTitle": "Revisar copia completa",
   "backupFullReviewInFile": "En este archivo",
   "backupFullReviewCreated": "Creada el {date} con Mekuru {version}",
@@ -2614,7 +2597,7 @@
   "backupFullReloadBody": "La copia completa está lista. Mekuru se recarga para terminar la restauración y luego abre tu biblioteca restaurada.",
   "backupFullReloadButton": "Recargar Mekuru",
   "backupFullRestoreComplete": "Restauración completa finalizada",
-  "backupFullRestoreBootFailed": "No se pudo completar la restauración completa y se conservaron tus datos anteriores. ({details})",
+  "backupFullRestoreBootFailed": "{reason} Se conservaron tus datos anteriores.",
   "backupFullJobExportTitle": "Creando copia",
   "backupFullJobRestoreTitle": "Restaurando",
   "backupFullJobPhaseWriting": "Escribiendo la copia…",
@@ -2622,7 +2605,7 @@
   "backupFullJobPhaseExtracting": "Copiando archivos…",
   "backupFullJobPhaseFinishing": "Finalizando…",
   "backupFullJobPhaseResuming": "Reanudando…",
-  "backupFullJobPaused": "En pausa: {details}. Mekuru lo volverá a intentar cuando lo abras de nuevo.",
+  "backupFullJobPaused": "{reason} Mekuru lo volverá a intentar cuando lo abras de nuevo.",
   "backupFullJobBackgroundHint": "Esto sigue en marcha aunque salgas de Mekuru. El progreso también se muestra en tus notificaciones.",
   "backupFullJobBackgroundHintIos": "Mantén Mekuru abierto en pantalla hasta que termine. La pantalla se mantiene encendida mientras tanto.",
   "backupFullJobCancelConfirmExport": "¿Detener la copia? Se eliminará lo que se haya escrito hasta ahora.",
@@ -2968,7 +2951,7 @@
   "localOcrDownloadNetwork": "La descarga no pudo conectarse. Comprueba tu conexión a internet y vuelve a intentarlo.",
   "localOcrDownloadDamaged": "El archivo descargado estaba dañado. Vuelve a descargarlo.",
   "localOcrModelInstallFailed": "No se pudieron instalar los modelos descargados. Vuelve a intentarlo.",
-  "proErrorLoadAccess": "No se pudo comprobar tu acceso a Pro: {details}",
+  "proErrorLoadAccess": "No se pudo comprobar tu acceso a Pro. Vuelve a intentarlo más tarde.",
   "proErrorOffline": "No hay conexión a internet. Comprueba tu conexión y vuelve a intentarlo.",
   "proErrorSignInRequired": "Inicia sesión con Google antes de usar las funciones de pago del OCR.",
   "proErrorAppCheck": "Mekuru no pudo verificarse con el servidor. Espera unos minutos y vuelve a intentarlo.",

@@ -182,19 +182,89 @@ void main() {
     await settle(tester, container);
   });
 
-  testWidgets('a paused job explains itself', (tester) async {
+  testWidgets('a paused job says it will go on, in Japanese, not what '
+      'stopped it', (tester) async {
     final container = await pumpGate(
       tester,
+      locale: const Locale('ja'),
       status: const FullBackupJobStatus(
         lifecycle: FullBackupJobLifecycle.paused,
         error: 'IOException',
       ),
     );
     expect(
-      find.text(l10n.backupFullJobPaused(details: 'IOException')),
+      find.text('完全バックアップが途中で止まりました。Mekuruをもう一度開くと再試行します。'),
       findsOneWidget,
     );
+    expect(find.textContaining('IOException'), findsNothing);
     await settle(tester, container);
+  });
+
+  group('a failure says what did not happen, in Japanese, never the code', () {
+    final ja = AppLocalizationsJa();
+    const export = FullBackupJobKind.export;
+    const restore = FullBackupJobKind.restore;
+    const folder = '選んだフォルダにMekuruが書き込めなくなりました。もう一度バックアップを始めて、フォルダを選んでください。';
+    const storage = 'この端末でファイルを読み書きできませんでした。空き容量が足りていることを確かめてから、もう一度お試しください。';
+    const stuck = '何度も止まって先に進まなかったため、Mekuruが終了しました。もう一度お試しください。';
+    // The Android service's codes (FullBackupJobRunner, SafJobIo, JobStore)
+    // and the iOS job's (DartFullBackupJob).
+    final cases = <(FullBackupJobKind, String, String)>[
+      (export, 'target_unavailable', folder),
+      (export, 'create_failed', folder),
+      (export, 'open_failed', folder),
+      // A SecurityException while writing: the folder's access was taken.
+      (export, 'unsafe_archive', folder),
+      (
+        export,
+        'partial_missing',
+        '作成中のバックアップファイルが移動または削除されました。もう一度バックアップを始めて、終わるまでファイルをそのままにしてください。',
+      ),
+      (export, 'write_failed', storage),
+      (export, 'io_error', storage),
+      (restore, 'io_error', storage),
+      (
+        restore,
+        'source_missing',
+        'バックアップファイルを開けなくなりました。選んだ場所にまだあるか確かめてから、もう一度復元を始めてください。',
+      ),
+      (restore, 'corrupt_archive', ja.backupFullIncomplete),
+      (restore, 'unsafe_archive', ja.backupFullInvalid),
+      (export, 'crash_loop', stuck),
+      (restore, 'crash_loop', stuck),
+      (export, 'bad_job', '完全バックアップが途中で止まりました。'),
+      (restore, 'bad_job', '完全復元が途中で止まりました。'),
+      (export, 'a_code_from_a_newer_version', '完全バックアップが途中で止まりました。'),
+    ];
+    for (final (kind, code, words) in cases) {
+      testWidgets('${kind.name} $code', (tester) async {
+        await pumpGate(
+          tester,
+          locale: const Locale('ja'),
+          status: FullBackupJobStatus(
+            lifecycle: FullBackupJobLifecycle.failed,
+            kind: kind,
+            error: code,
+          ),
+        );
+        expect(find.text(words), findsOneWidget);
+        expect(find.textContaining(code), findsNothing);
+      });
+    }
+
+    test('the launch after a restore that could not be applied says why, '
+        'and that nothing was lost', () {
+      expect(
+        fullRestoreBootFailure(ja, 'incomplete_staging'),
+        '復元のためにコピーしたファイルの一部が見つかりませんでした。もう一度バックアップから復元してください。'
+        '以前のデータはそのまま残っています。',
+      );
+      // StagedFullRestore records the runtime type of anything else.
+      expect(
+        fullRestoreBootFailure(ja, 'PathNotFoundException'),
+        '完全復元が途中で止まりました。以前のデータはそのまま残っています。',
+      );
+    });
   });
 
   group('the title says where the job is, in Japanese', () {
@@ -337,7 +407,7 @@ void main() {
     }
   });
 
-  testWidgets('a failure names the code and Close dismisses it', (
+  testWidgets('a failure says what went wrong and Close dismisses it', (
     tester,
   ) async {
     await pumpGate(
@@ -348,10 +418,7 @@ void main() {
         error: 'corrupt_archive',
       ),
     );
-    expect(
-      find.text(l10n.backupFullRestoreFailed(details: 'corrupt_archive')),
-      findsOneWidget,
-    );
+    expect(find.text(l10n.backupFullIncomplete), findsOneWidget);
     api.current = FullBackupJobStatus.none;
     await tester.tap(find.text(l10n.backupFullJobClose));
     await tester.pump();

@@ -11,7 +11,6 @@ import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
-import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/generated/app_localizations_ja.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:path/path.dart' as p;
@@ -97,21 +96,6 @@ void main() {
           throwsA(MangaPagesUnavailable.pagesMissing),
         );
       });
-    }
-  });
-
-  // The manga reader passes the auto-crop error's text along; the message
-  // leaves it out in every language.
-  test('the auto-crop failure never shows the error', () {
-    const error =
-        'Exception: Pages cache not found. Try re-importing this manga.';
-    for (final l10n in AppLocalizations.supportedLocales.map(
-      lookupAppLocalizations,
-    )) {
-      expect(
-        l10n.mangaAutoCropSetupFailed(details: error),
-        isNot(contains('Exception')),
-      );
     }
   });
 

@@ -972,9 +972,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.mangaAutoCropSetupFailed(details: '$e'))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.mangaAutoCropSetupFailed)));
       }
     } finally {
       _isComputingAutoCrop = false;

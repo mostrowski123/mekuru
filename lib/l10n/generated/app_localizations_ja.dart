@@ -130,11 +130,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get commonGotIt => 'わかりました';
 
   @override
-  String commonErrorWithDetails({required String details}) {
-    return 'エラー：$details';
-  }
-
-  @override
   String get commonNoFilePicker =>
       'この端末にはファイル選択画面がないため、Mekuruはストレージ内のファイルを開けません。';
 
@@ -1293,11 +1288,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get backupCreatedSuccess => '読書データのバックアップを作成しました';
 
   @override
-  String backupFailed({required String details}) {
-    return 'バックアップに失敗しました：$details';
-  }
-
-  @override
   String get backupNoBackupsToExport =>
       'エクスポートできる読書データのバックアップがありません。先に作成してください。';
 
@@ -2077,9 +2067,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mangaAutoCropBoundsRefreshed => 'トリミング範囲を更新しました。';
 
   @override
-  String mangaAutoCropSetupFailed({required String details}) {
-    return '自動トリミングを設定できませんでした。もう一度お試しください。';
-  }
+  String get mangaAutoCropSetupFailed => '自動トリミングを設定できませんでした。もう一度お試しください。';
 
   @override
   String get ocrRunActionTitle => 'OCRを実行';
@@ -2761,14 +2749,34 @@ class AppLocalizationsJa extends AppLocalizations {
       '以前の完全復元がまだ完了していません。先にMekuruを完全に終了してから、もう一度開いてください。';
 
   @override
-  String backupFullFailed({required String details}) {
-    return '完全バックアップに失敗しました：$details';
-  }
+  String get backupFullFailed => '完全バックアップが途中で止まりました。';
 
   @override
-  String backupFullRestoreFailed({required String details}) {
-    return '完全復元に失敗しました：$details';
-  }
+  String get backupFullRestoreFailed => '完全復元が途中で止まりました。';
+
+  @override
+  String get backupFullFailedFolder =>
+      '選んだフォルダにMekuruが書き込めなくなりました。もう一度バックアップを始めて、フォルダを選んでください。';
+
+  @override
+  String get backupFullFailedFileMoved =>
+      '作成中のバックアップファイルが移動または削除されました。もう一度バックアップを始めて、終わるまでファイルをそのままにしてください。';
+
+  @override
+  String get backupFullFailedStorage =>
+      'この端末でファイルを読み書きできませんでした。空き容量が足りていることを確かめてから、もう一度お試しください。';
+
+  @override
+  String get backupFullFailedSource =>
+      'バックアップファイルを開けなくなりました。選んだ場所にまだあるか確かめてから、もう一度復元を始めてください。';
+
+  @override
+  String get backupFullFailedStuck =>
+      '何度も止まって先に進まなかったため、Mekuruが終了しました。もう一度お試しください。';
+
+  @override
+  String get backupFullFailedStaging =>
+      '復元のためにコピーしたファイルの一部が見つかりませんでした。もう一度バックアップから復元してください。';
 
   @override
   String get backupFullReviewTitle => '完全バックアップの確認';
@@ -2882,8 +2890,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get backupFullRestoreComplete => '完全バックアップからの復元が完了しました';
 
   @override
-  String backupFullRestoreBootFailed({required String details}) {
-    return '完全バックアップからの復元を完了できなかったため、以前のデータを保持しました。（$details）';
+  String backupFullRestoreBootFailed({required String reason}) {
+    return '$reason以前のデータはそのまま残っています。';
   }
 
   @override
@@ -2908,8 +2916,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get backupFullJobPhaseResuming => '再開中…';
 
   @override
-  String backupFullJobPaused({required String details}) {
-    return '一時停止中：$details。Mekuruをもう一度開くと再試行します。';
+  String backupFullJobPaused({required String reason}) {
+    return '${reason}Mekuruをもう一度開くと再試行します。';
   }
 
   @override
@@ -4178,9 +4186,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'ダウンロードしたモデルをインストールできませんでした。もう一度お試しください。';
 
   @override
-  String proErrorLoadAccess({required String details}) {
-    return 'Proの利用状況を確認できませんでした：$details';
-  }
+  String get proErrorLoadAccess => 'Proの利用状況を確認できませんでした。しばらくしてから、もう一度お試しください。';
 
   @override
   String get proErrorOffline => 'インターネットに接続されていません。接続を確認して、もう一度お試しください。';

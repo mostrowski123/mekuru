@@ -131,11 +131,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonGotIt => 'Mengerti';
 
   @override
-  String commonErrorWithDetails({required String details}) {
-    return 'Kesalahan: $details';
-  }
-
-  @override
   String get commonNoFilePicker =>
       'Perangkat ini tidak memiliki pemilih file, sehingga Mekuru tidak dapat membuka file dari penyimpanan di sini.';
 
@@ -1337,11 +1332,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupCreatedSuccess => 'Cadangan data bacaan dibuat';
 
   @override
-  String backupFailed({required String details}) {
-    return 'Cadangan gagal: $details';
-  }
-
-  @override
   String get backupNoBackupsToExport =>
       'Tidak ada cadangan data bacaan untuk diekspor. Buat satu terlebih dahulu.';
 
@@ -2148,9 +2138,8 @@ class AppLocalizationsId extends AppLocalizations {
       'Batas pemotongan otomatis telah diperbarui.';
 
   @override
-  String mangaAutoCropSetupFailed({required String details}) {
-    return 'Tidak dapat menyiapkan pemotongan otomatis. Coba lagi.';
-  }
+  String get mangaAutoCropSetupFailed =>
+      'Tidak dapat menyiapkan pemotongan otomatis. Coba lagi.';
 
   @override
   String get ocrRunActionTitle => 'Jalankan OCR';
@@ -2846,14 +2835,35 @@ class AppLocalizationsId extends AppLocalizations {
       'Pemulihan lengkap sebelumnya masih menunggu untuk diselesaikan. Tutup Mekuru sepenuhnya dan buka kembali terlebih dahulu.';
 
   @override
-  String backupFullFailed({required String details}) {
-    return 'Cadangan lengkap gagal: $details';
-  }
+  String get backupFullFailed => 'Cadangan lengkap berhenti sebelum selesai.';
 
   @override
-  String backupFullRestoreFailed({required String details}) {
-    return 'Pemulihan lengkap gagal: $details';
-  }
+  String get backupFullRestoreFailed =>
+      'Pemulihan lengkap berhenti sebelum selesai.';
+
+  @override
+  String get backupFullFailedFolder =>
+      'Mekuru tidak bisa lagi menulis ke folder yang Anda pilih. Mulai cadangan lagi dan pilih folder.';
+
+  @override
+  String get backupFullFailedFileMoved =>
+      'File cadangan yang belum selesai dipindahkan atau dihapus. Mulai cadangan lagi dan biarkan file itu di tempatnya sampai selesai.';
+
+  @override
+  String get backupFullFailedStorage =>
+      'Mekuru tidak dapat membaca atau menulis file di perangkat ini. Pastikan ruang kosongnya cukup, lalu coba lagi.';
+
+  @override
+  String get backupFullFailedSource =>
+      'Mekuru tidak bisa lagi membuka file cadangan. Pastikan file masih ada di tempat Anda memilihnya, lalu mulai pemulihan lagi.';
+
+  @override
+  String get backupFullFailedStuck =>
+      'Prosesnya terus berhenti tanpa ada kemajuan, jadi Mekuru menghentikannya. Coba lagi.';
+
+  @override
+  String get backupFullFailedStaging =>
+      'Sebagian file yang disalin untuk pemulihan hilang. Pulihkan cadangan lagi.';
 
   @override
   String get backupFullReviewTitle => 'Tinjau cadangan lengkap';
@@ -2969,8 +2979,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupFullRestoreComplete => 'Pemulihan lengkap selesai';
 
   @override
-  String backupFullRestoreBootFailed({required String details}) {
-    return 'Pemulihan lengkap tidak dapat diselesaikan dan data Anda sebelumnya tetap dipertahankan. ($details)';
+  String backupFullRestoreBootFailed({required String reason}) {
+    return '$reason Data Anda sebelumnya tetap dipertahankan.';
   }
 
   @override
@@ -2995,8 +3005,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupFullJobPhaseResuming => 'Melanjutkan…';
 
   @override
-  String backupFullJobPaused({required String details}) {
-    return 'Dijeda: $details. Mekuru akan mencoba lagi saat Anda membukanya kembali.';
+  String backupFullJobPaused({required String reason}) {
+    return '$reason Mekuru akan mencoba lagi saat Anda membukanya kembali.';
   }
 
   @override
@@ -4307,9 +4317,8 @@ class AppLocalizationsId extends AppLocalizations {
       'Model yang diunduh tidak dapat dipasang. Coba lagi.';
 
   @override
-  String proErrorLoadAccess({required String details}) {
-    return 'Tidak dapat memeriksa akses Pro Anda: $details';
-  }
+  String get proErrorLoadAccess =>
+      'Tidak dapat memeriksa akses Pro Anda. Coba lagi nanti.';
 
   @override
   String get proErrorOffline =>
