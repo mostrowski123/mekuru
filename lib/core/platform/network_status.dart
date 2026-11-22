@@ -25,15 +25,16 @@ Future<bool> isOnWifi() async {
   }
 }
 
-/// Whether there is any network to download over (Android: an active
-/// network; false in airplane mode). True where it can't tell, so the caller
-/// asks or tries as before: on iOS, and when the check fails.
-// ponytail: iOS's `mekuru/network` answers only "unmetered", false offline
-// and on cellular alike. An `isConnected` method beside `isUnmetered`,
-// replying `path.status == .satisfied`, would tell them apart.
+/// Whether there is any network to download over: an active network on
+/// Android, a path that is not unsatisfied on iOS; false in airplane mode.
+/// True where it can't tell, so the caller asks or tries as before: when the
+/// check fails or has no answer.
 Future<bool> isConnected() async {
-  if (defaultTargetPlatform != TargetPlatform.android) return true;
   try {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return await _iosChannel.invokeMethod<bool>('isConnected') ?? true;
+    }
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
     return await LocalMangaOcr.isNetworkConnected();
   } catch (e, st) {
     logFailure('network.connection_check_failed', e, stackTrace: st);

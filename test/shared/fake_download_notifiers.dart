@@ -108,8 +108,8 @@ class FakeWordAudio extends WordAudio {
 }
 
 /// Answers the Wi-Fi check that `isOnWifi()` makes, on Android and on iOS,
-/// for the rest of the test. [offline]: no network at all (Android's
-/// `isConnected()`), so not on Wi-Fi either.
+/// for the rest of the test. [offline]: no network at all (`isConnected()`),
+/// so not on Wi-Fi either.
 void mockWifiConnected(
   bool connected, {
   bool vpn = false,
@@ -130,7 +130,11 @@ void mockWifiConnected(
   );
   messenger.setMockMethodCallHandler(
     iosNetwork,
-    (call) async => call.method == 'isUnmetered' ? connected : null,
+    (call) async => switch (call.method) {
+      'isUnmetered' => connected,
+      'isConnected' => !offline,
+      _ => null,
+    },
   );
   addTearDown(() {
     messenger.setMockMethodCallHandler(LocalMangaOcr.channel, null);

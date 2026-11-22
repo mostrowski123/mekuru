@@ -168,20 +168,27 @@ private let imageQueue = DispatchQueue(label: "mekuru.image_convert", qos: .user
   /// `mekuru/network`: `isUnmetered` is true when the current network is
   /// neither expensive (cellular, personal hotspot) nor constrained (Low Data
   /// Mode), so a large download can start without asking about mobile data.
+  /// `isConnected` is false only when there is no network at all (airplane
+  /// mode): a path that needs a connection set up first (a VPN on demand)
+  /// counts as connected, so the app asks or tries as before.
   private func registerNetworkChannel(messenger: FlutterBinaryMessenger) {
     FlutterMethodChannel(name: "mekuru/network", binaryMessenger: messenger)
       .setMethodCallHandler { call, result in
-        guard call.method == "isUnmetered" else {
+        guard call.method == "isUnmetered" || call.method == "isConnected" else {
           result(FlutterMethodNotImplemented)
           return
         }
+        let connectedOnly = call.method == "isConnected"
         // The first update describes the current path; stop after it. Main
         // is serial, so nothing more arrives once the monitor is cancelled.
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { path in
           monitor.cancel()
           monitor.pathUpdateHandler = nil
-          result(path.status == .satisfied && !path.isExpensive && !path.isConstrained)
+          result(
+            connectedOnly
+              ? path.status != .unsatisfied
+              : path.status == .satisfied && !path.isExpensive && !path.isConstrained)
         }
         monitor.start(queue: .main)
       }

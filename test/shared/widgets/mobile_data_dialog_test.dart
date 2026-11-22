@@ -96,9 +96,27 @@ void main() {
     expect(answers, [null]);
   });
 
-  testWidgets('iOS, which cannot tell offline from cellular yet, still asks '
-      'with no network', (tester) async {
+  testWidgets('on iOS too, with no network at all it asks nothing and says '
+      'there is no connection', (tester) async {
     mockWifiConnected(false, offline: true);
+    await pumpAsker(tester);
+    await ask(tester);
+
+    expect(find.text('Download over mobile data?'), findsNothing);
+    expect(
+      find.text(
+        lookupAppLocalizations(const Locale('en')).localOcrDownloadNetwork,
+      ),
+      findsOneWidget,
+    );
+    await answer(tester, 'OK');
+    expect(answers, [null]);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('on iOS, on cellular it still asks about mobile data', (
+    tester,
+  ) async {
+    mockWifiConnected(false);
     await pumpAsker(tester);
     await ask(tester);
 
