@@ -1,6 +1,5 @@
 // ignore_for_file: discarded_futures
 import 'dart:convert';
-import 'dart:io' show PathNotFoundException;
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:mekuru/shared/utils/app_routes.dart';
@@ -548,9 +547,8 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
             if (_loadError != null)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
-                // The pages cache is gone (MangaCacheStore.read).
                 child: Text(
-                  _loadError is PathNotFoundException
+                  _loadError == MangaPagesUnavailable.pagesMissing
                       ? l.mangaReaderPagesMissing
                       : l.commonLoadFailed,
                 ),

@@ -938,11 +938,7 @@ class BookRepository {
     if (book.bookType != 'manga') return;
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
-    if (!await cacheFile.exists()) {
-      throw MangaPagesUnavailable.pagesMissing;
-    }
-
-    final content = await cacheFile.readAsString();
+    final content = await MangaCacheStore.readEncoded(cacheFile.path);
     final mokuroBook = await decodeMangaCache(content);
 
     // Re-run segmentation; the worker isolate also encodes the updated
@@ -979,10 +975,10 @@ class BookRepository {
   Future<void> backupOriginalMokuroOcrIfNeeded(Book book) async {
     if (book.bookType != 'manga') return;
 
-    final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
-    if (!await cacheFile.exists()) {
-      throw MangaPagesUnavailable.pagesMissing;
-    }
+    // Read first: a missing cache says so even when a backup exists.
+    final content = await MangaCacheStore.readEncoded(
+      p.join(book.filePath, mangaPagesCacheFileName),
+    );
 
     final backupFile = File(
       p.join(book.filePath, originalMokuroOcrBackupFileName),
@@ -991,7 +987,6 @@ class BookRepository {
       return;
     }
 
-    final content = await cacheFile.readAsString();
     final mokuroBook = await decodeMangaCache(content);
     if (!isOriginalText(mokuroBook.ocrSource)) {
       return;
@@ -1005,9 +1000,8 @@ class BookRepository {
     if (book.bookType != 'manga') return false;
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
-    if (!await cacheFile.exists()) {
-      throw MangaPagesUnavailable.pagesMissing;
-    }
+    // Only to say so when the cache is missing: the backup replaces it.
+    await MangaCacheStore.readEncoded(cacheFile.path);
 
     final backupFile = File(
       p.join(book.filePath, originalMokuroOcrBackupFileName),
@@ -1032,12 +1026,7 @@ class BookRepository {
     if (book.bookType != 'manga') return;
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
-    if (!await cacheFile.exists()) {
-      throw MangaPagesUnavailable.pagesMissing;
-    }
-
-    final content = await cacheFile.readAsString();
-    final mokuroBook = await decodeMangaCache(content);
+    final mokuroBook = await MangaCacheStore.read(cacheFile.path);
 
     final clearedPages = mokuroBook.pages
         .map(
@@ -1072,11 +1061,7 @@ class BookRepository {
     if (book.bookType != 'manga') return false;
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
-    if (!await cacheFile.exists()) {
-      throw MangaPagesUnavailable.pagesMissing;
-    }
-
-    final content = await cacheFile.readAsString();
+    final content = await MangaCacheStore.readEncoded(cacheFile.path);
     final mokuroBook = await decodeMangaCache(content);
 
     if (!force &&

@@ -29,8 +29,7 @@ final mangaPagesProvider = FutureProvider.autoDispose.family<MokuroBook, int>(
     if (book == null) throw MangaPagesUnavailable.bookGone;
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
-    if (!await cacheFile.exists()) throw MangaPagesUnavailable.pagesMissing;
-    final content = await cacheFile.readAsString();
+    final content = await MangaCacheStore.readEncoded(cacheFile.path);
     final mokuroBook = await decodeMangaCache(content);
 
     // Self-heal caches with missing word boxes (legacy/partial OCR), broken

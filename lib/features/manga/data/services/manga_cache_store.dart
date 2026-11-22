@@ -17,8 +17,22 @@ Future<MokuroBook> decodeMangaCache(String json) => Isolate.run(
 /// All async calculations merge into the current cache. Android's native store
 /// serializes writes from UI engines, WorkManager, and local OCR.
 class MangaCacheStore {
+  /// The cache at [path], parsed. A cache that is not there throws
+  /// [MangaPagesUnavailable.pagesMissing].
   static Future<MokuroBook> read(String path) async =>
-      decodeMangaCache(await File(path).readAsString());
+      decodeMangaCache(await readEncoded(path));
+
+  /// The cache at [path] as it is stored, for a change merged into it or a
+  /// copy of it. A cache that is not there throws
+  /// [MangaPagesUnavailable.pagesMissing].
+  static Future<String> readEncoded(String path) async {
+    try {
+      return await File(path).readAsString();
+    } on PathNotFoundException {
+      throw MangaPagesUnavailable.pagesMissing;
+    }
+  }
+
   static bool _equal(Object? a, Object? b) {
     if (a is Map && b is Map) {
       return a.length == b.length &&
