@@ -83,7 +83,7 @@ final lookupDictionariesProvider = FutureProvider<LookupDictionaries>((
   if (await anyAnswers(on: true)) return LookupDictionaries.ready;
   if (await anyAnswers(on: false)) return LookupDictionaries.allOff;
   return LookupDictionaries.none;
-});
+}, retry: (_, _) => null);
 
 // ──────────────── Import State ────────────────
 

@@ -187,29 +187,30 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
 
   /// Search by dictionary form, surface form, and all deinflected candidates.
   /// Only an empty result then asks whether any dictionary can answer, so a
-  /// lookup that finds words never waits on that query. A failure is logged
-  /// here, once per lookup, and the sheet says only that the search failed.
+  /// lookup that finds words never waits on that question; the answer is
+  /// kept until the dictionaries change. A failure is logged here, once per
+  /// lookup, and the sheet says only that the search failed.
   Future<List<DictionaryEntryWithSource>> _search(
     String primary, [
     String? secondary,
   ]) async {
     try {
       final queryService = ref.read(dictionaryQueryServiceProvider);
-      final repository = ref.read(dictionaryRepositoryProvider);
       final results = await queryService.searchLookupWithSource(
         primary,
         secondary,
       );
       _noDictionaries = false;
       if (results.isEmpty && mounted) {
-        final dictionaries = await ref.read(dictionariesProvider.future);
-        _noDictionaries = !await repository.anyAnswersLookups([
-          for (final d in dictionaries) d.id,
-        ]);
+        _noDictionaries =
+            await ref.read(lookupDictionariesProvider.future) ==
+            LookupDictionaries.none;
       }
       return results;
     } catch (e) {
       logFailure('lookup.search_failed', e);
+      // A failed check is not kept: the next lookup asks again.
+      if (mounted) ref.invalidate(lookupDictionariesProvider);
       rethrow;
     }
   }

@@ -496,6 +496,7 @@ void main() {
       reading: 'ねこ',
       glossaries: '["cat"]',
     );
+    var checked = false;
 
     await tester.pumpWidget(
       ProviderScope(
@@ -518,6 +519,11 @@ void main() {
             (ref) =>
                 Stream.value([_jmdict, _jmdict.copyWith(id: 2, name: 'JPDB')]),
           ),
+          // Even a cached answer would cost the lookup a wait.
+          lookupDictionariesProvider.overrideWith((ref) {
+            checked = true;
+            return LookupDictionaries.ready;
+          }),
         ],
         child: buildLocalizedTestApp(
           home: const Scaffold(
@@ -534,6 +540,7 @@ void main() {
     // The lookup's own queries are faked, so a read of the dictionary tables
     // can only be the check.
     expect(selects.reading(['dictionary_entries', 'frequencies']), isEmpty);
+    expect(checked, isFalse);
   });
 
   group('when the lookup finds nothing', () {
@@ -602,6 +609,50 @@ void main() {
 
       expect(find.text('No results found.'), findsOneWidget);
       expect(find.text('Install Starter Pack'), findsNothing);
+    });
+
+    testWidgets('asks which dictionaries can answer once, not on every '
+        'lookup', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final selects = SelectLog();
+      final db = createTestDatabase(intercept: selects);
+      addTearDown(db.close);
+      final word = ValueNotifier('猫');
+      addTearDown(word.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(
+              _FakeDictionaryQueryService(db, lookupResultsByTerm: const {}),
+            ),
+            dictionariesProvider.overrideWith((ref) => Stream.value([_jmdict])),
+          ],
+          child: buildLocalizedTestApp(
+            home: Scaffold(
+              body: ValueListenableBuilder(
+                valueListenable: word,
+                builder: (_, text, _) =>
+                    SizedBox.expand(child: LookupSheet(selectedText: text)),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('No results found.'), findsOneWidget);
+      // The lookup's own queries are faked, so a read of the frequency
+      // table can only be the check.
+      final asked = selects.reading(['frequencies']).length;
+      expect(asked, 1);
+
+      word.value = '犬';
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('No results found.'), findsOneWidget);
+      expect(selects.reading(['frequencies']), hasLength(asked));
     });
 
     testWidgets('adds the user\'s own definition and shows it', (tester) async {

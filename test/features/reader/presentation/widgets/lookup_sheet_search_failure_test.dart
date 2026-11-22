@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
@@ -34,6 +35,36 @@ class _BrokenQueryService extends DictionaryQueryService {
   Future<Map<String, List<PitchAccentResult>>> searchPitchAccentsBatch(
     Iterable<String> expressions,
   ) async => const {};
+}
+
+/// Finds nothing, so the sheet asks which dictionaries can answer.
+class _EmptyQueryService extends DictionaryQueryService {
+  _EmptyQueryService(super.db);
+
+  @override
+  Future<List<DictionaryEntryWithSource>> searchLookupWithSource(
+    String primary, [
+    String? secondary,
+  ]) async => const [];
+
+  @override
+  Future<Map<String, List<PitchAccentResult>>> searchPitchAccentsBatch(
+    Iterable<String> expressions,
+  ) async => const {};
+}
+
+/// Its first check of which dictionaries can answer a lookup fails.
+class _BrokenCheckRepository extends DictionaryRepository {
+  _BrokenCheckRepository(super.db);
+
+  var _failed = false;
+
+  @override
+  Future<bool> anyAnswersLookups(List<int> ids) async {
+    if (_failed) return super.anyAnswersLookups(ids);
+    _failed = true;
+    throw Exception('SqliteException(5): database is locked');
+  }
 }
 
 void main() {
@@ -106,5 +137,56 @@ void main() {
     for (final attribute in failures.single.$2.values) {
       expect('${attribute.value}', isNot(contains(_word)));
     }
+  });
+
+  testWidgets('a failed check of which dictionaries can answer also says the '
+      'search failed, and the next lookup asks again', (tester) async {
+    final jmdict = DictionaryMeta(
+      id: 1,
+      name: 'JMdict',
+      isEnabled: true,
+      dateImported: DateTime(2026, 10, 3),
+      sortOrder: 0,
+      isHidden: false,
+    );
+    final word = ValueNotifier(_word);
+    addTearDown(word.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          dictionaryQueryServiceProvider.overrideWithValue(
+            _EmptyQueryService(db),
+          ),
+          dictionaryRepositoryProvider.overrideWithValue(
+            _BrokenCheckRepository(db),
+          ),
+          dictionariesProvider.overrideWith((ref) => Stream.value([jmdict])),
+        ],
+        child: buildLocalizedTestApp(
+          locale: const Locale('ja'),
+          home: Scaffold(
+            body: ValueListenableBuilder(
+              valueListenable: word,
+              builder: (_, text, _) =>
+                  SizedBox.expand(child: LookupSheet(selectedText: text)),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(ja.commonSearchFailed), findsOneWidget);
+    expect(find.text(ja.dictionaryNoResultsFound), findsNothing);
+    expect(logs.where((log) => log.$1 == 'lookup.search_failed'), hasLength(1));
+
+    word.value = '暗号';
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(ja.dictionaryNoResultsFound), findsOneWidget);
+    expect(find.text(ja.commonSearchFailed), findsNothing);
   });
 }
