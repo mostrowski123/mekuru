@@ -324,6 +324,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     } else if (state == AppLifecycleState.resumed) {
       _sessionTracker.resume();
     }
+    // A renderer that died while the app was away is replaced on return.
+    if (WidgetsBinding.instance.framesEnabled) _syncViewer();
   }
 
   void _emitSessionSummary(String endReason) {
@@ -1007,8 +1009,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         _suppressViewerRebuilds ||
         // A dead renderer's replacement also waits for sheets to close.
         // Reading isCurrent here brings its change to didChangeDependencies.
+        // And for the app to come back ([didChangeAppLifecycleState]): no
+        // frame is built while it is away, so the new viewer could not load
+        // and its 15 s would run out.
         (viewer.phase == ViewerPhase.rendererGone &&
-            !(ModalRoute.isCurrentOf(context) ?? true));
+            (!(ModalRoute.isCurrentOf(context) ?? true) ||
+                !WidgetsBinding.instance.framesEnabled));
     if (!covered &&
         viewer.beginReplacement(
           viewerLayoutOf(ref.read(readerSettingsProvider)),

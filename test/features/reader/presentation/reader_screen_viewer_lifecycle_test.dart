@@ -1,8 +1,8 @@
 // How the EPUB reader follows its viewer's life: loading, the load
-// watchdog, relocations before epub.js has locations, rebuilds for a new
-// reading mode, and a renderer that dies. A blank web view stands in for
-// the real one, so each test plays the viewer's side by calling its
-// callbacks.
+// watchdog, relocations (what they save and bookmark, also before epub.js
+// has locations), rebuilds for a new reading mode, and a renderer that
+// dies. A blank web view stands in for the real one, so each test plays
+// the viewer's side by calling its callbacks.
 
 import 'dart:async';
 import 'dart:io';
@@ -498,6 +498,60 @@ void main() {
     expect(viewer(tester).key, isNot(oldKey));
     expect(viewer(tester).initialCfi, _pageB);
     expect(spinner, findsOneWidget);
+    await closeReader(tester);
+  });
+
+  testWidgets('a renderer that dies while the app is away is replaced on '
+      'return, and its load is timed from then', (tester) async {
+    await openReader(tester);
+    viewer(tester).onLoaded!();
+    await tester.pump();
+    relocate(tester, _pageB, 0.5);
+    await tester.pump();
+    final oldKey = viewer(tester).key;
+
+    // Killed for memory in the background, where no frame is built.
+    addTearDown(
+      () => tester.binding.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      ),
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    viewer(tester).onRendererGone!();
+    await tester.pump(const Duration(seconds: 20));
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await settle(tester);
+    expect(find.textContaining('took too long'), findsNothing);
+    expect(viewer(tester).key, isNot(oldKey));
+    expect(viewer(tester).initialCfi, _pageB, reason: 'the place it showed');
+    expect(spinner, findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 10));
+    viewer(tester).onLoaded!();
+    await tester.pump();
+    expect(spinner, findsNothing);
+    expect(find.textContaining('took too long'), findsNothing);
+    await closeReader(tester);
+  });
+
+  testWidgets('a renderer that dies while the app shows unfocused (split '
+      'screen) is replaced at once', (tester) async {
+    await openReader(tester);
+    viewer(tester).onLoaded!();
+    await tester.pump();
+    final oldKey = viewer(tester).key;
+
+    // Frames are still built.
+    addTearDown(
+      () => tester.binding.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      ),
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    viewer(tester).onRendererGone!();
+    await settle(tester);
+    expect(viewer(tester).key, isNot(oldKey));
     await closeReader(tester);
   });
 
