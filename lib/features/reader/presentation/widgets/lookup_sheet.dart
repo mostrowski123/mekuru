@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
@@ -186,25 +187,31 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
 
   /// Search by dictionary form, surface form, and all deinflected candidates.
   /// Only an empty result then asks whether any dictionary can answer, so a
-  /// lookup that finds words never waits on that query.
+  /// lookup that finds words never waits on that query. A failure is logged
+  /// here, once per lookup, and the sheet says only that the search failed.
   Future<List<DictionaryEntryWithSource>> _search(
     String primary, [
     String? secondary,
   ]) async {
-    final queryService = ref.read(dictionaryQueryServiceProvider);
-    final repository = ref.read(dictionaryRepositoryProvider);
-    final results = await queryService.searchLookupWithSource(
-      primary,
-      secondary,
-    );
-    _noDictionaries = false;
-    if (results.isEmpty && mounted) {
-      final dictionaries = await ref.read(dictionariesProvider.future);
-      _noDictionaries = !await repository.anyAnswersLookups([
-        for (final d in dictionaries) d.id,
-      ]);
+    try {
+      final queryService = ref.read(dictionaryQueryServiceProvider);
+      final repository = ref.read(dictionaryRepositoryProvider);
+      final results = await queryService.searchLookupWithSource(
+        primary,
+        secondary,
+      );
+      _noDictionaries = false;
+      if (results.isEmpty && mounted) {
+        final dictionaries = await ref.read(dictionariesProvider.future);
+        _noDictionaries = !await repository.anyAnswersLookups([
+          for (final d in dictionaries) d.id,
+        ]);
+      }
+      return results;
+    } catch (e) {
+      logFailure('lookup.search_failed', e);
+      rethrow;
     }
-    return results;
   }
 
   /// Search pitch accents for the given terms.
@@ -517,11 +524,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              context.l10n.commonErrorWithDetails(details: '${snapshot.error}'),
-            ),
-          );
+          return Center(child: Text(context.l10n.commonSearchFailed));
         }
         final results = snapshot.data ?? [];
         final addDefinition = AddUserDefinitionButton(
