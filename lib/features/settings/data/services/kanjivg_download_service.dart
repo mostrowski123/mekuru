@@ -122,18 +122,32 @@ class KanjiVgDownloadService {
       share: 0.9,
       onProgress: onProgress,
       install: (zipPath, _) async {
-        // Extract SVGs (runs on isolate to avoid blocking UI)
-        final count = await compute(extractSvgsFromArchive, (
-          zipPath: zipPath,
-          outputDir: dir,
-        ));
-        // Write completion marker
-        await File(p.join(dir, _markerFileName)).writeAsString(
-          'KanjiVG kanjivg-20220427\n'
-          'Files: $count\n'
-          'Downloaded: ${DateTime.now().toIso8601String()}\n',
-        );
-        return count;
+        try {
+          // Extract SVGs (runs on isolate to avoid blocking UI)
+          final count = await compute(extractSvgsFromArchive, (
+            zipPath: zipPath,
+            outputDir: dir,
+          ));
+          // Write completion marker
+          await File(p.join(dir, _markerFileName)).writeAsString(
+            'KanjiVG kanjivg-20220427\n'
+            'Files: $count\n'
+            'Downloaded: ${DateTime.now().toIso8601String()}\n',
+          );
+          return count;
+        } catch (_) {
+          // Without the marker the folder is no install, only what this
+          // extraction got through: it goes, so nothing looks half there. A
+          // marked folder is a whole install this run rewrote in place.
+          if (!await isDownloaded()) {
+            try {
+              await outputDir.delete(recursive: true);
+            } on FileSystemException {
+              // The next download overwrites them; the user hears the cause.
+            }
+          }
+          rethrow;
+        }
       },
     );
   }

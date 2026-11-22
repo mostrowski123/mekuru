@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +26,27 @@ import '../../../../shared/loopback_http.dart';
 class _NoStatusCheck extends KanjiVgNotifier {
   @override
   Future<void> checkStatus() async {}
+}
+
+/// [zip] with the deflated data of its entry [name] overwritten, so the
+/// entries before it extract and that one fails to inflate.
+List<int> _damageEntry(List<int> zip, String name) {
+  final bytes = Uint8List.fromList(zip);
+  final view = ByteData.sublistView(bytes);
+  for (var at = 0; at + 30 < bytes.length; at++) {
+    if (view.getUint32(at, Endian.little) != 0x04034b50) continue;
+    final nameLength = view.getUint16(at + 26, Endian.little);
+    final start = at + 30;
+    if (String.fromCharCodes(bytes, start, start + nameLength) != name) {
+      continue;
+    }
+    // 8: deflated. A stored entry would extract whatever its bytes are.
+    expect(view.getUint16(at + 8, Endian.little), 8);
+    final data = start + nameLength + view.getUint16(at + 28, Endian.little);
+    bytes.fillRange(data, data + 8, 0xff);
+    return bytes;
+  }
+  throw StateError('No entry $name');
 }
 
 /// The KanjiVG tile's whole download, from tap to files on disk, against a
@@ -143,6 +165,27 @@ void main() {
     expect(tile().isDownloaded, isFalse);
     expect(failure(), isA<FormatException>());
     expect(marker().existsSync(), isFalse);
+    expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
+    await container.read(kanjiVgProvider.notifier).checkStatus();
+    expect(tile().isDownloaded, isFalse);
+  });
+
+  test('an archive that breaks partway through its SVGs leaves none of '
+      'them', () async {
+    // Long enough to be deflated, so a damaged entry fails to inflate.
+    final big = ('<svg>${'x' * 2000}</svg>').codeUnits;
+    final whole = ZipEncoder().encode(
+      Archive()
+        ..addFile(ArchiveFile('kanjivg/kanji/04e00.svg', big.length, big))
+        ..addFile(ArchiveFile('kanjivg/kanji/04e8c.svg', big.length, big)),
+    );
+    http.handler = serve(_damageEntry(whole, 'kanjivg/kanji/04e8c.svg'));
+
+    await download();
+
+    expect(tile().isDownloaded, isFalse);
+    expect(failure(), isA<FormatException>());
+    // Was: 04e00.svg left in the folder, without the marker.
     expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
     await container.read(kanjiVgProvider.notifier).checkStatus();
     expect(tile().isDownloaded, isFalse);
