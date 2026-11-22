@@ -23,13 +23,6 @@ class DictionaryRepository {
     _db.dictionaryMetas,
   )..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])).watch();
 
-  /// Watch the dictionaries whose `isHidden` is false, ordered by sort order.
-  Stream<List<DictionaryMeta>> watchVisibleDictionaries() =>
-      (_db.select(_db.dictionaryMetas)
-            ..where((t) => t.isHidden.equals(false))
-            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-          .watch();
-
   /// Insert a new dictionary and return its auto-generated id.
   /// Automatically assigns the next sort order (appends to end).
   Future<int> insertDictionary(

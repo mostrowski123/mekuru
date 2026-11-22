@@ -87,7 +87,7 @@ class PendingDictionaryRestoreService {
 
     final matches = _preferenceById(
       snapshot.preferences,
-      await _getVisibleDictionaries(repository),
+      await repository.getAllDictionaries(),
     );
     return PendingDictionaryRestorePreview(
       totalCount: snapshot.preferences.length,
@@ -107,8 +107,8 @@ class PendingDictionaryRestoreService {
       );
     }
 
-    final visibleDictionaries = await _getVisibleDictionaries(repository);
-    final matches = _preferenceById(snapshot.preferences, visibleDictionaries);
+    final dictionaries = await repository.getAllDictionaries();
+    final matches = _preferenceById(snapshot.preferences, dictionaries);
     if (matches.isEmpty) {
       return ApplyPendingDictionaryRestoreResult(
         appliedCount: 0,
@@ -118,7 +118,7 @@ class PendingDictionaryRestoreService {
 
     final sortedMatched =
         [
-          for (final dictionary in visibleDictionaries)
+          for (final dictionary in dictionaries)
             if (matches.containsKey(dictionary.id)) dictionary,
         ]..sort(
           (a, b) =>
@@ -126,7 +126,7 @@ class PendingDictionaryRestoreService {
         );
     await repository.reorderDictionaries([
       ...sortedMatched.map((dictionary) => dictionary.id),
-      for (final dictionary in visibleDictionaries)
+      for (final dictionary in dictionaries)
         if (!matches.containsKey(dictionary.id)) dictionary.id,
     ]);
 
@@ -171,13 +171,4 @@ class PendingDictionaryRestoreService {
     List<BackupDictionaryPreference> preferences,
     Map<int, BackupDictionaryPreference> matches,
   ) => preferences.length - matches.values.toSet().length;
-
-  Future<List<DictionaryMeta>> _getVisibleDictionaries(
-    DictionaryRepository repository,
-  ) async {
-    final dictionaries = await repository.getAllDictionaries();
-    return dictionaries
-        .where((dictionary) => !dictionary.isHidden)
-        .toList(growable: false);
-  }
 }

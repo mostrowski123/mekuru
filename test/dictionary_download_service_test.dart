@@ -328,10 +328,10 @@ void main() {
 
     expect(
       [
-        for (final d in await repo.watchVisibleDictionaries().first)
-          (d.name, d.isEnabled),
+        for (final d in await repo.watchAllDictionaries().first)
+          (d.name, d.isEnabled, d.isHidden),
       ],
-      [(JpdbFreqDownloadService.dictionaryName, true)],
+      [(JpdbFreqDownloadService.dictionaryName, true, false)],
     );
   });
 }

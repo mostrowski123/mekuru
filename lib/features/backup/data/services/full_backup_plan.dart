@@ -140,11 +140,7 @@ FullBackupPlan buildExportPlan(BuildExportPlanArgs args) {
       }
     }
     dictionaryCount =
-        db
-                .select(
-                  'SELECT count(*) AS n FROM dictionary_metas WHERE is_hidden = 0',
-                )
-                .first['n']
+        db.select('SELECT count(*) AS n FROM dictionary_metas').first['n']
             as int;
   } finally {
     db.close();

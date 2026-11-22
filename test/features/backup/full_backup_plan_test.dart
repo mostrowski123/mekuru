@@ -66,9 +66,7 @@ void main() {
     await book('Missing on disk', 'manga_5_eeeeeeee', type: 'manga');
     final dictionaries = DictionaryRepository(db);
     await dictionaries.insertDictionary('JMdict');
-    final hidden = await dictionaries.insertDictionary('Bundled frequency');
-    await (db.update(db.dictionaryMetas)..where((t) => t.id.equals(hidden)))
-        .write(const DictionaryMetasCompanion(isHidden: Value(true)));
+    await dictionaries.insertDictionary('Bundled frequency');
     await db.close();
   }
 
@@ -155,7 +153,7 @@ void main() {
     final plan = build();
 
     expect(plan.bookCount, 5);
-    expect(plan.dictionaryCount, 1);
+    expect(plan.dictionaryCount, 2);
     final epub = plan.entries.singleWhere((e) => e.name.endsWith('メロス.epub'));
     expect(epub.path, p.join(books.path, 'book_1_aaaaaaaa', 'メロス.epub'));
     expect(epub.size, 'EPUB-BYTES'.length);

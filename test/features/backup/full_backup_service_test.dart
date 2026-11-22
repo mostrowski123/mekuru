@@ -146,9 +146,7 @@ void main() {
     listed = [];
     final dictionaries = DictionaryRepository(db);
     await dictionaries.insertDictionary('JMdict');
-    final hiddenId = await dictionaries.insertDictionary('Bundled frequency');
-    await (db.update(db.dictionaryMetas)..where((t) => t.id.equals(hiddenId)))
-        .write(const DictionaryMetasCompanion(isHidden: Value(true)));
+    await dictionaries.insertDictionary('Bundled frequency');
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(safChannel, (call) async {
@@ -241,7 +239,7 @@ void main() {
       expect(manifest.schemaVersion, AppDatabase.latestSchemaVersion);
       expect(manifest.appSupportPath, root.path);
       expect(manifest.bookCount, 2);
-      expect(manifest.dictionaryCount, 1);
+      expect(manifest.dictionaryCount, 2);
       expect(manifest.externalMangaCount, 1);
       expect(manifest.folders, {
         'Books/走れメロス/': 'book_1_aaaaaaaa',
@@ -497,7 +495,7 @@ void main() {
         expect(preview.source, source);
         expect(preview.sizeBytes, 5);
         expect(preview.currentBookCount, 2);
-        expect(preview.currentDictionaryCount, 1);
+        expect(preview.currentDictionaryCount, 2);
       },
     );
 

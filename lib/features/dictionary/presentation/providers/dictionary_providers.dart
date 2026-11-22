@@ -46,7 +46,7 @@ final dictionaryImporterProvider = Provider<DictionaryImporter>((ref) {
 
 /// Reactive stream of the dictionaries the dictionary manager lists.
 final dictionariesProvider = StreamProvider<List<DictionaryMeta>>((ref) {
-  return ref.watch(dictionaryRepositoryProvider).watchVisibleDictionaries();
+  return ref.watch(dictionaryRepositoryProvider).watchAllDictionaries();
 });
 
 /// Whether a dictionary only ranks other dictionaries' words. Asked once per
@@ -70,7 +70,9 @@ enum LookupDictionaries {
 }
 
 /// What the listed dictionaries allow. Its query can read the whole entry
-/// index, so watch it only while no search is waiting on the database.
+/// index, so watch it only while no search is waiting on the database. Kept
+/// until the dictionaries change. A failure is not retried: a lookup waits on
+/// [FutureProvider.future], which stays pending while Riverpod retries.
 final lookupDictionariesProvider = FutureProvider<LookupDictionaries>((
   ref,
 ) async {

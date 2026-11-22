@@ -440,8 +440,7 @@ class FullBackupService implements FullBackupApi {
     final row = await db
         .customSelect(
           'SELECT (SELECT count(*) FROM books) AS books, '
-          '(SELECT count(*) FROM dictionary_metas WHERE is_hidden = 0) '
-          'AS dictionaries',
+          '(SELECT count(*) FROM dictionary_metas) AS dictionaries',
         )
         .getSingle();
     return (

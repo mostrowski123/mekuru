@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
@@ -56,15 +55,10 @@ class BackupService {
 
   Future<BackupManifest> createBackup() async {
     final settings = await collectSettings();
-    final dictionaryPreferences =
-        await (_db.select(_db.dictionaryMetas)
-              ..where((t) => t.isHidden.equals(false))
-              ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-            .get();
+    final dictionaries = DictionaryRepository(_db);
+    final dictionaryPreferences = await dictionaries.getAllDictionaries();
 
-    final userDefinitions = await DictionaryRepository(
-      _db,
-    ).getUserDefinitions();
+    final userDefinitions = await dictionaries.getUserDefinitions();
     final savedWords = await _db.select(_db.savedWords).get();
     final books = await _db.select(_db.books).get();
     final serverConnections = await _db.select(_db.serverConnections).get();

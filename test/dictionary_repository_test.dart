@@ -311,26 +311,6 @@ void main() {
     });
   });
 
-  group('DictionaryRepository — watchVisibleDictionaries', () {
-    test('excludes hidden dictionaries', () async {
-      await repo.insertDictionary('Visible');
-      final id2 = await repo.insertDictionary('Hidden');
-      await (db.update(db.dictionaryMetas)..where((t) => t.id.equals(id2)))
-          .write(const DictionaryMetasCompanion(isHidden: Value(true)));
-
-      final emissions = <List<DictionaryMeta>>[];
-      final subscription = repo.watchVisibleDictionaries().listen((data) {
-        emissions.add(data);
-      });
-
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(emissions.last, hasLength(1));
-      expect(emissions.last.first.name, 'Visible');
-
-      await subscription.cancel();
-    });
-  });
-
   test(
     'only a dictionary with ranks and no entries is frequency-only',
     () async {

@@ -714,11 +714,11 @@ void main() {
 
     expect(
       [
-        for (final d in await repo.watchVisibleDictionaries().first)
-          (d.name, d.isEnabled),
+        for (final d in await repo.watchAllDictionaries().first)
+          (d.name, d.isEnabled, d.isHidden),
       ],
       // A dictionary the user switched off stays off; JPDB joins the end.
-      [('Switched off', false), ('JPDB', true)],
+      [('Switched off', false, false), ('JPDB', true, false)],
     );
   });
 
@@ -805,7 +805,7 @@ void main() {
       expect(rows['JPDB']!.$1, greaterThan(rows['My frequency list']!.$1));
       final visible = await DictionaryRepository(
         migratedDb,
-      ).watchVisibleDictionaries().first;
+      ).watchAllDictionaries().first;
       expect(visible.map((d) => d.name), [
         'Dict A',
         'My frequency list',

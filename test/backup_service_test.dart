@@ -65,47 +65,44 @@ void main() {
       expect(manifest.settings.reader['reader.keep_screen_on'], true);
     });
 
-    test(
-      'includes visible dictionary preferences but excludes hidden ones',
-      () async {
-        await db
-            .into(db.dictionaryMetas)
-            .insert(
-              DictionaryMetasCompanion.insert(
-                name: 'Visible B',
-                sortOrder: const Value(1),
-              ),
-            );
-        await db
-            .into(db.dictionaryMetas)
-            .insert(
-              DictionaryMetasCompanion.insert(
-                name: 'Hidden Dict',
-                sortOrder: const Value(2),
-                isHidden: const Value(true),
-              ),
-            );
-        await db
-            .into(db.dictionaryMetas)
-            .insert(
-              DictionaryMetasCompanion.insert(
-                name: 'Visible A',
-                sortOrder: const Value(0),
-                isEnabled: const Value(false),
-              ),
-            );
+    test('includes every dictionary preference, in the list order', () async {
+      await db
+          .into(db.dictionaryMetas)
+          .insert(
+            DictionaryMetasCompanion.insert(
+              name: 'Visible B',
+              sortOrder: const Value(1),
+            ),
+          );
+      await db
+          .into(db.dictionaryMetas)
+          .insert(
+            DictionaryMetasCompanion.insert(
+              name: 'JPDB',
+              sortOrder: const Value(2),
+            ),
+          );
+      await db
+          .into(db.dictionaryMetas)
+          .insert(
+            DictionaryMetasCompanion.insert(
+              name: 'Visible A',
+              sortOrder: const Value(0),
+              isEnabled: const Value(false),
+            ),
+          );
 
-        final manifest = await backupService.createBackup();
+      final manifest = await backupService.createBackup();
 
-        expect(
-          manifest.dictionaryPreferences.map((item) => item.name).toList(),
-          ['Visible A', 'Visible B'],
-        );
-        expect(manifest.dictionaryPreferences[0].isEnabled, isFalse);
-        expect(manifest.dictionaryPreferences[0].sortOrder, 0);
-        expect(manifest.dictionaryPreferences[1].isEnabled, isTrue);
-      },
-    );
+      expect(manifest.dictionaryPreferences.map((item) => item.name).toList(), [
+        'Visible A',
+        'Visible B',
+        'JPDB',
+      ]);
+      expect(manifest.dictionaryPreferences[0].isEnabled, isFalse);
+      expect(manifest.dictionaryPreferences[0].sortOrder, 0);
+      expect(manifest.dictionaryPreferences[1].isEnabled, isTrue);
+    });
 
     test('includes saved words', () async {
       await db
