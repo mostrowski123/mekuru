@@ -106,18 +106,18 @@ class WordAudioPack {
   /// on Android, which also goes on after Mekuru closes, and in the app on iOS
   /// ([DownloadKind.wordAudioPackIos]). Mobile data only when [network] allows
   /// it. A stopped download keeps its partial file, and the next one resumes
-  /// it. [onProgress] gets the fraction downloaded and whether the Android job
-  /// waits for Wi-Fi.
+  /// it. [onProgress] gets the fraction downloaded and what the Android job
+  /// waits for.
   Future<void> download({
     required NetworkConsent network,
-    void Function(double fraction, bool waitingForWifi)? onProgress,
+    void Function(double fraction, JobWait wait)? onProgress,
   }) => switch (longWork) {
     LongWork.systemJob => _job.run(network: network, onProgress: onProgress),
     LongWork.inApp => _downloadInApp(onProgress, network),
   };
 
   Future<void> _downloadInApp(
-    void Function(double, bool)? onProgress,
+    void Function(double, JobWait)? onProgress,
     NetworkConsent network,
   ) async {
     final dir = await Directory(await _dir).create(recursive: true);
@@ -131,7 +131,7 @@ class WordAudioPack {
           parts: [file],
         ),
         network,
-        onProgress: (fraction) => onProgress?.call(fraction, false),
+        onProgress: (fraction) => onProgress?.call(fraction, JobWait.none),
       );
     } on DownloadStoppedException {
       // As the Android job says it.

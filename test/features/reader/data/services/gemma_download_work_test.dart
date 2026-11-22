@@ -480,16 +480,16 @@ void main() {
       await expectLater(done, throwsA(isA<HttpException>()));
     });
 
-    /// Follows a [network] download until [waiting] says whether it waits for
-    /// Wi-Fi, after Wi-Fi went; the last answer.
-    Future<bool> waitingOffWifi(
+    /// Follows a [network] download until [waiting] says what it waits for,
+    /// after Wi-Fi went; the last answer.
+    Future<JobWait> waitingOffWifi(
       NetworkConsent network, {
       bool alreadyQueued = false,
     }) async {
-      final waiting = <bool>[];
+      final waiting = <JobWait>[];
       final done = gemma.downloadModel(
         network: network,
-        onProgress: (_, waitingForWifi) => waiting.add(waitingForWifi),
+        onProgress: (_, wait) => waiting.add(wait),
         every: every,
       );
       if (!alreadyQueued) await workmanager.enqueued.future;
@@ -513,11 +513,11 @@ void main() {
     }
 
     test('queued for Wi-Fi only, it says it waits once Wi-Fi goes', () async {
-      expect(await waitingOffWifi(NetworkConsent.wifiOnly), isTrue);
+      expect(await waitingOffWifi(NetworkConsent.wifiOnly), JobWait.wifi);
     });
 
     test('allowed mobile data, it never says it waits for Wi-Fi', () async {
-      expect(await waitingOffWifi(NetworkConsent.mobileData), isFalse);
+      expect(await waitingOffWifi(NetworkConsent.mobileData), JobWait.none);
     });
 
     test('a relaunch following a job allowed mobile data does not say it '
@@ -538,7 +538,67 @@ void main() {
       // Following asks nothing, so it passes Wi-Fi only.
       expect(
         await waitingOffWifi(NetworkConsent.wifiOnly, alreadyQueued: true),
-        isFalse,
+        JobWait.none,
+      );
+    });
+
+    /// What following a [network] download last reports about waiting once
+    /// its job writes [status] (a quarter in), with no network at all when
+    /// [offline].
+    Future<JobWait> waitFor(
+      NetworkConsent network, {
+      int failedAttempts = 0,
+      bool offline = false,
+    }) async {
+      final waits = <JobWait>[];
+      workmanager.enqueued = Completer<void>();
+      final done = gemma.downloadModel(
+        network: network,
+        onProgress: (_, wait) => waits.add(wait),
+        every: every,
+      );
+      await workmanager.enqueued.future;
+      await jobWrites(
+        ServerDownloadWorkStatus(
+          state: ServerDownloadWorkState.running,
+          received: gemmaModelFile.bytes ~/ 4,
+          total: gemmaModelFile.bytes,
+          failedAttempts: failedAttempts,
+        ),
+      );
+      if (offline) mockWifiConnected(false, offline: true);
+      final seenFrom = waits.length;
+      // Two reports: the first can come from a poll that read before.
+      while (waits.length < seenFrom + 2) {
+        await Future<void>.delayed(every);
+      }
+      final last = waits.last;
+      gemma.cancelDownload();
+      await expectLater(done, throwsA(isA<HttpException>()));
+      return last;
+    }
+
+    test('a job waiting out its retry, or allowed mobile data with no network '
+        'at all, says so', () async {
+      // Was: all three reported as waiting for nothing (false).
+      expect(await waitFor(NetworkConsent.wifiOnly), JobWait.none);
+      // Its last attempt failed: WorkManager runs it again after a backoff.
+      expect(
+        await waitFor(NetworkConsent.wifiOnly, failedAttempts: 1),
+        JobWait.retry,
+      );
+      expect(
+        await waitFor(NetworkConsent.mobileData, offline: true),
+        JobWait.connection,
+      );
+      // No network says more than the failed attempt it led to.
+      expect(
+        await waitFor(
+          NetworkConsent.mobileData,
+          failedAttempts: 1,
+          offline: true,
+        ),
+        JobWait.connection,
       );
     });
 

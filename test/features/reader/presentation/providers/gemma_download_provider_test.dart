@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/features/manga/data/services/model_download_job.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,7 +45,7 @@ void main() {
     debugGemmaModelOps = (
       installed: () async => installed,
       download: (onProgress, network) {
-        report = (fraction) => onProgress(fraction, false);
+        report = (fraction) => onProgress(fraction, JobWait.none);
         mobileDataOks.add(network.allowsMobileData);
         return download.future;
       },

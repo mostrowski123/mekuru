@@ -17,6 +17,7 @@ import 'package:mekuru/features/word_audio/data/services/word_audio_pack.dart';
 import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 import 'package:mekuru/features/word_audio/presentation/widgets/word_audio_download_tile.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/features/manga/data/services/model_download_job.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -40,7 +41,7 @@ class _FakePack extends WordAudioPack {
   var deleteFails = false;
   bool? lastMobileData;
   void Function(double)? report;
-  void Function(double fraction, bool waitingForWifi)? progress;
+  void Function(double fraction, JobWait wait)? progress;
   Completer<void>? transfer;
 
   @override
@@ -58,11 +59,11 @@ class _FakePack extends WordAudioPack {
   @override
   Future<void> download({
     required NetworkConsent network,
-    void Function(double fraction, bool waitingForWifi)? onProgress,
+    void Function(double fraction, JobWait wait)? onProgress,
   }) {
     lastMobileData = network.allowsMobileData;
     progress = onProgress;
-    report = onProgress == null ? null : (f) => onProgress(f, false);
+    report = onProgress == null ? null : (f) => onProgress(f, JobWait.none);
     filesThere = true;
     return (transfer = Completer<void>()).future;
   }
@@ -433,18 +434,18 @@ void main() {
       mockWifiConnected(true);
       final workmanager = _QueuedWorkmanager();
       WorkmanagerPlatform.instance = workmanager;
-      final waiting = <bool>[];
+      final waiting = <JobWait>[];
 
       final done = pack.download(
         network: NetworkConsent.wifiOnly,
-        onProgress: (_, waitingForWifi) => waiting.add(waitingForWifi),
+        onProgress: (_, wait) => waiting.add(wait),
       );
       await workmanager.queued.future;
       mockWifiConnected(false);
       // The app looks at the job once a second.
       await Future<void>.delayed(const Duration(milliseconds: 2500));
 
-      expect(waiting.last, isTrue);
+      expect(waiting.last, JobWait.wifi);
       pack.cancel();
       await expectLater(done, throwsA(isA<HttpException>()));
     });
@@ -699,13 +700,36 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      pack.progress!(0.2, true);
+      pack.progress!(0.2, JobWait.wifi);
       await tester.pump();
 
       expect(
         find.text('Waiting for Wi-Fi. Cancel and resume to use mobile data.'),
         findsOneWidget,
       );
+      expect(find.byIcon(Icons.close), findsOneWidget);
+      pack.cancel();
+      await tester.pump();
+      await tester.pump();
+    });
+
+    testWidgets('Android: a job between attempts says it tries again, not a '
+        'percentage that stands still', (tester) async {
+      await pump(tester);
+      await tester.tap(find.text('Download'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Download').last);
+      await tester.pump();
+      await tester.pump();
+
+      pack.progress!(0.2, JobWait.retry);
+      await tester.pump();
+
+      expect(
+        find.text('The download was interrupted. Trying again shortly…'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('20%'), findsNothing);
       expect(find.byIcon(Icons.close), findsOneWidget);
       pack.cancel();
       await tester.pump();

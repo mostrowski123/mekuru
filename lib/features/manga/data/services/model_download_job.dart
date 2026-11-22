@@ -21,6 +21,22 @@ const modelJobVerificationError = 'verification';
 /// In a [ModelDownloadJob]'s folder while its queued job may use mobile data.
 const _mobileDataMarker = 'mobile_data_ok';
 
+/// Why a [ModelDownloadJob]'s percentage stands still, as far as the app can
+/// tell; a row shows it in words instead (`jobWaitText`).
+enum JobWait {
+  /// Nothing known holds it up.
+  none,
+
+  /// Off Wi-Fi, and the job may not use mobile data.
+  wifi,
+
+  /// No network at all, and the job may use mobile data.
+  connection,
+
+  /// Its last attempt failed; WorkManager runs it again after a backoff.
+  retry,
+}
+
 /// One large pinned file downloaded by a WorkManager job on Android
 /// ([runModelDownloadWork]), which goes on when Mekuru is left or closed.
 /// Plain work, never a foreground service: Play rejected that for OCR.
@@ -59,10 +75,10 @@ class ModelDownloadJob {
   /// [InsufficientSpaceException]. The job uses mobile data only when
   /// [network] allows it; otherwise it waits for unmetered Wi-Fi, also when it
   /// is queued again for a download already under way. [onProgress] gets the
-  /// fraction downloaded and whether the job waits for Wi-Fi.
+  /// fraction downloaded and what the job waits for.
   Future<void> run({
     required NetworkConsent network,
-    void Function(double fraction, bool waitingForWifi)? onProgress,
+    void Function(double fraction, JobWait wait)? onProgress,
     Duration every = const Duration(seconds: 1),
   }) async {
     // Before any await, so a cancel that comes while an earlier one ends
@@ -127,8 +143,9 @@ class ModelDownloadJob {
         existingWorkPolicy: ExistingWorkPolicy.keep,
       );
     }
-    // Off Wi-Fi, a job that may not use mobile data waits for it (its
-    // WorkManager constraint), and says so.
+    // A job waits for the network its WorkManager constraint names: Wi-Fi,
+    // unless it may use mobile data, then any. It says so, and so does a
+    // failed attempt's backoff ([ServerDownloadWorkStatus.failedAttempts]).
     final waitsForWifi = !await mobileDataOk.exists();
     for (var poll = 0; ; poll++) {
       await stopIfCancelled();
@@ -139,7 +156,7 @@ class ModelDownloadJob {
       final status = await work.readStatus();
       if (status?.state == ServerDownloadWorkState.done ||
           (!scheduled && await marker.exists())) {
-        onProgress?.call(1, false);
+        onProgress?.call(1, JobWait.none);
         // Followed to the end, so the next launch doesn't take it for one
         // that finished unseen ([pending]).
         return work.deleteStatus();
@@ -158,9 +175,12 @@ class ModelDownloadJob {
         );
       }
       if (status != null) {
+        final wait = waitsForWifi
+            ? (await isOnWifi() ? null : JobWait.wifi)
+            : (await isConnected() ? null : JobWait.connection);
         onProgress?.call(
           status.received / file.bytes,
-          waitsForWifi && !await isOnWifi(),
+          wait ?? (status.failedAttempts > 0 ? JobWait.retry : JobWait.none),
         );
       }
       await Future<void>.delayed(every);

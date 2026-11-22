@@ -10,6 +10,7 @@ import 'package:mekuru/features/reader/presentation/providers/gemma_download_pro
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/features/manga/data/services/model_download_job.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../shared/fake_download_notifiers.dart';
@@ -26,7 +27,7 @@ void main() {
   var cancels = 0;
   late Completer<void> downloadDone;
   late void Function(double fraction) report;
-  late void Function(double fraction, bool waitingForWifi) progress;
+  late void Function(double fraction, JobWait wait) progress;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -43,7 +44,7 @@ void main() {
       download: (onProgress, _) {
         downloads++;
         progress = onProgress;
-        report = (fraction) => onProgress(fraction, false);
+        report = (fraction) => onProgress(fraction, JobWait.none);
         // Made here, in the test's zone, so completing it reaches pump().
         downloadDone = Completer<void>();
         return downloadDone.future;
@@ -198,7 +199,7 @@ void main() {
           .start(NetworkConsent.wifiOnly),
     );
     await tester.pump();
-    progress(0.37, false);
+    progress(0.37, JobWait.none);
     await tester.pump();
     expect(
       subtitle(ja.translationHighQualityDownloading(percent: '37')),
@@ -206,7 +207,7 @@ void main() {
     );
 
     // Wi-Fi went: the job waits, and its percentage stops.
-    progress(0.37, true);
+    progress(0.37, JobWait.wifi);
     await tester.pump();
     expect(subtitle(ja.localOcrWaitingWifi), findsOneWidget);
     expect(find.textContaining('37'), findsNothing);
@@ -215,6 +216,41 @@ void main() {
     await tester.tap(find.text(ja.settingsTranslationModelTitle));
     await tester.pumpAndSettle();
     expect(find.text(ja.localOcrWaitingWifi), findsNWidgets(2));
+
+    downloadDone.complete();
+    await tester.pumpAndSettle();
+  }, variant: _android);
+
+  testWidgets('in Japanese, a download retrying or waiting for a connection '
+      'says so, not a percentage that stands still', (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    final container = await pumpSettings(tester, locale: const Locale('ja'));
+    Finder subtitle(String text) => find.descendant(
+      of: find.widgetWithText(ListTile, ja.settingsTranslationModelTitle),
+      matching: find.text(text),
+    );
+    unawaited(
+      container
+          .read(gemmaDownloadProvider.notifier)
+          .start(NetworkConsent.mobileData),
+    );
+    await tester.pump();
+
+    // Its last attempt failed, and WorkManager waits before the next.
+    progress(0.37, JobWait.retry);
+    await tester.pump();
+    expect(subtitle(ja.downloadRetrying), findsOneWidget);
+    expect(find.textContaining('37'), findsNothing);
+
+    // Allowed mobile data, but there is no network at all.
+    progress(0.37, JobWait.connection);
+    await tester.pump();
+    expect(subtitle(ja.downloadWaitingConnection), findsOneWidget);
+
+    // The sheet says the same.
+    await tester.tap(find.text(ja.settingsTranslationModelTitle));
+    await tester.pumpAndSettle();
+    expect(find.text(ja.downloadWaitingConnection), findsNWidgets(2));
 
     downloadDone.complete();
     await tester.pumpAndSettle();

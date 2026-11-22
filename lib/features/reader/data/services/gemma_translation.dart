@@ -109,7 +109,7 @@ class GemmaTranslation implements TranslationEngine {
   /// also says what happens without room or off Wi-Fi).
   Future<void> downloadModel({
     required NetworkConsent network,
-    void Function(double fraction, bool waitingForWifi)? onProgress,
+    void Function(double fraction, JobWait wait)? onProgress,
     @visibleForTesting Duration every = const Duration(seconds: 1),
   }) => _job.run(network: network, onProgress: onProgress, every: every);
 

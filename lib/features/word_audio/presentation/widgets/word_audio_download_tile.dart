@@ -106,12 +106,11 @@ class WordAudioPackTile extends ConsumerWidget {
           ),
           title: Text(l.wordAudioPackTitle),
           subtitle: Text(
-            state.waitingForWifi
-                ? l.localOcrWaitingWifi
-                : fraction != null
-                ? l.downloadsDownloadingPercent(
-                    percent: (fraction * 100).floor(),
-                  )
+            fraction != null
+                ? jobWaitText(l, state.wait) ??
+                      l.downloadsDownloadingPercent(
+                        percent: (fraction * 100).floor(),
+                      )
                 : state.installed
                 ? l.wordAudioPackReady
                 : '${l.wordAudioPackDescription} ($size)',

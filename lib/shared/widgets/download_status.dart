@@ -12,6 +12,8 @@ import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart'
     show ModelVerificationException;
+import 'package:mekuru/features/manga/data/services/model_download_job.dart'
+    show JobWait;
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -214,6 +216,15 @@ class DownloadOutcomeText extends StatelessWidget {
     };
   }
 }
+
+/// What a background download job's row says in place of a percentage that
+/// stands still; null when nothing holds it up.
+String? jobWaitText(AppLocalizations l10n, JobWait wait) => switch (wait) {
+  JobWait.none => null,
+  JobWait.wifi => l10n.localOcrWaitingWifi,
+  JobWait.connection => l10n.downloadWaitingConnection,
+  JobWait.retry => l10n.downloadRetrying,
+};
 
 /// Why a download (dictionary, translation or OCR model) failed, worded for
 /// the user; null when it did not. Every way one ends has its own words, and

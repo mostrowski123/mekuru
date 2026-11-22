@@ -20,6 +20,7 @@ import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
+import 'package:mekuru/features/manga/data/services/model_download_job.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart' show mockWifiConnected;
@@ -146,7 +147,7 @@ _FakeTranslationEngine _fakeTranslation({
 _FakeTranslationEngine _fakeHighQuality({
   TranslationStatus state = TranslationStatus.installed,
   Future<void> Function(
-    void Function(double fraction, bool waitingForWifi) onProgress,
+    void Function(double fraction, JobWait wait) onProgress,
     NetworkConsent network,
   )?
   download,

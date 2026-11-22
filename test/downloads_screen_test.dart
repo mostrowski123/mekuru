@@ -17,6 +17,7 @@ import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
+import 'package:mekuru/features/manga/data/services/model_download_job.dart';
 
 import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
@@ -321,7 +322,7 @@ void main() {
     final calls = <String>[];
     late Completer<void> downloadDone;
     late void Function(double fraction) report;
-    late void Function(double fraction, bool waitingForWifi) progress;
+    late void Function(double fraction, JobWait wait) progress;
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
@@ -336,7 +337,7 @@ void main() {
         download: (onProgress, _) {
           calls.add('download');
           progress = onProgress;
-          report = (fraction) => onProgress(fraction, false);
+          report = (fraction) => onProgress(fraction, JobWait.none);
           // Made here, in the test's zone, so completing it reaches pump().
           downloadDone = Completer<void>();
           return downloadDone.future;
@@ -486,7 +487,7 @@ void main() {
 
       await tester.tap(inRow(find.text('Download')));
       await tester.pumpAndSettle();
-      progress(0.3, true);
+      progress(0.3, JobWait.wifi);
       await tester.pump();
 
       expect(
@@ -497,9 +498,36 @@ void main() {
       );
       expect(inRow(find.byTooltip('Cancel')), findsOneWidget);
 
-      progress(0.4, false);
+      progress(0.4, JobWait.none);
       await tester.pump();
       expect(inRow(find.text('High quality: downloading 40%')), findsOneWidget);
+      downloadDone.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a job between attempts, or waiting for any network, says so '
+        'and offers Cancel', (tester) async {
+      mockWifiConnected(true);
+      await pumpDownloads(tester);
+
+      await tester.tap(inRow(find.text('Download')));
+      await tester.pumpAndSettle();
+      progress(0.3, JobWait.retry);
+      await tester.pump();
+
+      expect(
+        inRow(find.text('The download was interrupted. Trying again shortly…')),
+        findsOneWidget,
+      );
+      expect(inRow(find.textContaining('30%')), findsNothing);
+      expect(inRow(find.byTooltip('Cancel')), findsOneWidget);
+
+      progress(0.3, JobWait.connection);
+      await tester.pump();
+      expect(
+        inRow(find.text('Waiting for an internet connection.')),
+        findsOneWidget,
+      );
       downloadDone.complete();
       await tester.pumpAndSettle();
     });

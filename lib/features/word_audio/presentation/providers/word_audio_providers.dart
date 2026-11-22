@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/manga/data/services/model_download_job.dart'
+    show JobWait;
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 
 final wordAudioProvider = Provider<WordAudio>((ref) {
@@ -12,13 +14,13 @@ final wordAudioProvider = Provider<WordAudio>((ref) {
 });
 
 /// Where the offline pack stands. [fraction] is set while it downloads, and
-/// [waitingForWifi] while its Android job waits for Wi-Fi. [error] is why
-/// the last download failed, [deleteFailed] whether the last remove did.
+/// [wait] says what its Android job waits for. [error] is why the last
+/// download failed, [deleteFailed] whether the last remove did.
 typedef WordAudioPackState = ({
   bool installed,
   bool hasFiles,
   double? fraction,
-  bool waitingForWifi,
+  JobWait wait,
   Object? error,
   bool deleteFailed,
 });
@@ -27,14 +29,14 @@ WordAudioPackState _packState({
   bool installed = false,
   bool hasFiles = false,
   double? fraction,
-  bool waitingForWifi = false,
+  JobWait wait = JobWait.none,
   Object? error,
   bool deleteFailed = false,
 }) => (
   installed: installed,
   hasFiles: hasFiles,
   fraction: fraction,
-  waitingForWifi: waitingForWifi,
+  wait: wait,
   error: error,
   deleteFailed: deleteFailed,
 );
@@ -90,11 +92,8 @@ class WordAudioPackNotifier extends Notifier<WordAudioPackState> {
       if (!await audio.installed) await audio.download(network: network);
       await audio.pack.download(
         network: network,
-        onProgress: (fraction, waitingForWifi) => state = _packState(
-          hasFiles: true,
-          fraction: fraction,
-          waitingForWifi: waitingForWifi,
-        ),
+        onProgress: (fraction, wait) =>
+            state = _packState(hasFiles: true, fraction: fraction, wait: wait),
       );
       logUsage('word_audio.pack_downloaded');
       state = _packState(installed: true, hasFiles: true);

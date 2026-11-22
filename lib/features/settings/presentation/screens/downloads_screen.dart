@@ -419,11 +419,11 @@ class _HighQualityTranslationTileState
           ),
           title: Text(l.downloadsHighQualityTitle),
           subtitle: Text(switch (state) {
-            GemmaDownloading(waitingForWifi: true) => l.localOcrWaitingWifi,
-            GemmaDownloading(:final fraction) =>
-              l.translationHighQualityDownloading(
-                percent: '${(fraction * 100).floor()}',
-              ),
+            GemmaDownloading(:final fraction, :final wait) =>
+              jobWaitText(l, wait) ??
+                  l.translationHighQualityDownloading(
+                    percent: '${(fraction * 100).floor()}',
+                  ),
             _ =>
               '${l.downloadsHighQualitySubtitle} '
                   '(${GemmaTranslation.downloadSize()})',

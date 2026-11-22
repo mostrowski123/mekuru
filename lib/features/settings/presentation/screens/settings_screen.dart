@@ -32,6 +32,7 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/download_status.dart' show jobWaitText;
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -333,17 +334,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: Text(switch (ref.watch(
                 gemmaDownloadProvider.select(
                   (s) => s is GemmaDownloading
-                      ? (
-                          percent: (s.fraction * 100).floor(),
-                          waitingForWifi: s.waitingForWifi,
-                        )
+                      ? (percent: (s.fraction * 100).floor(), wait: s.wait)
                       : null,
                 ),
               )) {
-                // The job waits for Wi-Fi, so the percentage stands still.
-                (waitingForWifi: true, percent: _) => l10n.localOcrWaitingWifi,
-                (:final percent, waitingForWifi: false) =>
-                  l10n.translationHighQualityDownloading(percent: '$percent'),
+                // While the job waits its percentage stands still: say why.
+                (:final percent, :final wait) =>
+                  jobWaitText(l10n, wait) ??
+                      l10n.translationHighQualityDownloading(
+                        percent: '$percent',
+                      ),
                 null => switch (ref.watch(translationModelProvider)) {
                   TranslationModelChoice.standard =>
                     l10n.translationModelStandard,
@@ -778,11 +778,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   static String _gemmaDownloading(
     AppLocalizations l10n,
     GemmaDownloading download,
-  ) => download.waitingForWifi
-      ? l10n.localOcrWaitingWifi
-      : l10n.translationHighQualityDownloading(
-          percent: '${(download.fraction * 100).floor()}',
-        );
+  ) =>
+      jobWaitText(l10n, download.wait) ??
+      l10n.translationHighQualityDownloading(
+        percent: '${(download.fraction * 100).floor()}',
+      );
 
   /// Set from the tap until the sheet closes: the disk check before the
   /// sheet leaves time for a second tap.

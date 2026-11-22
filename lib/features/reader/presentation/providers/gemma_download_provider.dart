@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/manga/data/services/model_download_job.dart'
+    show JobWait;
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
@@ -20,11 +22,11 @@ class GemmaNotInstalled extends GemmaDownloadState {
 }
 
 class GemmaDownloading extends GemmaDownloadState {
-  const GemmaDownloading(this.fraction, {this.waitingForWifi = false});
+  const GemmaDownloading(this.fraction, {this.wait = JobWait.none});
   final double fraction;
 
-  /// The Android job waits for Wi-Fi: it may not use mobile data.
-  final bool waitingForWifi;
+  /// What the Android job waits for, while its percentage stands still.
+  final JobWait wait;
 }
 
 class GemmaInstalled extends GemmaDownloadState {
@@ -40,7 +42,7 @@ typedef GemmaModelOps = ({
   Future<bool> Function() installed,
   // Mobile data only when [network] allows it.
   Future<void> Function(
-    void Function(double fraction, bool waitingForWifi) onProgress,
+    void Function(double fraction, JobWait wait) onProgress,
     NetworkConsent network,
   )
   download,
@@ -148,8 +150,7 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
         return;
       }
       await _ops.download(
-        (fraction, waitingForWifi) =>
-            state = GemmaDownloading(fraction, waitingForWifi: waitingForWifi),
+        (fraction, wait) => state = GemmaDownloading(fraction, wait: wait),
         network,
       );
       logUsage('translation.high_quality_downloaded');
