@@ -11,6 +11,42 @@ import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.da
 import 'package:mekuru/features/manga/presentation/widgets/manga_zoom_viewer.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 
+/// A manga page's image decoded [cacheWidth] physical pixels wide, read from
+/// the user's folder (SAF) or from a file.
+ImageProvider mangaPageImage(MokuroBook book, MokuroPage page, int cacheWidth) {
+  final safImagePath = book.safImagePathFor(page);
+  return safImagePath != null
+      ? ResizeImage(
+          AndroidSafImageProvider(
+            treeUri: book.safTreeUri,
+            relativePath: safImagePath,
+          ),
+          width: cacheWidth,
+        )
+      : fileImage(
+          File('${book.imageDirPath}/${page.imageFileName}'),
+          cacheWidth: cacheWidth,
+        );
+}
+
+/// The image [MangaSpreadView] shows [page] of [spread] with when the view is
+/// [viewWidth] wide: a page of a pair fills half of it, a page that stands
+/// alone all of it. The reader's background asks for this same image, so a
+/// page turn decodes each page once.
+ImageProvider spreadPageImage(
+  BuildContext context,
+  MokuroBook book,
+  PageSpread spread,
+  MokuroPage page,
+  double viewWidth,
+) => mangaPageImage(
+  book,
+  page,
+  ((spread.isSinglePage ? viewWidth : viewWidth / 2) *
+          MediaQuery.devicePixelRatioOf(context))
+      .toInt(),
+);
+
 /// Two-page spread view for manga reading.
 ///
 /// Renders pages in pairs using [PageSpread] data from [computeSpreads].
@@ -132,8 +168,16 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
   Widget _buildSpread(BuildContext context, PageSpread spread) {
     if (spread.isSinglePage) {
       // Single page centered — cover or trailing odd page
-      final pageIdx = spread.primaryPageIndex;
-      return Center(child: _buildPageContent(context, pageIdx));
+      return LayoutBuilder(
+        builder: (context, constraints) => Center(
+          child: _buildPageContent(
+            context,
+            spread,
+            spread.primaryPageIndex,
+            constraints.maxWidth,
+          ),
+        ),
+      );
     }
 
     final sharedCropBounds = _resolveSharedCropBounds(spread);
@@ -166,7 +210,9 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
             Expanded(
               child: _buildPageContent(
                 context,
+                spread,
                 spread.leftPageIndex!,
+                constraints.maxWidth,
                 cropBoundsOverride: sharedCropBounds.$1,
                 scaleOverride: sharedScale,
               ),
@@ -174,7 +220,9 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
             Expanded(
               child: _buildPageContent(
                 context,
+                spread,
                 spread.rightPageIndex!,
+                constraints.maxWidth,
                 cropBoundsOverride: sharedCropBounds.$2,
                 scaleOverride: sharedScale,
               ),
@@ -214,10 +262,13 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
   }
 
   /// Renders a single page's image and word overlay, scaled to fit its
-  /// allocation (either full width for solo pages, or half-width in a spread).
+  /// allocation (either full width for solo pages, or half-width in a spread)
+  /// in a view [viewWidth] wide.
   Widget _buildPageContent(
     BuildContext context,
-    int pageIndex, {
+    PageSpread spread,
+    int pageIndex,
+    double viewWidth, {
     Rect? cropBoundsOverride,
     double? scaleOverride,
   }) {
@@ -227,14 +278,19 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     }
 
     final page = pages[pageIndex];
-    final imagePath = '${widget.mokuroBook.imageDirPath}/${page.imageFileName}';
-    final safImageRelPath = widget.mokuroBook.safImagePathFor(page);
     final imgW = page.imgWidth.toDouble();
     final imgH = page.imgHeight.toDouble();
 
     if (imgW == 0 || imgH == 0) {
       return const Center(child: Icon(Icons.broken_image, size: 48));
     }
+    final image = spreadPageImage(
+      context,
+      widget.mokuroBook,
+      spread,
+      page,
+      viewWidth,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -286,9 +342,6 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
           clipTranslateY = 0;
         }
 
-        final decodeCacheWidth =
-            (containerW * MediaQuery.devicePixelRatioOf(context)).toInt();
-
         return Stack(
           clipBehavior: Clip.hardEdge,
           children: [
@@ -309,12 +362,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
                       child: SizedBox(
                         width: imgW * scale,
                         height: imgH * scale,
-                        child: _buildPageImage(
-                          imagePath,
-                          safImageRelPath: safImageRelPath,
-                          fit: BoxFit.fill,
-                          cacheWidth: decodeCacheWidth,
-                        ),
+                        child: _buildPageImage(page, image, BoxFit.fill),
                       ),
                     ),
                   ),
@@ -322,12 +370,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
               )
             else
               Positioned.fill(
-                child: _buildPageImage(
-                  imagePath,
-                  safImageRelPath: safImageRelPath,
-                  fit: BoxFit.contain,
-                  cacheWidth: decodeCacheWidth,
-                ),
+                child: _buildPageImage(page, image, BoxFit.contain),
               ),
 
             // Word overlay (hidden during active OCR)
@@ -358,26 +401,15 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     );
   }
 
-  Widget _buildPageImage(
-    String imagePath, {
-    required String? safImageRelPath,
-    required BoxFit fit,
-    int? cacheWidth,
-  }) {
-    if (widget.mokuroBook.safTreeUri != null && safImageRelPath != null) {
-      return AndroidSafImage(
-        treeUri: widget.mokuroBook.safTreeUri,
-        relativePath: safImageRelPath,
+  Widget _buildPageImage(MokuroPage page, ImageProvider image, BoxFit fit) =>
+      Image(
+        image: image,
         fit: fit,
-        cacheWidth: cacheWidth,
         filterQuality: FilterQuality.medium,
+        // As AndroidSafImage: a page the user's folder does not give shows
+        // nothing.
+        errorBuilder: widget.mokuroBook.safImagePathFor(page) == null
+            ? null
+            : (_, _, _) => const SizedBox.shrink(),
       );
-    }
-
-    return Image(
-      image: fileImage(File(imagePath), cacheWidth: cacheWidth),
-      fit: fit,
-      filterQuality: FilterQuality.medium,
-    );
-  }
 }

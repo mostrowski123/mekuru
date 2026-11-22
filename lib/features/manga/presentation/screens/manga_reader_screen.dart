@@ -4,7 +4,6 @@ import 'package:mekuru/features/manga/presentation/widgets/local_ocr_page_overla
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' show max;
 
 import 'package:flutter/foundation.dart';
@@ -14,7 +13,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/manga/data/services/ocr_page_selection.dart';
-import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -47,7 +45,6 @@ import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart'
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
-import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:mekuru/shared/widgets/reader_seek_bar.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -350,7 +347,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       if (idx < 0 || idx >= mokuroBook.pages.length) continue;
 
       precacheImage(
-        _pageImage(mokuroBook, mokuroBook.pages[idx], cacheWidth),
+        mangaPageImage(mokuroBook, mokuroBook.pages[idx], cacheWidth),
         context,
         onError: (_, _) {}, // missing/unreadable page images fail on display
       );
@@ -363,23 +360,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       (MediaQuery.sizeOf(context).width *
               MediaQuery.devicePixelRatioOf(context))
           .toInt();
-
-  /// A page's image decoded [cacheWidth] wide.
-  ImageProvider _pageImage(MokuroBook book, MokuroPage page, int cacheWidth) {
-    final safImagePath = book.safImagePathFor(page);
-    return safImagePath != null
-        ? ResizeImage(
-            AndroidSafImageProvider(
-              treeUri: book.safTreeUri,
-              relativePath: safImagePath,
-            ),
-            width: cacheWidth,
-          )
-        : fileImage(
-            File('${book.imageDirPath}/${page.imageFileName}'),
-            cacheWidth: cacheWidth,
-          );
-  }
 
   Future<void> _acknowledgeCompletedOcrOverlay() async {
     final prefs = await SharedPreferences.getInstance();
@@ -1322,17 +1302,19 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                       mode: background,
                       pageImage: switch (viewMode) {
                         // The decode the page view already holds.
-                        MangaViewMode.singlePage => _pageImage(
+                        MangaViewMode.singlePage => mangaPageImage(
                           mokuroBook,
                           mokuroBook.pages[_currentPage],
                           _pageCacheWidth,
                         ),
-                        // Spread pages decode at widths only the spread
-                        // view knows, so a small decode of its own.
-                        MangaViewMode.twoPageSpread => _pageImage(
+                        // The decode the spread view already holds: it
+                        // fills the screen's width.
+                        MangaViewMode.twoPageSpread => spreadPageImage(
+                          context,
                           mokuroBook,
+                          spreads[spreadIndexForPage(spreads, _currentPage)],
                           mokuroBook.pages[_currentPage],
-                          32,
+                          MediaQuery.sizeOf(context).width,
                         ),
                         // Pages fill the width: the backdrop never shows.
                         MangaViewMode.scroll => null,
