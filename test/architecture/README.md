@@ -66,6 +66,7 @@ Each rule in `CLAUDE.md`, and what fails when it is broken. "nothing" marks wher
 | iOS never exits by itself; a restore applies through `restartAppInProcess()` | nothing |
 | Boot steps safe to run twice; library writers stop when a restore starts | nothing |
 | No GPL detector code ported to iOS | nothing |
+| ONNX Runtime on iOS: the pinned NuGet package and the vendored wrapper, changed together | partly: CocoaPods refuses a download whose SHA-256 is not the pin in `ios/podspecs/onnxruntime-c.podspec.json`; nothing checks the vendored sources against `ios/Vendor/onnxruntime-objc/README.md` |
 | No `comictextdetector.onnx` download on iOS | `test/features/manga/data/services/manga_ocr_algorithms_test.dart` |
 | `manga_ocr_algorithms.dart` and `OcrAlgorithms.kt` change together | partly: `test/features/manga/data/services/manga_ocr_algorithms_test.dart`, the Kotlin side in `build-pr.yml` only |
 | Manga109-s data stays in the gitignored `example/` | partly: `test/features/manga/data/services/ocr_distribution_test.dart` (plugin assets) |
