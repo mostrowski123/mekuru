@@ -171,13 +171,16 @@ Book recordedBook(Directory dir, {String? direction}) => Book(
   dateAdded: DateTime(2026, 11, 22),
 );
 
-/// Opens [book] with [settings] and lets the page report it shown.
+/// Opens [book] with [settings] in an app with [theme], and lets the page
+/// report it shown unless [loaded] is false.
 Future<ProviderContainer> openRecordedReader(
   WidgetTester tester, {
   required AppDatabase db,
   required Book book,
   required ReaderSettings settings,
   UserFontStore? fonts,
+  ThemeData? theme,
+  bool loaded = true,
 }) async {
   // Left in place: a reader a failed test leaves open still turns the
   // wakelock off when the next test tears it down.
@@ -204,11 +207,13 @@ Future<ProviderContainer> openRecordedReader(
     UncontrolledProviderScope(
       container: container,
       child: buildLocalizedTestApp(
+        theme: theme,
         home: ReaderScreen(book: book, initialCfi: 'epubcfi(/6/4!/4/2/1:0)'),
       ),
     ),
   );
   await pumpUntilViewerBuilt(tester);
+  if (!loaded) return container;
   readerViewer(tester).onLoaded!();
   await tester.pump();
   return container;

@@ -462,6 +462,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     });
 
     final readerTheme = _readerTheme(settings);
+    // A book that did not open is told on the app's own surface: the
+    // page's colours are for the book, the error's words and buttons take
+    // the app's.
+    final background = _failure == null
+        ? readerTheme.backgroundColor
+        : Theme.of(context).scaffoldBackgroundColor;
     // iOS never letterboxes the Dynamic Island / notch, and the reader draws
     // edge to edge, so keep the page itself clear of it. Android is unchanged.
     final viewerInsets = defaultTargetPlatform == TargetPlatform.iOS
@@ -473,14 +479,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       // iPhone Duo's status bar sits beside the control bar, over the page.
       value:
           GlassVerticalBar.maybeOf(context) != null &&
-              readerTheme.backgroundColor.computeLuminance() > 0.5
+              background.computeLuminance() > 0.5
           ? readerSystemBarsOverlayStyle.copyWith(
               statusBarIconBrightness: Brightness.dark,
               statusBarBrightness: Brightness.light,
             )
           : readerSystemBarsOverlayStyle,
       child: Scaffold(
-        backgroundColor: readerTheme.backgroundColor,
+        backgroundColor: background,
         body: _failure != null
             ? _buildErrorState(context, _failure!)
             : ReaderKeyNavigation(
