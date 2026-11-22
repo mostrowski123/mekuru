@@ -879,8 +879,20 @@ function toCfi(cfi) {
   _displayCfi(cfi);
 }
 
-// toCfi, as a promise for the page being on screen.
+// toCfi, as a promise for the page being on screen. A target the book does
+// not have is no jump, and changes nothing: a table-of-contents entry with no
+// link (''), or the seek bar before there are locations (-1).
 function _displayCfi(cfi) {
+  var section = null;
+  try {
+    section = book.spine.get(cfi); // as rendition.display() looks it up
+  } catch (e) {
+    // A CFI that does not parse.
+  }
+  if (rendition && !section) {
+    console.log('[EPUB_BRIDGE] toCfi: no such place in the book');
+    return Promise.resolve();
+  }
   unpinScroll();
   if (!rendition) return Promise.resolve();
   _pendingNavChars = true;

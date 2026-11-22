@@ -8459,9 +8459,6 @@ class rendition_Rendition {
     var displayed = displaying.promise;
     var section;
     var moveTo;
-    this.displaying = displaying;
-    // [MEKURU PATCH] see onResized()
-    this.lastDisplay = { target: target, location: this.location };
 
     // Check if this is a book percentage
     if (this.book.locations.length() && Object(core["isFloat"])(target)) {
@@ -8472,6 +8469,13 @@ class rendition_Rendition {
       displaying.reject(new Error("No Section Found"));
       return displayed;
     }
+    // [MEKURU PATCH] see onResized(). Set once there is a section to show:
+    // a target the book does not have (a table-of-contents entry with no
+    // link, a link to a file not in the spine) never starts, so it is
+    // neither the display in progress nor the last one, and a resize does
+    // not show it again (both were set first, and the page stayed blank).
+    this.displaying = displaying;
+    this.lastDisplay = { target: target, location: this.location };
     this.manager.display(section, target).then(() => {
       displaying.resolve(section);
       this.displaying = undefined;

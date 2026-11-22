@@ -86,9 +86,10 @@ function expectLocation(loc, label) {
   );
 }
 
-// A page of its own with `file` from this folder opened by loadBook(args).
-// Resolves once it has shown a page; p.thrown collects its script errors.
-async function openBook(file, args, [width, height] = [412, 800]) {
+// A page of its own with `file` from this folder opened by loadBook(args),
+// after running `before` there. Resolves once it has shown a page; p.thrown
+// collects its script errors.
+async function openBook(file, args, [width, height] = [412, 800], before = null) {
   const p = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2.625 });
   p.thrown = [];
   p.on('pageerror', (e) => p.thrown.push(e.message));
@@ -101,10 +102,23 @@ async function openBook(file, args, [width, height] = [412, 800]) {
   await p.waitForFunction(`window.__calls.some((c) => c.name === 'readyToLoad')`);
   const bytes = fs.readFileSync(path.join(here, file));
   await p.evaluate(`beginEpubTransfer(${bytes.length}); appendEpubChunk('${bytes.toString('base64')}')`);
+  if (before) await p.evaluate(before);
   await p.evaluate(`loadBook(${args})`);
   await p.waitForFunction(`window.__calls.some((c) => c.name === 'pageChars')`, null, { timeout: 8000 });
   return p;
 }
+
+// Waits on page p until no call has come for 500 ms.
+async function settle(p) {
+  for (let n = -1, m = 0; n !== m; ) {
+    [n, m] = [m, await p.evaluate(() => window.__calls.length)];
+    if (n !== m) await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+}
+
+// The last location page p reported.
+const lastRelocated = (p) =>
+  p.evaluate(() => window.__calls.filter((c) => c.name === 'relocated').at(-1).args[0]);
 
 // Runs `js` (a page turn or a jump) on page p, waits for its pageChars and
 // then for 300 ms without a call, and returns the calls it sent.
@@ -589,6 +603,39 @@ const checks = [
     } finally {
       await p.close();
     }
+  }],
+
+  ['a jump to a place the book does not have leaves the page on screen, also through a re-layout', async () => {
+    // A table-of-contents entry with no link (its href is ''), the seek bar
+    // before epub.js has locations (cfiFromPercentage() answers -1), and a
+    // link to a file that is not in the spine, which epub.js displays itself
+    // (Rendition.handleLinks()). epub.js took such a target for the display
+    // in progress, so the next re-layout showed it again: a blank page.
+    const pages = `"", "rtl", "paginated", false, "18", "#000000", null, 28, 28, false, "book", 1, null`;
+    const blank = [];
+    for (const jump of ['toCfi("")', 'toProgress(0.5)', 'rendition.display("nowhere.xhtml")']) {
+      // Locations never come, as on a book's first open before they are made.
+      const p = await openBook('book.epub', pages, undefined, 'book.locations.generate = () => new Promise(() => {})');
+      try {
+        await turned(p, 'next()');
+        const place = await p.evaluate(() => rendition.location.start.cfi);
+        await p.evaluate(`void ${jump}`);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        await p.evaluate('setFontSize("24")');
+        await settle(p);
+        const shown = await p.evaluate((asked) => {
+          const views = rendition.manager.views.all().filter((v) => v.contents).length;
+          const start = views && rendition.currentLocation().start;
+          const end = views && rendition.currentLocation().end;
+          const cfi = new ePub.CFI();
+          return { views, holds: !!(start && end && cfi.compare(start.cfi, asked) <= 0 && cfi.compare(asked, end.cfi) <= 0) };
+        }, place);
+        if (!shown.views || !shown.holds) blank.push(`${jump} (${JSON.stringify(shown)})`);
+      } finally {
+        await p.close();
+      }
+    }
+    expect(blank.length === 0, `a re-layout did not show the reader's page after ${blank.join(', ')}`);
   }],
 
   ['every handler the page calls is registered in Dart', async () => {
