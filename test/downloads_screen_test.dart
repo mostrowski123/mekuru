@@ -9,9 +9,12 @@ import 'package:mekuru/core/platform/device_memory.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
+import 'package:mekuru/features/settings/data/services/jpdb_freq_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
@@ -217,6 +220,112 @@ void main() {
       expect(started, ['jpdb']);
     });
   }
+
+  testWidgets('in Japanese, word frequency switched off in the dictionary '
+      'list says so on its row and the starter pack, and how to switch it '
+      'on', (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    DictionaryMeta meta(int id, String name, {required bool on}) =>
+        DictionaryMeta(
+          id: id,
+          name: name,
+          isEnabled: on,
+          dateImported: DateTime(2026, 11, 22),
+          sortOrder: id,
+          isHidden: false,
+        );
+    final started = <String>[];
+    final container = ProviderContainer(
+      overrides: fakeDownloadNotifierOverrides(
+        started,
+        installed: [
+          meta(1, 'Jitendex.org [2026-10-03]', on: true),
+          meta(2, JpdbFreqDownloadService.dictionaryName, on: false),
+        ],
+        fixed: (dictionary) => dictionary == FixedDictionary.jpdb
+            ? FakeFixedDictionaryNotifier(
+                dictionary,
+                (_) => started.add('jpdb'),
+                initial: const FixedDictionaryState(isImported: true),
+              )
+            : null,
+      ),
+    );
+    addTearDown(container.dispose);
+    await pumpInJapanese(tester, container);
+    await tester.pump();
+    Finder inCard(Finder finder) =>
+        find.descendant(of: find.byType(StarterPackCard), matching: finder);
+    Finder inRow(Finder finder) => find.descendant(
+      of: find.ancestor(
+        of: find.byIcon(Icons.bar_chart_outlined),
+        matching: find.byType(ListTile),
+      ),
+      matching: finder,
+    );
+
+    // Was: "downloaded" and a tick, with nothing to say why results aren't
+    // ranked.
+    expect(inRow(find.text(ja.downloadsWordFrequencyDownloaded)), findsNothing);
+    expect(
+      inRow(find.text(ja.downloadsWordFrequencySwitchedOff)),
+      findsOneWidget,
+    );
+    expect(
+      inCard(find.text(ja.downloadsWordFrequencySwitchedOff)),
+      findsOneWidget,
+    );
+    // Only Jitendex is ticked.
+    expect(inCard(find.byIcon(Icons.check_circle)), findsOneWidget);
+    // Installed: nothing to download, so nothing is offered or started.
+    expect(inRow(find.text(ja.commonDownload)), findsNothing);
+    expect(started, isEmpty);
+
+    await tester.tap(inCard(find.text(ja.commonManageDictionaries)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(DictionaryManagerScreen), findsOneWidget);
+  });
+
+  testWidgets('word frequency switched on reads as downloaded, with no '
+      'switch-on hint', (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    final container = ProviderContainer(
+      overrides: fakeDownloadNotifierOverrides(
+        [],
+        installed: [
+          DictionaryMeta(
+            id: 2,
+            name: JpdbFreqDownloadService.dictionaryName,
+            isEnabled: true,
+            dateImported: DateTime(2026, 11, 22),
+            sortOrder: 2,
+            isHidden: false,
+          ),
+        ],
+        fixed: (dictionary) => dictionary == FixedDictionary.jpdb
+            ? FakeFixedDictionaryNotifier(
+                dictionary,
+                (_) {},
+                initial: const FixedDictionaryState(isImported: true),
+              )
+            : null,
+      ),
+    );
+    addTearDown(container.dispose);
+    await pumpInJapanese(tester, container);
+    await tester.pump();
+
+    expect(find.text(ja.downloadsWordFrequencyDownloaded), findsOneWidget);
+    expect(find.text(ja.downloadsWordFrequencySwitchedOff), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(StarterPackCard),
+        matching: find.text(ja.commonManageDictionaries),
+      ),
+      findsNothing,
+    );
+  });
 
   testWidgets('off Wi-Fi, the KANJIDIC, stroke order, word frequency and '
       'enhanced furigana downloads ask before using mobile data', (

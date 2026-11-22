@@ -1,3 +1,4 @@
+import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart'
@@ -32,6 +33,11 @@ class JpdbFreqDownloadService {
     final meta = await repository.getDictionaryByName(dictionaryName);
     return meta != null;
   }
+
+  /// Whether [dictionaries] (the dictionary list) hold it switched off, so
+  /// it ranks nothing although it is installed.
+  static bool isSwitchedOffIn(Iterable<DictionaryMeta> dictionaries) =>
+      dictionaries.any((d) => d.name == dictionaryName && !d.isEnabled);
 
   /// Download the JPDB frequency dictionary and import it into the database,
   /// switched on and listed with the other dictionaries. It has no entries

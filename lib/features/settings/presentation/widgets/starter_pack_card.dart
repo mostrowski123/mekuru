@@ -8,7 +8,9 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
+import 'package:mekuru/features/settings/data/services/jpdb_freq_download_service.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -26,7 +28,9 @@ final _jpdb = fixedDictionaryProvider(FixedDictionary.jpdb);
 
 /// The installed dictionaries that stand for the starter pack's: Jitendex,
 /// and JMdict English, which the pack installed before it offered Jitendex.
-({bool jitendex, bool jmdict}) _starterDictionaries(
+/// [jpdbOff]: word frequency is installed but switched off, so downloading
+/// can't help and the card says where to switch it on.
+({bool jitendex, bool jmdict, bool jpdbOff}) _starterDictionaries(
   Iterable<DictionaryMeta> installed,
 ) => (
   jitendex: CatalogDictionary.jitendex.isInstalledIn(installed),
@@ -34,6 +38,7 @@ final _jpdb = fixedDictionaryProvider(FixedDictionary.jpdb);
     YomitanDictType.jmdictEnglish,
     installed,
   ),
+  jpdbOff: JpdbFreqDownloadService.isSwitchedOffIn(installed),
 );
 
 /// Starts whichever recommended dictionaries (Jitendex, JPDB word
@@ -109,6 +114,12 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
     );
   }
 
+  void _openDictionaryManager() {
+    Navigator.of(context).push(
+      namedRoute('dictionary_manager', (_) => const DictionaryManagerScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -171,8 +182,17 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
           const SizedBox(height: 8),
           _StatusRow(
             label: l10n.downloadsStarterPackWordFrequency,
-            isReady: jpdb.isImported,
+            isReady: jpdb.isImported && !installed.jpdbOff,
           ),
+          if (installed.jpdbOff) ...[
+            const SizedBox(height: 4),
+            Text(
+              l10n.downloadsWordFrequencySwitchedOff,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
           if (widget.showProgress && inFlight.isNotEmpty) ...[
             const SizedBox(height: 12),
             LinearProgressIndicator(
@@ -227,6 +247,14 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
                     _openDictionary();
                   },
                   child: Text(l10n.commonOpenDictionary),
+                ),
+              if (installed.jpdbOff)
+                OutlinedButton(
+                  onPressed: () {
+                    AppHaptics.light();
+                    _openDictionaryManager();
+                  },
+                  child: Text(l10n.commonManageDictionaries),
                 ),
             ],
           ),

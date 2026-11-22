@@ -10,11 +10,14 @@ import 'package:mekuru/features/reader/presentation/providers/gemma_download_pro
 import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
+import 'package:mekuru/features/settings/data/services/jpdb_freq_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
@@ -567,7 +570,18 @@ class _JpdbFreqTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final subtitle = state.isImported
+    // Installed but switched off in the dictionary list: it ranks nothing,
+    // and a tap goes where it is switched on.
+    final off =
+        state.isImported &&
+        ref.watch(
+          dictionariesProvider.select(
+            (d) => JpdbFreqDownloadService.isSwitchedOffIn(d.value ?? []),
+          ),
+        );
+    final subtitle = off
+        ? l10n.downloadsWordFrequencySwitchedOff
+        : state.isImported
         ? l10n.downloadsWordFrequencyDownloaded
         : l10n.downloadsWordFrequencyDescription;
 
@@ -576,6 +590,14 @@ class _JpdbFreqTile extends ConsumerWidget {
       title: Text(l10n.downloadsStarterPackWordFrequency),
       subtitle: Text(subtitle),
       trailing: _buildTrailing(context, ref),
+      onTap: off
+          ? () => Navigator.of(context).push(
+              namedRoute(
+                'dictionary_manager',
+                (_) => const DictionaryManagerScreen(),
+              ),
+            )
+          : null,
     );
   }
 
