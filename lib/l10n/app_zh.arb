@@ -1219,10 +1219,6 @@
   "@settingsCustomOcrServerTitle": {
     "description": "Title for the custom OCR server setting and dialog."
   },
-  "settingsCustomOcrServerUnavailableSubtitle": "OCR 服务暂时不可用。",
-  "@settingsCustomOcrServerUnavailableSubtitle": {
-    "description": "Subtitle shown when OCR services are unavailable."
-  },
   "settingsCustomOcrServerNotConfigured": "未配置。请添加您的服务器 URL 和共享密钥。",
   "@settingsCustomOcrServerNotConfigured": {
     "description": "Subtitle shown when a custom OCR server has not been configured."
@@ -1412,10 +1408,6 @@
   "@backupScopeNoteRestore": {
     "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
-  "backupSectionAutoBackup": "自动阅读数据备份",
-  "@backupSectionAutoBackup": {
-    "description": "Section header for auto-backup settings."
-  },
   "backupAutoBackupIntervalTitle": "自动备份间隔",
   "@backupAutoBackupIntervalTitle": {
     "description": "Title for the auto-backup interval setting."
@@ -1432,10 +1424,6 @@
   "@backupIntervalWeekly": {
     "description": "Label for weekly auto-backups."
   },
-  "backupSectionRestore": "恢复阅读数据",
-  "@backupSectionRestore": {
-    "description": "Section header for restore actions."
-  },
   "backupImportFileTitle": "导入阅读数据（.mekuru）",
   "@backupImportFileTitle": {
     "description": "Title for the import-backup action."
@@ -1451,15 +1439,6 @@
   "backupNoBackupsYet": "暂无阅读数据备份",
   "@backupNoBackupsYet": {
     "description": "Message shown when there are no backups."
-  },
-  "backupErrorLoadingHistory": "加载备份时出错：{details}",
-  "@backupErrorLoadingHistory": {
-    "description": "Message shown when backup history fails to load.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
   },
   "backupCreatedSuccess": "阅读数据备份已创建",
   "@backupCreatedSuccess": {
@@ -1482,36 +1461,9 @@
   "@backupExportedSuccess": {
     "description": "Snackbar shown after exporting a backup."
   },
-  "backupExportFailed": "导出失败：{details}",
-  "@backupExportFailed": {
-    "description": "Snackbar shown when exporting a backup fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "backupInvalidFile": "请选择一个 .mekuru 阅读数据备份文件。",
   "@backupInvalidFile": {
     "description": "Snackbar shown when the selected restore file has the wrong extension."
-  },
-  "backupCouldNotOpenFile": "无法打开文件：{details}",
-  "@backupCouldNotOpenFile": {
-    "description": "Snackbar shown when the backup file picker fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "backupRestoreFailed": "恢复失败：{details}",
-  "@backupRestoreFailed": {
-    "description": "Snackbar shown when restoring a backup fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
   },
   "backupBooksUpdatedFromBackup": "{count, plural, one {{count} 本书已通过备份更新} other {{count} 本书已通过备份更新}}",
   "@backupBooksUpdatedFromBackup": {
@@ -1519,15 +1471,6 @@
     "placeholders": {
       "count": {
         "type": "int"
-      }
-    }
-  },
-  "backupApplyBookDataFailed": "应用书籍数据失败：{details}",
-  "@backupApplyBookDataFailed": {
-    "description": "Snackbar shown when applying restored book data fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
       }
     }
   },
@@ -1652,24 +1595,6 @@
   "@readerDismiss": {
     "description": "Barrier label for dismissing reader overlays."
   },
-  "readerFailedToLoadContent": "无法加载 EPUB 内容。\n{details}",
-  "@readerFailedToLoadContent": {
-    "description": "Reader error shown when the EPUB viewer reports a content-loading failure.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "readerFailedToLoad": "无法加载 EPUB 文件。\n{details}",
-  "@readerFailedToLoad": {
-    "description": "Reader error shown when the EPUB file fails to load.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "readerLoadTimeout": "阅读器加载时间过长。点击重试。",
   "@readerLoadTimeout": {
     "description": "Shown when the reader's load watchdog trips before the EPUB finishes opening."
@@ -1713,10 +1638,6 @@
   "readerHighlightsTooltip": "高亮",
   "@readerHighlightsTooltip": {
     "description": "Tooltip for opening the highlights sheet."
-  },
-  "readerUnknownError": "未知阅读器错误。",
-  "@readerUnknownError": {
-    "description": "Fallback error shown in the reader when no specific error is available."
   },
   "readerQuickSettings": "快速设置",
   "@readerQuickSettings": {
@@ -1880,15 +1801,6 @@
   "@commonTitleLabel": {
     "description": "Generic title field label."
   },
-  "libraryCouldNotReadFolder": "无法读取文件夹：\n{details}",
-  "@libraryCouldNotReadFolder": {
-    "description": "Snackbar shown when the selected manga folder cannot be read.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "libraryBookmarksTitle": "书签",
   "@libraryBookmarksTitle": {
     "description": "Title for the book bookmarks action in library options."
@@ -1952,15 +1864,6 @@
     "description": "Confirmation body for deleting a book from the library.",
     "placeholders": {
       "title": {
-        "type": "String"
-      }
-    }
-  },
-  "libraryChangeCoverFailed": "更换封面失败：{details}",
-  "@libraryChangeCoverFailed": {
-    "description": "Snackbar shown when changing the cover image fails.",
-    "placeholders": {
-      "details": {
         "type": "String"
       }
     }
@@ -2335,92 +2238,9 @@
       }
     }
   },
-  "ocrNoPagesCacheFound": "未找到本书的页面缓存",
-  "@ocrNoPagesCacheFound": {
-    "description": "Snackbar shown when OCR cannot start because the pages cache is missing."
-  },
-  "ocrAlreadyCompleteResetHint": "OCR 已完成。使用“移除 OCR”可重置。",
-  "@ocrAlreadyCompleteResetHint": {
-    "description": "Snackbar shown when OCR is already complete for a manga book."
-  },
-  "ocrMangaImageDirectoryNotFound": "未找到漫画图片目录",
-  "@ocrMangaImageDirectoryNotFound": {
-    "description": "Snackbar shown when the manga image directory is missing."
-  },
-  "ocrBuildWordOverlaysTitle": "生成单词覆盖层",
-  "@ocrBuildWordOverlaysTitle": {
-    "description": "Dialog title for rebuilding word overlays from existing OCR."
-  },
-  "ocrBuildWordOverlaysBody": "OCR 文本已存在。这会重新生成单词点击目标，使查词覆盖层正确显示。",
-  "@ocrBuildWordOverlaysBody": {
-    "description": "Dialog body for rebuilding word overlays from existing OCR."
-  },
   "ocrRunActionTitle": "运行 OCR",
   "@ocrRunActionTitle": {
     "description": "Action title for starting OCR."
-  },
-  "ocrProcessPagesBody": "将处理 {count} 页。OCR 会在后台运行，即使关闭应用也会继续。",
-  "@ocrProcessPagesBody": {
-    "description": "Dialog body shown before OCR begins processing pages.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "ocrProcessAction": "处理",
-  "@ocrProcessAction": {
-    "description": "Button label for processing existing OCR into word overlays."
-  },
-  "ocrStartAction": "开始",
-  "@ocrStartAction": {
-    "description": "Button label for starting OCR."
-  },
-  "ocrPrepareFailed": "无法准备 OCR：{details}",
-  "@ocrPrepareFailed": {
-    "description": "Snackbar shown when OCR setup fails before processing starts.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "ocrStartFailed": "启动 OCR 失败：{details}",
-  "@ocrStartFailed": {
-    "description": "Snackbar shown when OCR background work fails to start.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "ocrWordOverlayStartedBackground": "词语遮罩处理已在后台开始",
-  "@ocrWordOverlayStartedBackground": {
-    "description": "Snackbar shown when rebuilding word overlays starts in the background."
-  },
-  "ocrStartedBackground": "OCR 已在后台启动",
-  "@ocrStartedBackground": {
-    "description": "Snackbar shown when OCR starts in the background."
-  },
-  "ocrCancelActionTitle": "暂停 OCR",
-  "@ocrCancelActionTitle": {
-    "description": "Action title for cancelling OCR."
-  },
-  "ocrCancelSavedProgress": "OCR 已暂停。进度已保存。",
-  "@ocrCancelSavedProgress": {
-    "description": "Snackbar shown when OCR is cancelled and progress is preserved."
-  },
-  "ocrReplaceActionTitle": "替换 OCR",
-  "@ocrReplaceActionTitle": {
-    "description": "Action title for replacing imported OCR with custom OCR."
-  },
-  "ocrReplaceMokuroBody": "这将覆盖从 Mokuro/HTML 文件导入的 OCR 数据，并使用您的自定义服务器对所有页面重新执行 OCR。\n\n之后您可以使用“删除 OCR”来恢复原始 OCR。",
-  "@ocrReplaceMokuroBody": {
-    "description": "Confirmation dialog body for replacing Mokuro OCR with custom OCR."
-  },
-  "ocrReplaceStartedBackground": "OCR 替换已在后台开始",
-  "@ocrReplaceStartedBackground": {
-    "description": "Snackbar shown when replacing OCR starts in the background."
   },
   "ocrRemoveActionTitle": "删除 OCR",
   "@ocrRemoveActionTitle": {
@@ -2437,27 +2257,6 @@
   "ocrRemovedFromBook": "已从本书删除 OCR",
   "@ocrRemovedFromBook": {
     "description": "Snackbar shown after OCR has been removed from a book."
-  },
-  "ocrRemoveFailed": "移除 OCR 失败：{details}",
-  "@ocrRemoveFailed": {
-    "description": "Snackbar shown when removing OCR fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "ocrUnlockProSubtitle": "解锁 Pro 以使用自定义 OCR 服务器",
-  "@ocrUnlockProSubtitle": {
-    "description": "Subtitle shown when OCR requires a Pro unlock."
-  },
-  "ocrStopAndSaveProgressSubtitle": "暂停处理并保存进度",
-  "@ocrStopAndSaveProgressSubtitle": {
-    "description": "Subtitle shown for the OCR cancel action."
-  },
-  "ocrReplaceMokuroSubtitle": "用自定义 OCR 服务器替换 Mokuro 的 OCR",
-  "@ocrReplaceMokuroSubtitle": {
-    "description": "Subtitle shown when replacing OCR imported from Mokuro."
   },
   "ocrRestoreOriginalMokuroBody": "要删除当前 OCR，并恢复从 Mokuro/HTML 文件导入的原始 OCR 吗？",
   "@ocrRestoreOriginalMokuroBody": {
@@ -2478,26 +2277,6 @@
   "ocrOriginalMokuroRestored": "已恢复原始 Mokuro/HTML OCR",
   "@ocrOriginalMokuroRestored": {
     "description": "Snackbar shown after the original Mokuro or HTML OCR has been restored."
-  },
-  "ocrBuildWordTargetsSubtitle": "根据已保存的 OCR 构建词语点击区域",
-  "@ocrBuildWordTargetsSubtitle": {
-    "description": "Subtitle shown when only word overlay generation is needed."
-  },
-  "ocrResumeSubtitle": "继续 OCR（已完成 {completed}/{total}）",
-  "@ocrResumeSubtitle": {
-    "description": "Subtitle shown when OCR can resume partially completed work.",
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "ocrRecognizeAllPagesSubtitle": "识别所有页面中的文本",
-  "@ocrRecognizeAllPagesSubtitle": {
-    "description": "Subtitle shown when OCR will run on all pages."
   },
   "readerEditNoteTitle": "编辑笔记",
   "@readerEditNoteTitle": {
@@ -2916,9 +2695,7 @@
   "localOcrDownloadSize": "已下载 {done} / {total}",
   "localOcrDownloadRequired": "请在“设置 → 下载”中下载 OCR 模型，然后回到这里开始。",
   "localOcrModelReady": "模型已安装 · 可离线使用",
-  "localOcrModelMissing": "需要额外下载",
   "localOcrModelVerifying": "正在验证模型文件…",
-  "localOcrModelDownloading": "正在下载模型…",
   "localOcrUnsupported": "设备端 OCR 需要受支持的 64 位 ARM Android 设备。远程 OCR 仍然可用。",
   "localOcrPause": "暂停",
   "localOcrResume": "继续",
@@ -2939,7 +2716,6 @@
   "localOcrOutcomeCounts": "{succeeded} 页已保存 · {skipped} 页已跳过 · {failed} 页失败",
   "localOcrRetryFailed": "重试失败的页面",
   "localOcrDismiss": "关闭",
-  "localOcrError": "OCR 无法继续：{details}",
   "localOcrInterrupted": "扫描已中断。点击“继续”可从已保存的进度接着进行。",
   "localOcrLowMemory": "设备内存不足，已暂停。请关闭其他应用后再继续。",
   "localOcrTooHot": "设备温度过高，已暂停。请等待设备冷却后再继续。",
@@ -2958,7 +2734,6 @@
   "localOcrLicenseOpen": "查看许可证和源代码声明",
   "localOcrPageErrors": "页面错误",
   "localOcrPageError": "第 {page} 页：{details}",
-  "localOcrNotificationsOff": "关闭通知后 OCR 仍可继续。可在漫画的识别面板中暂停或取消。",
   "localOcrModelCorrupt": "模型文件未通过验证。请移除并重新下载 OCR 模型。",
   "localOcrMobileDownloadTitle": "使用移动数据下载？",
   "mobileDataVpnTitle": "通过 VPN 下载？",
@@ -3178,7 +2953,6 @@
   "ocrErrorConnectFailed": "无法连接 OCR 服务器。请检查服务器 URL，并确认服务器正在运行。",
   "ocrErrorTimedOut": "OCR 服务器没有响应（已超时）。",
   "ocrErrorHostNotFound": "找不到 OCR 服务器的地址。请检查服务器 URL。",
-  "ocrErrorNetwork": "网络错误：{details}",
   "ocrErrorStatus": "OCR 服务器返回错误 {status}：{details}",
   "ocrErrorMalformedResponse": "OCR 服务器返回了 Mekuru 无法读取的响应。请确认服务器 URL 指向兼容的 OCR 服务器。",
   "ocrErrorServerUrlInvalid": "OCR 服务器 URL 无效。请使用以 http:// 或 https:// 开头的完整 URL。",
@@ -3194,9 +2968,7 @@
   "localOcrDownloadNetwork": "下载无法连接。请检查网络连接后重试。",
   "localOcrDownloadDamaged": "下载的文件已损坏。请重新下载。",
   "localOcrModelInstallFailed": "无法安装下载的模型。请重试。",
-  "proErrorLoadBilling": "无法连接 {store}：{details}",
   "proErrorLoadAccess": "无法检查你的 Pro 权限：{details}",
-  "proErrorLoadPrice": "无法从 {store} 加载价格：{details}",
   "proErrorOffline": "没有网络连接。请检查网络连接后重试。",
   "proErrorSignInRequired": "使用 OCR 付费功能前，请先使用 Google 登录。",
   "proErrorAppCheck": "Mekuru 无法向服务器完成验证。请等待几分钟后重试。",
@@ -3288,7 +3060,6 @@
   "backupApplyNotFinished": "无法从备份更新书籍。请重试。",
   "backupFullNotStarted": "无法开始完整备份。请重试。",
   "backupFullRestoreNotStarted": "无法开始完整恢复。请重试。",
-  "proErrorCheckAccess": "无法检查你的 Pro 权限。请稍后再试。",
   "dictionaryManagerPendingBackupFailed": "无法应用备份设置。请重试。",
   "libraryFavoriteChangeFailed": "无法更改星标。请重试。",
   "libraryRenameBookFailed": "无法重命名图书。请重试。",

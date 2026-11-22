@@ -1149,10 +1149,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsCustomOcrServerTitle => 'Server OCR Kustom';
 
   @override
-  String get settingsCustomOcrServerUnavailableSubtitle =>
-      'Layanan OCR sedang tidak tersedia sementara.';
-
-  @override
   String get settingsCustomOcrServerNotConfigured =>
       'Belum dikonfigurasi. Tambahkan URL server dan shared key milik Anda sendiri.';
 
@@ -1313,9 +1309,6 @@ class AppLocalizationsId extends AppLocalizations {
       'Setelah mengimpor data bacaan, impor ulang konten EPUB atau manga yang sama dan riwayatnya akan kembali. Riwayat waktu baca hanya dipulihkan jika perangkat ini belum memilikinya; statistik kosakata digabungkan dengan yang sudah ada. Pengaturan kamus yang cocok dapat diterapkan nanti dari Pengelola Kamus.';
 
   @override
-  String get backupSectionAutoBackup => 'Cadangan data bacaan otomatis';
-
-  @override
   String get backupAutoBackupIntervalTitle => 'Interval cadangan otomatis';
 
   @override
@@ -1326,9 +1319,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupIntervalWeekly => 'Mingguan';
-
-  @override
-  String get backupSectionRestore => 'Pulihkan data bacaan';
 
   @override
   String get backupImportFileTitle => 'Impor data bacaan (.mekuru)';
@@ -1342,11 +1332,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupNoBackupsYet => 'Belum ada cadangan data bacaan';
-
-  @override
-  String backupErrorLoadingHistory({required String details}) {
-    return 'Galat memuat cadangan: $details';
-  }
 
   @override
   String get backupCreatedSuccess => 'Cadangan data bacaan dibuat';
@@ -1364,23 +1349,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupExportedSuccess => 'Cadangan data bacaan diekspor';
 
   @override
-  String backupExportFailed({required String details}) {
-    return 'Ekspor gagal: $details';
-  }
-
-  @override
   String get backupInvalidFile =>
       'Silakan pilih file cadangan data bacaan .mekuru.';
-
-  @override
-  String backupCouldNotOpenFile({required String details}) {
-    return 'Tidak dapat membuka file: $details';
-  }
-
-  @override
-  String backupRestoreFailed({required String details}) {
-    return 'Pemulihan gagal: $details';
-  }
 
   @override
   String backupBooksUpdatedFromBackup({required int count}) {
@@ -1391,11 +1361,6 @@ class AppLocalizationsId extends AppLocalizations {
       one: '$count buku diperbarui dari cadangan',
     );
     return '$_temp0';
-  }
-
-  @override
-  String backupApplyBookDataFailed({required String details}) {
-    return 'Gagal menerapkan data buku: $details';
   }
 
   @override
@@ -1519,16 +1484,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerDismiss => 'Tutup';
 
   @override
-  String readerFailedToLoadContent({required String details}) {
-    return 'Gagal memuat konten EPUB.\n$details';
-  }
-
-  @override
-  String readerFailedToLoad({required String details}) {
-    return 'Gagal memuat EPUB.\n$details';
-  }
-
-  @override
   String get readerLoadTimeout =>
       'Pembaca terlalu lama memuat. Ketuk coba lagi untuk mengulang.';
 
@@ -1572,9 +1527,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get readerHighlightsTooltip => 'Sorotan';
-
-  @override
-  String get readerUnknownError => 'Kesalahan pembaca tidak diketahui.';
 
   @override
   String get readerQuickSettings => 'Pengaturan Cepat';
@@ -1712,11 +1664,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonTitleLabel => 'Judul';
-
-  @override
-  String libraryCouldNotReadFolder({required String details}) {
-    return 'Tidak dapat membaca folder:\n$details';
-  }
 
   @override
   String get libraryBookmarksTitle => 'Penanda Halaman';
@@ -1874,11 +1821,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String libraryDeleteBookBody({required String title}) {
     return 'Hapus \"$title\" dari perpustakaan Anda?';
-  }
-
-  @override
-  String libraryChangeCoverFailed({required String details}) {
-    return 'Gagal mengubah sampul: $details';
   }
 
   @override
@@ -2211,71 +2153,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get ocrNoPagesCacheFound =>
-      'Cache halaman tidak ditemukan untuk buku ini';
-
-  @override
-  String get ocrAlreadyCompleteResetHint =>
-      'OCR sudah selesai. Gunakan \"Hapus OCR\" untuk mereset.';
-
-  @override
-  String get ocrMangaImageDirectoryNotFound =>
-      'Direktori gambar manga tidak ditemukan';
-
-  @override
-  String get ocrBuildWordOverlaysTitle => 'Bangun Overlay Kata';
-
-  @override
-  String get ocrBuildWordOverlaysBody =>
-      'Teks OCR sudah ada. Ini akan membangun ulang target ketukan kata agar overlay pencarian tampil dengan benar.';
-
-  @override
   String get ocrRunActionTitle => 'Jalankan OCR';
-
-  @override
-  String ocrProcessPagesBody({required int count}) {
-    return 'Ini akan memproses $count halaman. OCR akan berjalan di latar belakang dan tetap berjalan meskipun Anda menutup aplikasi.';
-  }
-
-  @override
-  String get ocrProcessAction => 'Proses';
-
-  @override
-  String get ocrStartAction => 'Mulai';
-
-  @override
-  String ocrPrepareFailed({required String details}) {
-    return 'Tidak dapat menyiapkan OCR: $details';
-  }
-
-  @override
-  String ocrStartFailed({required String details}) {
-    return 'Gagal memulai OCR: $details';
-  }
-
-  @override
-  String get ocrWordOverlayStartedBackground =>
-      'Proses overlay kata dimulai di latar belakang';
-
-  @override
-  String get ocrStartedBackground => 'OCR dimulai di latar belakang';
-
-  @override
-  String get ocrCancelActionTitle => 'Jeda OCR';
-
-  @override
-  String get ocrCancelSavedProgress => 'OCR dijeda. Progres disimpan.';
-
-  @override
-  String get ocrReplaceActionTitle => 'Ganti OCR';
-
-  @override
-  String get ocrReplaceMokuroBody =>
-      'Ini akan menimpa data OCR yang diimpor dari file Mokuro/HTML dan menjalankan ulang OCR pada SEMUA halaman menggunakan server kustom Anda.\n\nNanti Anda dapat menggunakan Hapus OCR untuk memulihkan OCR asli.';
-
-  @override
-  String get ocrReplaceStartedBackground =>
-      'Penggantian OCR dimulai di latar belakang';
 
   @override
   String get ocrRemoveActionTitle => 'Hapus OCR';
@@ -2289,22 +2167,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get ocrRemovedFromBook => 'OCR dihapus dari buku ini';
-
-  @override
-  String ocrRemoveFailed({required String details}) {
-    return 'Gagal menghapus OCR: $details';
-  }
-
-  @override
-  String get ocrUnlockProSubtitle =>
-      'Buka Pro untuk menggunakan server OCR kustom Anda';
-
-  @override
-  String get ocrStopAndSaveProgressSubtitle => 'Jeda proses dan simpan progres';
-
-  @override
-  String get ocrReplaceMokuroSubtitle =>
-      'Ganti OCR Mokuro dengan server OCR kustom Anda';
 
   @override
   String get ocrRestoreOriginalMokuroBody =>
@@ -2324,18 +2186,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get ocrOriginalMokuroRestored => 'OCR asli Mokuro/HTML dipulihkan';
-
-  @override
-  String get ocrBuildWordTargetsSubtitle =>
-      'Buat target ketukan kata dari OCR yang disimpan';
-
-  @override
-  String ocrResumeSubtitle({required int completed, required int total}) {
-    return 'Lanjutkan OCR ($completed/$total selesai)';
-  }
-
-  @override
-  String get ocrRecognizeAllPagesSubtitle => 'Kenali teks pada semua halaman';
 
   @override
   String get readerEditNoteTitle => 'Edit Catatan';
@@ -3418,13 +3268,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get localOcrModelReady => 'Model terpasang · berfungsi offline';
 
   @override
-  String get localOcrModelMissing => 'Perlu unduhan tambahan';
-
-  @override
   String get localOcrModelVerifying => 'Memverifikasi berkas model…';
-
-  @override
-  String get localOcrModelDownloading => 'Mengunduh model…';
 
   @override
   String get localOcrUnsupported =>
@@ -3499,11 +3343,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get localOcrDismiss => 'Tutup';
 
   @override
-  String localOcrError({required String details}) {
-    return 'OCR tidak dapat dilanjutkan: $details';
-  }
-
-  @override
   String get localOcrInterrupted =>
       'Pemindaian terganggu. Lanjutkan untuk meneruskan dari progres yang tersimpan.';
 
@@ -3573,10 +3412,6 @@ class AppLocalizationsId extends AppLocalizations {
   String localOcrPageError({required int page, required String details}) {
     return 'Halaman $page: $details';
   }
-
-  @override
-  String get localOcrNotificationsOff =>
-      'OCR dapat berjalan meski notifikasi dimatikan. Gunakan lembar pengenalan manga untuk menjeda atau membatalkan.';
 
   @override
   String get localOcrModelCorrupt =>
@@ -4412,11 +4247,6 @@ class AppLocalizationsId extends AppLocalizations {
       'Alamat server OCR tidak ditemukan. Periksa URL server.';
 
   @override
-  String ocrErrorNetwork({required String details}) {
-    return 'Kesalahan jaringan: $details';
-  }
-
-  @override
   String ocrErrorStatus({required int status, required String details}) {
     return 'Server OCR mengembalikan kesalahan $status: $details';
   }
@@ -4477,18 +4307,8 @@ class AppLocalizationsId extends AppLocalizations {
       'Model yang diunduh tidak dapat dipasang. Coba lagi.';
 
   @override
-  String proErrorLoadBilling({required String store, required String details}) {
-    return 'Tidak dapat terhubung ke $store: $details';
-  }
-
-  @override
   String proErrorLoadAccess({required String details}) {
     return 'Tidak dapat memeriksa akses Pro Anda: $details';
-  }
-
-  @override
-  String proErrorLoadPrice({required String store, required String details}) {
-    return 'Tidak dapat memuat harga dari $store: $details';
   }
 
   @override
@@ -4798,10 +4618,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get backupFullRestoreNotStarted =>
       'Tidak dapat memulai pemulihan lengkap. Coba lagi.';
-
-  @override
-  String get proErrorCheckAccess =>
-      'Tidak dapat memeriksa akses Pro Anda. Coba lagi nanti.';
 
   @override
   String get dictionaryManagerPendingBackupFailed =>

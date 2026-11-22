@@ -1094,9 +1094,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsCustomOcrServerTitle => '自定义 OCR 服务器';
 
   @override
-  String get settingsCustomOcrServerUnavailableSubtitle => 'OCR 服务暂时不可用。';
-
-  @override
   String get settingsCustomOcrServerNotConfigured => '未配置。请添加您的服务器 URL 和共享密钥。';
 
   @override
@@ -1249,9 +1246,6 @@ class AppLocalizationsZh extends AppLocalizations {
       '导入阅读数据后，重新导入相同的 EPUB 或漫画内容，其记录就会恢复。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。匹配的词典设置可稍后在“词典管理”中应用。';
 
   @override
-  String get backupSectionAutoBackup => '自动阅读数据备份';
-
-  @override
   String get backupAutoBackupIntervalTitle => '自动备份间隔';
 
   @override
@@ -1262,9 +1256,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupIntervalWeekly => '每周';
-
-  @override
-  String get backupSectionRestore => '恢复阅读数据';
 
   @override
   String get backupImportFileTitle => '导入阅读数据（.mekuru）';
@@ -1278,11 +1269,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupNoBackupsYet => '暂无阅读数据备份';
-
-  @override
-  String backupErrorLoadingHistory({required String details}) {
-    return '加载备份时出错：$details';
-  }
 
   @override
   String get backupCreatedSuccess => '阅读数据备份已创建';
@@ -1299,22 +1285,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupExportedSuccess => '阅读数据备份已导出';
 
   @override
-  String backupExportFailed({required String details}) {
-    return '导出失败：$details';
-  }
-
-  @override
   String get backupInvalidFile => '请选择一个 .mekuru 阅读数据备份文件。';
-
-  @override
-  String backupCouldNotOpenFile({required String details}) {
-    return '无法打开文件：$details';
-  }
-
-  @override
-  String backupRestoreFailed({required String details}) {
-    return '恢复失败：$details';
-  }
 
   @override
   String backupBooksUpdatedFromBackup({required int count}) {
@@ -1325,11 +1296,6 @@ class AppLocalizationsZh extends AppLocalizations {
       one: '$count 本书已通过备份更新',
     );
     return '$_temp0';
-  }
-
-  @override
-  String backupApplyBookDataFailed({required String details}) {
-    return '应用书籍数据失败：$details';
   }
 
   @override
@@ -1445,16 +1411,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerDismiss => '关闭';
 
   @override
-  String readerFailedToLoadContent({required String details}) {
-    return '无法加载 EPUB 内容。\n$details';
-  }
-
-  @override
-  String readerFailedToLoad({required String details}) {
-    return '无法加载 EPUB 文件。\n$details';
-  }
-
-  @override
   String get readerLoadTimeout => '阅读器加载时间过长。点击重试。';
 
   @override
@@ -1493,9 +1449,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get readerHighlightsTooltip => '高亮';
-
-  @override
-  String get readerUnknownError => '未知阅读器错误。';
 
   @override
   String get readerQuickSettings => '快速设置';
@@ -1628,11 +1581,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get commonTitleLabel => '标题';
-
-  @override
-  String libraryCouldNotReadFolder({required String details}) {
-    return '无法读取文件夹：\n$details';
-  }
 
   @override
   String get libraryBookmarksTitle => '书签';
@@ -1782,11 +1730,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String libraryDeleteBookBody({required String title}) {
     return '从您的书库中删除“$title”？';
-  }
-
-  @override
-  String libraryChangeCoverFailed({required String details}) {
-    return '更换封面失败：$details';
   }
 
   @override
@@ -2104,65 +2047,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get ocrNoPagesCacheFound => '未找到本书的页面缓存';
-
-  @override
-  String get ocrAlreadyCompleteResetHint => 'OCR 已完成。使用“移除 OCR”可重置。';
-
-  @override
-  String get ocrMangaImageDirectoryNotFound => '未找到漫画图片目录';
-
-  @override
-  String get ocrBuildWordOverlaysTitle => '生成单词覆盖层';
-
-  @override
-  String get ocrBuildWordOverlaysBody => 'OCR 文本已存在。这会重新生成单词点击目标，使查词覆盖层正确显示。';
-
-  @override
   String get ocrRunActionTitle => '运行 OCR';
-
-  @override
-  String ocrProcessPagesBody({required int count}) {
-    return '将处理 $count 页。OCR 会在后台运行，即使关闭应用也会继续。';
-  }
-
-  @override
-  String get ocrProcessAction => '处理';
-
-  @override
-  String get ocrStartAction => '开始';
-
-  @override
-  String ocrPrepareFailed({required String details}) {
-    return '无法准备 OCR：$details';
-  }
-
-  @override
-  String ocrStartFailed({required String details}) {
-    return '启动 OCR 失败：$details';
-  }
-
-  @override
-  String get ocrWordOverlayStartedBackground => '词语遮罩处理已在后台开始';
-
-  @override
-  String get ocrStartedBackground => 'OCR 已在后台启动';
-
-  @override
-  String get ocrCancelActionTitle => '暂停 OCR';
-
-  @override
-  String get ocrCancelSavedProgress => 'OCR 已暂停。进度已保存。';
-
-  @override
-  String get ocrReplaceActionTitle => '替换 OCR';
-
-  @override
-  String get ocrReplaceMokuroBody =>
-      '这将覆盖从 Mokuro/HTML 文件导入的 OCR 数据，并使用您的自定义服务器对所有页面重新执行 OCR。\n\n之后您可以使用“删除 OCR”来恢复原始 OCR。';
-
-  @override
-  String get ocrReplaceStartedBackground => 'OCR 替换已在后台开始';
 
   @override
   String get ocrRemoveActionTitle => '删除 OCR';
@@ -2175,20 +2060,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ocrRemovedFromBook => '已从本书删除 OCR';
-
-  @override
-  String ocrRemoveFailed({required String details}) {
-    return '移除 OCR 失败：$details';
-  }
-
-  @override
-  String get ocrUnlockProSubtitle => '解锁 Pro 以使用自定义 OCR 服务器';
-
-  @override
-  String get ocrStopAndSaveProgressSubtitle => '暂停处理并保存进度';
-
-  @override
-  String get ocrReplaceMokuroSubtitle => '用自定义 OCR 服务器替换 Mokuro 的 OCR';
 
   @override
   String get ocrRestoreOriginalMokuroBody =>
@@ -2206,17 +2077,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ocrOriginalMokuroRestored => '已恢复原始 Mokuro/HTML OCR';
-
-  @override
-  String get ocrBuildWordTargetsSubtitle => '根据已保存的 OCR 构建词语点击区域';
-
-  @override
-  String ocrResumeSubtitle({required int completed, required int total}) {
-    return '继续 OCR（已完成 $completed/$total）';
-  }
-
-  @override
-  String get ocrRecognizeAllPagesSubtitle => '识别所有页面中的文本';
 
   @override
   String get readerEditNoteTitle => '编辑笔记';
@@ -3258,13 +3118,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrModelReady => '模型已安装 · 可离线使用';
 
   @override
-  String get localOcrModelMissing => '需要额外下载';
-
-  @override
   String get localOcrModelVerifying => '正在验证模型文件…';
-
-  @override
-  String get localOcrModelDownloading => '正在下载模型…';
 
   @override
   String get localOcrUnsupported =>
@@ -3336,11 +3190,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrDismiss => '关闭';
 
   @override
-  String localOcrError({required String details}) {
-    return 'OCR 无法继续：$details';
-  }
-
-  @override
   String get localOcrInterrupted => '扫描已中断。点击“继续”可从已保存的进度接着进行。';
 
   @override
@@ -3398,9 +3247,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String localOcrPageError({required int page, required String details}) {
     return '第 $page 页：$details';
   }
-
-  @override
-  String get localOcrNotificationsOff => '关闭通知后 OCR 仍可继续。可在漫画的识别面板中暂停或取消。';
 
   @override
   String get localOcrModelCorrupt => '模型文件未通过验证。请移除并重新下载 OCR 模型。';
@@ -4191,11 +4037,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ocrErrorHostNotFound => '找不到 OCR 服务器的地址。请检查服务器 URL。';
 
   @override
-  String ocrErrorNetwork({required String details}) {
-    return '网络错误：$details';
-  }
-
-  @override
   String ocrErrorStatus({required int status, required String details}) {
     return 'OCR 服务器返回错误 $status：$details';
   }
@@ -4249,18 +4090,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrModelInstallFailed => '无法安装下载的模型。请重试。';
 
   @override
-  String proErrorLoadBilling({required String store, required String details}) {
-    return '无法连接 $store：$details';
-  }
-
-  @override
   String proErrorLoadAccess({required String details}) {
     return '无法检查你的 Pro 权限：$details';
-  }
-
-  @override
-  String proErrorLoadPrice({required String store, required String details}) {
-    return '无法从 $store 加载价格：$details';
   }
 
   @override
@@ -4535,9 +4366,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupFullRestoreNotStarted => '无法开始完整恢复。请重试。';
-
-  @override
-  String get proErrorCheckAccess => '无法检查你的 Pro 权限。请稍后再试。';
 
   @override
   String get dictionaryManagerPendingBackupFailed => '无法应用备份设置。请重试。';
@@ -5769,9 +5597,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get settingsCustomOcrServerTitle => '自定义 OCR 服务器';
 
   @override
-  String get settingsCustomOcrServerUnavailableSubtitle => 'OCR 服务暂时不可用。';
-
-  @override
   String get settingsCustomOcrServerNotConfigured => '未配置。请添加您的服务器 URL 和共享密钥。';
 
   @override
@@ -5924,9 +5749,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '导入阅读数据后，重新导入相同的 EPUB 或漫画内容，其记录就会恢复。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。匹配的词典设置可稍后在“词典管理”中应用。';
 
   @override
-  String get backupSectionAutoBackup => '自动阅读数据备份';
-
-  @override
   String get backupAutoBackupIntervalTitle => '自动备份间隔';
 
   @override
@@ -5937,9 +5759,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupIntervalWeekly => '每周';
-
-  @override
-  String get backupSectionRestore => '恢复阅读数据';
 
   @override
   String get backupImportFileTitle => '导入阅读数据（.mekuru）';
@@ -5953,11 +5772,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupNoBackupsYet => '暂无阅读数据备份';
-
-  @override
-  String backupErrorLoadingHistory({required String details}) {
-    return '加载备份时出错：$details';
-  }
 
   @override
   String get backupCreatedSuccess => '阅读数据备份已创建';
@@ -5974,22 +5788,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupExportedSuccess => '阅读数据备份已导出';
 
   @override
-  String backupExportFailed({required String details}) {
-    return '导出失败：$details';
-  }
-
-  @override
   String get backupInvalidFile => '请选择一个 .mekuru 阅读数据备份文件。';
-
-  @override
-  String backupCouldNotOpenFile({required String details}) {
-    return '无法打开文件：$details';
-  }
-
-  @override
-  String backupRestoreFailed({required String details}) {
-    return '恢复失败：$details';
-  }
 
   @override
   String backupBooksUpdatedFromBackup({required int count}) {
@@ -6000,11 +5799,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       one: '$count 本书已通过备份更新',
     );
     return '$_temp0';
-  }
-
-  @override
-  String backupApplyBookDataFailed({required String details}) {
-    return '应用书籍数据失败：$details';
   }
 
   @override
@@ -6120,16 +5914,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get readerDismiss => '关闭';
 
   @override
-  String readerFailedToLoadContent({required String details}) {
-    return '无法加载 EPUB 内容。\n$details';
-  }
-
-  @override
-  String readerFailedToLoad({required String details}) {
-    return '无法加载 EPUB 文件。\n$details';
-  }
-
-  @override
   String get readerLoadTimeout => '阅读器加载时间过长。点击重试。';
 
   @override
@@ -6168,9 +5952,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerHighlightsTooltip => '高亮';
-
-  @override
-  String get readerUnknownError => '未知阅读器错误。';
 
   @override
   String get readerQuickSettings => '快速设置';
@@ -6303,11 +6084,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get commonTitleLabel => '标题';
-
-  @override
-  String libraryCouldNotReadFolder({required String details}) {
-    return '无法读取文件夹：\n$details';
-  }
 
   @override
   String get libraryBookmarksTitle => '书签';
@@ -6457,11 +6233,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String libraryDeleteBookBody({required String title}) {
     return '从您的书库中删除“$title”？';
-  }
-
-  @override
-  String libraryChangeCoverFailed({required String details}) {
-    return '更换封面失败：$details';
   }
 
   @override
@@ -6779,65 +6550,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get ocrNoPagesCacheFound => '未找到本书的页面缓存';
-
-  @override
-  String get ocrAlreadyCompleteResetHint => 'OCR 已完成。使用“移除 OCR”可重置。';
-
-  @override
-  String get ocrMangaImageDirectoryNotFound => '未找到漫画图片目录';
-
-  @override
-  String get ocrBuildWordOverlaysTitle => '生成单词覆盖层';
-
-  @override
-  String get ocrBuildWordOverlaysBody => 'OCR 文本已存在。这会重新生成单词点击目标，使查词覆盖层正确显示。';
-
-  @override
   String get ocrRunActionTitle => '运行 OCR';
-
-  @override
-  String ocrProcessPagesBody({required int count}) {
-    return '将处理 $count 页。OCR 会在后台运行，即使关闭应用也会继续。';
-  }
-
-  @override
-  String get ocrProcessAction => '处理';
-
-  @override
-  String get ocrStartAction => '开始';
-
-  @override
-  String ocrPrepareFailed({required String details}) {
-    return '无法准备 OCR：$details';
-  }
-
-  @override
-  String ocrStartFailed({required String details}) {
-    return '启动 OCR 失败：$details';
-  }
-
-  @override
-  String get ocrWordOverlayStartedBackground => '词语遮罩处理已在后台开始';
-
-  @override
-  String get ocrStartedBackground => 'OCR 已在后台启动';
-
-  @override
-  String get ocrCancelActionTitle => '暂停 OCR';
-
-  @override
-  String get ocrCancelSavedProgress => 'OCR 已暂停。进度已保存。';
-
-  @override
-  String get ocrReplaceActionTitle => '替换 OCR';
-
-  @override
-  String get ocrReplaceMokuroBody =>
-      '这将覆盖从 Mokuro/HTML 文件导入的 OCR 数据，并使用您的自定义服务器对所有页面重新执行 OCR。\n\n之后您可以使用“删除 OCR”来恢复原始 OCR。';
-
-  @override
-  String get ocrReplaceStartedBackground => 'OCR 替换已在后台开始';
 
   @override
   String get ocrRemoveActionTitle => '删除 OCR';
@@ -6850,20 +6563,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ocrRemovedFromBook => '已从本书删除 OCR';
-
-  @override
-  String ocrRemoveFailed({required String details}) {
-    return '移除 OCR 失败：$details';
-  }
-
-  @override
-  String get ocrUnlockProSubtitle => '解锁 Pro 以使用自定义 OCR 服务器';
-
-  @override
-  String get ocrStopAndSaveProgressSubtitle => '暂停处理并保存进度';
-
-  @override
-  String get ocrReplaceMokuroSubtitle => '用自定义 OCR 服务器替换 Mokuro 的 OCR';
 
   @override
   String get ocrRestoreOriginalMokuroBody =>
@@ -6881,17 +6580,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ocrOriginalMokuroRestored => '已恢复原始 Mokuro/HTML OCR';
-
-  @override
-  String get ocrBuildWordTargetsSubtitle => '根据已保存的 OCR 构建词语点击区域';
-
-  @override
-  String ocrResumeSubtitle({required int completed, required int total}) {
-    return '继续 OCR（已完成 $completed/$total）';
-  }
-
-  @override
-  String get ocrRecognizeAllPagesSubtitle => '识别所有页面中的文本';
 
   @override
   String get readerEditNoteTitle => '编辑笔记';
@@ -7933,13 +7621,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get localOcrModelReady => '模型已安装 · 可离线使用';
 
   @override
-  String get localOcrModelMissing => '需要额外下载';
-
-  @override
   String get localOcrModelVerifying => '正在验证模型文件…';
-
-  @override
-  String get localOcrModelDownloading => '正在下载模型…';
 
   @override
   String get localOcrUnsupported =>
@@ -8011,11 +7693,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get localOcrDismiss => '关闭';
 
   @override
-  String localOcrError({required String details}) {
-    return 'OCR 无法继续：$details';
-  }
-
-  @override
   String get localOcrInterrupted => '扫描已中断。点击“继续”可从已保存的进度接着进行。';
 
   @override
@@ -8073,9 +7750,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String localOcrPageError({required int page, required String details}) {
     return '第 $page 页：$details';
   }
-
-  @override
-  String get localOcrNotificationsOff => '关闭通知后 OCR 仍可继续。可在漫画的识别面板中暂停或取消。';
 
   @override
   String get localOcrModelCorrupt => '模型文件未通过验证。请移除并重新下载 OCR 模型。';
@@ -8866,11 +8540,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get ocrErrorHostNotFound => '找不到 OCR 服务器的地址。请检查服务器 URL。';
 
   @override
-  String ocrErrorNetwork({required String details}) {
-    return '网络错误：$details';
-  }
-
-  @override
   String ocrErrorStatus({required int status, required String details}) {
     return 'OCR 服务器返回错误 $status：$details';
   }
@@ -8924,18 +8593,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get localOcrModelInstallFailed => '无法安装下载的模型。请重试。';
 
   @override
-  String proErrorLoadBilling({required String store, required String details}) {
-    return '无法连接 $store：$details';
-  }
-
-  @override
   String proErrorLoadAccess({required String details}) {
     return '无法检查你的 Pro 权限：$details';
-  }
-
-  @override
-  String proErrorLoadPrice({required String store, required String details}) {
-    return '无法从 $store 加载价格：$details';
   }
 
   @override
@@ -9210,9 +8869,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupFullRestoreNotStarted => '无法开始完整恢复。请重试。';
-
-  @override
-  String get proErrorCheckAccess => '无法检查你的 Pro 权限。请稍后再试。';
 
   @override
   String get dictionaryManagerPendingBackupFailed => '无法应用备份设置。请重试。';

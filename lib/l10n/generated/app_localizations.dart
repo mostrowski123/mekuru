@@ -2007,12 +2007,6 @@ abstract class AppLocalizations {
   /// **'Custom OCR Server'**
   String get settingsCustomOcrServerTitle;
 
-  /// Subtitle shown when OCR services are unavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'OCR services are temporarily unavailable.'**
-  String get settingsCustomOcrServerUnavailableSubtitle;
-
   /// Subtitle shown when a custom OCR server has not been configured.
   ///
   /// In en, this message translates to:
@@ -2295,12 +2289,6 @@ abstract class AppLocalizations {
   /// **'After importing reading data, re-import the same EPUB or manga content and its history comes back. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Matching dictionary settings can be applied later from Dictionary Manager.'**
   String get backupScopeNoteRestore;
 
-  /// Section header for auto-backup settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic reading data backup'**
-  String get backupSectionAutoBackup;
-
   /// Title for the auto-backup interval setting.
   ///
   /// In en, this message translates to:
@@ -2324,12 +2312,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Weekly'**
   String get backupIntervalWeekly;
-
-  /// Section header for restore actions.
-  ///
-  /// In en, this message translates to:
-  /// **'Restore reading data'**
-  String get backupSectionRestore;
 
   /// Title for the import-backup action.
   ///
@@ -2355,12 +2337,6 @@ abstract class AppLocalizations {
   /// **'No reading data backups yet'**
   String get backupNoBackupsYet;
 
-  /// Message shown when backup history fails to load.
-  ///
-  /// In en, this message translates to:
-  /// **'Error loading backups: {details}'**
-  String backupErrorLoadingHistory({required String details});
-
   /// Snackbar shown after a backup is created.
   ///
   /// In en, this message translates to:
@@ -2385,41 +2361,17 @@ abstract class AppLocalizations {
   /// **'Reading data backup exported'**
   String get backupExportedSuccess;
 
-  /// Snackbar shown when exporting a backup fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Export failed: {details}'**
-  String backupExportFailed({required String details});
-
   /// Snackbar shown when the selected restore file has the wrong extension.
   ///
   /// In en, this message translates to:
   /// **'Please select a .mekuru reading data backup file.'**
   String get backupInvalidFile;
 
-  /// Snackbar shown when the backup file picker fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not open file: {details}'**
-  String backupCouldNotOpenFile({required String details});
-
-  /// Snackbar shown when restoring a backup fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Restore failed: {details}'**
-  String backupRestoreFailed({required String details});
-
   /// Snackbar shown after applying conflict selections during restore.
   ///
   /// In en, this message translates to:
   /// **'{count, plural, one {{count} book updated from backup} other {{count} books updated from backup}}'**
   String backupBooksUpdatedFromBackup({required int count});
-
-  /// Snackbar shown when applying restored book data fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to apply book data: {details}'**
-  String backupApplyBookDataFailed({required String details});
 
   /// Title for the restore dialog that lists books with conflicting reading data.
   ///
@@ -2571,18 +2523,6 @@ abstract class AppLocalizations {
   /// **'Dismiss'**
   String get readerDismiss;
 
-  /// Reader error shown when the EPUB viewer reports a content-loading failure.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load EPUB content.\n{details}'**
-  String readerFailedToLoadContent({required String details});
-
-  /// Reader error shown when the EPUB file fails to load.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load EPUB.\n{details}'**
-  String readerFailedToLoad({required String details});
-
   /// Shown when the reader's load watchdog trips before the EPUB finishes opening.
   ///
   /// In en, this message translates to:
@@ -2660,12 +2600,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Highlights'**
   String get readerHighlightsTooltip;
-
-  /// Fallback error shown in the reader when no specific error is available.
-  ///
-  /// In en, this message translates to:
-  /// **'Unknown reader error.'**
-  String get readerUnknownError;
 
   /// Title for the reader quick settings sheet.
   ///
@@ -2930,12 +2864,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Title'**
   String get commonTitleLabel;
-
-  /// Snackbar shown when the selected manga folder cannot be read.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not read folder:\n{details}'**
-  String libraryCouldNotReadFolder({required String details});
 
   /// Title for the book bookmarks action in library options.
   ///
@@ -3218,12 +3146,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete \"{title}\" from your library?'**
   String libraryDeleteBookBody({required String title});
-
-  /// Snackbar shown when changing the cover image fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to change cover: {details}'**
-  String libraryChangeCoverFailed({required String details});
 
   /// Title for the dictionary manager screen and help dialog.
   ///
@@ -3732,113 +3654,11 @@ abstract class AppLocalizations {
   /// **'Couldn\'t set up auto-crop. Try again.'**
   String mangaAutoCropSetupFailed({required String details});
 
-  /// Snackbar shown when OCR cannot start because the pages cache is missing.
-  ///
-  /// In en, this message translates to:
-  /// **'No pages cache found for this book'**
-  String get ocrNoPagesCacheFound;
-
-  /// Snackbar shown when OCR is already complete for a manga book.
-  ///
-  /// In en, this message translates to:
-  /// **'OCR is already complete. Use \"Remove OCR\" to reset.'**
-  String get ocrAlreadyCompleteResetHint;
-
-  /// Snackbar shown when the manga image directory is missing.
-  ///
-  /// In en, this message translates to:
-  /// **'Manga image directory not found'**
-  String get ocrMangaImageDirectoryNotFound;
-
-  /// Dialog title for rebuilding word overlays from existing OCR.
-  ///
-  /// In en, this message translates to:
-  /// **'Build Word Overlays'**
-  String get ocrBuildWordOverlaysTitle;
-
-  /// Dialog body for rebuilding word overlays from existing OCR.
-  ///
-  /// In en, this message translates to:
-  /// **'OCR text already exists. This will rebuild word tap targets so lookup overlays appear correctly.'**
-  String get ocrBuildWordOverlaysBody;
-
   /// Action title for starting OCR.
   ///
   /// In en, this message translates to:
   /// **'Run OCR'**
   String get ocrRunActionTitle;
-
-  /// Dialog body shown before OCR begins processing pages.
-  ///
-  /// In en, this message translates to:
-  /// **'This will process {count} pages. OCR will run in the background and continue even if you close the app.'**
-  String ocrProcessPagesBody({required int count});
-
-  /// Button label for processing existing OCR into word overlays.
-  ///
-  /// In en, this message translates to:
-  /// **'Process'**
-  String get ocrProcessAction;
-
-  /// Button label for starting OCR.
-  ///
-  /// In en, this message translates to:
-  /// **'Start'**
-  String get ocrStartAction;
-
-  /// Snackbar shown when OCR setup fails before processing starts.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to prepare OCR: {details}'**
-  String ocrPrepareFailed({required String details});
-
-  /// Snackbar shown when OCR background work fails to start.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to start OCR: {details}'**
-  String ocrStartFailed({required String details});
-
-  /// Snackbar shown when rebuilding word overlays starts in the background.
-  ///
-  /// In en, this message translates to:
-  /// **'Word overlay processing started in background'**
-  String get ocrWordOverlayStartedBackground;
-
-  /// Snackbar shown when OCR starts in the background.
-  ///
-  /// In en, this message translates to:
-  /// **'OCR started in background'**
-  String get ocrStartedBackground;
-
-  /// Action title for cancelling OCR.
-  ///
-  /// In en, this message translates to:
-  /// **'Pause OCR'**
-  String get ocrCancelActionTitle;
-
-  /// Snackbar shown when OCR is cancelled and progress is preserved.
-  ///
-  /// In en, this message translates to:
-  /// **'OCR paused. Progress saved.'**
-  String get ocrCancelSavedProgress;
-
-  /// Action title for replacing imported OCR with custom OCR.
-  ///
-  /// In en, this message translates to:
-  /// **'Replace OCR'**
-  String get ocrReplaceActionTitle;
-
-  /// Confirmation dialog body for replacing Mokuro OCR with custom OCR.
-  ///
-  /// In en, this message translates to:
-  /// **'This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nYou can use Delete OCR later to restore the original OCR.'**
-  String get ocrReplaceMokuroBody;
-
-  /// Snackbar shown when replacing OCR starts in the background.
-  ///
-  /// In en, this message translates to:
-  /// **'OCR replacement started in background'**
-  String get ocrReplaceStartedBackground;
 
   /// Action title for removing OCR.
   ///
@@ -3863,30 +3683,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OCR deleted from this book'**
   String get ocrRemovedFromBook;
-
-  /// Snackbar shown when removing OCR fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to remove OCR: {details}'**
-  String ocrRemoveFailed({required String details});
-
-  /// Subtitle shown when OCR requires a Pro unlock.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlock Pro to use your custom OCR server'**
-  String get ocrUnlockProSubtitle;
-
-  /// Subtitle shown for the OCR cancel action.
-  ///
-  /// In en, this message translates to:
-  /// **'Pause processing and save progress'**
-  String get ocrStopAndSaveProgressSubtitle;
-
-  /// Subtitle shown when replacing OCR imported from Mokuro.
-  ///
-  /// In en, this message translates to:
-  /// **'Replace Mokuro OCR with your custom OCR server'**
-  String get ocrReplaceMokuroSubtitle;
 
   /// Confirmation dialog body for deleting custom OCR and restoring the original Mokuro or HTML OCR.
   ///
@@ -3917,24 +3713,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Original Mokuro/HTML OCR restored'**
   String get ocrOriginalMokuroRestored;
-
-  /// Subtitle shown when only word overlay generation is needed.
-  ///
-  /// In en, this message translates to:
-  /// **'Build word tap targets from saved OCR'**
-  String get ocrBuildWordTargetsSubtitle;
-
-  /// Subtitle shown when OCR can resume partially completed work.
-  ///
-  /// In en, this message translates to:
-  /// **'Resume OCR ({completed}/{total} done)'**
-  String ocrResumeSubtitle({required int completed, required int total});
-
-  /// Subtitle shown when OCR will run on all pages.
-  ///
-  /// In en, this message translates to:
-  /// **'Recognize text on all pages'**
-  String get ocrRecognizeAllPagesSubtitle;
 
   /// Title for editing a highlight note.
   ///
@@ -5562,23 +5340,11 @@ abstract class AppLocalizations {
   /// **'Models installed · works offline'**
   String get localOcrModelReady;
 
-  /// On-device manga OCR: localOcrModelMissing
-  ///
-  /// In en, this message translates to:
-  /// **'Additional download required'**
-  String get localOcrModelMissing;
-
   /// On-device manga OCR: localOcrModelVerifying
   ///
   /// In en, this message translates to:
   /// **'Verifying model files…'**
   String get localOcrModelVerifying;
-
-  /// On-device manga OCR: localOcrModelDownloading
-  ///
-  /// In en, this message translates to:
-  /// **'Downloading models…'**
-  String get localOcrModelDownloading;
 
   /// On-device manga OCR: localOcrUnsupported
   ///
@@ -5704,12 +5470,6 @@ abstract class AppLocalizations {
   /// **'Dismiss'**
   String get localOcrDismiss;
 
-  /// On-device manga OCR: localOcrError
-  ///
-  /// In en, this message translates to:
-  /// **'OCR could not continue: {details}'**
-  String localOcrError({required String details});
-
   /// On-device manga OCR: localOcrInterrupted
   ///
   /// In en, this message translates to:
@@ -5817,12 +5577,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Page {page}: {details}'**
   String localOcrPageError({required int page, required String details});
-
-  /// Shown once when starting local OCR without notification permission.
-  ///
-  /// In en, this message translates to:
-  /// **'OCR can continue with notifications off. Use the manga’s recognition sheet to pause or cancel.'**
-  String get localOcrNotificationsOff;
 
   /// Recovery instructions for corrupted installed OCR model files.
   ///
@@ -7124,12 +6878,6 @@ abstract class AppLocalizations {
   /// **'Couldn\'t find the OCR server\'s address. Check the server URL.'**
   String get ocrErrorHostNotFound;
 
-  /// Remote manga OCR failed with another network error. {details} is the system's error text.
-  ///
-  /// In en, this message translates to:
-  /// **'Network error: {details}'**
-  String ocrErrorNetwork({required String details});
-
   /// Remote manga OCR failed with another HTTP error status. {details} is the server's own explanation, usually in English.
   ///
   /// In en, this message translates to:
@@ -7220,23 +6968,11 @@ abstract class AppLocalizations {
   /// **'The downloaded models couldn\'t be installed. Try again.'**
   String get localOcrModelInstallFailed;
 
-  /// Pro screen: the store's billing service could not be started. {store} is 'Google Play' or 'App Store'; {details} says why.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t connect to {store}: {details}'**
-  String proErrorLoadBilling({required String store, required String details});
-
   /// Pro screen: whether the user owns Pro could not be checked. {details} says why.
   ///
   /// In en, this message translates to:
   /// **'Couldn\'t check your Pro access: {details}'**
   String proErrorLoadAccess({required String details});
-
-  /// Pro screen: the price could not be loaded. {store} is 'Google Play' or 'App Store'; {details} says why.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t load the price from {store}: {details}'**
-  String proErrorLoadPrice({required String store, required String details});
 
   /// Pro purchase or check failed: the device has no internet connection.
   ///
@@ -7729,12 +7465,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t start the full restore. Try again.'**
   String get backupFullRestoreNotStarted;
-
-  /// Shown on the Pro page when Mekuru could not check whether the user has Pro.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t check your Pro access. Try again later.'**
-  String get proErrorCheckAccess;
 
   /// Snack bar when the dictionary order and enabled states from a restored backup could not be applied. Nothing changed.
   ///

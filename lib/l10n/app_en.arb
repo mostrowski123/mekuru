@@ -1485,10 +1485,6 @@
   "@settingsCustomOcrServerTitle": {
     "description": "Title for the custom OCR server setting and dialog."
   },
-  "settingsCustomOcrServerUnavailableSubtitle": "OCR services are temporarily unavailable.",
-  "@settingsCustomOcrServerUnavailableSubtitle": {
-    "description": "Subtitle shown when OCR services are unavailable."
-  },
   "settingsCustomOcrServerNotConfigured": "Not configured. Add your own server URL and shared key.",
   "@settingsCustomOcrServerNotConfigured": {
     "description": "Subtitle shown when a custom OCR server has not been configured."
@@ -1687,10 +1683,6 @@
   "@backupScopeNoteRestore": {
     "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
-  "backupSectionAutoBackup": "Automatic reading data backup",
-  "@backupSectionAutoBackup": {
-    "description": "Section header for auto-backup settings."
-  },
   "backupAutoBackupIntervalTitle": "Auto-backup interval",
   "@backupAutoBackupIntervalTitle": {
     "description": "Title for the auto-backup interval setting."
@@ -1707,10 +1699,6 @@
   "@backupIntervalWeekly": {
     "description": "Label for weekly auto-backups."
   },
-  "backupSectionRestore": "Restore reading data",
-  "@backupSectionRestore": {
-    "description": "Section header for restore actions."
-  },
   "backupImportFileTitle": "Import reading data (.mekuru)",
   "@backupImportFileTitle": {
     "description": "Title for the import-backup action."
@@ -1726,15 +1714,6 @@
   "backupNoBackupsYet": "No reading data backups yet",
   "@backupNoBackupsYet": {
     "description": "Message shown when there are no backups."
-  },
-  "backupErrorLoadingHistory": "Error loading backups: {details}",
-  "@backupErrorLoadingHistory": {
-    "description": "Message shown when backup history fails to load.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
   },
   "backupCreatedSuccess": "Reading data backup created",
   "@backupCreatedSuccess": {
@@ -1757,36 +1736,9 @@
   "@backupExportedSuccess": {
     "description": "Snackbar shown after exporting a backup."
   },
-  "backupExportFailed": "Export failed: {details}",
-  "@backupExportFailed": {
-    "description": "Snackbar shown when exporting a backup fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "backupInvalidFile": "Please select a .mekuru reading data backup file.",
   "@backupInvalidFile": {
     "description": "Snackbar shown when the selected restore file has the wrong extension."
-  },
-  "backupCouldNotOpenFile": "Could not open file: {details}",
-  "@backupCouldNotOpenFile": {
-    "description": "Snackbar shown when the backup file picker fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "backupRestoreFailed": "Restore failed: {details}",
-  "@backupRestoreFailed": {
-    "description": "Snackbar shown when restoring a backup fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
   },
   "backupBooksUpdatedFromBackup": "{count, plural, one {{count} book updated from backup} other {{count} books updated from backup}}",
   "@backupBooksUpdatedFromBackup": {
@@ -1794,15 +1746,6 @@
     "placeholders": {
       "count": {
         "type": "int"
-      }
-    }
-  },
-  "backupApplyBookDataFailed": "Failed to apply book data: {details}",
-  "@backupApplyBookDataFailed": {
-    "description": "Snackbar shown when applying restored book data fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
       }
     }
   },
@@ -1951,24 +1894,6 @@
   "@readerDismiss": {
     "description": "Barrier label for dismissing reader overlays."
   },
-  "readerFailedToLoadContent": "Failed to load EPUB content.\n{details}",
-  "@readerFailedToLoadContent": {
-    "description": "Reader error shown when the EPUB viewer reports a content-loading failure.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "readerFailedToLoad": "Failed to load EPUB.\n{details}",
-  "@readerFailedToLoad": {
-    "description": "Reader error shown when the EPUB file fails to load.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "readerLoadTimeout": "Reader took too long to load. Tap retry to try again.",
   "@readerLoadTimeout": {
     "description": "Shown when the reader's load watchdog trips before the EPUB finishes opening."
@@ -2020,10 +1945,6 @@
   "readerHighlightsTooltip": "Highlights",
   "@readerHighlightsTooltip": {
     "description": "Tooltip for opening the highlights sheet."
-  },
-  "readerUnknownError": "Unknown reader error.",
-  "@readerUnknownError": {
-    "description": "Fallback error shown in the reader when no specific error is available."
   },
   "readerQuickSettings": "Quick Settings",
   "@readerQuickSettings": {
@@ -2200,15 +2121,6 @@
   "commonTitleLabel": "Title",
   "@commonTitleLabel": {
     "description": "Generic title field label."
-  },
-  "libraryCouldNotReadFolder": "Could not read folder:\n{details}",
-  "@libraryCouldNotReadFolder": {
-    "description": "Snackbar shown when the selected manga folder cannot be read.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
   },
   "libraryBookmarksTitle": "Bookmarks",
   "@libraryBookmarksTitle": {
@@ -2414,15 +2326,6 @@
     "description": "Confirmation body for deleting a book from the library.",
     "placeholders": {
       "title": {
-        "type": "String"
-      }
-    }
-  },
-  "libraryChangeCoverFailed": "Failed to change cover: {details}",
-  "@libraryChangeCoverFailed": {
-    "description": "Snackbar shown when changing the cover image fails.",
-    "placeholders": {
-      "details": {
         "type": "String"
       }
     }
@@ -2851,92 +2754,9 @@
       }
     }
   },
-  "ocrNoPagesCacheFound": "No pages cache found for this book",
-  "@ocrNoPagesCacheFound": {
-    "description": "Snackbar shown when OCR cannot start because the pages cache is missing."
-  },
-  "ocrAlreadyCompleteResetHint": "OCR is already complete. Use \"Remove OCR\" to reset.",
-  "@ocrAlreadyCompleteResetHint": {
-    "description": "Snackbar shown when OCR is already complete for a manga book."
-  },
-  "ocrMangaImageDirectoryNotFound": "Manga image directory not found",
-  "@ocrMangaImageDirectoryNotFound": {
-    "description": "Snackbar shown when the manga image directory is missing."
-  },
-  "ocrBuildWordOverlaysTitle": "Build Word Overlays",
-  "@ocrBuildWordOverlaysTitle": {
-    "description": "Dialog title for rebuilding word overlays from existing OCR."
-  },
-  "ocrBuildWordOverlaysBody": "OCR text already exists. This will rebuild word tap targets so lookup overlays appear correctly.",
-  "@ocrBuildWordOverlaysBody": {
-    "description": "Dialog body for rebuilding word overlays from existing OCR."
-  },
   "ocrRunActionTitle": "Run OCR",
   "@ocrRunActionTitle": {
     "description": "Action title for starting OCR."
-  },
-  "ocrProcessPagesBody": "This will process {count} pages. OCR will run in the background and continue even if you close the app.",
-  "@ocrProcessPagesBody": {
-    "description": "Dialog body shown before OCR begins processing pages.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "ocrProcessAction": "Process",
-  "@ocrProcessAction": {
-    "description": "Button label for processing existing OCR into word overlays."
-  },
-  "ocrStartAction": "Start",
-  "@ocrStartAction": {
-    "description": "Button label for starting OCR."
-  },
-  "ocrPrepareFailed": "Unable to prepare OCR: {details}",
-  "@ocrPrepareFailed": {
-    "description": "Snackbar shown when OCR setup fails before processing starts.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "ocrStartFailed": "Failed to start OCR: {details}",
-  "@ocrStartFailed": {
-    "description": "Snackbar shown when OCR background work fails to start.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "ocrWordOverlayStartedBackground": "Word overlay processing started in background",
-  "@ocrWordOverlayStartedBackground": {
-    "description": "Snackbar shown when rebuilding word overlays starts in the background."
-  },
-  "ocrStartedBackground": "OCR started in background",
-  "@ocrStartedBackground": {
-    "description": "Snackbar shown when OCR starts in the background."
-  },
-  "ocrCancelActionTitle": "Pause OCR",
-  "@ocrCancelActionTitle": {
-    "description": "Action title for cancelling OCR."
-  },
-  "ocrCancelSavedProgress": "OCR paused. Progress saved.",
-  "@ocrCancelSavedProgress": {
-    "description": "Snackbar shown when OCR is cancelled and progress is preserved."
-  },
-  "ocrReplaceActionTitle": "Replace OCR",
-  "@ocrReplaceActionTitle": {
-    "description": "Action title for replacing imported OCR with custom OCR."
-  },
-  "ocrReplaceMokuroBody": "This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nYou can use Delete OCR later to restore the original OCR.",
-  "@ocrReplaceMokuroBody": {
-    "description": "Confirmation dialog body for replacing Mokuro OCR with custom OCR."
-  },
-  "ocrReplaceStartedBackground": "OCR replacement started in background",
-  "@ocrReplaceStartedBackground": {
-    "description": "Snackbar shown when replacing OCR starts in the background."
   },
   "ocrRemoveActionTitle": "Delete OCR",
   "@ocrRemoveActionTitle": {
@@ -2953,27 +2773,6 @@
   "ocrRemovedFromBook": "OCR deleted from this book",
   "@ocrRemovedFromBook": {
     "description": "Snackbar shown after OCR has been removed from a book."
-  },
-  "ocrRemoveFailed": "Failed to remove OCR: {details}",
-  "@ocrRemoveFailed": {
-    "description": "Snackbar shown when removing OCR fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "ocrUnlockProSubtitle": "Unlock Pro to use your custom OCR server",
-  "@ocrUnlockProSubtitle": {
-    "description": "Subtitle shown when OCR requires a Pro unlock."
-  },
-  "ocrStopAndSaveProgressSubtitle": "Pause processing and save progress",
-  "@ocrStopAndSaveProgressSubtitle": {
-    "description": "Subtitle shown for the OCR cancel action."
-  },
-  "ocrReplaceMokuroSubtitle": "Replace Mokuro OCR with your custom OCR server",
-  "@ocrReplaceMokuroSubtitle": {
-    "description": "Subtitle shown when replacing OCR imported from Mokuro."
   },
   "ocrRestoreOriginalMokuroBody": "Delete the current OCR and restore the original OCR imported from the Mokuro/HTML file?",
   "@ocrRestoreOriginalMokuroBody": {
@@ -2994,26 +2793,6 @@
   "ocrOriginalMokuroRestored": "Original Mokuro/HTML OCR restored",
   "@ocrOriginalMokuroRestored": {
     "description": "Snackbar shown after the original Mokuro or HTML OCR has been restored."
-  },
-  "ocrBuildWordTargetsSubtitle": "Build word tap targets from saved OCR",
-  "@ocrBuildWordTargetsSubtitle": {
-    "description": "Subtitle shown when only word overlay generation is needed."
-  },
-  "ocrResumeSubtitle": "Resume OCR ({completed}/{total} done)",
-  "@ocrResumeSubtitle": {
-    "description": "Subtitle shown when OCR can resume partially completed work.",
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "ocrRecognizeAllPagesSubtitle": "Recognize text on all pages",
-  "@ocrRecognizeAllPagesSubtitle": {
-    "description": "Subtitle shown when OCR will run on all pages."
   },
   "readerEditNoteTitle": "Edit Note",
   "@readerEditNoteTitle": {
@@ -4362,17 +4141,9 @@
   "@localOcrModelReady": {
     "description": "On-device manga OCR: localOcrModelReady"
   },
-  "localOcrModelMissing": "Additional download required",
-  "@localOcrModelMissing": {
-    "description": "On-device manga OCR: localOcrModelMissing"
-  },
   "localOcrModelVerifying": "Verifying model files…",
   "@localOcrModelVerifying": {
     "description": "On-device manga OCR: localOcrModelVerifying"
-  },
-  "localOcrModelDownloading": "Downloading models…",
-  "@localOcrModelDownloading": {
-    "description": "On-device manga OCR: localOcrModelDownloading"
   },
   "localOcrUnsupported": "On-device OCR requires a supported 64-bit ARM Android device. Remote OCR remains available.",
   "@localOcrUnsupported": {
@@ -4473,15 +4244,6 @@
   "@localOcrDismiss": {
     "description": "On-device manga OCR: localOcrDismiss"
   },
-  "localOcrError": "OCR could not continue: {details}",
-  "@localOcrError": {
-    "description": "On-device manga OCR: localOcrError",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "localOcrInterrupted": "The scan was interrupted. Resume to continue from saved progress.",
   "@localOcrInterrupted": {
     "description": "On-device manga OCR: localOcrInterrupted"
@@ -4561,10 +4323,6 @@
         "type": "String"
       }
     }
-  },
-  "localOcrNotificationsOff": "OCR can continue with notifications off. Use the manga’s recognition sheet to pause or cancel.",
-  "@localOcrNotificationsOff": {
-    "description": "Shown once when starting local OCR without notification permission."
   },
   "localOcrModelCorrupt": "The model files failed verification. Remove and download the OCR models again.",
   "@localOcrModelCorrupt": {
@@ -5632,15 +5390,6 @@
   "@ocrErrorHostNotFound": {
     "description": "Remote manga OCR failed: the OCR server's host name could not be looked up."
   },
-  "ocrErrorNetwork": "Network error: {details}",
-  "@ocrErrorNetwork": {
-    "description": "Remote manga OCR failed with another network error. {details} is the system's error text.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "ocrErrorStatus": "The OCR server returned error {status}: {details}",
   "@ocrErrorStatus": {
     "description": "Remote manga OCR failed with another HTTP error status. {details} is the server's own explanation, usually in English.",
@@ -5719,34 +5468,10 @@
   "@localOcrModelInstallFailed": {
     "description": "OCR model download finished but the files could not be moved into place."
   },
-  "proErrorLoadBilling": "Couldn't connect to {store}: {details}",
-  "@proErrorLoadBilling": {
-    "description": "Pro screen: the store's billing service could not be started. {store} is 'Google Play' or 'App Store'; {details} says why.",
-    "placeholders": {
-      "store": {
-        "type": "String"
-      },
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "proErrorLoadAccess": "Couldn't check your Pro access: {details}",
   "@proErrorLoadAccess": {
     "description": "Pro screen: whether the user owns Pro could not be checked. {details} says why.",
     "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "proErrorLoadPrice": "Couldn't load the price from {store}: {details}",
-  "@proErrorLoadPrice": {
-    "description": "Pro screen: the price could not be loaded. {store} is 'Google Play' or 'App Store'; {details} says why.",
-    "placeholders": {
-      "store": {
-        "type": "String"
-      },
       "details": {
         "type": "String"
       }
@@ -6110,10 +5835,6 @@
   "backupFullRestoreNotStarted": "Couldn't start the full restore. Try again.",
   "@backupFullRestoreNotStarted": {
     "description": "Snack bar when a full restore could not be started."
-  },
-  "proErrorCheckAccess": "Couldn't check your Pro access. Try again later.",
-  "@proErrorCheckAccess": {
-    "description": "Shown on the Pro page when Mekuru could not check whether the user has Pro."
   },
   "dictionaryManagerPendingBackupFailed": "Couldn't apply the backup settings. Try again.",
   "@dictionaryManagerPendingBackupFailed": {

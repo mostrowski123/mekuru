@@ -1158,10 +1158,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsCustomOcrServerTitle => 'Servidor OCR personalizado';
 
   @override
-  String get settingsCustomOcrServerUnavailableSubtitle =>
-      'Los servicios de OCR no están disponibles temporalmente.';
-
-  @override
   String get settingsCustomOcrServerNotConfigured =>
       'No configurado. Añade la URL de tu servidor y la clave compartida.';
 
@@ -1325,9 +1321,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Después de importar los datos de lectura, vuelve a importar el mismo contenido EPUB o manga y su historial volverá. El historial de tiempo de lectura solo se restaura si este dispositivo aún no tiene ninguno; las estadísticas de vocabulario se fusionan con las existentes. La configuración de diccionarios coincidente se puede aplicar más tarde desde el Gestor de diccionarios.';
 
   @override
-  String get backupSectionAutoBackup => 'Copia automática de datos de lectura';
-
-  @override
   String get backupAutoBackupIntervalTitle => 'Intervalo de copia automática';
 
   @override
@@ -1338,9 +1331,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get backupIntervalWeekly => 'Semanal';
-
-  @override
-  String get backupSectionRestore => 'Restaurar datos de lectura';
 
   @override
   String get backupImportFileTitle => 'Importar datos de lectura (.mekuru)';
@@ -1354,11 +1344,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get backupNoBackupsYet => 'Aún no hay copias de datos de lectura';
-
-  @override
-  String backupErrorLoadingHistory({required String details}) {
-    return 'Error al cargar las copias de seguridad: $details';
-  }
 
   @override
   String get backupCreatedSuccess => 'Copia de datos de lectura creada';
@@ -1376,23 +1361,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backupExportedSuccess => 'Copia de datos de lectura exportada';
 
   @override
-  String backupExportFailed({required String details}) {
-    return 'Error al exportar: $details';
-  }
-
-  @override
   String get backupInvalidFile =>
       'Selecciona un archivo de copia de datos de lectura .mekuru.';
-
-  @override
-  String backupCouldNotOpenFile({required String details}) {
-    return 'No se pudo abrir el archivo: $details';
-  }
-
-  @override
-  String backupRestoreFailed({required String details}) {
-    return 'Error al restaurar: $details';
-  }
 
   @override
   String backupBooksUpdatedFromBackup({required int count}) {
@@ -1403,11 +1373,6 @@ class AppLocalizationsEs extends AppLocalizations {
       one: '$count libro actualizado desde la copia de seguridad',
     );
     return '$_temp0';
-  }
-
-  @override
-  String backupApplyBookDataFailed({required String details}) {
-    return 'No se pudieron aplicar los datos del libro: $details';
   }
 
   @override
@@ -1530,16 +1495,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get readerDismiss => 'Cerrar';
 
   @override
-  String readerFailedToLoadContent({required String details}) {
-    return 'No se pudo cargar el contenido EPUB.\n$details';
-  }
-
-  @override
-  String readerFailedToLoad({required String details}) {
-    return 'No se pudo cargar el EPUB.\n$details';
-  }
-
-  @override
   String get readerLoadTimeout =>
       'El lector tardó demasiado en cargar. Toca reintentar para volver a intentarlo.';
 
@@ -1583,9 +1538,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get readerHighlightsTooltip => 'Destacados';
-
-  @override
-  String get readerUnknownError => 'Error de lector desconocido.';
 
   @override
   String get readerQuickSettings => 'Ajustes rápidos';
@@ -1724,11 +1676,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get commonTitleLabel => 'Título';
-
-  @override
-  String libraryCouldNotReadFolder({required String details}) {
-    return 'No se pudo leer la carpeta:\n$details';
-  }
 
   @override
   String get libraryBookmarksTitle => 'Marcadores';
@@ -1887,11 +1834,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String libraryDeleteBookBody({required String title}) {
     return '¿Eliminar \"$title\" de tu biblioteca?';
-  }
-
-  @override
-  String libraryChangeCoverFailed({required String details}) {
-    return 'No se pudo cambiar la portada: $details';
   }
 
   @override
@@ -2226,71 +2168,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get ocrNoPagesCacheFound =>
-      'No se encontró caché de páginas para este libro';
-
-  @override
-  String get ocrAlreadyCompleteResetHint =>
-      'El OCR ya está completo. Usa \"Eliminar OCR\" para reiniciar.';
-
-  @override
-  String get ocrMangaImageDirectoryNotFound =>
-      'Directorio de imágenes de manga no encontrado';
-
-  @override
-  String get ocrBuildWordOverlaysTitle => 'Crear Superposiciones de Palabras';
-
-  @override
-  String get ocrBuildWordOverlaysBody =>
-      'El texto OCR ya existe. Esto volverá a crear las áreas táctiles de palabras para que las superposiciones del diccionario funcionen correctamente.';
-
-  @override
   String get ocrRunActionTitle => 'Ejecutar OCR';
-
-  @override
-  String ocrProcessPagesBody({required int count}) {
-    return 'Esto procesará $count páginas. El OCR se ejecutará en segundo plano y continuará incluso si cierras la app.';
-  }
-
-  @override
-  String get ocrProcessAction => 'Procesar';
-
-  @override
-  String get ocrStartAction => 'Iniciar';
-
-  @override
-  String ocrPrepareFailed({required String details}) {
-    return 'No se pudo preparar el OCR: $details';
-  }
-
-  @override
-  String ocrStartFailed({required String details}) {
-    return 'No se pudo iniciar el OCR: $details';
-  }
-
-  @override
-  String get ocrWordOverlayStartedBackground =>
-      'Procesamiento de la superposición de palabras iniciado en segundo plano';
-
-  @override
-  String get ocrStartedBackground => 'OCR iniciado en segundo plano';
-
-  @override
-  String get ocrCancelActionTitle => 'Pausar OCR';
-
-  @override
-  String get ocrCancelSavedProgress => 'OCR en pausa. Progreso guardado.';
-
-  @override
-  String get ocrReplaceActionTitle => 'Reemplazar OCR';
-
-  @override
-  String get ocrReplaceMokuroBody =>
-      'Esto sobrescribirá los datos de OCR importados del archivo Mokuro/HTML y volverá a ejecutar el OCR en TODAS las páginas usando tu propio servidor.\n\nDespués podrás usar Eliminar OCR para restaurar el OCR original.';
-
-  @override
-  String get ocrReplaceStartedBackground =>
-      'Reemplazo de OCR iniciado en segundo plano';
 
   @override
   String get ocrRemoveActionTitle => 'Eliminar OCR';
@@ -2304,23 +2182,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ocrRemovedFromBook => 'OCR eliminado de este libro';
-
-  @override
-  String ocrRemoveFailed({required String details}) {
-    return 'No se pudo eliminar el OCR: $details';
-  }
-
-  @override
-  String get ocrUnlockProSubtitle =>
-      'Desbloquea Pro para usar tu propio servidor OCR';
-
-  @override
-  String get ocrStopAndSaveProgressSubtitle =>
-      'Pausar el procesamiento y guardar el progreso';
-
-  @override
-  String get ocrReplaceMokuroSubtitle =>
-      'Reemplaza el OCR de Mokuro con tu propio servidor OCR';
 
   @override
   String get ocrRestoreOriginalMokuroBody =>
@@ -2341,19 +2202,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get ocrOriginalMokuroRestored =>
       'Se restauró el OCR original de Mokuro/HTML';
-
-  @override
-  String get ocrBuildWordTargetsSubtitle =>
-      'Generar zonas táctiles desde el OCR guardado';
-
-  @override
-  String ocrResumeSubtitle({required int completed, required int total}) {
-    return 'Reanudar OCR ($completed/$total completados)';
-  }
-
-  @override
-  String get ocrRecognizeAllPagesSubtitle =>
-      'Reconocer texto en todas las páginas';
 
   @override
   String get readerEditNoteTitle => 'Editar nota';
@@ -3443,13 +3291,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get localOcrModelReady => 'Modelos instalados · funciona sin conexión';
 
   @override
-  String get localOcrModelMissing => 'Requiere una descarga adicional';
-
-  @override
   String get localOcrModelVerifying => 'Verificando los archivos del modelo…';
-
-  @override
-  String get localOcrModelDownloading => 'Descargando modelos…';
 
   @override
   String get localOcrUnsupported =>
@@ -3525,11 +3367,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get localOcrDismiss => 'Cerrar';
 
   @override
-  String localOcrError({required String details}) {
-    return 'El OCR no pudo continuar: $details';
-  }
-
-  @override
   String get localOcrInterrupted =>
       'El escaneo se interrumpió. Reanuda para continuar desde el progreso guardado.';
 
@@ -3598,10 +3435,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String localOcrPageError({required int page, required String details}) {
     return 'Página $page: $details';
   }
-
-  @override
-  String get localOcrNotificationsOff =>
-      'El OCR puede continuar con las notificaciones desactivadas. Usa el panel de reconocimiento del manga para pausar o cancelar.';
 
   @override
   String get localOcrModelCorrupt =>
@@ -4441,11 +4274,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se encontró la dirección del servidor OCR. Comprueba la URL.';
 
   @override
-  String ocrErrorNetwork({required String details}) {
-    return 'Error de red: $details';
-  }
-
-  @override
   String ocrErrorStatus({required int status, required String details}) {
     return 'El servidor OCR devolvió el error $status: $details';
   }
@@ -4507,18 +4335,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudieron instalar los modelos descargados. Vuelve a intentarlo.';
 
   @override
-  String proErrorLoadBilling({required String store, required String details}) {
-    return 'No se pudo conectar con $store: $details';
-  }
-
-  @override
   String proErrorLoadAccess({required String details}) {
     return 'No se pudo comprobar tu acceso a Pro: $details';
-  }
-
-  @override
-  String proErrorLoadPrice({required String store, required String details}) {
-    return 'No se pudo cargar el precio de $store: $details';
   }
 
   @override
@@ -4835,10 +4653,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get backupFullRestoreNotStarted =>
       'No se pudo iniciar la restauración completa. Vuelve a intentarlo.';
-
-  @override
-  String get proErrorCheckAccess =>
-      'No se pudo comprobar tu acceso a Pro. Vuelve a intentarlo más tarde.';
 
   @override
   String get dictionaryManagerPendingBackupFailed =>

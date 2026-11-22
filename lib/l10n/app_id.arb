@@ -1219,10 +1219,6 @@
   "@settingsCustomOcrServerTitle": {
     "description": "Title for the custom OCR server setting and dialog."
   },
-  "settingsCustomOcrServerUnavailableSubtitle": "Layanan OCR sedang tidak tersedia sementara.",
-  "@settingsCustomOcrServerUnavailableSubtitle": {
-    "description": "Subtitle shown when OCR services are unavailable."
-  },
   "settingsCustomOcrServerNotConfigured": "Belum dikonfigurasi. Tambahkan URL server dan shared key milik Anda sendiri.",
   "@settingsCustomOcrServerNotConfigured": {
     "description": "Subtitle shown when a custom OCR server has not been configured."
@@ -1412,10 +1408,6 @@
   "@backupScopeNoteRestore": {
     "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
-  "backupSectionAutoBackup": "Cadangan data bacaan otomatis",
-  "@backupSectionAutoBackup": {
-    "description": "Section header for auto-backup settings."
-  },
   "backupAutoBackupIntervalTitle": "Interval cadangan otomatis",
   "@backupAutoBackupIntervalTitle": {
     "description": "Title for the auto-backup interval setting."
@@ -1432,10 +1424,6 @@
   "@backupIntervalWeekly": {
     "description": "Label for weekly auto-backups."
   },
-  "backupSectionRestore": "Pulihkan data bacaan",
-  "@backupSectionRestore": {
-    "description": "Section header for restore actions."
-  },
   "backupImportFileTitle": "Impor data bacaan (.mekuru)",
   "@backupImportFileTitle": {
     "description": "Title for the import-backup action."
@@ -1451,15 +1439,6 @@
   "backupNoBackupsYet": "Belum ada cadangan data bacaan",
   "@backupNoBackupsYet": {
     "description": "Message shown when there are no backups."
-  },
-  "backupErrorLoadingHistory": "Galat memuat cadangan: {details}",
-  "@backupErrorLoadingHistory": {
-    "description": "Message shown when backup history fails to load.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
   },
   "backupCreatedSuccess": "Cadangan data bacaan dibuat",
   "@backupCreatedSuccess": {
@@ -1482,36 +1461,9 @@
   "@backupExportedSuccess": {
     "description": "Snackbar shown after exporting a backup."
   },
-  "backupExportFailed": "Ekspor gagal: {details}",
-  "@backupExportFailed": {
-    "description": "Snackbar shown when exporting a backup fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "backupInvalidFile": "Silakan pilih file cadangan data bacaan .mekuru.",
   "@backupInvalidFile": {
     "description": "Snackbar shown when the selected restore file has the wrong extension."
-  },
-  "backupCouldNotOpenFile": "Tidak dapat membuka file: {details}",
-  "@backupCouldNotOpenFile": {
-    "description": "Snackbar shown when the backup file picker fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "backupRestoreFailed": "Pemulihan gagal: {details}",
-  "@backupRestoreFailed": {
-    "description": "Snackbar shown when restoring a backup fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
   },
   "backupBooksUpdatedFromBackup": "{count, plural, one {{count} buku diperbarui dari cadangan} other {{count} buku diperbarui dari cadangan}}",
   "@backupBooksUpdatedFromBackup": {
@@ -1519,15 +1471,6 @@
     "placeholders": {
       "count": {
         "type": "int"
-      }
-    }
-  },
-  "backupApplyBookDataFailed": "Gagal menerapkan data buku: {details}",
-  "@backupApplyBookDataFailed": {
-    "description": "Snackbar shown when applying restored book data fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
       }
     }
   },
@@ -1652,24 +1595,6 @@
   "@readerDismiss": {
     "description": "Barrier label for dismissing reader overlays."
   },
-  "readerFailedToLoadContent": "Gagal memuat konten EPUB.\n{details}",
-  "@readerFailedToLoadContent": {
-    "description": "Reader error shown when the EPUB viewer reports a content-loading failure.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "readerFailedToLoad": "Gagal memuat EPUB.\n{details}",
-  "@readerFailedToLoad": {
-    "description": "Reader error shown when the EPUB file fails to load.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "readerLoadTimeout": "Pembaca terlalu lama memuat. Ketuk coba lagi untuk mengulang.",
   "@readerLoadTimeout": {
     "description": "Shown when the reader's load watchdog trips before the EPUB finishes opening."
@@ -1713,10 +1638,6 @@
   "readerHighlightsTooltip": "Sorotan",
   "@readerHighlightsTooltip": {
     "description": "Tooltip for opening the highlights sheet."
-  },
-  "readerUnknownError": "Kesalahan pembaca tidak diketahui.",
-  "@readerUnknownError": {
-    "description": "Fallback error shown in the reader when no specific error is available."
   },
   "readerQuickSettings": "Pengaturan Cepat",
   "@readerQuickSettings": {
@@ -1880,15 +1801,6 @@
   "@commonTitleLabel": {
     "description": "Generic title field label."
   },
-  "libraryCouldNotReadFolder": "Tidak dapat membaca folder:\n{details}",
-  "@libraryCouldNotReadFolder": {
-    "description": "Snackbar shown when the selected manga folder cannot be read.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
   "libraryBookmarksTitle": "Penanda Halaman",
   "@libraryBookmarksTitle": {
     "description": "Title for the book bookmarks action in library options."
@@ -1952,15 +1864,6 @@
     "description": "Confirmation body for deleting a book from the library.",
     "placeholders": {
       "title": {
-        "type": "String"
-      }
-    }
-  },
-  "libraryChangeCoverFailed": "Gagal mengubah sampul: {details}",
-  "@libraryChangeCoverFailed": {
-    "description": "Snackbar shown when changing the cover image fails.",
-    "placeholders": {
-      "details": {
         "type": "String"
       }
     }
@@ -2335,92 +2238,9 @@
       }
     }
   },
-  "ocrNoPagesCacheFound": "Cache halaman tidak ditemukan untuk buku ini",
-  "@ocrNoPagesCacheFound": {
-    "description": "Snackbar shown when OCR cannot start because the pages cache is missing."
-  },
-  "ocrAlreadyCompleteResetHint": "OCR sudah selesai. Gunakan \"Hapus OCR\" untuk mereset.",
-  "@ocrAlreadyCompleteResetHint": {
-    "description": "Snackbar shown when OCR is already complete for a manga book."
-  },
-  "ocrMangaImageDirectoryNotFound": "Direktori gambar manga tidak ditemukan",
-  "@ocrMangaImageDirectoryNotFound": {
-    "description": "Snackbar shown when the manga image directory is missing."
-  },
-  "ocrBuildWordOverlaysTitle": "Bangun Overlay Kata",
-  "@ocrBuildWordOverlaysTitle": {
-    "description": "Dialog title for rebuilding word overlays from existing OCR."
-  },
-  "ocrBuildWordOverlaysBody": "Teks OCR sudah ada. Ini akan membangun ulang target ketukan kata agar overlay pencarian tampil dengan benar.",
-  "@ocrBuildWordOverlaysBody": {
-    "description": "Dialog body for rebuilding word overlays from existing OCR."
-  },
   "ocrRunActionTitle": "Jalankan OCR",
   "@ocrRunActionTitle": {
     "description": "Action title for starting OCR."
-  },
-  "ocrProcessPagesBody": "Ini akan memproses {count} halaman. OCR akan berjalan di latar belakang dan tetap berjalan meskipun Anda menutup aplikasi.",
-  "@ocrProcessPagesBody": {
-    "description": "Dialog body shown before OCR begins processing pages.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "ocrProcessAction": "Proses",
-  "@ocrProcessAction": {
-    "description": "Button label for processing existing OCR into word overlays."
-  },
-  "ocrStartAction": "Mulai",
-  "@ocrStartAction": {
-    "description": "Button label for starting OCR."
-  },
-  "ocrPrepareFailed": "Tidak dapat menyiapkan OCR: {details}",
-  "@ocrPrepareFailed": {
-    "description": "Snackbar shown when OCR setup fails before processing starts.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "ocrStartFailed": "Gagal memulai OCR: {details}",
-  "@ocrStartFailed": {
-    "description": "Snackbar shown when OCR background work fails to start.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "ocrWordOverlayStartedBackground": "Proses overlay kata dimulai di latar belakang",
-  "@ocrWordOverlayStartedBackground": {
-    "description": "Snackbar shown when rebuilding word overlays starts in the background."
-  },
-  "ocrStartedBackground": "OCR dimulai di latar belakang",
-  "@ocrStartedBackground": {
-    "description": "Snackbar shown when OCR starts in the background."
-  },
-  "ocrCancelActionTitle": "Jeda OCR",
-  "@ocrCancelActionTitle": {
-    "description": "Action title for cancelling OCR."
-  },
-  "ocrCancelSavedProgress": "OCR dijeda. Progres disimpan.",
-  "@ocrCancelSavedProgress": {
-    "description": "Snackbar shown when OCR is cancelled and progress is preserved."
-  },
-  "ocrReplaceActionTitle": "Ganti OCR",
-  "@ocrReplaceActionTitle": {
-    "description": "Action title for replacing imported OCR with custom OCR."
-  },
-  "ocrReplaceMokuroBody": "Ini akan menimpa data OCR yang diimpor dari file Mokuro/HTML dan menjalankan ulang OCR pada SEMUA halaman menggunakan server kustom Anda.\n\nNanti Anda dapat menggunakan Hapus OCR untuk memulihkan OCR asli.",
-  "@ocrReplaceMokuroBody": {
-    "description": "Confirmation dialog body for replacing Mokuro OCR with custom OCR."
-  },
-  "ocrReplaceStartedBackground": "Penggantian OCR dimulai di latar belakang",
-  "@ocrReplaceStartedBackground": {
-    "description": "Snackbar shown when replacing OCR starts in the background."
   },
   "ocrRemoveActionTitle": "Hapus OCR",
   "@ocrRemoveActionTitle": {
@@ -2437,27 +2257,6 @@
   "ocrRemovedFromBook": "OCR dihapus dari buku ini",
   "@ocrRemovedFromBook": {
     "description": "Snackbar shown after OCR has been removed from a book."
-  },
-  "ocrRemoveFailed": "Gagal menghapus OCR: {details}",
-  "@ocrRemoveFailed": {
-    "description": "Snackbar shown when removing OCR fails.",
-    "placeholders": {
-      "details": {
-        "type": "String"
-      }
-    }
-  },
-  "ocrUnlockProSubtitle": "Buka Pro untuk menggunakan server OCR kustom Anda",
-  "@ocrUnlockProSubtitle": {
-    "description": "Subtitle shown when OCR requires a Pro unlock."
-  },
-  "ocrStopAndSaveProgressSubtitle": "Jeda proses dan simpan progres",
-  "@ocrStopAndSaveProgressSubtitle": {
-    "description": "Subtitle shown for the OCR cancel action."
-  },
-  "ocrReplaceMokuroSubtitle": "Ganti OCR Mokuro dengan server OCR kustom Anda",
-  "@ocrReplaceMokuroSubtitle": {
-    "description": "Subtitle shown when replacing OCR imported from Mokuro."
   },
   "ocrRestoreOriginalMokuroBody": "Hapus OCR saat ini dan pulihkan OCR asli yang diimpor dari file Mokuro/HTML?",
   "@ocrRestoreOriginalMokuroBody": {
@@ -2478,26 +2277,6 @@
   "ocrOriginalMokuroRestored": "OCR asli Mokuro/HTML dipulihkan",
   "@ocrOriginalMokuroRestored": {
     "description": "Snackbar shown after the original Mokuro or HTML OCR has been restored."
-  },
-  "ocrBuildWordTargetsSubtitle": "Buat target ketukan kata dari OCR yang disimpan",
-  "@ocrBuildWordTargetsSubtitle": {
-    "description": "Subtitle shown when only word overlay generation is needed."
-  },
-  "ocrResumeSubtitle": "Lanjutkan OCR ({completed}/{total} selesai)",
-  "@ocrResumeSubtitle": {
-    "description": "Subtitle shown when OCR can resume partially completed work.",
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "ocrRecognizeAllPagesSubtitle": "Kenali teks pada semua halaman",
-  "@ocrRecognizeAllPagesSubtitle": {
-    "description": "Subtitle shown when OCR will run on all pages."
   },
   "readerEditNoteTitle": "Edit Catatan",
   "@readerEditNoteTitle": {
@@ -2916,9 +2695,7 @@
   "localOcrDownloadSize": "{done} / {total} terunduh",
   "localOcrDownloadRequired": "Unduh model OCR di Pengaturan → Unduhan, lalu kembali ke sini untuk memulai.",
   "localOcrModelReady": "Model terpasang · berfungsi offline",
-  "localOcrModelMissing": "Perlu unduhan tambahan",
   "localOcrModelVerifying": "Memverifikasi berkas model…",
-  "localOcrModelDownloading": "Mengunduh model…",
   "localOcrUnsupported": "OCR di perangkat memerlukan perangkat Android ARM 64-bit yang didukung. OCR jarak jauh tetap tersedia.",
   "localOcrPause": "Jeda",
   "localOcrResume": "Lanjutkan",
@@ -2939,7 +2716,6 @@
   "localOcrOutcomeCounts": "{succeeded} disimpan · {skipped} dilewati · {failed} gagal",
   "localOcrRetryFailed": "Coba lagi halaman yang gagal",
   "localOcrDismiss": "Tutup",
-  "localOcrError": "OCR tidak dapat dilanjutkan: {details}",
   "localOcrInterrupted": "Pemindaian terganggu. Lanjutkan untuk meneruskan dari progres yang tersimpan.",
   "localOcrLowMemory": "Dijeda karena memori perangkat hampir habis. Tutup aplikasi lain sebelum melanjutkan.",
   "localOcrTooHot": "Dijeda karena perangkat terlalu panas. Biarkan dingin sebelum melanjutkan.",
@@ -2958,7 +2734,6 @@
   "localOcrLicenseOpen": "Lihat lisensi dan pemberitahuan kode sumber",
   "localOcrPageErrors": "Kesalahan halaman",
   "localOcrPageError": "Halaman {page}: {details}",
-  "localOcrNotificationsOff": "OCR dapat berjalan meski notifikasi dimatikan. Gunakan lembar pengenalan manga untuk menjeda atau membatalkan.",
   "localOcrModelCorrupt": "Berkas model gagal diverifikasi. Keluarkan model OCR lalu unduh lagi.",
   "localOcrMobileDownloadTitle": "Unduh melalui data seluler?",
   "mobileDataVpnTitle": "Unduh melalui VPN Anda?",
@@ -3178,7 +2953,6 @@
   "ocrErrorConnectFailed": "Tidak dapat terhubung ke server OCR. Periksa URL server dan pastikan server berjalan.",
   "ocrErrorTimedOut": "Server OCR tidak merespons (waktu habis).",
   "ocrErrorHostNotFound": "Alamat server OCR tidak ditemukan. Periksa URL server.",
-  "ocrErrorNetwork": "Kesalahan jaringan: {details}",
   "ocrErrorStatus": "Server OCR mengembalikan kesalahan {status}: {details}",
   "ocrErrorMalformedResponse": "Server OCR mengirim jawaban yang tidak dapat dibaca Mekuru. Pastikan URL server mengarah ke server OCR yang kompatibel.",
   "ocrErrorServerUrlInvalid": "URL server OCR tidak valid. Gunakan URL lengkap dengan http:// atau https://.",
@@ -3194,9 +2968,7 @@
   "localOcrDownloadNetwork": "Unduhan tidak dapat terhubung. Periksa koneksi internet Anda lalu coba lagi.",
   "localOcrDownloadDamaged": "Berkas yang diunduh rusak. Unduh lagi.",
   "localOcrModelInstallFailed": "Model yang diunduh tidak dapat dipasang. Coba lagi.",
-  "proErrorLoadBilling": "Tidak dapat terhubung ke {store}: {details}",
   "proErrorLoadAccess": "Tidak dapat memeriksa akses Pro Anda: {details}",
-  "proErrorLoadPrice": "Tidak dapat memuat harga dari {store}: {details}",
   "proErrorOffline": "Tidak ada koneksi internet. Periksa koneksi Anda lalu coba lagi.",
   "proErrorSignInRequired": "Masuk dengan Google sebelum memakai fitur penagihan OCR.",
   "proErrorAppCheck": "Mekuru tidak dapat memverifikasi dirinya ke server. Tunggu beberapa menit lalu coba lagi.",
@@ -3288,7 +3060,6 @@
   "backupApplyNotFinished": "Tidak dapat memperbarui buku dari cadangan. Coba lagi.",
   "backupFullNotStarted": "Tidak dapat memulai cadangan lengkap. Coba lagi.",
   "backupFullRestoreNotStarted": "Tidak dapat memulai pemulihan lengkap. Coba lagi.",
-  "proErrorCheckAccess": "Tidak dapat memeriksa akses Pro Anda. Coba lagi nanti.",
   "dictionaryManagerPendingBackupFailed": "Tidak dapat menerapkan pengaturan cadangan. Coba lagi.",
   "libraryFavoriteChangeFailed": "Tidak dapat mengubah favorit Anda. Coba lagi.",
   "libraryRenameBookFailed": "Tidak dapat mengganti nama buku. Coba lagi.",
