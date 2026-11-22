@@ -389,6 +389,84 @@ void main() {
       expect(notified, 1);
     });
 
+    // Gigabytes in the app; here a few MB, more than a full disk cuts off the
+    // part to make room for the status.
+    final big = List<int>.generate(4 << 20, (i) => i % 251);
+    for (final (room, moment, left) in [
+      // The part keeps the validator that the resume's If-Range sends.
+      (
+        big.length ~/ 2,
+        'mid-download',
+        {'status.json', 'model.bin.part', 'model.bin.part.validator'},
+      ),
+      // Every byte arrived, and then the "being checked" status didn't fit.
+      (big.length, 'before the check', {'status.json', 'model.bin.part'}),
+    ]) {
+      test('a disk that fills $moment keeps the part, and the next Download '
+          'resumes it', () async {
+        final ranges = <String?>[];
+        final bigServer = await HttpServer.bind(
+          InternetAddress.loopbackIPv4,
+          0,
+        );
+        addTearDown(() => bigServer.close(force: true));
+        bigServer.listen((request) async {
+          final range = request.headers.value(HttpHeaders.rangeHeader);
+          ranges.add(range);
+          final from = range == null
+              ? 0
+              : int.parse(range.substring('bytes='.length, range.length - 1));
+          final response = request.response
+            ..headers.set(HttpHeaders.etagHeader, '"v1"');
+          if (from > 0) {
+            response.statusCode = HttpStatus.partialContent;
+            response.headers.set(
+              HttpHeaders.contentRangeHeader,
+              'bytes $from-${big.length - 1}/${big.length}',
+            );
+          }
+          response.contentLength = big.length - from;
+          response.add(big.sublist(from));
+          await response.close();
+        });
+        final from = 'http://127.0.0.1:${bigServer.port}/file';
+        // As ModelDownloadJob.run queues it.
+        void queue() => seed(
+          'status.json',
+          '{"state":"running","received":0,"total":${big.length},'
+              '"failedAttempts":0}',
+        );
+        queue();
+
+        final disk = _Disk([], free: room);
+        final over = await IOOverrides.runWithIOOverrides(
+          () => run(from: from, body: big),
+          disk,
+        );
+
+        expect(over, isTrue);
+        expect(files(), left);
+        final kept = File(p.join(dir.path, 'model.bin.part')).readAsBytesSync();
+        // All but a tail of what arrived.
+        expect(kept.length, greaterThanOrEqualTo(big.length ~/ 4));
+        expect(kept, big.sublist(0, kept.length));
+        expect(
+          status(),
+          '{"state":"failed","received":${kept.length},"total":${big.length},'
+          '"failedAttempts":0,"error":"storage_full"}',
+        );
+        expect(events, ['test.download_failed']);
+        expect(notified, 1);
+
+        // The user frees space and taps Download again.
+        queue();
+        expect(await run(from: from, body: big), isTrue);
+        expect(ranges, [null, 'bytes=${kept.length}-']);
+        expect(File(p.join(dir.path, 'model.bin')).readAsBytesSync(), big);
+        expect(files(), {'status.json', 'model.bin', 'INSTALLED'});
+      });
+    }
+
     test("a rejected certificate is retried, unlike a server book's", () async {
       final secure = await HttpServer.bindSecure(
         InternetAddress.loopbackIPv4,
@@ -524,6 +602,13 @@ class _PartWrites implements RandomAccessFile {
 
   @override
   Future<void> close() => _raf.close();
+
+  @override
+  Future<RandomAccessFile> truncate(int length) async {
+    _disk.free += await _raf.length() - length;
+    await _raf.truncate(length);
+    return this;
+  }
 
   @override
   String get path => _path;

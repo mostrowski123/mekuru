@@ -39,8 +39,9 @@ const serverDownloadInterruptedError = 'interrupted';
 /// restarted because its server connection was deleted or turned off.
 const serverDownloadConnectionGoneError = 'connection_gone';
 
-/// [ServerDownloadWorkStatus.error] of a download that filled the disk. Its
-/// partial file is deleted, so the space it took is free again.
+/// [ServerDownloadWorkStatus.error] of a download that filled the disk. A
+/// server book's partial file is deleted, so the space it took is free
+/// again; a pinned-size download keeps all but a tail of its, to resume.
 const serverDownloadStorageFullError = 'storage_full';
 
 /// Prefix of the [ServerDownloadWorkStatus.error] of a download the server
@@ -365,15 +366,23 @@ Future<bool> runWorkerDownload(
     await writes;
     if (!Directory(work.path).existsSync()) return true;
     if (e case FileSystemException(osError: OSError(errorCode: 28))) {
-      // ENOSPC: a retry can't fit either. The part goes first, or not even
-      // the status that says so could be written.
-      for (final path in [partPath, '$partPath.validator']) {
-        final file = File(path);
-        if (await file.exists()) await file.delete();
+      // ENOSPC: a retry can't fit either. Room goes first, or not even the
+      // status that says so could be written. A server book's part goes; a
+      // pinned-size one (gigabytes) only loses a tail, and the next run
+      // continues from what is left.
+      var kept = 0;
+      if (bytes == null) {
+        for (final path in [partPath, '$partPath.validator']) {
+          final file = File(path);
+          if (await file.exists()) await file.delete();
+        }
+      } else {
+        kept = await _cutTail(partPath);
       }
       await work.writeStatus(
         ServerDownloadWorkStatus(
           state: ServerDownloadWorkState.failed,
+          received: kept,
           total: total,
           error: serverDownloadStorageFullError,
         ),
@@ -409,6 +418,27 @@ Future<bool> runWorkerDownload(
 Future<int> _lengthOrZero(String path) async {
   final file = File(path);
   return await file.exists() ? await file.length() : 0;
+}
+
+/// What a full disk cuts off a kept part: room for the status that says so,
+/// with a margin for whole blocks and the file system's own records.
+const _fullDiskTail = 1 << 20;
+
+/// Cuts [_fullDiskTail] bytes (all, when shorter) off the end of the part at
+/// [partPath] and returns the length left. What is left is still the start
+/// of the file, so [downloadResumable] continues it.
+Future<int> _cutTail(String partPath) async {
+  final part = File(partPath);
+  if (!await part.exists()) return 0;
+  final length = await part.length();
+  final kept = length > _fullDiskTail ? length - _fullDiskTail : 0;
+  final raf = await part.open(mode: FileMode.append);
+  try {
+    await raf.truncate(kept);
+  } finally {
+    await raf.close();
+  }
+  return kept;
 }
 
 /// Non-2xx answer to a download request.
