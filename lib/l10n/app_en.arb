@@ -3224,11 +3224,11 @@
       }
     }
   },
-  "serverSettingsLinkFailed": "Linking failed: {error}",
+  "serverSettingsLinkFailed": "Linking failed: {reason}",
   "@serverSettingsLinkFailed": {
     "description": "Snackbar shown when matching existing books against the server threw; error is the exception text.",
     "placeholders": {
-      "error": {
+      "reason": {
         "type": "String"
       }
     }
@@ -3310,11 +3310,11 @@
   "@serverDialogConnectionOk": {
     "description": "Result shown in the server connection dialog after a successful connection test."
   },
-  "serverDialogConnectionFailed": "Failed: {error}",
+  "serverDialogConnectionFailed": "Failed: {reason}",
   "@serverDialogConnectionFailed": {
     "description": "Result shown in the server connection dialog after a failed connection test; error is the exception text.",
     "placeholders": {
-      "error": {
+      "reason": {
         "type": "String"
       }
     }
@@ -3391,11 +3391,11 @@
       }
     }
   },
-  "serverBrowseDownloadFailed": "Download failed: {error}",
+  "serverBrowseDownloadFailed": "Download failed: {reason}",
   "@serverBrowseDownloadFailed": {
     "description": "Snackbar shown when downloading a server book threw; error is the exception text.",
     "placeholders": {
-      "error": {
+      "reason": {
         "type": "String"
       }
     }
@@ -4303,14 +4303,14 @@
   "@localOcrPageErrors": {
     "description": "On-device manga OCR: localOcrPageErrors"
   },
-  "localOcrPageError": "Page {page}: {details}",
+  "localOcrPageError": "Page {page}: {reason}",
   "@localOcrPageError": {
     "description": "On-device manga OCR: localOcrPageError",
     "placeholders": {
       "page": {
         "type": "int"
       },
-      "details": {
+      "reason": {
         "type": "String"
       }
     }

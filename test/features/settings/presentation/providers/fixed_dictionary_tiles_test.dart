@@ -409,7 +409,7 @@ void main() {
         await shows(
           () => tile.download(screen),
           ja.serverBrowseDownloadFailed(
-            error: ja.serverErrorStatus(status: 404),
+            reason: ja.serverErrorStatus(status: 404),
           ),
         );
         http.handler = serve(_zip(tile.title));

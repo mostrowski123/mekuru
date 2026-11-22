@@ -4317,8 +4317,8 @@ abstract class AppLocalizations {
   /// Snackbar shown when matching existing books against the server threw; error is the exception text.
   ///
   /// In en, this message translates to:
-  /// **'Linking failed: {error}'**
-  String serverSettingsLinkFailed({required String error});
+  /// **'Linking failed: {reason}'**
+  String serverSettingsLinkFailed({required String reason});
 
   /// Snackbar shown while Sync now pushes reading progress to every server.
   ///
@@ -4422,8 +4422,8 @@ abstract class AppLocalizations {
   /// Result shown in the server connection dialog after a failed connection test; error is the exception text.
   ///
   /// In en, this message translates to:
-  /// **'Failed: {error}'**
-  String serverDialogConnectionFailed({required String error});
+  /// **'Failed: {reason}'**
+  String serverDialogConnectionFailed({required String reason});
 
   /// Button in the server connection dialog that tests the connection with the entered URL and credential.
   ///
@@ -4506,8 +4506,8 @@ abstract class AppLocalizations {
   /// Snackbar shown when downloading a server book threw; error is the exception text.
   ///
   /// In en, this message translates to:
-  /// **'Download failed: {error}'**
-  String serverBrowseDownloadFailed({required String error});
+  /// **'Download failed: {reason}'**
+  String serverBrowseDownloadFailed({required String reason});
 
   /// Snack bar after a server book download was stopped, by the user (e.g. from the system Live Activity) or by iOS.
   ///
@@ -5599,8 +5599,8 @@ abstract class AppLocalizations {
   /// On-device manga OCR: localOcrPageError
   ///
   /// In en, this message translates to:
-  /// **'Page {page}: {details}'**
-  String localOcrPageError({required int page, required String details});
+  /// **'Page {page}: {reason}'**
+  String localOcrPageError({required int page, required String reason});
 
   /// Recovery instructions for corrupted installed OCR model files.
   ///

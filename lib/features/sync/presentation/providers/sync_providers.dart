@@ -605,7 +605,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
       );
       announce(
         (l10n) => l10n.serverBrowseDownloadFailed(
-          error: importFailureReason(l10n, e),
+          reason: importFailureReason(l10n, e),
         ),
       );
     }
@@ -620,7 +620,7 @@ String describeServerError(AppLocalizations l10n, Object error) =>
       _ when isUntrustedCertificateError(error) =>
         l10n.serverCertificateUntrusted,
       SyncException() => l10n.serverBrowseDownloadFailed(
-        error: serverErrorReason(l10n, error),
+        reason: serverErrorReason(l10n, error),
       ),
       _ => dictionaryDownloadError(l10n, error)!,
     };
@@ -636,12 +636,12 @@ String describeServerDownloadError(AppLocalizations l10n, String? error) {
   return switch (failure) {
     RecordedFailureCode.interrupted => l10n.serverBrowseDownloadInterrupted,
     RecordedServerStatus(:final status) => l10n.serverBrowseDownloadFailed(
-      error: serverErrorReason(l10n, SyncException(status, '')),
+      reason: serverErrorReason(l10n, SyncException(status, '')),
     ),
-    RecordedFailureCode.connectionGone || RecordedFailureCode.storageFull =>
-      l10n.serverBrowseDownloadFailed(
-        error: recordedDownloadFailureText(l10n, failure),
-      ),
+    RecordedFailureCode.connectionGone ||
+    RecordedFailureCode.storageFull => l10n.serverBrowseDownloadFailed(
+      reason: recordedDownloadFailureText(l10n, failure),
+    ),
     RecordedFailureCode.stopped ||
     RecordedFailureCode.untrustedCertificate ||
     RecordedFailureCode.other => recordedDownloadFailureText(l10n, failure),

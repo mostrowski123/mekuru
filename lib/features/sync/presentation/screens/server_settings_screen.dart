@@ -174,7 +174,7 @@ class ServerSettingsScreen extends ConsumerWidget {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            l10n.serverSettingsLinkFailed(error: serverErrorReason(l10n, e)),
+            l10n.serverSettingsLinkFailed(reason: serverErrorReason(l10n, e)),
           ),
         ),
       );
@@ -339,7 +339,7 @@ class _ServerConnectionDialogState
           _testResult = isUntrustedCertificateError(e)
               ? l10n.serverCertificateUntrusted
               : l10n.serverDialogConnectionFailed(
-                  error: serverErrorReason(l10n, e),
+                  reason: serverErrorReason(l10n, e),
                 );
         });
       }

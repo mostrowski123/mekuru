@@ -2522,8 +2522,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String serverSettingsLinkFailed({required String error}) {
-    return 'Linking failed: $error';
+  String serverSettingsLinkFailed({required String reason}) {
+    return 'Linking failed: $reason';
   }
 
   @override
@@ -2589,8 +2589,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serverDialogConnectionOk => 'Connection OK';
 
   @override
-  String serverDialogConnectionFailed({required String error}) {
-    return 'Failed: $error';
+  String serverDialogConnectionFailed({required String reason}) {
+    return 'Failed: $reason';
   }
 
   @override
@@ -2649,8 +2649,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String serverBrowseDownloadFailed({required String error}) {
-    return 'Download failed: $error';
+  String serverBrowseDownloadFailed({required String reason}) {
+    return 'Download failed: $reason';
   }
 
   @override
@@ -3399,8 +3399,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get localOcrPageErrors => 'Page errors';
 
   @override
-  String localOcrPageError({required int page, required String details}) {
-    return 'Page $page: $details';
+  String localOcrPageError({required int page, required String reason}) {
+    return 'Page $page: $reason';
   }
 
   @override

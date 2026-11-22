@@ -364,19 +364,12 @@ final _rows = [
 ];
 
 /// The messages whose placeholder is named details or error but only ever
-/// takes text already worded or the OCR server's own explanation.
+/// takes the OCR server's own explanation.
 const _placeholdersAllowed = {
   // The OCR server's own explanation of why it refused (HTTP 422).
   'ocrErrorRejected',
   // The OCR server's own explanation beside the HTTP status.
   'ocrErrorStatus',
-  // The next four take only a reason serverErrorReason, importFailureReason
-  // or localOcrReason has worded; their placeholders are to be renamed
-  // {reason}.
-  'serverBrowseDownloadFailed',
-  'serverSettingsLinkFailed',
-  'serverDialogConnectionFailed',
-  'localOcrPageError',
 };
 
 final _freeTextPlaceholder = RegExp(r'\{\s*(details|error)\s*[,}]');

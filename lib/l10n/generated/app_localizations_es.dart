@@ -2551,8 +2551,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String serverSettingsLinkFailed({required String error}) {
-    return 'Error al vincular: $error';
+  String serverSettingsLinkFailed({required String reason}) {
+    return 'Error al vincular: $reason';
   }
 
   @override
@@ -2620,8 +2620,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get serverDialogConnectionOk => 'Conexión correcta';
 
   @override
-  String serverDialogConnectionFailed({required String error}) {
-    return 'Error: $error';
+  String serverDialogConnectionFailed({required String reason}) {
+    return 'Error: $reason';
   }
 
   @override
@@ -2680,8 +2680,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String serverBrowseDownloadFailed({required String error}) {
-    return 'Error al descargar: $error';
+  String serverBrowseDownloadFailed({required String reason}) {
+    return 'Error al descargar: $reason';
   }
 
   @override
@@ -3443,8 +3443,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get localOcrPageErrors => 'Errores de página';
 
   @override
-  String localOcrPageError({required int page, required String details}) {
-    return 'Página $page: $details';
+  String localOcrPageError({required int page, required String reason}) {
+    return 'Página $page: $reason';
   }
 
   @override

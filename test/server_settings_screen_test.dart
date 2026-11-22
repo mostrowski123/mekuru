@@ -221,7 +221,7 @@ void main() {
     }
 
     expect(
-      find.text(ja.serverSettingsLinkFailed(error: ja.serverErrorUnreadable)),
+      find.text(ja.serverSettingsLinkFailed(reason: ja.serverErrorUnreadable)),
       findsOneWidget,
     );
     expect(find.textContaining(RegExp('Exception|<html>')), findsNothing);

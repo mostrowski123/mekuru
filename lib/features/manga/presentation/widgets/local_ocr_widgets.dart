@@ -444,7 +444,7 @@ class LocalOcrJobCard extends StatelessWidget {
                       title: Text(
                         l.localOcrPageError(
                           page: int.parse(entry.key as String) + 1,
-                          details: localOcrReason(
+                          reason: localOcrReason(
                             context,
                             entry.value as String,
                           ),

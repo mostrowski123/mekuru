@@ -265,7 +265,7 @@ String? dictionaryDownloadError(
   ServerDownloadHttpException(
     :final statusCode,
   ) => l10n.serverBrowseDownloadFailed(
-    error: l10n.serverErrorStatus(status: statusCode),
+    reason: l10n.serverErrorStatus(status: statusCode),
   ),
   ServerDownloadFailedException(:final error) => recordedDownloadFailureText(
     l10n,
@@ -306,7 +306,7 @@ String recordedDownloadFailureText(
   RecordedFailureCode.storageFull => l10n.localOcrStorageFull,
   RecordedServerStatus(status: 0) => l10n.localOcrDownloadNetwork,
   RecordedServerStatus(:final status) => l10n.serverBrowseDownloadFailed(
-    error: l10n.serverErrorStatus(status: status),
+    reason: l10n.serverErrorStatus(status: status),
   ),
   // An exception's own text, or none.
   RecordedFailureCode.other => l10n.downloadNotFinished,

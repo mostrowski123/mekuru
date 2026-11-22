@@ -285,7 +285,7 @@ void main() {
 
     await shows(
       () => notifier.download(NetworkConsent.mobileData),
-      ja.serverBrowseDownloadFailed(error: ja.serverErrorStatus(status: 404)),
+      ja.serverBrowseDownloadFailed(reason: ja.serverErrorStatus(status: 404)),
     );
     // Not the published archive, so its hash doesn't match.
     http.handler = serve(archiveBytes);

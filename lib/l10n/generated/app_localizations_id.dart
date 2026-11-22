@@ -2533,8 +2533,8 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String serverSettingsLinkFailed({required String error}) {
-    return 'Gagal menautkan: $error';
+  String serverSettingsLinkFailed({required String reason}) {
+    return 'Gagal menautkan: $reason';
   }
 
   @override
@@ -2603,8 +2603,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get serverDialogConnectionOk => 'Koneksi berhasil';
 
   @override
-  String serverDialogConnectionFailed({required String error}) {
-    return 'Gagal: $error';
+  String serverDialogConnectionFailed({required String reason}) {
+    return 'Gagal: $reason';
   }
 
   @override
@@ -2663,8 +2663,8 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String serverBrowseDownloadFailed({required String error}) {
-    return 'Gagal mengunduh: $error';
+  String serverBrowseDownloadFailed({required String reason}) {
+    return 'Gagal mengunduh: $reason';
   }
 
   @override
@@ -3419,8 +3419,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get localOcrPageErrors => 'Kesalahan halaman';
 
   @override
-  String localOcrPageError({required int page, required String details}) {
-    return 'Halaman $page: $details';
+  String localOcrPageError({required int page, required String reason}) {
+    return 'Halaman $page: $reason';
   }
 
   @override

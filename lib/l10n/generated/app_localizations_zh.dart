@@ -2415,8 +2415,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String serverSettingsLinkFailed({required String error}) {
-    return '关联失败：$error';
+  String serverSettingsLinkFailed({required String reason}) {
+    return '关联失败：$reason';
   }
 
   @override
@@ -2482,8 +2482,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serverDialogConnectionOk => '连接正常';
 
   @override
-  String serverDialogConnectionFailed({required String error}) {
-    return '失败：$error';
+  String serverDialogConnectionFailed({required String reason}) {
+    return '失败：$reason';
   }
 
   @override
@@ -2540,8 +2540,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String serverBrowseDownloadFailed({required String error}) {
-    return '下载失败：$error';
+  String serverBrowseDownloadFailed({required String reason}) {
+    return '下载失败：$reason';
   }
 
   @override
@@ -3248,8 +3248,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrPageErrors => '页面错误';
 
   @override
-  String localOcrPageError({required int page, required String details}) {
-    return '第 $page 页：$details';
+  String localOcrPageError({required int page, required String reason}) {
+    return '第 $page 页：$reason';
   }
 
   @override
@@ -6920,8 +6920,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String serverSettingsLinkFailed({required String error}) {
-    return '关联失败：$error';
+  String serverSettingsLinkFailed({required String reason}) {
+    return '关联失败：$reason';
   }
 
   @override
@@ -6987,8 +6987,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get serverDialogConnectionOk => '连接正常';
 
   @override
-  String serverDialogConnectionFailed({required String error}) {
-    return '失败：$error';
+  String serverDialogConnectionFailed({required String reason}) {
+    return '失败：$reason';
   }
 
   @override
@@ -7045,8 +7045,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String serverBrowseDownloadFailed({required String error}) {
-    return '下载失败：$error';
+  String serverBrowseDownloadFailed({required String reason}) {
+    return '下载失败：$reason';
   }
 
   @override
@@ -7753,8 +7753,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get localOcrPageErrors => '页面错误';
 
   @override
-  String localOcrPageError({required int page, required String details}) {
-    return '第 $page 页：$details';
+  String localOcrPageError({required int page, required String reason}) {
+    return '第 $page 页：$reason';
   }
 
   @override
