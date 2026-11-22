@@ -8,6 +8,7 @@ import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_downloa
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
 import 'package:mekuru/features/word_audio/presentation/providers/word_audio_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/downloads/download.dart' show DownloadKind;
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
@@ -20,6 +21,7 @@ class WordAudioDownloadTile extends ConsumerWidget {
     final audio = ref.watch(wordAudioProvider);
     final l10n = context.l10n;
     return ModelDownloadTile(
+      kind: DownloadKind.wordAudioList,
       icon: Icons.volume_up_outlined,
       title: l10n.wordAudioTitle,
       description: l10n.wordAudioDescription,
@@ -81,12 +83,6 @@ class WordAudioPackTile extends ConsumerWidget {
     final notifier = ref.read(wordAudioPackProvider.notifier);
     final size = ref.watch(wordAudioProvider).pack.downloadSize;
     final fraction = state.fraction;
-    // The pack keeps its partial file, so a Wi-Fi stop (iOS) says so.
-    final error = state.deleteFailed
-        ? l.downloadsDeleteFailed
-        : state.error == null
-        ? null
-        : modelDownloadFailureReason(l, state.error!);
     final removeButton = IconButton(
       tooltip: l.commonRemove,
       icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
@@ -144,7 +140,9 @@ class WordAudioPackTile extends ConsumerWidget {
               semanticsLabel: l.wordAudioPackTitle,
             ),
           ),
-        if (error != null) DownloadErrorText(text: error),
+        // The pack keeps its partial file, so a Wi-Fi stop (iOS) says so.
+        if (state.outcome case final outcome?)
+          DownloadOutcomeText(outcome, kind: DownloadKind.wordAudioPackIos),
       ],
     );
   }

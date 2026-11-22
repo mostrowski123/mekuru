@@ -8,7 +8,10 @@ import 'package:mekuru/features/manga/data/services/ocr_failure.dart';
 import 'package:mekuru/features/manga/data/services/vision_page_ocr.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
+import 'package:mekuru/core/platform/network_status.dart'
+    show WifiLostException;
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/downloads/download.dart' show DownloadKind;
 import 'package:mekuru/shared/widgets/download_status.dart';
 
 import '../../test_app.dart';
@@ -156,17 +159,29 @@ void main() {
   });
 
   test('a failed model download is worded in the app language', () {
+    String? reason(Object error) =>
+        dictionaryDownloadError(es, error, kind: DownloadKind.mangaOcrIos);
     expect(
-      modelDownloadFailureReason(es, const ModelVerificationException()),
+      reason(const ModelVerificationException()),
       es.localOcrDownloadDamaged,
     );
     expect(
-      modelDownloadFailureReason(es, const ServerDownloadHttpException(404)),
+      reason(const ServerDownloadHttpException(404)),
       'Error al descargar: El servidor devolvió el error 404.',
     );
     expect(
-      modelDownloadFailureReason(es, const SocketException('refused')),
+      reason(const SocketException('refused')),
       es.localOcrDownloadNetwork,
+    );
+    // A model keeps the files it got, which a dictionary does not.
+    expect(reason(const WifiLostException()), es.localOcrWifiLostIos);
+    expect(
+      dictionaryDownloadError(
+        es,
+        const WifiLostException(),
+        kind: DownloadKind.fixedDictionary,
+      ),
+      es.dictionaryDownloadWifiLost,
     );
   });
 }

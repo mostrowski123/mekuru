@@ -13,9 +13,8 @@ class CatalogDownloadState {
     this.isDownloading = false,
     this.isDeleting = false,
     this.progress = 0,
-    this.failure,
+    this.outcome,
     this.deletedId,
-    this.deleteFailed = false,
   });
 
   final bool isDownloading;
@@ -24,16 +23,13 @@ class CatalogDownloadState {
   /// [DictionaryDownloadService] progress: downloading, then importing.
   final double progress;
 
-  /// What stopped the last attempt, shown under the tile
-  /// (`dictionaryDownloadError`).
-  final Object? failure;
+  /// The last download or delete, shown under the tile. A failed delete
+  /// leaves the dictionary there to delete again.
+  final TileOutcome? outcome;
 
   /// The dictionary this tile deleted. The list stream can still show it:
   /// Drift refetches the list only after every delete queued behind this one.
   final int? deletedId;
-
-  /// The last delete failed; the dictionary is still there to delete again.
-  final bool deleteFailed;
 }
 
 /// Downloads one catalog dictionary at a time and reports how it goes.
@@ -71,7 +67,9 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
           ),
         );
       }
-      state = const CatalogDownloadState();
+      state = const CatalogDownloadState(
+        outcome: (action: TileAction.download, error: null),
+      );
       // JMdict's own tile shows the delete and anything that stops it.
       final jmdict = fixedDictionaryProvider(FixedDictionary.jmdict);
       if (replaceJmdict) await ref.read(jmdict.notifier).delete();
@@ -79,7 +77,9 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
       // iOS ended the background work, or the user stopped it there.
       state = const CatalogDownloadState();
     } catch (e) {
-      state = CatalogDownloadState(failure: e);
+      state = CatalogDownloadState(
+        outcome: (action: TileAction.download, error: e),
+      );
     }
   }
 
@@ -92,10 +92,15 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
       await ref
           .read(dictionaryRepositoryProvider)
           .deleteDictionary(dictionaryId);
-      state = CatalogDownloadState(deletedId: dictionaryId);
+      state = CatalogDownloadState(
+        deletedId: dictionaryId,
+        outcome: (action: TileAction.delete, error: null),
+      );
     } catch (e) {
       logFailure('dictionary.delete_failed', e, attrs: {'asset': entry.name});
-      state = const CatalogDownloadState(deleteFailed: true);
+      state = CatalogDownloadState(
+        outcome: (action: TileAction.delete, error: e),
+      );
     }
   }
 }

@@ -144,12 +144,15 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
     final finishing = inFlight.every(
       (p) => p >= DictionaryDownloadService.finishingProgress,
     );
-    final jpdbFailure = switch (jpdb.outcome) {
+    Object? downloadFailure(TileOutcome? outcome) => switch (outcome) {
       (action: TileAction.download, :final error) => error,
       _ => null,
     };
     final error = widget.showProgress
-        ? dictionaryDownloadError(l10n, jitendex.failure ?? jpdbFailure)
+        ? dictionaryDownloadError(
+            l10n,
+            downloadFailure(jitendex.outcome) ?? downloadFailure(jpdb.outcome),
+          )
         : null;
 
     return Container(

@@ -12,6 +12,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/downloads/download.dart' show TileAction;
 
 import 'shared/fake_download_notifiers.dart';
 import 'shared/test_database.dart';
@@ -24,6 +25,21 @@ class _FailingDeleteRepository extends DictionaryRepository {
   @override
   Future<void> deleteDictionary(int dictionaryId) async =>
       throw const FileSystemException('locked');
+}
+
+/// The dictionaries [listed] (a [StateError] while null), whose deletes go
+/// through without a database.
+class _ListedRepository extends DictionaryRepository {
+  _ListedRepository(super.db);
+
+  List<DictionaryMeta>? listed;
+
+  @override
+  Future<List<DictionaryMeta>> getAllDictionaries() async =>
+      listed ?? (throw StateError('database closed'));
+
+  @override
+  Future<void> deleteDictionary(int dictionaryId) async {}
 }
 
 void main() {
@@ -191,6 +207,60 @@ void main() {
     expect(find.byTooltip(ja.dictionaryManagerDeleteTitle), findsOneWidget);
   });
 
+  testWidgets('in Japanese, a download and a delete each say how they went', (
+    tester,
+  ) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repo = _ListedRepository(db);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dictionaryRepositoryProvider.overrideWithValue(repo),
+          dictionariesProvider.overrideWith((ref) => Stream.value(const [])),
+        ],
+        child: buildLocalizedTestApp(
+          home: const Scaffold(
+            body: CatalogDictionaryTile(entry: CatalogDictionary.jitendex),
+          ),
+          locale: const Locale('ja'),
+        ),
+      ),
+    );
+    await tester.pump();
+    final download = ProviderScope.containerOf(
+      tester.element(find.byType(CatalogDictionaryTile)),
+    ).read(catalogDownloadProvider(CatalogDictionary.jitendex).notifier);
+
+    // Fails before it fetches anything; never the error's text.
+    await download.download(NetworkConsent.mobileData);
+    await tester.pump();
+    expect(find.text(ja.downloadNotFinished), findsOneWidget);
+    expect(find.textContaining('closed'), findsNothing);
+
+    // Installed meanwhile: nothing left to fetch, so it finishes.
+    repo.listed = [
+      DictionaryMeta(
+        id: 1,
+        name: 'Jitendex.org [2026-10-03]',
+        isEnabled: true,
+        dateImported: DateTime(2026, 10, 3),
+        sortOrder: 0,
+        isHidden: false,
+      ),
+    ];
+    await download.download(NetworkConsent.mobileData);
+    await tester.pump();
+    expect(find.text(ja.downloadsDownloadComplete), findsOneWidget);
+    expect(find.text(ja.downloadNotFinished), findsNothing);
+
+    await download.delete(1);
+    await tester.pump();
+    expect(find.text(ja.downloadsDeleted), findsOneWidget);
+    expect(untranslatedDownloadText, findsNothing);
+  });
+
   group('Jitendex replacing JMdict', () {
     final download = catalogDownloadProvider(CatalogDictionary.jitendex);
 
@@ -229,14 +299,15 @@ void main() {
         'JMdict (Spanish) [2026-10-03]',
         'Jitendex.org [2026-10-03]',
       ]);
-      expect(state.failure, isNull);
+      expect(state.outcome, (action: TileAction.download, error: null));
     });
 
     test('keeps JMdict when the Jitendex download fails', () async {
       // No network or platform plugins in unit tests: the download fails.
       final (left, state) = await replaceOver(['JMdict [2026-10-03]']);
 
-      expect(state.failure, isNotNull);
+      expect(state.outcome?.action, TileAction.download);
+      expect(state.outcome?.error, isNotNull);
       expect(left, ['JMdict [2026-10-03]']);
     });
   });

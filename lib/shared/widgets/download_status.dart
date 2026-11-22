@@ -187,11 +187,16 @@ class DownloadOutcomeText extends StatelessWidget {
   const DownloadOutcomeText(
     this.outcome, {
     super.key,
+    required this.kind,
     this.downloaded,
     this.deleted,
   });
 
   final TileOutcome outcome;
+
+  /// What the tile downloads, which words a stop when Wi-Fi goes
+  /// ([dictionaryDownloadError]); null for one [runDownload] doesn't run.
+  final DownloadKind? kind;
   final String? downloaded;
   final String? deleted;
 
@@ -206,7 +211,7 @@ class DownloadOutcomeText extends StatelessWidget {
         text: deleted ?? l10n.downloadsDeleted,
       ),
       (action: TileAction.download, :final error?) => DownloadErrorText(
-        text: dictionaryDownloadError(l10n, error)!,
+        text: dictionaryDownloadError(l10n, error, kind: kind)!,
       ),
       (action: TileAction.delete, error: _?) => DownloadErrorText(
         text: l10n.downloadsDeleteFailed,
@@ -237,38 +242,46 @@ String highQualityDownloadText(
 /// Why a download (dictionary, translation or OCR model) failed, worded for
 /// the user; null when it did not. Every way one ends has its own words, and
 /// anything else says only that it didn't finish: an exception's own text
-/// never reaches the user.
-String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
-    switch (failure) {
-      null => null,
-      InsufficientSpaceException(:final neededBytes) =>
-        l10n.backupFullNotEnoughSpace(size: formatBytes(neededBytes)),
-      WifiLostException() => l10n.dictionaryDownloadWifiLost,
-      DownloadStoppedInBackgroundException() =>
-        l10n.downloadStoppedInBackground,
-      // iOS ended its background work.
-      DownloadStoppedException() => l10n.downloadInterrupted,
-      // A part of the wrong size or hash.
-      ModelVerificationException() => l10n.localOcrDownloadDamaged,
-      DownloadHttpException(:final statusCode) ||
-      ServerDownloadHttpException(
-        :final statusCode,
-      ) => l10n.serverBrowseDownloadFailed(
-        error: l10n.serverErrorStatus(status: statusCode),
-      ),
-      ServerDownloadFailedException(:final error) =>
-        recordedDownloadFailureText(l10n, RecordedDownloadFailure.parse(error)),
-      SocketException() ||
-      HttpException() ||
-      TlsException() ||
-      TimeoutException() => l10n.localOcrDownloadNetwork,
-      _ when isStorageFull(failure) => l10n.localOcrStorageFull,
-      // An archive that doesn't unpack (ArchiveException, a bad gzip) or a
-      // hash that doesn't match (UniDic).
-      FormatException() => l10n.localOcrDownloadDamaged,
-      // An import or extraction that failed some other way.
-      _ => l10n.downloadNotFinished,
-    };
+/// never reaches the user. A stop when Wi-Fi goes says that a [kind] that
+/// resumes ([DownloadKind.resume]) kept what it got.
+String? dictionaryDownloadError(
+  AppLocalizations l10n,
+  Object? failure, {
+  DownloadKind? kind,
+}) => switch (failure) {
+  null => null,
+  InsufficientSpaceException(:final neededBytes) =>
+    l10n.backupFullNotEnoughSpace(size: formatBytes(neededBytes)),
+  WifiLostException() =>
+    kind?.resume ?? false
+        ? l10n.localOcrWifiLostIos
+        : l10n.dictionaryDownloadWifiLost,
+  DownloadStoppedInBackgroundException() => l10n.downloadStoppedInBackground,
+  // iOS ended its background work.
+  DownloadStoppedException() => l10n.downloadInterrupted,
+  // A part of the wrong size or hash.
+  ModelVerificationException() => l10n.localOcrDownloadDamaged,
+  DownloadHttpException(:final statusCode) ||
+  ServerDownloadHttpException(
+    :final statusCode,
+  ) => l10n.serverBrowseDownloadFailed(
+    error: l10n.serverErrorStatus(status: statusCode),
+  ),
+  ServerDownloadFailedException(:final error) => recordedDownloadFailureText(
+    l10n,
+    RecordedDownloadFailure.parse(error),
+  ),
+  SocketException() ||
+  HttpException() ||
+  TlsException() ||
+  TimeoutException() => l10n.localOcrDownloadNetwork,
+  _ when isStorageFull(failure) => l10n.localOcrStorageFull,
+  // An archive that doesn't unpack (ArchiveException, a bad gzip) or a
+  // hash that doesn't match (UniDic).
+  FormatException() => l10n.localOcrDownloadDamaged,
+  // An import or extraction that failed some other way.
+  _ => l10n.downloadNotFinished,
+};
 
 /// [dictionaryDownloadError] for a download with no Download button to tap
 /// again (the lookup's speaker, the Anki button): a stop because Wi-Fi went
@@ -277,12 +290,6 @@ String downloadErrorWithoutButton(AppLocalizations l10n, Object failure) =>
     failure is WifiLostException
     ? l10n.downloadWifiLostShort
     : dictionaryDownloadError(l10n, failure)!;
-
-/// Why a model download (`runDownload`) failed, in the user's language.
-String modelDownloadFailureReason(AppLocalizations l, Object error) =>
-    error is WifiLostException
-    ? l.localOcrWifiLostIos
-    : dictionaryDownloadError(l, error)!;
 
 /// The one wording of each failure a download worker records: all a model's
 /// tile says, and a server book's message too except where the book's own

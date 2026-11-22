@@ -6,6 +6,7 @@ import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/manga/data/services/ndl_text_model.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/downloads/download.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
@@ -19,6 +20,7 @@ class MangaOcrIosDownloadTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ocr = MangaOcrIos.instance;
     return ModelDownloadTile(
+      kind: DownloadKind.mangaOcrIos,
       icon: Icons.document_scanner_outlined,
       title: context.l10n.localOcrModelTitle,
       description: context.l10n.localOcrModelDescriptionIos,
@@ -42,6 +44,7 @@ class NdlTextModelDownloadTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final model = NdlTextModel.instance;
     return ModelDownloadTile(
+      kind: DownloadKind.ndlTextModel,
       icon: Icons.menu_book_outlined,
       title: context.l10n.ndlTextModelTitle,
       description: context.l10n.ndlTextModelDescription,
@@ -62,6 +65,7 @@ class NdlTextModelDownloadTile extends StatelessWidget {
 class ModelDownloadTile extends StatefulWidget {
   const ModelDownloadTile({
     super.key,
+    required this.kind,
     required this.icon,
     required this.title,
     required this.description,
@@ -73,6 +77,8 @@ class ModelDownloadTile extends StatefulWidget {
     required this.mobileDataBody,
   });
 
+  /// What [download] runs, which words its outcome.
+  final DownloadKind kind;
   final IconData icon;
   final String title;
   final String description;
@@ -98,8 +104,7 @@ class ModelDownloadTile extends StatefulWidget {
 class _ModelDownloadTileState extends State<ModelDownloadTile> {
   bool? _installed;
   double? _progress;
-  Object? _error;
-  bool _removeFailed = false;
+  TileOutcome? _outcome;
 
   String get _size => modelFilesSize(widget.files);
 
@@ -124,8 +129,7 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
     // download.
     setState(() {
       _progress = 0;
-      _error = null;
-      _removeFailed = false;
+      _outcome = null;
     });
     final network = await askNetwork(
       context,
@@ -136,6 +140,7 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
       if (mounted) setState(() => _progress = null);
       return;
     }
+    Object? error;
     try {
       await widget.download(
         network: network,
@@ -144,22 +149,28 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
         },
       );
     } catch (e) {
-      if (mounted) setState(() => _error = e);
+      error = e;
     }
-    if (mounted) setState(() => _progress = null);
+    if (mounted) {
+      setState(() {
+        _progress = null;
+        _outcome = (action: TileAction.download, error: error);
+      });
+    }
     await _refresh();
   }
 
   Future<void> _remove() async {
-    setState(() {
-      _error = null;
-      _removeFailed = false;
-    });
+    setState(() => _outcome = null);
+    Object? error;
     try {
       await widget.remove();
     } catch (e) {
       logFailure('download.delete_failed', e);
-      if (mounted) setState(() => _removeFailed = true);
+      error = e;
+    }
+    if (mounted) {
+      setState(() => _outcome = (action: TileAction.delete, error: error));
     }
     // Whatever is left decides the button: Remove again, or Download.
     await _refresh();
@@ -177,11 +188,7 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
           leading: Icon(widget.icon, color: theme.colorScheme.primary),
           title: Text(widget.title),
           subtitle: Text(
-            _removeFailed
-                ? l.downloadsDeleteFailed
-                : _error != null
-                ? modelDownloadFailureReason(l, _error!)
-                : _installed == true
+            _installed == true
                 ? widget.readyText
                 : '${widget.description} ($_size)',
           ),
@@ -210,6 +217,8 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: LinearProgressIndicator(value: _progress),
           ),
+        if (_outcome case final outcome?)
+          DownloadOutcomeText(outcome, kind: widget.kind),
       ],
     );
   }

@@ -6,6 +6,8 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/model_download_job.dart'
     show JobWait;
 import 'package:mekuru/features/word_audio/data/services/word_audio.dart';
+import 'package:mekuru/shared/downloads/download.dart'
+    show TileOutcome, TileAction;
 
 final wordAudioProvider = Provider<WordAudio>((ref) {
   final audio = WordAudio();
@@ -14,15 +16,14 @@ final wordAudioProvider = Provider<WordAudio>((ref) {
 });
 
 /// Where the offline pack stands. [fraction] is set while it downloads, and
-/// [wait] says what its Android job waits for. [error] is why the last
-/// download failed, [deleteFailed] whether the last remove did.
+/// [wait] says what its Android job waits for. [outcome] is the last
+/// download or remove (none after a cancel).
 typedef WordAudioPackState = ({
   bool installed,
   bool hasFiles,
   double? fraction,
   JobWait wait,
-  Object? error,
-  bool deleteFailed,
+  TileOutcome? outcome,
 });
 
 WordAudioPackState _packState({
@@ -30,15 +31,13 @@ WordAudioPackState _packState({
   bool hasFiles = false,
   double? fraction,
   JobWait wait = JobWait.none,
-  Object? error,
-  bool deleteFailed = false,
+  TileOutcome? outcome,
 }) => (
   installed: installed,
   hasFiles: hasFiles,
   fraction: fraction,
   wait: wait,
-  error: error,
-  deleteFailed: deleteFailed,
+  outcome: outcome,
 );
 
 /// The offline pack's download, kept here so leaving Downloads doesn't lose it.
@@ -96,13 +95,20 @@ class WordAudioPackNotifier extends Notifier<WordAudioPackState> {
             state = _packState(hasFiles: true, fraction: fraction, wait: wait),
       );
       logUsage('word_audio.pack_downloaded');
-      state = _packState(installed: true, hasFiles: true);
+      state = _packState(
+        installed: true,
+        hasFiles: true,
+        outcome: (action: TileAction.download, error: null),
+      );
     } catch (e) {
       final hasFiles = await audio.pack.hasFiles();
       // Decided by the flag, not the error: a cancel surfaces as whatever the
       // closed connection threw.
       if (!_cancelling) logFailure('word_audio.pack_download_failed', e);
-      state = _packState(hasFiles: hasFiles, error: _cancelling ? null : e);
+      state = _packState(
+        hasFiles: hasFiles,
+        outcome: _cancelling ? null : (action: TileAction.download, error: e),
+      );
     } finally {
       _cancelling = false;
       _epoch++;
@@ -121,14 +127,14 @@ class WordAudioPackNotifier extends Notifier<WordAudioPackState> {
     if (state.fraction != null) return;
     try {
       await ref.read(wordAudioProvider).pack.delete();
-      state = _packState();
+      state = _packState(outcome: (action: TileAction.delete, error: null));
     } catch (e) {
       logFailure('word_audio.pack_delete_failed', e);
       // Its files are still there, so the row keeps Remove to try again.
       state = _packState(
         installed: state.installed,
         hasFiles: state.hasFiles,
-        deleteFailed: true,
+        outcome: (action: TileAction.delete, error: e),
       );
     } finally {
       _epoch++;

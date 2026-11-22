@@ -90,7 +90,7 @@ void main() {
           body: DownloadOutcomeText((
             action: TileAction.download,
             error: error,
-          )),
+          ), kind: DownloadKind.catalogDictionary),
         ),
         locale: const Locale('ja'),
       ),

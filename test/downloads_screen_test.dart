@@ -44,6 +44,26 @@ class _FailingStandardTranslation implements TranslationEngine {
   Future<String> translate(String text, String target) async => '';
 }
 
+/// Standard translation, installed once a download that doesn't fail with
+/// [failWith] went through.
+class _DownloadableStandardTranslation implements TranslationEngine {
+  var installed = false;
+  Object? failWith;
+
+  @override
+  Future<TranslationStatus> status(String target) async =>
+      installed ? TranslationStatus.installed : TranslationStatus.needsDownload;
+
+  @override
+  Future<void> download(String target, NetworkConsent network) async {
+    if (failWith case final error?) throw error;
+    installed = true;
+  }
+
+  @override
+  Future<String> translate(String text, String target) async => '';
+}
+
 /// Standard translation, downloaded.
 class _InstalledStandardTranslation implements TranslationEngine {
   @override
@@ -89,6 +109,44 @@ void main() {
     expect(deletes, 1);
     expect(find.text(ja.downloadsDeleteFailed), findsOneWidget);
     expect(find.text(ja.downloadNotFinished), findsNothing);
+    expect(untranslatedDownloadText, findsNothing);
+  });
+
+  testWidgets('in Japanese, the translation row says how each download and '
+      'remove went, and Wi-Fi going what it kept', (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    debugDeviceLowOnMemory = false;
+    addTearDown(() => debugDeviceLowOnMemory = null);
+    final engine = _DownloadableStandardTranslation();
+    debugTranslationEngine = engine;
+    addTearDown(() => debugTranslationEngine = null);
+    debugDeleteTranslation = () async => engine.installed = false;
+    addTearDown(() => debugDeleteTranslation = null);
+    final container = ProviderContainer(
+      overrides: fakeDownloadNotifierOverrides([]),
+    );
+    addTearDown(container.dispose);
+    await pumpInJapanese(tester, container);
+    await tester.pumpAndSettle();
+    Finder inRow(Finder finder) => find.descendant(
+      of: find.widgetWithText(ListTile, ja.downloadsSentenceTranslationTitle),
+      matching: finder,
+    );
+
+    engine.failWith = const WifiLostException();
+    await tester.tap(inRow(find.text(ja.commonDownload)));
+    await tester.pumpAndSettle();
+    expect(find.text(ja.localOcrWifiLostIos), findsOneWidget);
+
+    engine.failWith = null;
+    await tester.tap(inRow(find.text(ja.commonDownload)));
+    await tester.pumpAndSettle();
+    expect(find.text(ja.localOcrWifiLostIos), findsNothing);
+    expect(find.text(ja.downloadsDownloadComplete), findsOneWidget);
+
+    await tester.tap(inRow(find.byIcon(Icons.delete_outline)));
+    await tester.pumpAndSettle();
+    expect(find.text(ja.downloadsDeleted), findsOneWidget);
     expect(untranslatedDownloadText, findsNothing);
   });
 
@@ -690,6 +748,48 @@ void main() {
         find.textContaining('Not enough free space on this device.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('in Japanese, each download and removal says how it went', (
+      tester,
+    ) async {
+      final ja = lookupAppLocalizations(const Locale('ja'));
+      final container = ProviderContainer(
+        overrides: fakeDownloadNotifierOverrides([]),
+      );
+      addTearDown(container.dispose);
+      await pumpInJapanese(tester, container);
+      await tester.pumpAndSettle();
+      Finder inJaRow(Finder finder) => find.descendant(
+        of: find.widgetWithText(ListTile, ja.downloadsHighQualityTitle),
+        matching: finder,
+      );
+
+      await tester.tap(inJaRow(find.text(ja.commonDownload)));
+      await tester.pumpAndSettle();
+      downloadDone.completeError(Exception('boom'));
+      await tester.pumpAndSettle();
+      expect(find.text(ja.downloadNotFinished), findsOneWidget);
+
+      await tester.tap(inJaRow(find.text(ja.commonDownload)));
+      await tester.pumpAndSettle();
+      expect(find.text(ja.downloadNotFinished), findsNothing);
+      installed = true;
+      downloadDone.complete();
+      await tester.pumpAndSettle();
+      expect(find.text(ja.downloadsDownloadComplete), findsOneWidget);
+
+      deleteFails = true;
+      await tester.tap(inJaRow(find.byTooltip(ja.commonRemove)));
+      await tester.pumpAndSettle();
+      expect(find.text(ja.downloadsDeleteFailed), findsOneWidget);
+      expect(find.text(ja.downloadsDownloadComplete), findsNothing);
+
+      deleteFails = false;
+      await tester.tap(inJaRow(find.byTooltip(ja.commonRemove)));
+      await tester.pumpAndSettle();
+      expect(find.text(ja.downloadsDeleted), findsOneWidget);
+      expect(untranslatedDownloadText, findsNothing);
     });
 
     testWidgets('a cancelled download offers to remove its partial file', (

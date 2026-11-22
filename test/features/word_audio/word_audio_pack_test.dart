@@ -571,7 +571,7 @@ void main() {
       notifier().cancel();
       await start;
 
-      expect(read().error, isNull);
+      expect(read().outcome, isNull);
       expect(read().fraction, isNull);
       expect(read().hasFiles, isTrue);
 
@@ -588,7 +588,7 @@ void main() {
       pack.transfer!.completeError(const SocketException('offline'));
       await start;
 
-      expect(read().error, isA<SocketException>());
+      expect(read().outcome?.error, isA<SocketException>());
       expect(read().fraction, isNull);
     });
 
@@ -803,6 +803,56 @@ void main() {
 
       expect(find.byIcon(Icons.delete_outline), findsOneWidget);
       expect(find.text('Download'), findsOneWidget);
+    });
+
+    testWidgets('in Japanese, each download and remove says how it went, '
+        'and Wi-Fi going what it kept', (tester) async {
+      final ja = lookupAppLocalizations(const Locale('ja'));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [wordAudioProvider.overrideWithValue(_FakeAudio(pack))],
+          child: buildLocalizedTestApp(
+            home: const Scaffold(body: WordAudioPackTile()),
+            locale: const Locale('ja'),
+          ),
+        ),
+      );
+      await tester.pump();
+      Future<void> download() async {
+        await tester.tap(
+          find.descendant(
+            of: find.byType(ListTile),
+            matching: find.text(ja.commonDownload),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(FilledButton, ja.commonDownload).last,
+        );
+        await tester.pump();
+        await tester.pump();
+      }
+
+      await download();
+      pack.transfer!.completeError(const WifiLostException());
+      await tester.pump();
+      await tester.pump();
+      expect(find.text(ja.localOcrWifiLostIos), findsOneWidget);
+
+      await download();
+      expect(find.text(ja.localOcrWifiLostIos), findsNothing);
+      pack.isInstalled = true;
+      pack.transfer!.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(find.text(ja.downloadsDownloadComplete), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text(ja.downloadsDeleted), findsOneWidget);
+      expect(find.text(ja.downloadsDownloadComplete), findsNothing);
+      expect(untranslatedDownloadText, findsNothing);
     });
   });
 }

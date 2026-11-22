@@ -110,7 +110,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           if (kanjidicState.isDownloading)
             DictionaryDownloadProgress(progress: kanjidicState.progress),
           if (kanjidicState.outcome case final outcome?)
-            DownloadOutcomeText(outcome),
+            DownloadOutcomeText(outcome, kind: DownloadKind.fixedDictionary),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
@@ -171,7 +171,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                   : l10n.downloadsExtractingFiles,
             ),
           if (kanjiVgState.outcome case final outcome?)
-            DownloadOutcomeText(outcome),
+            DownloadOutcomeText(outcome, kind: DownloadKind.kanjiVg),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
@@ -213,7 +213,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           if (jpdbFreqState.isDownloading)
             DictionaryDownloadProgress(progress: jpdbFreqState.progress),
           if (jpdbFreqState.outcome case final outcome?)
-            DownloadOutcomeText(outcome),
+            DownloadOutcomeText(outcome, kind: DownloadKind.fixedDictionary),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
@@ -283,6 +283,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           if (enhancedFuriganaState.outcome case final outcome?)
             DownloadOutcomeText(
               outcome,
+              kind: DownloadKind.uniDic,
               // Low RAM mode never loads it (the download can outlast
               // turning the mode on).
               downloaded: lowRamMode
@@ -344,8 +345,8 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
   TranslationStatus? _status;
   bool _busy = false;
 
-  /// The last download or remove, when it failed.
-  TileOutcome? _failed;
+  /// The last download or remove.
+  TileOutcome? _outcome;
 
   @override
   void didChangeDependencies() {
@@ -365,8 +366,9 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
   Future<void> _run(TileAction action, Future<void> Function() work) async {
     setState(() {
       _busy = true;
-      _failed = null;
+      _outcome = null;
     });
+    Object? error;
     try {
       await work();
     } catch (e) {
@@ -374,8 +376,9 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
         TileAction.download => 'translation.download_failed',
         TileAction.delete => 'translation.delete_failed',
       }, e);
-      _failed = (action: action, error: e);
+      error = e;
     }
+    _outcome = (action: action, error: error);
     if (mounted) setState(() => _busy = false);
     await _refresh();
   }
@@ -402,13 +405,6 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
     }
     final l = context.l10n;
     final theme = Theme.of(context);
-    // The pairs keep their partial files, so a Wi-Fi stop says so.
-    final error = switch (_failed) {
-      (action: TileAction.download, :final error?) =>
-        modelDownloadFailureReason(l, error),
-      (action: TileAction.delete, error: _) => l.downloadsDeleteFailed,
-      _ => null,
-    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -447,7 +443,9 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: LinearProgressIndicator(),
           ),
-        if (error != null) DownloadErrorText(text: error),
+        // The pairs keep their partial files, so a Wi-Fi stop says so.
+        if (_outcome case final outcome?)
+          DownloadOutcomeText(outcome, kind: DownloadKind.translationModel),
       ],
     );
   }
@@ -465,10 +463,12 @@ class _HighQualityTranslationTile extends ConsumerStatefulWidget {
 
 class _HighQualityTranslationTileState
     extends ConsumerState<_HighQualityTranslationTile> {
-  Object? _removeError;
+  /// The last removal, or a download seen to finish here. The provider
+  /// holds a failed download, also one that failed while the tile was gone.
+  TileOutcome? _outcome;
 
   Future<void> _download() async {
-    setState(() => _removeError = null);
+    setState(() => _outcome = null);
     // Read before the dialogs: the tile can unmount while one is up.
     final download = ref.read(gemmaDownloadProvider.notifier);
     if (!await confirmHighQualityMemory(context) || !mounted) return;
@@ -476,12 +476,16 @@ class _HighQualityTranslationTileState
   }
 
   Future<void> _remove() async {
-    setState(() => _removeError = null);
+    setState(() => _outcome = null);
+    Object? error;
     try {
       await ref.read(gemmaDownloadProvider.notifier).remove();
     } catch (e) {
       logFailure('translation.high_quality_delete_failed', e);
-      if (mounted) setState(() => _removeError = e);
+      error = e;
+    }
+    if (mounted) {
+      setState(() => _outcome = (action: TileAction.delete, error: error));
     }
   }
 
@@ -490,12 +494,22 @@ class _HighQualityTranslationTileState
     final l = context.l10n;
     final theme = Theme.of(context);
     final state = ref.watch(gemmaDownloadProvider);
-    final error = _removeError != null
-        ? l.downloadsDeleteFailed
-        : dictionaryDownloadError(
-            l,
-            state is GemmaDownloadFailed ? state.error : null,
-          );
+    ref.listen(gemmaDownloadProvider, (previous, next) {
+      if (next is GemmaDownloading) {
+        setState(() => _outcome = null);
+      } else if (previous is GemmaDownloading && next is GemmaInstalled) {
+        setState(() => _outcome = (action: TileAction.download, error: null));
+      }
+    });
+    final outcome =
+        _outcome ??
+        switch (state) {
+          GemmaDownloadFailed(:final error) => (
+            action: TileAction.download,
+            error: error,
+          ),
+          _ => null,
+        };
     final removeButton = IconButton(
       tooltip: l.commonRemove,
       icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
@@ -554,7 +568,8 @@ class _HighQualityTranslationTileState
               semanticsLabel: l.downloadsHighQualityTitle,
             ),
           ),
-        if (error != null) DownloadErrorText(text: error),
+        // Its job waits for Wi-Fi rather than stopping, so it has no kind.
+        if (outcome != null) DownloadOutcomeText(outcome, kind: null),
       ],
     );
   }

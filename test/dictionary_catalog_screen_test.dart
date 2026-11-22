@@ -11,6 +11,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
+import 'package:mekuru/shared/downloads/download.dart' show TileAction;
 
 import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
@@ -200,7 +201,9 @@ void main() {
     mockWifiConnected(true);
     await pumpCatalog(
       tester,
-      afterDownload: const CatalogDownloadState(failure: WifiLostException()),
+      afterDownload: const CatalogDownloadState(
+        outcome: (action: TileAction.download, error: WifiLostException()),
+      ),
     );
 
     await tester.tap(downloadButtonOf('Jitendex'));
@@ -221,7 +224,10 @@ void main() {
     await pumpCatalog(
       tester,
       afterDownload: const CatalogDownloadState(
-        failure: InsufficientSpaceException(neededBytes: 500 << 20),
+        outcome: (
+          action: TileAction.download,
+          error: InsufficientSpaceException(neededBytes: 500 << 20),
+        ),
       ),
     );
 

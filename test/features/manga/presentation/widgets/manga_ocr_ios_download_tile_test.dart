@@ -12,6 +12,7 @@ import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/downloads/download.dart' show DownloadKind;
 import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
@@ -131,6 +132,7 @@ void main() {
         buildLocalizedTestApp(
           home: Scaffold(
             body: ModelDownloadTile(
+              kind: DownloadKind.ndlTextModel,
               icon: Icons.menu_book_outlined,
               title: 'Test model',
               description: 'Optional test model.',
@@ -148,7 +150,7 @@ void main() {
                 }
                 installed = false;
               },
-              readyText: 'Models installed · works offline',
+              readyText: 'Model ready · works offline',
               mobileDataBody: (size) => 'The model is $size.',
             ),
           ),
@@ -183,7 +185,7 @@ void main() {
       finish.complete();
       await tester.pumpAndSettle();
       expect(find.byType(LinearProgressIndicator), findsNothing);
-      expect(find.text('Models installed · works offline'), findsOneWidget);
+      expect(find.text('Model ready · works offline'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Remove'));
       await tester.pumpAndSettle();
@@ -274,6 +276,37 @@ void main() {
       expect(removed, 2);
       expect(find.text(ja.downloadsDeleteFailed), findsNothing);
       expect(find.text(ja.commonDownload), findsOneWidget);
+    });
+
+    testWidgets('in Japanese, each download and remove says how it went '
+        'under the row, which keeps its own line', (tester) async {
+      final ja = lookupAppLocalizations(const Locale('ja'));
+      mockWifiConnected(true);
+      await pumpModelTile(tester, locale: const Locale('ja'));
+      const description = 'Optional test model. (42.6 MB)';
+
+      await tester.tap(find.text(ja.commonDownload));
+      await tester.pump();
+      finish.completeError(const WifiLostException());
+      await tester.pumpAndSettle();
+      expect(find.text(ja.localOcrWifiLostIos), findsOneWidget);
+      expect(find.text(description), findsOneWidget);
+
+      finish = Completer<void>();
+      await tester.tap(find.text(ja.commonDownload));
+      await tester.pump();
+      expect(find.text(ja.localOcrWifiLostIos), findsNothing);
+      installed = true;
+      finish.complete();
+      await tester.pumpAndSettle();
+      expect(find.text(ja.downloadsDownloadComplete), findsOneWidget);
+      expect(find.text('Model ready · works offline'), findsOneWidget);
+
+      await tester.tap(find.byTooltip(ja.commonRemove));
+      await tester.pumpAndSettle();
+      expect(find.text(ja.downloadsDeleted), findsOneWidget);
+      expect(find.text(description), findsOneWidget);
+      expect(untranslatedDownloadText, findsNothing);
     });
   });
 

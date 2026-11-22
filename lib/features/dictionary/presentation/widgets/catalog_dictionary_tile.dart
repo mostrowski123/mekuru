@@ -8,6 +8,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/widgets/delete_dictionary_dialog.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
+import 'package:mekuru/shared/downloads/download.dart' show DownloadKind;
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -57,10 +58,8 @@ class CatalogDictionaryTile extends ConsumerWidget {
         ),
         if (state.isDownloading)
           DictionaryDownloadProgress(progress: state.progress),
-        if (dictionaryDownloadError(l10n, state.failure) case final error?)
-          DownloadErrorText(text: error),
-        if (state.deleteFailed)
-          DownloadErrorText(text: l10n.downloadsDeleteFailed),
+        if (state.outcome case final outcome?)
+          DownloadOutcomeText(outcome, kind: DownloadKind.catalogDictionary),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: DownloadAttributionText(

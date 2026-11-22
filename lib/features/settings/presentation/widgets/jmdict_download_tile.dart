@@ -7,6 +7,7 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/downloads/download.dart' show DownloadKind;
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/download_tile.dart';
@@ -61,7 +62,8 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
         ),
         if (state.isDownloading)
           DictionaryDownloadProgress(progress: state.progress),
-        if (state.outcome case final outcome?) DownloadOutcomeText(outcome),
+        if (state.outcome case final outcome?)
+          DownloadOutcomeText(outcome, kind: DownloadKind.fixedDictionary),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: DownloadAttributionText(

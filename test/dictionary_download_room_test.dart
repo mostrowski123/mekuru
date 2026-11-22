@@ -79,7 +79,7 @@ final _entries = <_Entry>[
     start: (c) async {
       final download = catalogDownloadProvider(CatalogDictionary.jmdictSpanish);
       await c.read(download.notifier).download(NetworkConsent.mobileData);
-      return c.read(download).failure;
+      return c.read(download).outcome?.error;
     },
   ),
 ];
