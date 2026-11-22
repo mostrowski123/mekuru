@@ -30,7 +30,7 @@ Each rule in `CLAUDE.md`, and what fails when it is broken. "nothing" marks wher
 | `AppDatabase` built only in `lib/main.dart` | nothing |
 | Tests use `createTestDatabase()` | `test/architecture/raw_api_test.dart` |
 | Pure-logic files import no Flutter above `foundation.dart` | nothing |
-| No personal data in telemetry; book titles in breadcrumbs only | partly: `test/core/usage_telemetry_test.dart` (paths in error text) |
+| No personal data in telemetry; book titles in breadcrumbs only | partly: `test/core/usage_telemetry_test.dart` (paths in error text; a file error's path, a platform error's message and a socket error's host never sent), `test/server_settings_screen_test.dart` (a Komga or Kavita server's address) |
 | Append-only schema, a `schemaVersion` bump, an `if (from < N)` block | partly: `test/database_migration_test.dart` |
 | Late columns also re-added by `_repairMissingColumns` | partly: `test/database_migration_test.dart` |
 | `applyStagedFullRestoreIfAny()` first in `_bootApp`, `IosFullBackup.start()` after it | nothing |
@@ -91,7 +91,7 @@ Each rule in `CLAUDE.md`, and what fails when it is broken. "nothing" marks wher
 | A save passes a file's path, never its bytes | `test/architecture/raw_api_test.dart` (no other file can reach a save dialog), `test/core/platform/file_pick_test.dart` |
 | A download goes through `runDownload` with a `NetworkConsent` | partly: `test/architecture/raw_api_test.dart` (raw HTTP clients and mobile-data consent are counted), `test/shared/downloads/download_kinds_test.dart` |
 | A provider's state holds what happened, never user-facing text | `test/architecture/raw_api_test.dart` (a String error or message field in a provider file) |
-| An exception's own text never reaches the user | partly: `test/architecture/raw_api_test.dart` for an error passed as details: '$e' or e.toString(), or shown with Text('$error'); screen tests in Japanese for downloads, deletes, imports, lists and server errors; nothing for other shapes |
+| An exception's own text never reaches the user | partly: `test/architecture/raw_api_test.dart` for a message in `lib/l10n/app_en.arb` with a placeholder named details or error (six allowed by name), and in Dart for an error passed as details: '$e' or e.toString(), shown with Text('$error') or Text(e.toString()), or returned with => e.toString() or return e.toString(); screen tests in Japanese for downloads, deletes, imports, lists, server errors and the full backup; nothing for other shapes |
 | Long work and platform wording are read from `lib/core/platform/capabilities.dart` | partly: `test/core/platform/capabilities_test.dart`; a new inline platform check is caught only when it picks an Ios key |
 | A library write from the UI is awaited and its failure shown | partly: `test/features/library/presentation/library_write_failure_test.dart` (existing actions) |
 | An EPUB href is decoded with `decodeHref` | `test/architecture/raw_api_test.dart` |

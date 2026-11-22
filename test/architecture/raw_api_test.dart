@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +16,7 @@ class _Row {
     this.allowed = const {},
     this.within = '',
     this.dir = 'lib',
+    this.ext = '.dart',
   });
 
   final String what;
@@ -24,6 +26,10 @@ class _Row {
 
   /// The folder the row scans: `lib` or `test`.
   final String dir;
+
+  /// The kind of file the row scans: Dart, or the English messages
+  /// (`.arb`).
+  final String ext;
 
   /// The line of each use in a file's source, comment lines blanked.
   final List<int> Function(String source) uses;
@@ -163,24 +169,35 @@ final _rows = [
   // The uses left in files other work held when this row came in.
   _Row(
     "An exception's own text handed to the user: details: '\$e', "
-        "details: e.toString() or Text('\$error')",
+        "details: e.toString(), Text('\$error'), or e.toString() in a Text "
+        'or returned as the message',
     _matching(
       r"\bdetails:\s*('\$\{?\w|\w+(\.error)?\.toString\(\))|"
-      r"\bText\(\s*'\$\{?(e|err|error)\b",
+      r"\bText\(\s*'\$\{?(e|err|error)\b|"
+      r'(\bText\(\s*|=>\s*|\breturn\s+)(e|err|error)\.toString\(\)',
     ),
     'words for what did not happen and what to do, as dictionaryDownloadError '
         'does (lib/shared/widgets/download_status.dart), or LoadFailedText for '
         'a list that cannot load (lib/shared/widgets/load_failed_text.dart); '
         'the error itself goes to logFailure '
         '(lib/core/services/usage_telemetry.dart)',
-    counts: {
-      // The message leaves {details} out in every language.
-      'lib/features/manga/presentation/screens/manga_reader_screen.dart': 1,
-      // Signed-in cloud OCR only; no test reaches it yet.
-      'lib/features/manga/presentation/screens/pro_upgrade_screen.dart': 1,
-      'lib/features/settings/presentation/widgets/ocr_server_url_dialog.dart':
-          1,
+    allowed: {
+      'lib/core/services/usage_telemetry.dart': (
+        1,
+        "_failureText: an error's text for telemetry, scrubbed and never shown",
+      ),
     },
+  ),
+  _Row(
+    'A message placeholder named details or error, which takes whatever '
+        "text the caller has, an exception's included",
+    _freeTextPlaceholders,
+    'a message that says what did not happen and what to do, or a {reason} '
+        'placeholder that takes a sentence already worded, as '
+        'backupFullJobPaused takes fullBackupFailureText '
+        '(lib/features/backup/presentation/screens/full_backup_job_screen.dart)',
+    ext: '.arb',
+    within: 'lib/l10n/app_en.arb',
   ),
   _Row(
     'NetworkConsent.mobileData, a download allowed mobile data unasked',
@@ -346,6 +363,40 @@ final _rows = [
   ),
 ];
 
+/// The messages whose placeholder is named details or error but only ever
+/// takes text already worded or the OCR server's own explanation.
+const _placeholdersAllowed = {
+  // The OCR server's own explanation of why it refused (HTTP 422).
+  'ocrErrorRejected',
+  // The OCR server's own explanation beside the HTTP status.
+  'ocrErrorStatus',
+  // The next four take only a reason serverErrorReason, importFailureReason
+  // or localOcrReason has worded; their placeholders are to be renamed
+  // {reason}.
+  'serverBrowseDownloadFailed',
+  'serverSettingsLinkFailed',
+  'serverDialogConnectionFailed',
+  'localOcrPageError',
+};
+
+final _freeTextPlaceholder = RegExp(r'\{\s*(details|error)\s*[,}]');
+
+/// The line of every message in app_en.arb, outside [_placeholdersAllowed],
+/// that uses or declares a placeholder named details or error.
+List<int> _freeTextPlaceholders(String source) {
+  final arb = jsonDecode(source) as Map<String, dynamic>;
+  return [
+    for (final MapEntry(:key, :value) in arb.entries)
+      if (!key.startsWith('@') &&
+          !_placeholdersAllowed.contains(key) &&
+          (_freeTextPlaceholder.hasMatch(value as String) ||
+              ((arb['@$key'] as Map?)?['placeholders'] as Map? ?? {}).keys.any(
+                (name) => name == 'details' || name == 'error',
+              )))
+        _lineOf(source, source.indexOf('"$key":')),
+  ];
+}
+
 /// The scan for the pattern rows: the line of every match.
 List<int> Function(String) _matching(String pattern) {
   final regex = RegExp(pattern);
@@ -413,6 +464,7 @@ void main() {
               for (final line in f.readAsLinesSync())
                 line.trimLeft().startsWith('//') ? '' : line,
             ].join('\n'),
+    'lib/l10n/app_en.arb': File('lib/l10n/app_en.arb').readAsStringSync(),
   };
 
   test('scans the hand-written Dart files under lib and test', () {
@@ -423,7 +475,9 @@ void main() {
     test(row.what, () {
       final found = <String, List<int>>{};
       sources.forEach((path, source) {
-        if (!path.startsWith('${row.dir}/') || !path.contains(row.within)) {
+        if (!path.startsWith('${row.dir}/') ||
+            !path.endsWith(row.ext) ||
+            !path.contains(row.within)) {
           return;
         }
         final lines = row.uses(source);
