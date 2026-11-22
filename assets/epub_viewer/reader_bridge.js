@@ -227,7 +227,6 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     options.gap = twoPageGap();
   }
   rendition = book.renderTo('viewer', options);
-  rendition.relayoutAnchor = relayoutAnchor;
   // A fixed-layout book keeps its own page handling.
   rendition.on('started', function () {
     if (window._twoPage && rendition.settings.layout === 'pre-paginated') {
@@ -791,7 +790,8 @@ function countTurnedPage() {
   }
   var at = rendition && rendition.location;
   if (!at || !at.start) return;
-  reportPageChars(at.start.cfi, at.end ? at.end.cfi : at.start.cfi);
+  // From the start reported for it (keepPlace()), as 'relocated' counts.
+  reportPageChars(rendition.place || at.start.cfi, at.end ? at.end.cfi : at.start.cfi);
 }
 
 // ── Navigation (section-aware — bypasses epub.js broken scroll-delta logic) ──
@@ -1694,7 +1694,6 @@ function twoPageAt(width) {
 function syncTwoPage() {
   var on = twoPageAt(window.innerWidth);
   if (on === window._twoPage) return;
-  holdRelayoutPlace();
   window._twoPage = on;
   applyTwoPageSpread(on);
 }
@@ -1718,27 +1717,6 @@ function setTwoPage(minWidth) {
     // Laid out again at the place on screen; that lay-out asks syncTwoPage().
     relayoutInPlace();
   }
-}
-
-// The first character on screen when the reader last turned, jumped or
-// touched the page, kept while two pages switch to one and back (rotation,
-// folding, the switch) or a two-page layout is laid out again (font size,
-// margins): each lay-out shows the page or pair that holds it. Taking every
-// new layout's own first character instead walked the place back, a page or
-// a pair at a time. Null: none held (cleared by unpinScroll()).
-var _relayoutPlace = null;
-
-function holdRelayoutPlace() {
-  if (!_relayoutPlace && rendition.location && rendition.location.start) {
-    _relayoutPlace = rendition.location.start.cfi;
-  }
-}
-
-// epub.js Rendition.onResized() asks this where to lay the book out again;
-// null keeps its own choice, as with two pages never in play.
-function relayoutAnchor() {
-  if (window._twoPage) holdRelayoutPlace();
-  return _relayoutPlace;
 }
 
 // Whether this web view can run vertical text's pages leftwards, which two
@@ -2195,7 +2173,6 @@ function pinScrollEnd() {
 // position in place (epub.js pinScroll()), and the place (keepPlace()).
 function unpinScroll() {
   _holdPlace = false;
-  _relayoutPlace = null;
   if (rendition && rendition.manager) rendition.manager.unpinScroll();
 }
 
