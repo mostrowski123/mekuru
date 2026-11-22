@@ -45,6 +45,7 @@ import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart'
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 import 'package:mekuru/shared/widgets/reader_seek_bar.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -1202,16 +1203,21 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                     ).textTheme.titleMedium?.copyWith(color: Colors.white),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    switch (error) {
-                      MangaPagesUnavailable.bookGone =>
-                        context.l10n.serverBrowseBookGone,
-                      MangaPagesUnavailable.pagesMissing =>
-                        context.l10n.mangaReaderPagesMissing,
-                      _ => error.toString(),
-                    },
+                  DefaultTextStyle.merge(
                     style: const TextStyle(color: Colors.white70),
                     textAlign: TextAlign.center,
+                    child: switch (error) {
+                      MangaPagesUnavailable.bookGone => Text(
+                        context.l10n.serverBrowseBookGone,
+                      ),
+                      MangaPagesUnavailable.pagesMissing => Text(
+                        context.l10n.mangaReaderPagesMissing,
+                      ),
+                      _ => LoadFailedText(
+                        error,
+                        event: 'manga.pages_load_failed',
+                      ),
+                    },
                   ),
                 ],
               ),
