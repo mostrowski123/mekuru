@@ -3,10 +3,12 @@ import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
 /// The one mobile-data question, asked before every add-on download. On Wi-Fi
-/// ([isOnWifi]) it asks nothing and answers [NetworkConsent.wifiOnly]. Off it,
-/// it asks "Download over mobile data?" with [body] of the download's [size]
-/// (through a VPN on Android, [isOnVpn], it says the VPN is why it asks), and
-/// answers [NetworkConsent.mobileData] for Download, null for Cancel or Back.
+/// ([isOnWifi]) it asks nothing and answers [NetworkConsent.wifiOnly]. With
+/// no network at all ([isConnected]) it asks nothing either: it says there
+/// is no connection and answers null. Otherwise it asks "Download over
+/// mobile data?" with [body] of the download's [size] (through a VPN on
+/// Android, [isOnVpn], it says the VPN is why it asks), and answers
+/// [NetworkConsent.mobileData] for Download, null for Cancel or Back.
 /// Nothing is remembered: the next download asks again.
 Future<NetworkConsent?> askNetwork(
   BuildContext context, {
@@ -15,6 +17,10 @@ Future<NetworkConsent?> askNetwork(
 }) async {
   if (await isOnWifi()) return NetworkConsent.wifiOnly;
   if (!context.mounted) return null;
+  if (!await isConnected()) {
+    if (context.mounted) await _sayOffline(context);
+    return null;
+  }
   final vpn = await isOnVpn();
   if (!context.mounted) return null;
   final l = context.l10n;
@@ -37,3 +43,18 @@ Future<NetworkConsent?> askNetwork(
   );
   return confirmed == true ? NetworkConsent.mobileData : null;
 }
+
+/// A dialog, as the question would have been: it shows above a bottom sheet,
+/// where a snack bar would not.
+Future<void> _sayOffline(BuildContext context) => showDialog<void>(
+  context: context,
+  builder: (dialogContext) => AlertDialog(
+    content: Text(dialogContext.l10n.localOcrDownloadNetwork),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(dialogContext),
+        child: Text(dialogContext.l10n.commonOk),
+      ),
+    ],
+  ),
+);

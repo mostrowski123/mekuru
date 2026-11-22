@@ -17,6 +17,10 @@ class ModelDownloadNetwork(context: Context, private val allowMobileData: Boolea
 
     fun isWifiConnected(): Boolean = connectivity.activeNetwork?.let(::isUnmeteredWifi) == true
 
+    /** Any network at all: false in airplane mode, or with Wi-Fi and mobile
+     * data both off (see isConnected in the app's network_status.dart). */
+    fun isConnected(): Boolean = connectivity.activeNetwork != null
+
     /** A VPN carries the traffic (see isOnVpn in the app's network_status.dart). */
     fun isVpn(): Boolean = connectivity.activeNetwork
         ?.let(connectivity::getNetworkCapabilities)

@@ -108,8 +108,14 @@ class FakeWordAudio extends WordAudio {
 }
 
 /// Answers the Wi-Fi check that `isOnWifi()` makes, on Android and on iOS,
-/// for the rest of the test.
-void mockWifiConnected(bool connected, {bool vpn = false}) {
+/// for the rest of the test. [offline]: no network at all (Android's
+/// `isConnected()`), so not on Wi-Fi either.
+void mockWifiConnected(
+  bool connected, {
+  bool vpn = false,
+  bool offline = false,
+}) {
+  assert(!(connected && offline));
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   const iosNetwork = MethodChannel('mekuru/network');
@@ -117,6 +123,7 @@ void mockWifiConnected(bool connected, {bool vpn = false}) {
     LocalMangaOcr.channel,
     (call) async => switch (call.method) {
       'isWifiConnected' => connected,
+      'isNetworkConnected' => !offline,
       'isVpnActive' => vpn,
       _ => null,
     },

@@ -128,6 +128,10 @@ class LocalMangaOcr {
       channel.invokeMethod('download', {'allowMetered': allowMetered});
   static Future<bool> isWifiConnected() async =>
       await channel.invokeMethod<bool>('isWifiConnected') ?? false;
+
+  /// Any network at all; true when there is no answer.
+  static Future<bool> isNetworkConnected() async =>
+      await channel.invokeMethod<bool>('isNetworkConnected') ?? true;
   static Future<bool> isVpnActive() async =>
       await channel.invokeMethod<bool>('isVpnActive') ?? false;
 

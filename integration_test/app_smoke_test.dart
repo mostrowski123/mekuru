@@ -63,6 +63,7 @@ void main() {
     // The native OCR channel exists on Android only.
     if (LocalMangaOcr.available) {
       expect(await LocalMangaOcr.isWifiConnected(), isA<bool>());
+      expect(await LocalMangaOcr.isNetworkConnected(), isA<bool>());
     }
 
     // Settings has no navigation-bar slot of its own; it is the hub's last

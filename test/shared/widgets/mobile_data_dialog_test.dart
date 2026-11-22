@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 import '../../test_app.dart';
@@ -10,10 +11,11 @@ void main() {
   /// Every answer [askNetwork] gave, in order.
   late List<NetworkConsent?> answers;
 
-  Future<void> pumpAsker(WidgetTester tester) async {
+  Future<void> pumpAsker(WidgetTester tester, {Locale? locale}) async {
     answers = [];
     await tester.pumpWidget(
       buildLocalizedTestApp(
+        locale: locale,
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async => answers.add(
@@ -80,6 +82,28 @@ void main() {
 
     expect(answers, [NetworkConsent.mobileData, null, null]);
   });
+
+  testWidgets('in Japanese, with no network at all it asks nothing, says '
+      'there is no connection, and starts nothing', (tester) async {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    mockWifiConnected(false, offline: true);
+    await pumpAsker(tester, locale: const Locale('ja'));
+    await ask(tester);
+
+    expect(find.text(ja.localOcrMobileDownloadTitle), findsNothing);
+    expect(find.text(ja.localOcrDownloadNetwork), findsOneWidget);
+    await answer(tester, ja.commonOk);
+    expect(answers, [null]);
+  });
+
+  testWidgets('iOS, which cannot tell offline from cellular yet, still asks '
+      'with no network', (tester) async {
+    mockWifiConnected(false, offline: true);
+    await pumpAsker(tester);
+    await ask(tester);
+
+    expect(find.text('Download over mobile data?'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('through a VPN it says the VPN is why it asks', (tester) async {
     mockWifiConnected(false, vpn: true);

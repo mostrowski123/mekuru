@@ -25,6 +25,22 @@ Future<bool> isOnWifi() async {
   }
 }
 
+/// Whether there is any network to download over (Android: an active
+/// network; false in airplane mode). True where it can't tell, so the caller
+/// asks or tries as before: on iOS, and when the check fails.
+// ponytail: iOS's `mekuru/network` answers only "unmetered", false offline
+// and on cellular alike. An `isConnected` method beside `isUnmetered`,
+// replying `path.status == .satisfied`, would tell them apart.
+Future<bool> isConnected() async {
+  if (defaultTargetPlatform != TargetPlatform.android) return true;
+  try {
+    return await LocalMangaOcr.isNetworkConnected();
+  } catch (e, st) {
+    logFailure('network.connection_check_failed', e, stackTrace: st);
+    return true;
+  }
+}
+
 /// Whether a VPN carries the traffic (Android): Android counts most VPNs as
 /// metered, so [isOnWifi] is false on Wi-Fi under one, and the mobile-data
 /// question says the VPN is why. False off Android or when the check fails.
