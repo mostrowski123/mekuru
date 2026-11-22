@@ -7,6 +7,7 @@
 import base64
 import pathlib
 import zipfile
+from urllib.parse import quote
 
 here = pathlib.Path(__file__).parent
 para = ('吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。'
@@ -96,8 +97,23 @@ arabic_entries = entries[:2] + [
     ('OEBPS/c2.xhtml', chapter('الفصل الثاني', 2, style='', root=arabic_root, text=arabic), zipfile.ZIP_DEFLATED),
 ]
 
+# japanese_name.epub: book.epub with chapter one's file named in Japanese, as
+# the manifest and the nav write it. Chapter two links to it as written and
+# percent-encoded.
+first = '第一章.xhtml'
+japanese_name_entries = entries[:2] + [
+    ('OEBPS/content.opf', opf.replace('bridge-test-1', 'bridge-test-5')
+     .replace('href="c1.xhtml"', f'href="{first}"'), zipfile.ZIP_DEFLATED),
+    ('OEBPS/nav.xhtml', nav.replace('href="c1.xhtml"', f'href="{first}"'), zipfile.ZIP_DEFLATED),
+    (f'OEBPS/{first}', chapter('第一章', 6), zipfile.ZIP_DEFLATED),
+    ('OEBPS/c2.xhtml', chapter('第二章', 2).replace(
+        '<h1>', f'<p><a id="raw" href="{first}">一</a> <a id="encoded" href="{quote(first)}">一</a></p><h1>'),
+     zipfile.ZIP_DEFLATED),
+]
+
 for file, files in [('book.epub', entries), ('bad_href.epub', bad_href_entries),
-                    ('horizontal_rtl.epub', horizontal_rtl_entries), ('arabic_rtl.epub', arabic_entries)]:
+                    ('horizontal_rtl.epub', horizontal_rtl_entries), ('arabic_rtl.epub', arabic_entries),
+                    ('japanese_name.epub', japanese_name_entries)]:
     out = here / file
     with zipfile.ZipFile(out, 'w') as z:
         for name, data, method in files:

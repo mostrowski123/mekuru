@@ -638,6 +638,38 @@ const checks = [
     expect(blank.length === 0, `a re-layout did not show the reader's page after ${blank.join(', ')}`);
   }],
 
+  ['a first chapter named in Japanese opens from the chapter list, a link and a saved place', async () => {
+    // japanese_name.epub (make_epub.py): chapter 1 is 第一章.xhtml, and
+    // chapter 2 links to it as written and percent-encoded.
+    const args = (cfi) => `${JSON.stringify(cfi)}, "rtl", "paginated", false, "18", "#000000", null, 28, 28, false, "book", 1, null`;
+    const missed = [];
+    let p = await openBook('japanese_name.epub', args(''));
+    try {
+      const index = () => p.evaluate(() => rendition.currentLocation().start?.index);
+      const href = argOf(await p.evaluate(() => window.__calls), 'chapters')[0].href;
+      expect(href === '第一章.xhtml', `the chapter list links chapter 1 as ${href}`);
+      const lands = async (label, js) => {
+        await turned(p, 'toCfi("c2.xhtml")');
+        await turned(p, js).catch(() => {});
+        if (await index() !== 0) missed.push(label);
+      };
+      for (const target of [href, encodeURI(href)]) await lands(`toCfi('${target}')`, `toCfi(${JSON.stringify(target)})`);
+      for (const id of ['raw', 'encoded']) {
+        await lands(`the ${id} link`, `rendition.getContents()[0].document.getElementById('${id}').click()`);
+      }
+    } finally {
+      await p.close();
+    }
+    p = await openBook('japanese_name.epub', args('epubcfi(/6/2!/4/4/1:10)'));
+    try {
+      const at = await p.evaluate(() => rendition.currentLocation().start?.index);
+      if (at !== 0) missed.push('a saved place');
+    } finally {
+      await p.close();
+    }
+    expect(missed.length === 0, `not in chapter 1 after: ${missed.join(', ')}`);
+  }],
+
   ['every handler the page calls is registered in Dart', async () => {
     // The calls seen so far, and every name written in reader_bridge.js.
     const source = fs.readFileSync(path.join(viewer, 'reader_bridge.js'), 'utf8');

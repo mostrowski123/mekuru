@@ -14386,14 +14386,22 @@ class spine_Spine {
     } else if (typeof target === "string" && target.indexOf("#") === 0) {
       index = this.spineById[target.substring(1)];
     } else if (typeof target === "string") {
+      // [MEKURU PATCH] The href as written, else encoded. Upstream joined the
+      // two with ||, which reads the first item's index, 0, as not found: a
+      // link to a first chapter whose name is not ASCII (encoded, as epub.js
+      // passes links) found nothing.
+      let byHref = href => {
+        let found = this.spineByHref[href];
+        return found !== undefined ? found : this.spineByHref[encodeURI(href)];
+      };
       // Remove fragments
       target = target.split("#")[0];
-      index = this.spineByHref[target] || this.spineByHref[encodeURI(target)];
+      index = byHref(target);
       // [MEKURU PATCH] And a link's query (c1.xhtml?v=1), which names no
       // other file. A file whose name holds a "?" is found as written first.
       if (index === undefined && target.indexOf("?") !== -1) {
         target = target.split("?")[0];
-        index = this.spineByHref[target] || this.spineByHref[encodeURI(target)];
+        index = byHref(target);
       }
     }
     return this.spineItems[index] || null;
