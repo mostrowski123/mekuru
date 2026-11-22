@@ -1174,6 +1174,20 @@ class BookRepository {
       final booksRoot = await _booksRootDir();
       if (!await booksRoot.exists()) return 0;
 
+      // In this order: the folders, then the imports under way, then the
+      // library. A folder seen here belongs to an import that is still
+      // registered when asked next, or that ended before the library is
+      // read and so is in it. Read the other way round, an import that
+      // ended in between was in neither, and its folder was taken.
+      final candidates = <Directory>[];
+      await for (final entity in booksRoot.list(followLinks: false)) {
+        if (entity is Directory &&
+            importDirName.hasMatch(p.basename(entity.path))) {
+          candidates.add(entity);
+        }
+      }
+      final inFlight = {...inFlightImportDirNames};
+
       // An empty table alongside existing files can mean the database was
       // lost (e.g. a partial restore) while the books survived — never
       // treat that as "everything is an orphan".
@@ -1204,12 +1218,12 @@ class BookRepository {
 
       final now = DateTime.now();
       var quarantined = 0;
-      await for (final entity in booksRoot.list(followLinks: false)) {
-        if (entity is! Directory) continue;
+      for (final entity in candidates) {
         final name = p.basename(entity.path);
-        final match = importDirName.firstMatch(name);
-        if (match == null) continue;
-        if (inFlightImportDirNames.contains(name)) continue;
+        final match = importDirName.firstMatch(name)!;
+        if (inFlight.contains(name) || inFlightImportDirNames.contains(name)) {
+          continue;
+        }
         if (referenced.contains(name)) continue;
         final createdMs = int.tryParse(match.group(1)!);
         if (createdMs == null) continue;

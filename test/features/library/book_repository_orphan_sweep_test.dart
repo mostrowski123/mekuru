@@ -18,6 +18,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../shared/fake_path_provider.dart';
 import '../../shared/test_database.dart';
 
+/// Reads the library as the sweep does, then lets [afterRead] happen before
+/// the sweep goes on with what it read.
+class _ReadsThenWaits extends BookRepository {
+  _ReadsThenWaits(super.db, this.afterRead);
+
+  final Future<void> Function() afterRead;
+
+  @override
+  Future<List<Book>> getAllBooks() async {
+    final books = await super.getAllBooks();
+    await afterRead();
+    return books;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -406,6 +421,41 @@ void main() {
         ),
         isNotNull,
       );
+    });
+
+    // The race above, made to happen: the import ends in the moment between
+    // the sweep reading which folders the library owns and its looking at
+    // the folders. It then is neither in the library the sweep read nor
+    // still registered, and the sweep took its folder (seen once on CI).
+    test('a book imported while the sweep reads the library is not '
+        'swept', () async {
+      await seedLiveManga();
+      const imported = 'book_2000_feedf00d';
+      final sweeper = _ReadsThenWaits(db, () async {
+        plantDir(imported);
+        await insertEpub(imported);
+      });
+
+      expect(await sweeper.sweepOrphanImportDirs(minAge: Duration.zero), 0);
+      expect(Directory(p.join(booksRoot.path, imported)).existsSync(), isTrue);
+    });
+
+    test('an import under way when the sweep starts, done while it reads the '
+        'library, is not swept', () async {
+      await seedLiveManga();
+      const imported = 'book_2000_feedf00d';
+      final dir = plantDir(imported);
+      BookRepository.inFlightImportDirNames.add(imported);
+      final sweeper = _ReadsThenWaits(db, () async {
+        await insertEpub(imported);
+        BookRepository.inFlightImportDirNames.remove(imported);
+      });
+
+      expect(await sweeper.sweepOrphanImportDirs(minAge: Duration.zero), 0);
+      expect(dir.existsSync(), isTrue);
+      // The next sweep finds it in the library.
+      expect(await repo.sweepOrphanImportDirs(minAge: Duration.zero), 0);
+      expect(dir.existsSync(), isTrue);
     });
   });
 
