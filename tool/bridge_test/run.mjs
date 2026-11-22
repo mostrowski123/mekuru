@@ -86,6 +86,40 @@ function expectLocation(loc, label) {
   );
 }
 
+// A page of its own with `file` from this folder opened by loadBook(args).
+// Resolves once it has shown a page; p.thrown collects its script errors.
+async function openBook(file, args, [width, height] = [412, 800]) {
+  const p = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2.625 });
+  p.thrown = [];
+  p.on('pageerror', (e) => p.thrown.push(e.message));
+  await p.route('http://viewer.localhost/**', (route) => {
+    const file = path.join(viewer, new URL(route.request().url()).pathname);
+    return fs.existsSync(file) ? route.fulfill({ path: file }) : route.fulfill({ status: 404 });
+  });
+  await p.addInitScript({ path: path.join(here, 'stub.js') });
+  await p.goto('http://viewer.localhost/reader.html');
+  await p.waitForFunction(`window.__calls.some((c) => c.name === 'readyToLoad')`);
+  const bytes = fs.readFileSync(path.join(here, file));
+  await p.evaluate(`beginEpubTransfer(${bytes.length}); appendEpubChunk('${bytes.toString('base64')}')`);
+  await p.evaluate(`loadBook(${args})`);
+  await p.waitForFunction(`window.__calls.some((c) => c.name === 'pageChars')`, null, { timeout: 8000 });
+  return p;
+}
+
+// Runs `js` (a page turn or a jump) on page p, waits for its pageChars and
+// then for 300 ms without a call, and returns the calls it sent.
+async function turned(p, js) {
+  const start = await p.evaluate(() => window.__calls.length);
+  await p.evaluate(js);
+  await p.waitForFunction(`window.__calls.slice(${start}).some((c) => c.name === 'pageChars')`, null, { timeout: 5000 })
+    .catch(() => { throw new Error(`${js} showed no page`); });
+  for (let n = -1, m = 0; n !== m; ) {
+    [n, m] = [m, await p.evaluate(() => window.__calls.length)];
+    if (n !== m) await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  return p.evaluate((f) => window.__calls.slice(f), start);
+}
+
 let firstPage; // the relocation the book opened on
 
 const checks = [
@@ -444,6 +478,66 @@ const checks = [
           expect(got.reported === place, `${label}: reported ${got.reported}, not the place ${place}`);
           expect(got.holds, `${label}: shows the page from ${got.pageStart}, which does not hold ${place}`);
         }
+      } finally {
+        await p.close();
+      }
+    }
+  }],
+
+  ["a book paged right to left keeps its text's own direction, and its pages run right to left", async () => {
+    // horizontal_rtl.epub and arabic_rtl.epub (make_epub.py): spines that
+    // run right to left, horizontal text. epub.js turns such pages right to
+    // left by making the content right-to-left, and that turned Japanese
+    // text around too: right-aligned, each full stop at the line's left end.
+    // With vertical text on (Dart's default for them) nothing forces the
+    // text horizontal or left to right.
+    const pages = `"rtl", "paginated", false, "18", "#000000", null, 28, 28, false, "book", 1, null`;
+    for (const [file, ltr, args, size] of [
+      ['horizontal_rtl.epub', true, pages, [412, 800]],
+      ['horizontal_rtl.epub', true, `${pages}, 600`, [900, 600]], // two pages side by side
+      ['arabic_rtl.epub', false, pages, [412, 800]],
+    ]) {
+      const label = `${file} at ${size.join(' x ')}`;
+      const p = await openBook(file, `"", ${args}`, size);
+      try {
+        // Rightwards steps from the first paragraph's first character to
+        // its second, and from its second to last to its last (a full stop).
+        const steps = await p.evaluate(() => {
+          const doc = rendition.getContents()[0].document;
+          const text = doc.querySelector('p').firstChild;
+          const x = (i) => {
+            const r = doc.createRange();
+            r.setStart(text, i);
+            r.setEnd(text, i + 1);
+            return r.getBoundingClientRect().left;
+          };
+          return [x(1) - x(0), x(text.length - 1) - x(text.length - 2)];
+        });
+        expect(steps.every((s) => (ltr ? s > 0 : s < 0)),
+          `${label}: the text does not run ${ltr ? 'left to right' : 'right to left'} (rightward steps ${steps.join(', ')})`);
+
+        // Through chapter 1 with next(), a page (or a pair) a turn, each
+        // further left, then back from chapter 2 onto its last page.
+        const where = () => p.evaluate(() => {
+          const { start, end } = rendition.currentLocation();
+          return [start.index, start.displayed.page, end.displayed.page, start.displayed.total,
+            rendition.manager.container.scrollLeft];
+        });
+        let [index, page, last, total, left] = await where();
+        const shown = [];
+        while (index === 0 && shown.length <= total) {
+          shown.push(`${page}-${last}`);
+          await turned(p, 'next()');
+          const before = left;
+          [index, page, last, , left] = await where();
+          expect(index !== 0 || left < before, `${label}: next() from page ${shown.at(-1)} moved right`);
+        }
+        expect(shown.at(-1).endsWith(`-${total}`) && shown[0].startsWith('1-'),
+          `${label}: chapter 1 showed pages ${shown.join()} of ${total}`);
+        await turned(p, 'previous()');
+        [index, , last] = await where();
+        expect(index === 0 && last === total, `${label}: previous() from chapter 2 went to page ${last} of chapter ${index + 1}`);
+        if (p.thrown.length) throw new Error(`${label}: the page threw ${p.thrown.join(' | ')}`);
       } finally {
         await p.close();
       }

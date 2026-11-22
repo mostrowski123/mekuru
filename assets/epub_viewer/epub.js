@@ -6542,7 +6542,19 @@ class Contents {
     // horizontal axis — the content should flow LTR.
     if (dir === "rtl" && axis === "horizontal" &&
         !(typeof window._forceHorizontalAxis !== 'undefined' && window._forceHorizontalAxis)) {
+      // [MEKURU PATCH] The root's direction runs the pages (its columns)
+      // right to left; in HTML the body's direction decides it, so both stay
+      // rtl. The text must not turn around with them: page progression says
+      // nothing about the text's direction, and horizontal Japanese came out
+      // right-aligned with each full stop at the line's left end. So text the
+      // book left left-to-right stays so: the body's children get ltr, below
+      // any direction the book gives them (dir attribute, its stylesheets).
+      // Arabic or Hebrew the book marks right to left is left alone.
+      let own = this.content && this.window.getComputedStyle(this.content).direction;
       this.direction(dir);
+      if (own === "ltr") {
+        this.addStylesheetCss(":where(body) > :where(:not([dir])) { direction: ltr; }", "mekuru-ltr-text");
+      }
     }
     this.width(width);
     this.height(height);

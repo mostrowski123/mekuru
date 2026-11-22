@@ -62,6 +62,18 @@ void registerChapterEndScenario({required bool vertical, bool rtl = false}) {
       );
       await _recordReports(controller);
 
+      // Pages that run right to left leave the text left to right: epub.js
+      // made the whole content right-to-left, which right-aligned Japanese
+      // and put each full stop at the line's left end.
+      if (rtl) {
+        final steps = await evalJson(controller, _textStepsJs);
+        expect(
+          (steps['steps'] as List).every((s) => (s as num) > 0),
+          isTrue,
+          reason: 'rightward steps between the last characters: $steps',
+        );
+      }
+
       // Through c1 a page turn at a time: forward from its first page, then
       // back from its last.
       final total = (await _settled(tester, controller))['total'] as int;
@@ -225,6 +237,25 @@ const _locationJs =
     '  var s = rendition.currentLocation().start;'
     '  return JSON.stringify({index: s.index, page: s.displayed.page,'
     '    total: s.displayed.total, cfi: s.cfi, progress: s.percentage});'
+    '})()';
+
+// How far right each of the first paragraph's last two characters (す and
+// 。) sits from the one before it.
+const _textStepsJs =
+    '(function () {'
+    '  var doc = rendition.getContents()[0].document;'
+    '  var p = doc.querySelector("p");'
+    '  var walk = doc.createTreeWalker(p, NodeFilter.SHOW_TEXT), text, n;'
+    '  while ((n = walk.nextNode())) text = n;'
+    '  function x(i) {'
+    '    var r = doc.createRange();'
+    '    r.setStart(text, i);'
+    '    r.setEnd(text, i + 1);'
+    '    return r.getBoundingClientRect().left;'
+    '  }'
+    '  var end = text.length - 1;'
+    '  return JSON.stringify({text: text.data.slice(-3),'
+    '    steps: [x(end - 1) - x(end - 2), x(end) - x(end - 1)]});'
     '})()';
 
 /// Polls until the location reads the same twice, 400 ms apart.

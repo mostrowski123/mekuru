@@ -13,13 +13,16 @@ para = ('吾輩は猫である。名前はまだ無い。どこで生れたか�
         '何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。') * 4
 
 
-def chapter(title, n, ruby=False):
-    body = ''.join(f'<p>{para}</p>' for _ in range(n))
+VERTICAL = '<style>html{writing-mode:vertical-rl;-webkit-writing-mode:vertical-rl;}</style>'
+
+
+def chapter(title, n, ruby=False, style=VERTICAL, root='xml:lang="ja"', text=para):
+    body = ''.join(f'<p>{text}</p>' for _ in range(n))
     if ruby:
         body = '<p><ruby>漢字<rt>かんじ</rt></ruby>を読む。</p>' + body
     return f'''<?xml version="1.0" encoding="UTF-8"?>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja"><head><title>{title}</title>
-<style>html{{writing-mode:vertical-rl;-webkit-writing-mode:vertical-rl;}}</style></head>
+<html xmlns="http://www.w3.org/1999/xhtml" {root}><head><title>{title}</title>
+{style}</head>
 <body><h1>{title}</h1>{body}</body></html>'''
 
 
@@ -74,7 +77,27 @@ bad_href_entries = entries[:2] + [
     ('OEBPS/i%FF.png', png, zipfile.ZIP_STORED),
 ]
 
-for file, files in [('book.epub', entries), ('bad_href.epub', bad_href_entries)]:
+# horizontal_rtl.epub: book.epub's pages run right to left (the spine says
+# rtl) but its text is horizontal, as no stylesheet makes it vertical.
+# arabic_rtl.epub: the same, in Arabic, which its markup makes right to left.
+horizontal_rtl_entries = entries[:2] + [
+    ('OEBPS/content.opf', opf.replace('bridge-test-1', 'bridge-test-3'), zipfile.ZIP_DEFLATED),
+    ('OEBPS/nav.xhtml', nav, zipfile.ZIP_DEFLATED),
+    ('OEBPS/c1.xhtml', chapter('第一章', 6, style=''), zipfile.ZIP_DEFLATED),
+    ('OEBPS/c2.xhtml', chapter('第二章', 2, style=''), zipfile.ZIP_DEFLATED),
+]
+arabic = 'هذه فقرة قصيرة باللغة العربية تتكرر حتى تملأ الصفحة. ' * 6 + 'النهاية.'
+arabic_root = 'dir="rtl" xml:lang="ar" lang="ar"'
+arabic_entries = entries[:2] + [
+    ('OEBPS/content.opf', opf.replace('bridge-test-1', 'bridge-test-4')
+     .replace('<dc:language>ja</dc:language>', '<dc:language>ar</dc:language>'), zipfile.ZIP_DEFLATED),
+    ('OEBPS/nav.xhtml', nav, zipfile.ZIP_DEFLATED),
+    ('OEBPS/c1.xhtml', chapter('الفصل الأول', 6, style='', root=arabic_root, text=arabic), zipfile.ZIP_DEFLATED),
+    ('OEBPS/c2.xhtml', chapter('الفصل الثاني', 2, style='', root=arabic_root, text=arabic), zipfile.ZIP_DEFLATED),
+]
+
+for file, files in [('book.epub', entries), ('bad_href.epub', bad_href_entries),
+                    ('horizontal_rtl.epub', horizontal_rtl_entries), ('arabic_rtl.epub', arabic_entries)]:
     out = here / file
     with zipfile.ZipFile(out, 'w') as z:
         for name, data, method in files:
