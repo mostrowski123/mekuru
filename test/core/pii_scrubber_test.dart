@@ -135,8 +135,8 @@ void main() {
 
     test('leaves text that names no file unchanged', () {
       for (final input in [
-        "SocketException: Failed host lookup: 'komga.example.com' "
-            '(OS Error: No address associated with hostname, errno = 7)',
+        'SocketException: Connection refused '
+            '(OS Error: Connection refused, errno = 111)',
         '#0      MangaReaderScreen.build (package:mekuru/features/manga/'
             'presentation/screens/manga_reader_screen.dart:12:3)',
         '[Reader] Opened 進撃の巨人 01 at page 12',
@@ -144,6 +144,34 @@ void main() {
         expect(scrubPaths(input), input);
       }
     });
+  });
+
+  group('scrubPaths on the server a socket error names', () {
+    // A user's own Komga, Kavita or OCR server. An error that wraps the
+    // system's text (the OCR client's "Network error: …") carries it too.
+    const cases = {
+      "SocketException: Failed host lookup: 'komga.example.com' "
+              '(OS Error: No address associated with hostname, errno = 7)':
+          "SocketException: Failed host lookup: '<host>' "
+          '(OS Error: No address associated with hostname, errno = 7)',
+      "OcrServerException(0): Network error: Failed host lookup: 'ocr.home'":
+          "OcrServerException(0): Network error: Failed host lookup: '<host>'",
+      'SocketException: Connection refused (OS Error: Connection refused, '
+              'errno = 111), address = 192.168.1.20, port = 50432':
+          'SocketException: Connection refused (OS Error: Connection refused, '
+          'errno = 111), address = <host>, port = 50432',
+      'ClientException with SocketException: Connection timed out '
+              '(OS Error: Connection timed out, errno = 110), '
+              'address = komga.example.com, port = 44321, '
+              'uri=https://komga.example.com/api/v1/books':
+          'ClientException with SocketException: Connection timed out '
+          '(OS Error: Connection timed out, errno = 110), '
+          'address = <host>, port = 44321, uri=<uri>',
+    };
+
+    for (final MapEntry(key: input, value: scrubbed) in cases.entries) {
+      test(input, () => expect(scrubPaths(input), scrubbed));
+    }
   });
 
   group('scrubPaths on a path that follows any character', () {

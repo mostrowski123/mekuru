@@ -77,12 +77,20 @@ final RegExp _bareFileNamePattern = RegExp(
   caseSensitive: false,
 );
 
+/// The server dart:io names in a socket error: `Failed host lookup: 'host'`
+/// and `address = host, port = N`. A user's own Komga, Kavita or OCR server
+/// is theirs to know; an exception that wraps the system's text carries it.
+final RegExp _socketHostPattern = RegExp(
+  r"(?<=host lookup: ')[^'\r\n]+(?=')|(?<=\baddress = )[^,\s)]+",
+);
+
 const String _pathReplacement = '<path>';
 
-/// Replaces every URI, quoted name, filesystem path, and bare filename in
-/// [input].
+/// Replaces every URI, a socket error's server, quoted name, filesystem path,
+/// and bare filename in [input].
 String scrubPaths(String input) => input
     .replaceAll(_uriPattern, '<uri>')
+    .replaceAll(_socketHostPattern, '<host>')
     .replaceAllMapped(_quotedNamePattern, (m) {
       final quoted = m[0]!;
       return m[1] ?? '${quoted[0]}<file>${quoted[quoted.length - 1]}';
