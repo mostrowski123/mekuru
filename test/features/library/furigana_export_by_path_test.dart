@@ -77,7 +77,9 @@ void main() {
   for (final mode in [FuriganaMode.book, FuriganaMode.hide]) {
     test('${mode.name} export streams file to file: no read or write is '
         'book-sized', () async {
-      final outPath = '${dir.path}/${mode.name}.epub';
+      // Never the book's own name (FuriganaMode.book is "book"): a file
+      // copied onto itself comes out empty on Linux.
+      final outPath = '${dir.path}/exported_${mode.name}.epub';
       final io = IoRecorder();
 
       final written = await IOOverrides.runWithIOOverrides(
