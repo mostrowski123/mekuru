@@ -40,18 +40,39 @@ final RegExp _quotedNamePattern = RegExp(
 /// `primary:Download/…`). Group 1 is a Dart stack frame's file
 /// (`package:mekuru/…dart`, `dart:async/zone.dart`): it names code, not the
 /// user's files, so it is matched only to be kept.
+///
+/// The path starts only where a run of name characters starts. Without
+/// that, a run with no slash was tried again from every one of its
+/// characters, which is quadratic, and kana are name characters, so a
+/// Japanese paragraph is one run (20,000 characters took 7 seconds). A match
+/// starting inside a run would have started earlier anyway, except right
+/// after a kept frame: its `.dart` is inside a run, and a path can follow
+/// it there (`main.dart/秘密`).
 final RegExp _relativePathPattern = RegExp(
   r'''((?:package:[a-z][a-z0-9_]*|dart:[a-z_][a-z0-9_-]*)/[\w./-]*\.dart)|'''
+  r'''(?:(?<![^\s<>'"`()\[\],;\\/])|(?<=\.dart))'''
   r'''[^\s<>'"`()\[\],;\\/]*(?:[\\/][^\s<>'"`()\[\],;\\/]+)+[\\/]?''',
 );
+
+/// The extensions of [_bareFileNamePattern], in its match and its lookbehind.
+const _bookExtensions =
+    'epub|cbz|cbr|cbt|zip|rar|json|mekuru|csv|mokuro|html|txt|tar|gz|tgz|'
+    'png|jpg|jpeg|webp|gif|avif|bmp|tif|tiff|pdf|db|sqlite|apk|dic|bin';
 
 /// Book-ish extensions whose bare filenames get redacted even without a path.
 /// Up to three space-separated segments ("秘密の本 volume 1.cbz"). Full paths
 /// are already gone by this point, so this only mops up name-only mentions.
+///
+/// A name starts only where a run of non-space characters starts, for the
+/// reason [_relativePathPattern] gives (a run with no `.epub` and the like
+/// was quadratic: 20,000 kana took 9 seconds). The exception is right after
+/// a name it replaced, which can end inside a run (`a.epub-x y.zip`).
 final RegExp _bareFileNamePattern = RegExp(
+  r'(?:(?<![^\s<>])|(?<=\.(?:'
+  '$_bookExtensions'
+  r')))'
   r'(?:[^\s<>]+ ){0,2}[^\s<>]+\.(?:'
-  'epub|cbz|cbr|cbt|zip|rar|json|mekuru|csv|mokuro|html|txt|tar|gz|tgz|'
-  'png|jpg|jpeg|webp|gif|avif|bmp|tif|tiff|pdf|db|sqlite|apk|dic|bin'
+  '$_bookExtensions'
   r')\b',
   caseSensitive: false,
 );

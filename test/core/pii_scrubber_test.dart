@@ -229,6 +229,36 @@ void main() {
     });
   });
 
+  group('scrubPaths on long runs of text', () {
+    test('a Japanese paragraph with no path takes linear time', () {
+      final text = 'あいうえおかきくけこ' * 2000;
+      final watch = Stopwatch()..start();
+      final scrubbed = scrubPaths(text);
+      watch.stop();
+      expect(scrubbed, text);
+      expect(
+        watch.elapsedMilliseconds,
+        lessThan(500),
+        reason: 'Sentry scrubs on the UI isolate',
+      );
+    });
+
+    test('a path right after a kept stack frame', () {
+      expect(
+        scrubPaths('#0 main (package:mekuru/main.dart/秘密/本.epub)'),
+        '#0 main (package:mekuru/main.dart<path>)',
+      );
+    });
+
+    test('a file name right after another one', () {
+      expect(scrubPaths('w1 w2 a.epub-x y.zip'), '<file><file>');
+    });
+
+    test('a SAF document ID inside Japanese text', () {
+      expect(scrubPaths('これはprimary:Download/秘密/本.epubです'), '<path>');
+    });
+  });
+
   group('scrubPaths on iOS file errors, which name a file in quotes', () {
     // Foundation's NSCocoaErrorDomain messages, as `localizedDescription`
     // hands them to a PlatformException: the file or folder name in quotes,
