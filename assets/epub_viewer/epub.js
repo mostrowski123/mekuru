@@ -4186,7 +4186,11 @@ class default_DefaultViewManager {
     var displayed = displaying.promise;
 
     // Check if moving to target is needed
-    if (target === section.href || Object(core["isNumber"])(target)) {
+    // [MEKURU PATCH] The section's href with a query too (see Spine.get()):
+    // it names the section's start, and moveToTarget() finds no place in it
+    // (locationOf() answers 0, 0, which right to left is the section's end).
+    if (target === section.href || Object(core["isNumber"])(target) ||
+        typeof target === "string" && target.indexOf("#") === -1 && target.split("?")[0] === section.href) {
       target = undefined;
     }
 
@@ -14370,6 +14374,12 @@ class spine_Spine {
       // Remove fragments
       target = target.split("#")[0];
       index = this.spineByHref[target] || this.spineByHref[encodeURI(target)];
+      // [MEKURU PATCH] And a link's query (c1.xhtml?v=1), which names no
+      // other file. A file whose name holds a "?" is found as written first.
+      if (index === undefined && target.indexOf("?") !== -1) {
+        target = target.split("?")[0];
+        index = this.spineByHref[target] || this.spineByHref[encodeURI(target)];
+      }
     }
     return this.spineItems[index] || null;
   }

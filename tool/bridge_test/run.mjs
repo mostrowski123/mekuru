@@ -544,6 +544,26 @@ const checks = [
     }
   }],
 
+  ["a link with a ?query goes to the start of its chapter", async () => {
+    // epub.js looked c2.xhtml?v=1 up with its query, found no chapter, and
+    // the link went nowhere; found, it was placed as a target in the chapter
+    // and right to left went to the chapter's end. toCfi(href) is what Dart's
+    // chapter list runs; a link in the text displays its href the same way.
+    const p = await openBook('horizontal_rtl.epub', `"", "rtl", "paginated", false, "18", "#000000", null, 28, 28, false, "book", 1, null`);
+    try {
+      for (const [href, index] of [['c2.xhtml?v=1', 1], ['c1.xhtml?v=1', 0]]) {
+        await turned(p, `toCfi(${JSON.stringify(href)})`);
+        const [at, page] = await p.evaluate(() => {
+          const { start } = rendition.currentLocation();
+          return [start.index, start.displayed.page];
+        });
+        expect(at === index && page === 1, `toCfi('${href}') went to chapter ${at + 1}, page ${page}`);
+      }
+    } finally {
+      await p.close();
+    }
+  }],
+
   ['every handler the page calls is registered in Dart', async () => {
     // The calls seen so far, and every name written in reader_bridge.js.
     const source = fs.readFileSync(path.join(viewer, 'reader_bridge.js'), 'utf8');
