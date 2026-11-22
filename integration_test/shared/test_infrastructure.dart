@@ -7,6 +7,8 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_test/flutter_test.dart'
+    show TestWidgetsFlutterBinding, addTearDown;
 import 'package:mekuru/app.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:path/path.dart' as p;
@@ -321,6 +323,20 @@ Future<void> seedBooks(AppDatabase db, {int count = 3}) async {
 
 // ──────────────── App Builder ────────────────
 
+/// Unmounts the app when the test ends, before the test closes its database.
+/// flutter_test unmounts only after a test that passed. A failed one left the
+/// screen mounted with its database streams open, and the test's
+/// `db.close()` never completed: the run hung, reported as "(tearDownAll) -
+/// did not complete", until a watchdog stopped it. Tear-downs run newest
+/// first, so this one, added as the app is built, runs before a `db.close()`
+/// added when the database was made.
+void _unmountAtTearDown() {
+  addTearDown(() async {
+    runApp(const SizedBox.shrink());
+    await TestWidgetsFlutterBinding.instance.pump();
+  });
+}
+
 /// Builds a test app with standard provider overrides for integration tests.
 ///
 /// The [home] widget is wrapped in a localized MaterialApp with ProviderScope.
@@ -336,6 +352,7 @@ Widget buildIntegrationTestApp({
   List<Override> extraOverrides = const [],
   GlobalKey<NavigatorState>? navigatorKey,
 }) {
+  _unmountAtTearDown();
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),
@@ -361,6 +378,7 @@ Widget buildIntegrationTestRealApp({
   required AppDatabase db,
   List<Override> extraOverrides = const [],
 }) {
+  _unmountAtTearDown();
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),
