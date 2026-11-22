@@ -182,7 +182,8 @@ void main() {
         asset: 'jmnedict',
         network: NetworkConsent.mobileData,
         importer: DictionaryImporter(repo),
-        requiredBytes: 100000000,
+        // No database file to measure: 50 MB of growth and as much again.
+        size: (downloadMb: 0, installedMb: 50),
       ),
       throwsA(
         isA<InsufficientSpaceException>().having(

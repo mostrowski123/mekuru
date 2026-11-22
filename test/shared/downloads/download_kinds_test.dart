@@ -108,10 +108,12 @@ void main() {
             asset: 'jitendex',
             importer: importer(),
             network: network,
-            requiredBytes: 5000,
+            size: (downloadMb: 0.001, installedMb: 0.002),
           ),
           length: 4000,
           arriving: r'^app/download_\d+_Jitendex\.zip$',
+          // 1000 bytes of zip + 2 × 2000 of database, with no database file
+          // to measure.
           room: 5000,
           resume: false,
           iosWork: true,

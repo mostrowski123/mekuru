@@ -2,7 +2,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart'
-    show dictionaryRequiredMb;
+    show DictionarySize;
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
@@ -24,9 +24,9 @@ class JpdbFreqDownloadService {
   /// The dictionary name as stored in the database after import.
   static const dictionaryName = 'JPDBv2\u32D5';
 
-  /// Free bytes its install needs ([dictionaryRequiredMb]): the zip and what
-  /// its import added to a database, measured on 2026-11-21.
-  static final requiredBytes = (dictionaryRequiredMb(6.0, 39.1) * 1e6).round();
+  /// The zip and what its import added to a database, measured on
+  /// 2026-11-21.
+  static const DictionarySize size = (downloadMb: 6.0, installedMb: 39.1);
 
   /// Check whether the JPDB frequency dictionary exists in the database.
   static Future<bool> isImported(DictionaryRepository repository) async {
@@ -59,7 +59,7 @@ class JpdbFreqDownloadService {
       asset: 'jpdb_freq',
       importer: importer,
       network: network,
-      requiredBytes: requiredBytes,
+      size: size,
       onProgress: onProgress,
     );
   }

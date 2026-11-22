@@ -1,8 +1,14 @@
+import 'dart:io';
+
+import 'package:mekuru/core/database/database_provider.dart' show AppDatabase;
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart'
+    show DictionarySize, dictionaryRequiredBytes;
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 /// Downloads Yomitan dictionary zips and imports them.
 class DictionaryDownloadService {
@@ -18,17 +24,21 @@ class DictionaryDownloadService {
   /// [onProgress] gets 0–[downloadShare] while downloading, then up to
   /// [finishingProgress] while importing, stays there while the import
   /// finishes, and gets 1.0 when done. [asset] names the download in
-  /// telemetry. [requiredBytes] is the room the import needs, when [kind]
-  /// checks for room. A stop ([DownloadStoppedException]) imports nothing.
+  /// telemetry. [size] is the dictionary's, for the room its install needs
+  /// ([dictionaryRequiredBytes]). A stop ([DownloadStoppedException])
+  /// imports nothing.
   static Future<void> downloadAndImportUrl({
     required DownloadKind kind,
     required String url,
     required String asset,
     required DictionaryImporter importer,
     required NetworkConsent network,
-    int? requiredBytes,
+    DictionarySize? size,
     void Function(double progress)? onProgress,
   }) async {
+    final room = size == null
+        ? 0
+        : dictionaryRequiredBytes(size, await _databaseBytes());
     final stopwatch = Stopwatch()..start();
     try {
       await runDownload<void>(
@@ -43,7 +53,7 @@ class DictionaryDownloadService {
               sha256: null,
             ),
           ],
-          extraBytes: requiredBytes ?? 0,
+          extraBytes: room,
         ),
         network,
         share: downloadShare,
@@ -91,6 +101,18 @@ class DictionaryDownloadService {
     } catch (error) {
       logFailure('download.failed', error, attrs: {'asset': asset});
       rethrow;
+    }
+  }
+
+  /// The length of the app's database file now, null when it can't be read.
+  static Future<int?> _databaseBytes() async {
+    try {
+      final dir = await getApplicationSupportDirectory();
+      return await File(
+        p.join(dir.path, AppDatabase.databaseFileName),
+      ).length();
+    } catch (_) {
+      return null;
     }
   }
 }

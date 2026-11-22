@@ -64,7 +64,7 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
           asset: entry.name,
           importer: ref.read(dictionaryImporterProvider),
           network: network,
-          requiredBytes: (entry.requiredMb * 1e6).round(),
+          size: (downloadMb: entry.downloadMb, installedMb: entry.installedMb),
           onProgress: (progress) => state = CatalogDownloadState(
             isDownloading: true,
             progress: progress,

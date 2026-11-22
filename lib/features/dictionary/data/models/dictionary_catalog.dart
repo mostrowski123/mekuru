@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:mekuru/core/database/database_provider.dart'
     show DictionaryMeta;
 
@@ -168,14 +170,29 @@ enum CatalogDictionary {
 
   bool isInstalledIn(Iterable<DictionaryMeta> dictionaries) =>
       dictionaries.any((d) => matchesTitle(d.name));
-
-  double get requiredMb => dictionaryRequiredMb(downloadMb, installedMb);
 }
 
-/// Free storage a dictionary's install needs: the zip, the database's growth,
-/// and as much again for the import's journal until it commits.
-double dictionaryRequiredMb(double downloadMb, double installedMb) =>
-    downloadMb + 2 * installedMb;
+/// A dictionary's measured sizes: [downloadMb] its zip, [installedMb] what
+/// its import adds to the database.
+typedef DictionarySize = ({double downloadMb, double installedMb});
+
+/// Free bytes a dictionary's install needs, the database file being
+/// [databaseBytes] long now (null when unknown): the zip, the database's
+/// growth, and the rollback journal until the import commits. The journal
+/// holds the earlier content of each page the import changes, once, so it
+/// stays within the database's size before the import (8 bytes a page
+/// aside); it is also taken to stay within the growth. On an Android
+/// emulator, 2026-11-22: JMdict into an empty database left a 0.1 MB
+/// journal, Jitendex into a 282 MB one a 59 MB journal. It never asks for
+/// less than a twentieth of the growth on top: the sizes are measured ones,
+/// and a dictionary's next release can be a little larger.
+int dictionaryRequiredBytes(DictionarySize size, int? databaseBytes) {
+  final growth = (size.installedMb * 1e6).round();
+  final journal = databaseBytes == null
+      ? growth
+      : min(growth, max(databaseBytes, growth ~/ 20));
+  return (size.downloadMb * 1e6).round() + growth + journal;
+}
 
 /// The name the app shows for a dictionary: the catalog's name for a
 /// catalog dictionary ("Jitendex.org [2026-10-03]" → "Jitendex"), otherwise
