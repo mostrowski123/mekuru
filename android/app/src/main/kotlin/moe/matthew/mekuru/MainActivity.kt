@@ -69,7 +69,6 @@ class MainActivity : FlutterActivity() {
     }
 
     private var pendingTreePickerResult: MethodChannel.Result? = null
-    private var pendingPickedDocumentUri: Uri? = null
     private var pendingDocumentPickerResult: MethodChannel.Result? = null
     private var pendingSave: Pair<File, MethodChannel.Result>? = null
 
@@ -227,9 +226,7 @@ class MainActivity : FlutterActivity() {
         if (requestCode != REQUEST_OPEN_DOCUMENT_TREE) return
 
         val callback = pendingTreePickerResult
-        val pickedDocumentUri = pendingPickedDocumentUri
         pendingTreePickerResult = null
-        pendingPickedDocumentUri = null
 
         if (callback == null) return
 
@@ -254,21 +251,12 @@ class MainActivity : FlutterActivity() {
                 takeFlags or Intent.FLAG_GRANT_READ_URI_PERMISSION,
             )
 
-            val response = mutableMapOf<String, Any?>(
-                "treeUri" to treeUri.toString(),
-                "treeDocumentId" to safeGetTreeDocumentId(treeUri),
+            callback.success(
+                mapOf(
+                    "treeUri" to treeUri.toString(),
+                    "treeDocumentId" to safeGetTreeDocumentId(treeUri),
+                ),
             )
-
-            if (pickedDocumentUri != null) {
-                response["selectedFileUri"] = pickedDocumentUri.toString()
-                response["selectedFileDocumentId"] = safeGetDocumentId(pickedDocumentUri)
-
-                val treeDocId = safeGetTreeDocumentId(treeUri)
-                val fileDocId = safeGetDocumentId(pickedDocumentUri)
-                response["selectedFileRelativePath"] = deriveRelativePath(treeDocId, fileDocId)
-            }
-
-            callback.success(response)
         } catch (e: Exception) {
             callback.error("saf_tree_access_failed", e.message, null)
         }
@@ -277,15 +265,7 @@ class MainActivity : FlutterActivity() {
     private fun handleSafMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "pickDirectory" -> {
-                requestDirectoryAccess(null, result)
-            }
-            "requestDirectoryAccessForDocument" -> {
-                val uriString = call.argument<String>("documentUri")
-                if (uriString.isNullOrBlank()) {
-                    result.error("bad_args", "documentUri is required", null)
-                    return
-                }
-                requestDirectoryAccessForDocument(Uri.parse(uriString), result)
+                requestDirectoryAccess(result)
             }
             "readBytesFromUri" -> {
                 val uriString = call.argument<String>("uri")
@@ -714,17 +694,7 @@ class MainActivity : FlutterActivity() {
         return false
     }
 
-    private fun requestDirectoryAccessForDocument(
-        pickedDocumentUri: Uri,
-        result: MethodChannel.Result,
-    ) {
-        requestDirectoryAccess(pickedDocumentUri, result)
-    }
-
-    private fun requestDirectoryAccess(
-        pickedDocumentUri: Uri?,
-        result: MethodChannel.Result,
-    ) {
+    private fun requestDirectoryAccess(result: MethodChannel.Result) {
         if (pendingTreePickerResult != null) {
             result.error("busy", "A directory picker request is already in progress", null)
             return
@@ -735,12 +705,6 @@ class MainActivity : FlutterActivity() {
             addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
             addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-
-            if (pickedDocumentUri != null) {
-                buildParentDocumentUri(pickedDocumentUri)?.let { parentUri ->
-                    putExtra(DocumentsContract.EXTRA_INITIAL_URI, parentUri)
-                }
-            }
         }
 
         try {
@@ -751,7 +715,6 @@ class MainActivity : FlutterActivity() {
             return
         }
         pendingTreePickerResult = result
-        pendingPickedDocumentUri = pickedDocumentUri
     }
 
     /**
@@ -1012,51 +975,10 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun buildParentDocumentUri(documentUri: Uri): Uri? {
-        val authority = documentUri.authority ?: return null
-        val documentId = safeGetDocumentId(documentUri) ?: return null
-
-        val prefix = documentId.substringBefore(':', missingDelimiterValue = "")
-        if (prefix.isEmpty()) return null
-
-        val afterColon = documentId.substringAfter(':', missingDelimiterValue = "")
-        val parentAfterColon = afterColon.substringBeforeLast('/', missingDelimiterValue = "")
-        val parentDocId = if (parentAfterColon.isEmpty()) {
-            "$prefix:"
-        } else {
-            "$prefix:$parentAfterColon"
-        }
-
-        return try {
-            DocumentsContract.buildDocumentUri(authority, parentDocId)
-        } catch (_: Exception) {
-            null
-        }
-    }
-
     private fun safeGetTreeDocumentId(treeUri: Uri): String? {
         return try {
             DocumentsContract.getTreeDocumentId(treeUri)
         } catch (_: Exception) {
-            null
-        }
-    }
-
-    private fun safeGetDocumentId(uri: Uri): String? {
-        return try {
-            DocumentsContract.getDocumentId(uri)
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    private fun deriveRelativePath(treeDocId: String?, fileDocId: String?): String? {
-        if (treeDocId.isNullOrBlank() || fileDocId.isNullOrBlank()) return null
-        if (fileDocId == treeDocId) return ""
-        val prefix = "$treeDocId/"
-        return if (fileDocId.startsWith(prefix)) {
-            fileDocId.removePrefix(prefix)
-        } else {
             null
         }
     }
