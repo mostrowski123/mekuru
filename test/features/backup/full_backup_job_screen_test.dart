@@ -6,6 +6,7 @@ import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/backup/presentation/providers/full_backup_job_provider.dart';
 import 'package:mekuru/features/backup/presentation/screens/full_backup_job_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations_en.dart';
+import 'package:mekuru/l10n/generated/app_localizations_ja.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
 
 import '../../test_app.dart';
@@ -34,6 +35,7 @@ void main() {
   Future<ProviderContainer> pumpGate(
     WidgetTester tester, {
     required FullBackupJobStatus status,
+    Locale? locale,
   }) async {
     api.current = status;
     final container = ProviderContainer(
@@ -47,6 +49,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: buildLocalizedTestApp(
+          locale: locale,
           home: const FullBackupJobGate(
             child: Scaffold(body: Center(child: Text('the app'))),
           ),
@@ -192,6 +195,55 @@ void main() {
       findsOneWidget,
     );
     await settle(tester, container);
+  });
+
+  group('the title says where the job is, in Japanese', () {
+    final ja = AppLocalizationsJa();
+
+    Future<void> pumpJa(WidgetTester tester, FullBackupJobStatus status) =>
+        pumpGate(tester, status: status, locale: const Locale('ja'));
+
+    testWidgets('a written backup is finished, not backing up', (tester) async {
+      await pumpJa(
+        tester,
+        const FullBackupJobStatus(
+          lifecycle: FullBackupJobLifecycle.done,
+          bytes: 2048,
+        ),
+      );
+      expect(find.text(ja.backupFullJobExportDoneTitle), findsOneWidget);
+      expect(find.text(ja.backupFullJobExportTitle), findsNothing);
+    });
+
+    testWidgets('an unpacked restore is ready, not restoring', (tester) async {
+      await pumpJa(
+        tester,
+        const FullBackupJobStatus(
+          lifecycle: FullBackupJobLifecycle.done,
+          kind: FullBackupJobKind.restore,
+        ),
+      );
+      expect(find.text(ja.backupFullJobRestoreDoneTitle), findsOneWidget);
+      expect(find.text(ja.backupFullJobRestoreTitle), findsNothing);
+    });
+
+    for (final lifecycle in [
+      FullBackupJobLifecycle.failed,
+      FullBackupJobLifecycle.cancelled,
+    ]) {
+      for (final kind in FullBackupJobKind.values) {
+        testWidgets('a ${kind.name} that ended ${lifecycle.name} is no longer '
+            'under way', (tester) async {
+          await pumpJa(
+            tester,
+            FullBackupJobStatus(lifecycle: lifecycle, kind: kind),
+          );
+          expect(find.text(ja.backupFullSectionTitle), findsOneWidget);
+          expect(find.text(ja.backupFullJobExportTitle), findsNothing);
+          expect(find.text(ja.backupFullJobRestoreTitle), findsNothing);
+        });
+      }
+    }
   });
 
   testWidgets('a finished export shows the size and Done reveals the app', (

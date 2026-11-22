@@ -91,12 +91,25 @@ class _FullBackupJobScreenState extends ConsumerState<FullBackupJobScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          isExport
-                              ? l10n.backupFullJobExportTitle
-                              : l10n.backupFullJobRestoreTitle,
-                          style: theme.textTheme.headlineSmall,
-                        ),
+                        child: Text(switch ((
+                          state.stage,
+                          state.status.lifecycle,
+                        )) {
+                          (
+                            FullBackupJobStage.terminal,
+                            FullBackupJobLifecycle.done,
+                          ) =>
+                            isExport
+                                ? l10n.backupFullJobExportDoneTitle
+                                : l10n.backupFullJobRestoreDoneTitle,
+                          // Failed or cancelled: no longer under way.
+                          (FullBackupJobStage.terminal, _) =>
+                            l10n.backupFullSectionTitle,
+                          _ =>
+                            isExport
+                                ? l10n.backupFullJobExportTitle
+                                : l10n.backupFullJobRestoreTitle,
+                        }, style: theme.textTheme.headlineSmall),
                       ),
                       Chip(
                         label: Text(l10n.backupFullBadge),
