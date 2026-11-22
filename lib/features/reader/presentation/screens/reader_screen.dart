@@ -697,6 +697,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                           ),
                         ),
                       ),
+                    if (viewer != null && viewerInsets.left > 0)
+                      _besidePage(left: true, width: viewerInsets.left),
+                    if (viewer != null && viewerInsets.right > 0)
+                      _besidePage(left: false, width: viewerInsets.right),
                     if (_isLoading) _buildLoadingOverlay(context),
                     if (_showControls && !_isLoading)
                       Positioned(
@@ -1329,6 +1333,36 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
     _executeNavigationIntent(intent);
   }
+
+  /// The strip beside the page that iOS keeps it out of: the Dynamic Island's
+  /// side held sideways, iPhone Duo's strip. The page never sees a tap
+  /// there, so the strip takes it as a tap at that edge of the page.
+  Widget _besidePage({required bool left, required double width}) => Positioned(
+    top: 0,
+    bottom: 0,
+    left: left ? 0 : null,
+    right: left ? null : 0,
+    width: width,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      // ReaderPageSemantics turns pages for screen readers.
+      excludeFromSemantics: true,
+      onTap: () {
+        // As _handleTouchUp does for a tap on the page.
+        _imageTap?.cancel();
+        if (_hasActiveSelection) return;
+        final settings = ref.read(readerSettingsProvider);
+        _executeNavigationIntent(
+          resolveTapIntent(
+            normalizedX: left ? 0 : 1,
+            normalizedY: 0.5,
+            readingDirection: settings.readingDirection,
+            scrollView: settings.scrollView,
+          ),
+        );
+      },
+    ),
+  );
 
   /// Ends the pending touch that just lifted at ([x], [y]). If it was a
   /// swipe, acts on it and returns true; a tap (or no touch-down) returns
