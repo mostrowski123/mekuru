@@ -939,7 +939,7 @@ class BookRepository {
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
-      throw Exception('Pages cache not found. Try re-importing this manga.');
+      throw MangaPagesUnavailable.pagesMissing;
     }
 
     final content = await cacheFile.readAsString();
@@ -981,7 +981,7 @@ class BookRepository {
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
-      throw Exception('Pages cache not found. Try re-importing this manga.');
+      throw MangaPagesUnavailable.pagesMissing;
     }
 
     final backupFile = File(
@@ -1006,7 +1006,7 @@ class BookRepository {
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
-      throw Exception('Pages cache not found. Try re-importing this manga.');
+      throw MangaPagesUnavailable.pagesMissing;
     }
 
     final backupFile = File(
@@ -1033,7 +1033,7 @@ class BookRepository {
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
-      throw Exception('Pages cache not found. Try re-importing this manga.');
+      throw MangaPagesUnavailable.pagesMissing;
     }
 
     final content = await cacheFile.readAsString();
@@ -1073,7 +1073,7 @@ class BookRepository {
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
-      throw Exception('Pages cache not found. Try re-importing this manga.');
+      throw MangaPagesUnavailable.pagesMissing;
     }
 
     final content = await cacheFile.readAsString();

@@ -5,6 +5,16 @@ import 'package:path/path.dart' as p;
 /// File name of the cached page/OCR data inside a manga book's directory.
 const String mangaPagesCacheFileName = 'pages_cache.json';
 
+/// Why a manga's pages cannot be read or changed. Whoever shows it words it.
+enum MangaPagesUnavailable implements Exception {
+  /// The book is no longer in the library.
+  bookGone,
+
+  /// Its [mangaPagesCacheFileName] is gone: only a new import brings it
+  /// back.
+  pagesMissing,
+}
+
 /// Manifest for a single mokuro book discovered in a directory.
 /// Contains paths but no parsed page data yet.
 class MokuroBookManifest {

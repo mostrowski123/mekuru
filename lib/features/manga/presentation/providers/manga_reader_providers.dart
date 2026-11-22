@@ -10,14 +10,9 @@ import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:path/path.dart' as p;
 
-/// Why [mangaPagesProvider] has no pages to show. The reader words it.
-enum MangaPagesUnavailable implements Exception {
-  /// The book is no longer in the library.
-  bookGone,
-
-  /// Its `pages_cache.json` is gone: only a new import brings it back.
-  pagesMissing,
-}
+// Why [mangaPagesProvider] has no pages to show; the reader words it.
+export 'package:mekuru/features/manga/data/models/mokuro_models.dart'
+    show MangaPagesUnavailable;
 
 /// Loads and caches the mokuro page data for a manga book.
 ///

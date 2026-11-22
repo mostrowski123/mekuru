@@ -1771,9 +1771,16 @@ class _BookTileState extends ConsumerState<_BookTile>
         );
       }
     } catch (e) {
+      logFailure('ocr.delete_failed', e);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.ocrRemoveFailed(details: '$e'))),
+          SnackBar(
+            content: Text(
+              e == MangaPagesUnavailable.pagesMissing
+                  ? context.l10n.mangaReaderPagesMissing
+                  : context.l10n.ocrDeleteFailed,
+            ),
+          ),
         );
       }
     }
