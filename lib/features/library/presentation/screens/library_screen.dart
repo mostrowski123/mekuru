@@ -49,6 +49,7 @@ import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.d
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
@@ -330,9 +331,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             child: booksAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(
-                child: Text(
-                  l10n.commonErrorWithDetails(details: err.toString()),
-                ),
+                child: LoadFailedText(err, event: 'library.books_load_failed'),
               ),
               data: (dataBooks) {
                 final collections =
@@ -1074,10 +1073,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     try {
       entities = await dir.list().toList();
     } catch (e) {
+      logFailure('library.folder_read_failed', e);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.libraryCouldNotReadFolder(details: '$e'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.libraryReadFolderFailed)));
       return;
     }
 
@@ -1703,11 +1703,10 @@ class _BookTileState extends ConsumerState<_BookTile>
         rethrow;
       }
     } catch (e) {
+      logFailure('library.cover_change_failed', e);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.libraryChangeCoverFailed(details: '$e')),
-        ),
+        SnackBar(content: Text(context.l10n.libraryCoverChangeFailed)),
       );
     }
   }

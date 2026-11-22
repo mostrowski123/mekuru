@@ -15,6 +15,7 @@ import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/l10n/generated/app_localizations_ja.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -204,6 +205,7 @@ void main() {
   testWidgets('a cover that cannot be saved says so and keeps no copy', (
     tester,
   ) async {
+    final ja = AppLocalizationsJa();
     final dir = Directory.systemTemp.createTempSync('change_cover_');
     addTearDown(() => dir.deleteSync(recursive: true));
     final bookFile = File(p.join(dir.path, 'book', 'book.epub'))
@@ -224,19 +226,22 @@ void main() {
           ),
           bookRepositoryProvider.overrideWithValue(_CoverWriteFails(db)),
         ],
-        child: buildLocalizedTestApp(home: const LibraryScreen()),
+        child: buildLocalizedTestApp(
+          locale: const Locale('ja'),
+          home: const LibraryScreen(),
+        ),
       ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     tester.semantics.customAction(
       find.semantics.byLabel('Book 1'),
-      CustomSemanticsAction(label: 'Book options'),
+      CustomSemanticsAction(label: ja.libraryBookOptions),
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Change Cover'));
-    await tester.tap(find.text('Change Cover'));
+    await tester.ensureVisible(find.text(ja.libraryChangeCoverAction));
+    await tester.tap(find.text(ja.libraryChangeCoverAction));
     // The copy is real file IO: give it real time, then let the app react.
     for (var i = 0; i < 10; i++) {
       await tester.runAsync(
@@ -245,7 +250,10 @@ void main() {
       await tester.pump();
     }
 
-    expect(find.textContaining('Failed to change cover'), findsOneWidget);
+    // In the user's language, without the error's own text.
+    expect(find.text(ja.libraryCoverChangeFailed), findsOneWidget);
+    expect(find.textContaining('FileSystemException'), findsNothing);
+    expect(find.textContaining('disk is full'), findsNothing);
     expect(
       dir
           .listSync(recursive: true)
