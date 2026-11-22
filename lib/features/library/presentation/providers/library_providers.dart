@@ -15,6 +15,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/core/utils/storage_full.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart' show PdfException, PdfPasswordException;
@@ -178,9 +179,8 @@ String importFailureReason(AppLocalizations l10n, Object error) =>
       MangaImagesMissingException(:final folderName) =>
         l10n.libraryImportReasonImagesMissing(folder: folderName),
       UnsupportedError() => l10n.libraryImportReasonUnsupported,
-      // ENOSPC: the copy or the extraction filled the device.
-      FileSystemException(osError: OSError(errorCode: 28)) =>
-        l10n.localOcrStorageFull,
+      // The copy, the extraction or the database filled the device.
+      _ when isStorageFull(error) => l10n.localOcrStorageFull,
       FileSystemException(osError: OSError()) =>
         l10n.libraryImportReasonUnreadable,
       _ => l10n.libraryImportReasonUnknown,

@@ -17,6 +17,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../database/database_provider.dart';
 import '../database/row_count.dart';
+import '../utils/storage_full.dart';
 import 'analytics_service.dart';
 import 'pii_scrubber.dart';
 
@@ -142,14 +143,10 @@ String _failureText(Object error) => switch (error) {
 /// in the background, too little room for one): logged, never an issue.
 abstract interface class UserSideFailure implements Exception {}
 
-/// Whether [error] is on the user's side: a [UserSideFailure], or a full
-/// disk.
+/// Whether [error] is on the user's side: a [UserSideFailure], or storage
+/// that is full, for a file or for the database ([isStorageFull]).
 bool isUserSideFailure(Object? error) =>
-    error is UserSideFailure ||
-    (error is FileSystemException && error.osError?.errorCode == _noSpace);
-
-/// ENOSPC, "No space left on device", on Android and iOS.
-const _noSpace = 28;
+    error is UserSideFailure || isStorageFull(error);
 
 /// Formats exception text for a telemetry attribute: keeps only the first
 /// line (Dart parse errors append source snippets on later lines), redacts

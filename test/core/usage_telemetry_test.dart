@@ -7,6 +7,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:sqlite3/sqlite3.dart' show SqliteException;
 
 import '../shared/test_database.dart';
 
@@ -111,6 +112,20 @@ void main() {
           'Write failed',
           'book.pdf',
           OSError('No space left on device', 28),
+        ),
+        stackTrace: StackTrace.current,
+      );
+
+      expect(issues, isEmpty);
+      expect(logged!['user_side']?.value, isTrue);
+    });
+
+    test('a full database is marked user-side and files no issue', () {
+      logFailure(
+        'book.import_failed',
+        SqliteException(
+          extendedResultCode: 13,
+          message: 'database or disk is full',
         ),
         stackTrace: StackTrace.current,
       );

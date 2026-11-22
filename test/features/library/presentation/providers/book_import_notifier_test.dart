@@ -18,6 +18,7 @@ import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart' show PdfException, PdfPasswordException;
 import 'package:rar_reader/rar_reader.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:sqlite3/sqlite3.dart' show SqliteException;
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
@@ -309,6 +310,19 @@ void main() {
       en.localOcrStorageFull,
     );
     expect(reason(StateError('bug')), en.libraryImportReasonUnknown);
+  });
+
+  test('an import that fills the database says storage is full', () {
+    expect(
+      importFailureReason(
+        en,
+        SqliteException(
+          extendedResultCode: 13,
+          message: 'database or disk is full',
+        ),
+      ),
+      en.localOcrStorageFull,
+    );
   });
 
   group('BookImportNotifier failure telemetry', () {
