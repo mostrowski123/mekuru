@@ -26,6 +26,7 @@ import 'package:workmanager_platform_interface/workmanager_platform_interface.da
 
 import '../../shared/fake_download_notifiers.dart';
 import '../../shared/fake_path_provider.dart';
+import '../../shared/free_space_fakes.dart';
 import '../../test_app.dart';
 
 const _clip = 'f84aff2662b3f2f2';
@@ -448,6 +449,33 @@ void main() {
       expect(waiting.last, JobWait.wifi);
       pack.cancel();
       await expectLater(done, throwsA(isA<HttpException>()));
+    });
+
+    test('Android: without room for the rest of the pack nothing is queued, '
+        'and it says how much more it needs', () async {
+      final workmanager = _QueuedWorkmanager();
+      WorkmanagerPlatform.instance = workmanager;
+      // What an earlier run got needs no room again.
+      final dir = await Directory(
+        await WordAudioPack.storageDir(),
+      ).create(recursive: true);
+      File(
+        p.join(dir.path, '${file.name}.part'),
+      ).writeAsBytesSync(body.sublist(0, 100));
+      mockFreeBytes(10);
+
+      await expectLater(
+        pack.download(network: NetworkConsent.wifiOnly),
+        throwsA(
+          isA<InsufficientSpaceException>().having(
+            (e) => e.neededBytes,
+            'neededBytes',
+            body.length - 100 - 10,
+          ),
+        ),
+      );
+      expect(workmanager.scheduled, isFalse);
+      expect(requests, 0);
     });
 
     test('Android: the worker installs what the app queued', () async {

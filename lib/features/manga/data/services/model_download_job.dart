@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
-import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
@@ -12,6 +11,7 @@ import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/downloads/download.dart' show requireRoom;
 import 'package:path/path.dart' as p;
 import 'package:workmanager/workmanager.dart';
 
@@ -106,11 +106,7 @@ class ModelDownloadJob {
     if (!await _scheduled()) {
       final partial = File(p.join(folder.path, '${file.name}.part'));
       final have = await partial.exists() ? await partial.length() : 0;
-      final needed = file.bytes - have + extraBytes;
-      final free = await AndroidSafService.getFreeBytes(folder.path);
-      if (free != null && free < needed) {
-        throw InsufficientSpaceException(neededBytes: needed - free);
-      }
+      await requireRoom(file.bytes - have + extraBytes);
       await stopIfCancelled();
       if (network.allowsMobileData) {
         await mobileDataOk.create();
