@@ -38,12 +38,6 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    // Why the page turn cannot be chosen; null when it can.
-    final pageTurnOffReason = lowRamMode
-        ? l10n.lowRamModeOffHere
-        : settings.readerAnimations
-        ? null
-        : l10n.readerPageTurnNeedsAnimations;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsReadingTitle)),
@@ -67,20 +61,6 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
                 : l10n.readerAnimationsSubtitle,
             value: settings.readerAnimations && !lowRamMode,
             onChanged: lowRamMode ? null : notifier.setReaderAnimations,
-          ),
-          // Follows the switch above: with animations off pages don't turn
-          // with one, so there is nothing to pick.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: SettingsSegmentedRow<PageTurnStyle>(
-              label: l10n.readerPageTurnTitle,
-              helperText: pageTurnOffReason,
-              segments: pageTurnStyleSegments(l10n),
-              selected: settings.pageTurnStyle,
-              onSelected: pageTurnOffReason == null
-                  ? notifier.setPageTurnStyle
-                  : null,
-            ),
           ),
           // Android only; see VolumeKeyPageTurn.
           if (defaultTargetPlatform == TargetPlatform.android)

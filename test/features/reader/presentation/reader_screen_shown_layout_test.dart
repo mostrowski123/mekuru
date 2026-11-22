@@ -1,12 +1,12 @@
 // A reading-mode change is shown by a new viewer, but the one on screen
 // stays until the new one can be built: while an added font is still being
-// sent to it, for one. Until then, pages turn and lay out as that viewer's
-// mode asks, not the one the settings now want.
+// sent to it, for one. Until then, pages lay out as that viewer's mode asks,
+// not the one the settings now want.
 
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -73,18 +73,14 @@ void main() {
     final settings = container.read(readerSettingsProvider.notifier);
     settings.setCustomFont('Added.ttf');
     await tester.pump();
+    webView.sent.clear();
     settings.setScrollView(true);
     await tester.pump();
     expect(readerViewer(tester).key, shown.key, reason: 'waits for the font');
-    webView.sent.clear();
 
-    // Still two pages, and a page turn slides as it does on pages.
+    // Still two pages.
     expect(readerViewer(tester).twoPageMinWidth, kEpubTwoPageMinWidth);
-    await tester.sendKeyEvent(LogicalKeyboardKey.pageDown);
-    await tester.pump();
     expect(webView.sent, isNot(contains(startsWith('setTwoPage'))));
-    expect(webView.sent, contains('next(1)'), reason: 'the sliding turn');
-    expect(webView.sent, isNot(contains('next()')));
 
     // The font is in: the scroll view viewer replaces it.
     font.found.complete(null);

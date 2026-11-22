@@ -135,10 +135,6 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(mangaBackground: background));
   }
 
-  void setPageTurnStyle(PageTurnStyle style) {
-    _update(state.copyWith(pageTurnStyle: style));
-  }
-
   void setEpubTwoPage(bool enabled) {
     _update(state.copyWith(epubTwoPage: enabled));
   }

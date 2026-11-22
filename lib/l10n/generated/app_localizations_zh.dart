@@ -1552,18 +1552,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerAnimationsSubtitle => '电子墨水屏建议关闭';
 
   @override
-  String get readerPageTurnTitle => '翻页';
-
-  @override
-  String get readerPageTurnNone => '无';
-
-  @override
-  String get readerPageTurnSlide => '滑动';
-
-  @override
-  String get readerPageTurnNeedsAnimations => '开启“动画效果”后可选择翻页方式';
-
-  @override
   String get settingsReadingTitle => '阅读器设置';
 
   @override
@@ -6159,18 +6147,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerAnimationsSubtitle => '电子墨水屏建议关闭';
-
-  @override
-  String get readerPageTurnTitle => '翻页';
-
-  @override
-  String get readerPageTurnNone => '无';
-
-  @override
-  String get readerPageTurnSlide => '滑动';
-
-  @override
-  String get readerPageTurnNeedsAnimations => '开启“动画效果”后可选择翻页方式';
 
   @override
   String get settingsReadingTitle => '阅读器设置';

@@ -13,7 +13,7 @@ const double _swipeSlop = 8;
 /// Here the InteractiveViewer gets every touch, and the horizontal movement
 /// it cannot pan (the page is not zoomed, or is already at that edge) goes
 /// to [pageController]: dragged with the finger when [animatePageTurns], or
-/// an instant turn on release when pages don't slide.
+/// an instant turn on release in e-reader mode.
 class MangaZoomViewer extends StatefulWidget {
   /// This item's index in the [PageView].
   final int pageIndex;
@@ -21,9 +21,8 @@ class MangaZoomViewer extends StatefulWidget {
   /// The surrounding PageView's controller; null for zoom only (scroll mode).
   final PageController? pageController;
 
-  /// When false (e-reader mode, or a page turn other than Slide) a swipe
-  /// past a zoomed page's edge jumps on release; unzoomed swipes are left to
-  /// the reader screen.
+  /// When false (e-reader mode) a swipe past a zoomed page's edge jumps on
+  /// release; unzoomed swipes are left to the reader screen.
   final bool animatePageTurns;
   final ValueChanged<bool>? onZoomChanged;
   final Widget child;

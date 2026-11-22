@@ -28,6 +28,9 @@ import '../../../shared/fake_user_font_store.dart';
 import '../../../shared/reader_settings_test_helpers.dart';
 import '../../../test_app.dart';
 
+/// What [RecordingWebViewPlatform.sent] holds for a picture of the page.
+const screenshotCall = '<takeScreenshot>';
+
 /// Records the JavaScript sent to every web view it makes. With
 /// [finishLoading], a web view reports its page loaded as soon as it is
 /// made, so the viewer sends the book.
@@ -95,11 +98,15 @@ class _RecordingController extends PlatformInAppWebViewController {
     return null;
   }
 
-  /// No picture: the page turn turns without one.
+  /// Recorded in [sent] as [screenshotCall]: the reader takes no picture of
+  /// the page.
   @override
   Future<Uint8List?> takeScreenshot({
     ScreenshotConfiguration? screenshotConfiguration,
-  }) async => null;
+  }) async {
+    sent.add(screenshotCall);
+    return null;
+  }
 }
 
 class _NoProgress extends BookRepository {

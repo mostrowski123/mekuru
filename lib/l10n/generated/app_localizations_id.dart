@@ -1631,19 +1631,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerAnimationsSubtitle => 'Nonaktifkan untuk layar e-reader';
 
   @override
-  String get readerPageTurnTitle => 'Pergantian halaman';
-
-  @override
-  String get readerPageTurnNone => 'Tidak ada';
-
-  @override
-  String get readerPageTurnSlide => 'Geser';
-
-  @override
-  String get readerPageTurnNeedsAnimations =>
-      'Aktifkan Animasi untuk memilih pergantian halaman';
-
-  @override
   String get settingsReadingTitle => 'Pengaturan Pembaca';
 
   @override

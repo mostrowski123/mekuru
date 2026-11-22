@@ -36,7 +36,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   // Historical key: the toggle started as manga-only. Kept so users who
   // already turned it off stay off.
   static const _readerAnimationsKey = 'reader.manga_page_turn_animation';
-  static const _pageTurnStyleKey = 'reader.page_turn_style';
   static const _epubTwoPageKey = 'reader.epub_two_page';
   static const _volumeKeyPageTurnKey = 'reader.volume_key_page_turn';
 
@@ -68,7 +67,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     _mangaDetectSpreadsKey,
     _mangaBackgroundKey,
     _readerAnimationsKey,
-    _pageTurnStyleKey,
     _epubTwoPageKey,
     _volumeKeyPageTurnKey,
   ];
@@ -120,9 +118,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
         prefs.getString(_mangaBackgroundKey),
       ),
       readerAnimations: prefs.getBool(_readerAnimationsKey) ?? true,
-      pageTurnStyle: pageTurnStyleFromString(
-        prefs.getString(_pageTurnStyleKey),
-      ),
       epubTwoPage: prefs.getBool(_epubTwoPageKey) ?? false,
       volumeKeyPageTurn: volumeKeyPageTurnFromString(
         prefs.getString(_volumeKeyPageTurnKey),
@@ -180,10 +175,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       settings.mangaBackground.storageValue,
     );
     await prefs.setBool(_readerAnimationsKey, settings.readerAnimations);
-    await prefs.setString(
-      _pageTurnStyleKey,
-      settings.pageTurnStyle.storageValue,
-    );
     await prefs.setBool(_epubTwoPageKey, settings.epubTwoPage);
     await prefs.setString(
       _volumeKeyPageTurnKey,

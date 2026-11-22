@@ -32,67 +32,6 @@ void main() {
     });
   });
 
-  group('page turn style', () {
-    setUp(() => SharedPreferences.setMockInitialValues({}));
-
-    test('round-trips every value and falls back to slide', () {
-      for (final style in PageTurnStyle.values) {
-        expect(pageTurnStyleFromString(style.storageValue), style);
-      }
-      expect(pageTurnStyleFromString(null), PageTurnStyle.slide);
-      expect(pageTurnStyleFromString('flip'), PageTurnStyle.slide);
-    });
-
-    test('is saved, reloaded and backed up', () async {
-      final storage = SharedPreferencesReaderSettingsStorage();
-      await storage.save(
-        const ReaderSettings(pageTurnStyle: PageTurnStyle.none),
-      );
-      expect((await storage.load())!.pageTurnStyle, PageTurnStyle.none);
-      expect(
-        SharedPreferencesReaderSettingsStorage.allKeys,
-        contains('reader.page_turn_style'),
-      );
-    });
-
-    test('is slide on a device that saved a dropped style', () async {
-      SharedPreferences.setMockInitialValues({
-        'reader.page_turn_style': 'curl',
-      });
-      final loaded = await SharedPreferencesReaderSettingsStorage().load();
-      expect(loaded!.pageTurnStyle, PageTurnStyle.slide);
-    });
-
-    test('is slide for installs that predate it', () async {
-      SharedPreferences.setMockInitialValues({'reader.font_size': 24.0});
-      final loaded = await SharedPreferencesReaderSettingsStorage().load();
-      expect(loaded!.pageTurnStyle, PageTurnStyle.slide);
-      expect(const ReaderSettings().pageTurnStyle, PageTurnStyle.slide);
-    });
-
-    test('is none in effect whenever animations are off', () {
-      PageTurnStyle effective(
-        PageTurnStyle style, {
-        bool animations = true,
-        bool reduceMotion = false,
-      }) => effectivePageTurnStyle(
-        ReaderSettings(pageTurnStyle: style, readerAnimations: animations),
-        disableAnimations: reduceMotion,
-      );
-
-      expect(effective(PageTurnStyle.slide), PageTurnStyle.slide);
-      expect(effective(PageTurnStyle.none), PageTurnStyle.none);
-      expect(
-        effective(PageTurnStyle.slide, animations: false),
-        PageTurnStyle.none,
-      );
-      expect(
-        effective(PageTurnStyle.slide, reduceMotion: true),
-        PageTurnStyle.none,
-      );
-    });
-  });
-
   group('SharedPreferencesReaderSettingsStorage - volume buttons', () {
     setUp(() => SharedPreferences.setMockInitialValues({}));
 

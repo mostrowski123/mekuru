@@ -181,13 +181,13 @@ void main() {
       reason: '$image',
     );
 
-    // (j) The book's last pair: a turn forward is refused at once. (The page
-    // turn animation holds its picture of the page until it hears.)
-    final refused = controller.turnPage(forward: true);
+    // (j) The book's last pair: a turn forward stays on it.
+    final last = await pairState(controller);
+    final refused = await turn();
     expect(
-      await refused.timeout(const Duration(seconds: 3), onTimeout: () => true),
-      isFalse,
-      reason: 'the turn past the last pair was not refused',
+      [refused['index'], refused['page'], refused['pos']],
+      [last['index'], last['page'], last['pos']],
+      reason: 'the turn past the last pair moved: $refused',
     );
 
     // (k) A link to an element that runs over several pairs, like the

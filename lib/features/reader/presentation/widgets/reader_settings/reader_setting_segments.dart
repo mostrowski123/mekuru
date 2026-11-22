@@ -122,21 +122,6 @@ String readerFontFamilyLabel(AppLocalizations l10n, ReaderFontFamily family) =>
       ReaderFontFamily.custom => l10n.settingsFontFamilyBook,
     };
 
-List<ButtonSegment<PageTurnStyle>> pageTurnStyleSegments(
-  AppLocalizations l10n,
-) {
-  return [
-    ButtonSegment(
-      value: PageTurnStyle.none,
-      label: Text(l10n.readerPageTurnNone),
-    ),
-    ButtonSegment(
-      value: PageTurnStyle.slide,
-      label: Text(l10n.readerPageTurnSlide),
-    ),
-  ];
-}
-
 List<ButtonSegment<VolumeKeyPageTurn>> volumeKeyPageTurnSegments(
   AppLocalizations l10n,
 ) {

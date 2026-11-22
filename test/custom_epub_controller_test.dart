@@ -1,6 +1,4 @@
 // ignore_for_file: unawaited_futures
-import 'dart:async';
-
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -39,58 +37,6 @@ void main() {
       expect(chapters.single.subitems.single.title, 'Section 1');
     });
 
-    test('an animated page turn is answered by its own id only', () async {
-      final platformController = _FakePlatformInAppWebViewController(
-        onEvaluateJavascript: (source) async => null,
-      );
-      final controller = CustomEpubController()
-        ..attach(
-          InAppWebViewController.fromPlatform(platform: platformController),
-        );
-
-      controller.next();
-      controller.prev();
-      bool? firstShown, secondShown;
-      unawaited(
-        controller.turnPage(forward: true).then((came) => firstShown = came),
-      );
-      unawaited(
-        controller.turnPage(forward: false).then((came) => secondShown = came),
-      );
-      await _flushMicrotasks();
-      expect(platformController.evaluatedSources, [
-        'next()',
-        'previous()',
-        'next(1)',
-        'previous(2)',
-      ]);
-
-      // The first turn's answer arrives late: it is not the second's.
-      controller.completePageTurn(1, turned: true);
-      await _flushMicrotasks();
-      expect([firstShown, secondShown], [null, null]);
-
-      controller.completePageTurn(2, turned: true);
-      controller.completePageTurn(2, turned: false);
-      await _flushMicrotasks();
-      expect([firstShown, secondShown], [null, true]);
-
-      // The last page of the book: the bridge says there was no page.
-      final last = controller.turnPage(forward: true);
-      controller.completePageTurn(3, turned: false);
-      expect(await last, isFalse);
-
-      // Under a finger still dragging, a turn is not yet a page read.
-      platformController.evaluatedSources.clear();
-      unawaited(controller.turnPage(forward: false, quiet: true));
-      controller.countTurnedPage();
-      await _flushMicrotasks();
-      expect(platformController.evaluatedSources, [
-        'previous(4, true)',
-        'countTurnedPage()',
-      ]);
-    });
-
     test('setTwoPage asks the bridge for two pages or one', () async {
       final platformController = _FakePlatformInAppWebViewController(
         onEvaluateJavascript: (source) async => null,
@@ -108,10 +54,6 @@ void main() {
         'setTwoPage(600.0)',
         'setTwoPage(null)',
       ]);
-    });
-
-    test('there is no page picture without a web view', () async {
-      expect(await CustomEpubController().takePagePicture(), isNull);
     });
 
     test(

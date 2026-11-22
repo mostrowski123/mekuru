@@ -66,8 +66,7 @@ void main() {
     addTearDown(tester.view.reset);
   }
 
-  /// Opens a Japanese book (right to left), or one read [direction], with
-  /// no page turn animation.
+  /// Opens a Japanese book (right to left), or one read [direction].
   Future<void> openReader(
     WidgetTester tester, {
     String? direction,
@@ -76,10 +75,7 @@ void main() {
     tester,
     db: db,
     book: recordedBook(tempDir, direction: direction),
-    settings: ReaderSettings(
-      pageTurnStyle: PageTurnStyle.none,
-      scrollView: scrollView,
-    ),
+    settings: ReaderSettings(scrollView: scrollView),
   );
 
   Future<void> closeReader(WidgetTester tester) async {

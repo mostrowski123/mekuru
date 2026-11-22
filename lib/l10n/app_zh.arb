@@ -3312,9 +3312,5 @@
   "mangaBackgroundGray": "灰色",
   "mangaBackgroundWhite": "白色",
   "mangaBackgroundAuto": "自动",
-  "mangaBackgroundBlur": "模糊",
-  "readerPageTurnTitle": "翻页",
-  "readerPageTurnNone": "无",
-  "readerPageTurnSlide": "滑动",
-  "readerPageTurnNeedsAnimations": "开启“动画效果”后可选择翻页方式"
+  "mangaBackgroundBlur": "模糊"
 }

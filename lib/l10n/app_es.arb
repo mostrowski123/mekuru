@@ -3312,9 +3312,5 @@
   "mangaBackgroundGray": "Gris",
   "mangaBackgroundWhite": "Blanco",
   "mangaBackgroundAuto": "Automático",
-  "mangaBackgroundBlur": "Desenfoque",
-  "readerPageTurnTitle": "Paso de página",
-  "readerPageTurnNone": "Ninguno",
-  "readerPageTurnSlide": "Deslizar",
-  "readerPageTurnNeedsAnimations": "Activa Animaciones para elegir el paso de página"
+  "mangaBackgroundBlur": "Desenfoque"
 }

@@ -96,25 +96,6 @@ extension MangaBackgroundStorage on MangaBackground {
   String get storageValue => name;
 }
 
-/// How a page turn animates in both readers.
-enum PageTurnStyle { none, slide }
-
-PageTurnStyle pageTurnStyleFromString(String? value) =>
-    PageTurnStyle.values.asNameMap()[value] ?? PageTurnStyle.slide;
-
-extension PageTurnStyleStorage on PageTurnStyle {
-  String get storageValue => name;
-}
-
-/// The style the readers act on: none whenever animations are off, in the
-/// app or for the device (reduce motion, Low RAM mode).
-PageTurnStyle effectivePageTurnStyle(
-  ReaderSettings settings, {
-  required bool disableAnimations,
-}) => settings.readerAnimations && !disableAnimations
-    ? settings.pageTurnStyle
-    : PageTurnStyle.none;
-
 /// The narrowest page area, in logical pixels, that shows two EPUB pages
 /// side by side: tablets, unfolded foldables and phones held sideways are
 /// that wide, a phone held upright is not.
@@ -283,9 +264,6 @@ class ReaderSettings {
   /// transitions ghost.
   final bool readerAnimations;
 
-  /// How pages turn while [readerAnimations] is on.
-  final PageTurnStyle pageTurnStyle;
-
   /// Two EPUB pages side by side where the screen is wide enough, see
   /// [epubTwoPageMinWidth]. Off unless the reader switches it on.
   final bool epubTwoPage;
@@ -321,7 +299,6 @@ class ReaderSettings {
     this.mangaDetectSpreads = true,
     this.mangaBackground = MangaBackground.black,
     this.readerAnimations = true,
-    this.pageTurnStyle = PageTurnStyle.slide,
     this.epubTwoPage = false,
     this.volumeKeyPageTurn = VolumeKeyPageTurn.downNext,
   });
@@ -355,7 +332,6 @@ class ReaderSettings {
     bool? mangaDetectSpreads,
     MangaBackground? mangaBackground,
     bool? readerAnimations,
-    PageTurnStyle? pageTurnStyle,
     bool? epubTwoPage,
     VolumeKeyPageTurn? volumeKeyPageTurn,
   }) {
@@ -393,7 +369,6 @@ class ReaderSettings {
       mangaDetectSpreads: mangaDetectSpreads ?? this.mangaDetectSpreads,
       mangaBackground: mangaBackground ?? this.mangaBackground,
       readerAnimations: readerAnimations ?? this.readerAnimations,
-      pageTurnStyle: pageTurnStyle ?? this.pageTurnStyle,
       epubTwoPage: epubTwoPage ?? this.epubTwoPage,
       volumeKeyPageTurn: volumeKeyPageTurn ?? this.volumeKeyPageTurn,
     );

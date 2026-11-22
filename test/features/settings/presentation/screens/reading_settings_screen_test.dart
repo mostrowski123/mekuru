@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,15 +15,12 @@ import '../../../../test_app.dart';
 Future<ProviderContainer> _pumpScreen(
   WidgetTester tester, {
   bool proUnlocked = false,
-  bool lowRamMode = false,
 }) async {
   final container = ProviderContainer(
     overrides: [
       proUnlockedProvider.overrideWith(
         () => FakeProUnlockedNotifier(proUnlocked),
       ),
-      if (lowRamMode)
-        lowRamModeProvider.overrideWithBuild((ref, notifier) => true),
     ],
   );
   addTearDown(container.dispose);
@@ -38,11 +34,6 @@ Future<ProviderContainer> _pumpScreen(
   await tester.pumpAndSettle();
   return container;
 }
-
-Finder _pageTurnChoice(String label) => find.descendant(
-  of: find.byType(SettingsSegmentedRow<PageTurnStyle>),
-  matching: find.text(label),
-);
 
 void main() {
   setUp(() {
@@ -130,62 +121,6 @@ void main() {
     expect(
       find.descendant(of: row, matching: find.text('White')),
       findsOneWidget,
-    );
-  });
-
-  testWidgets('the page turn row sets the style', (tester) async {
-    final container = await _pumpScreen(tester);
-    expect(
-      container.read(readerSettingsProvider).pageTurnStyle,
-      PageTurnStyle.slide,
-    );
-
-    await tester.tap(_pageTurnChoice('None'));
-    await tester.pumpAndSettle();
-
-    expect(
-      container.read(readerSettingsProvider).pageTurnStyle,
-      PageTurnStyle.none,
-    );
-  });
-
-  testWidgets('page turn cannot be chosen while Animations is off', (
-    tester,
-  ) async {
-    final container = await _pumpScreen(tester);
-    await tester.tap(find.text('Animations'));
-    await tester.pumpAndSettle();
-    expect(container.read(readerSettingsProvider).readerAnimations, isFalse);
-    expect(
-      find.text('Turn on Animations to choose a page turn'),
-      findsOneWidget,
-    );
-
-    await tester.tap(_pageTurnChoice('None'));
-    await tester.pumpAndSettle();
-
-    expect(
-      container.read(readerSettingsProvider).pageTurnStyle,
-      PageTurnStyle.slide,
-    );
-  });
-
-  testWidgets('page turn is off in Low RAM mode, and says so', (tester) async {
-    final container = await _pumpScreen(tester, lowRamMode: true);
-    expect(
-      find.descendant(
-        of: find.byType(SettingsSegmentedRow<PageTurnStyle>),
-        matching: find.text('Off in Low RAM mode'),
-      ),
-      findsOneWidget,
-    );
-
-    await tester.tap(_pageTurnChoice('None'));
-    await tester.pumpAndSettle();
-
-    expect(
-      container.read(readerSettingsProvider).pageTurnStyle,
-      PageTurnStyle.slide,
     );
   });
 

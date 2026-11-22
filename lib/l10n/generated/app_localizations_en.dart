@@ -1623,19 +1623,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerAnimationsSubtitle => 'Turn off for e-reader displays';
 
   @override
-  String get readerPageTurnTitle => 'Page turn';
-
-  @override
-  String get readerPageTurnNone => 'None';
-
-  @override
-  String get readerPageTurnSlide => 'Slide';
-
-  @override
-  String get readerPageTurnNeedsAnimations =>
-      'Turn on Animations to choose a page turn';
-
-  @override
   String get settingsReadingTitle => 'Reader Settings';
 
   @override

@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -46,53 +44,6 @@ class CustomEpubController {
 
   void next() => _eval('next()');
   void prev() => _eval('previous()');
-
-  // The page turn animation's turn: its id, and what the bridge's answer
-  // (`pageTurned`) completes.
-  var _turnId = 0;
-  Completer<bool>? _turnShown;
-
-  /// [next] or [prev] for the page turn animation. The future completes
-  /// with true once the page the turn went to is on screen, and with false
-  /// when there was no page to turn to (the first or last page of the
-  /// book). It never completes when a newer turn replaces this one.
-  ///
-  /// A [quiet] turn does not count its page as read: the page is only
-  /// peeked at under a finger still dragging it ([countTurnedPage] counts
-  /// it once the turn is finished), or is the way back from such a peek.
-  Future<bool> turnPage({required bool forward, bool quiet = false}) {
-    final shown = _turnShown = Completer<bool>();
-    _eval(
-      '${forward ? 'next' : 'previous'}(${++_turnId}${quiet ? ', true' : ''})',
-    );
-    return shown.future;
-  }
-
-  /// Counts the page a quiet [turnPage] went to as read after all.
-  void countTurnedPage() => _eval('countTurnedPage()');
-
-  /// The bridge's answer to [turnPage]. An older turn's answer can arrive
-  /// after a newer turn has started: the id tells them apart.
-  void completePageTurn(int id, {required bool turned}) {
-    if (id != _turnId) return;
-    _turnShown?.complete(turned);
-    _turnShown = null;
-  }
-
-  /// A picture of the page on screen, for the page turn animation (Flutter
-  /// cannot snapshot a platform view itself). Null without a web view.
-  Future<ui.Image?> takePagePicture() async {
-    final bytes = await _webView?.takeScreenshot(
-      // PNG is the faster format on iOS, JPEG on Android.
-      screenshotConfiguration: defaultTargetPlatform == TargetPlatform.iOS
-          ? null
-          : ScreenshotConfiguration(
-              compressFormat: CompressFormat.JPEG,
-              quality: 90,
-            ),
-    );
-    return bytes == null ? null : decodeImageFromList(bytes);
-  }
 
   void display({required String cfi}) {
     final escaped = cfi.replaceAll('"', '\\"');

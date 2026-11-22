@@ -1,5 +1,8 @@
+// Taps and swipes turn manga pages. With Animations on the pages slide, as
+// in 1.74.5; with it off the next page is shown in the next frame, so
+// e-reader displays never draw a page half way across.
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -48,7 +51,6 @@ class _NoProgress extends BookRepository {
   }) async {}
 }
 
-const _picture = Key('page-turn-picture');
 const _pageCount = 4;
 final _en = AppLocalizationsEn();
 
@@ -63,12 +65,13 @@ final _book = Book(
   dateAdded: DateTime(2026, 11, 18),
 );
 
+/// Opens the book in single-page view, read right to left.
 Future<void> _openReader(
   WidgetTester tester, {
-  required PageTurnStyle style,
+  required bool animations,
 }) async {
   SharedPreferences.setMockInitialValues({
-    'reader.page_turn_style': style.name,
+    'reader.manga_page_turn_animation': animations,
     'reader.manga_view_mode': MangaViewMode.singlePage.storageValue,
   });
   final db = createTestDatabase();
@@ -126,6 +129,18 @@ int _page(WidgetTester tester) {
   return fail('unexpected page label "$label"');
 }
 
+/// Where the pages are: a whole number while one page fills the screen.
+double _position(WidgetTester tester) =>
+    tester.widget<PageView>(find.byType(PageView)).controller!.page!;
+
+/// A tap at the left edge: forward, right to left.
+Future<void> _tapForward(WidgetTester tester) =>
+    tester.tapAt(const Offset(20, 300));
+
+/// A swipe to the right: forward, right to left.
+Future<void> _swipeForward(WidgetTester tester) =>
+    tester.flingFrom(const Offset(200, 300), const Offset(400, 0), 1000);
+
 void main() {
   late WakelockPlusPlatformInterface originalWakelock;
   setUp(() {
@@ -134,19 +149,38 @@ void main() {
   });
   tearDown(() => WakelockPlusPlatformInterface.instance = originalWakelock);
 
-  testWidgets('slide and none take no picture', (tester) async {
-    for (final style in [PageTurnStyle.slide, PageTurnStyle.none]) {
-      await _openReader(tester, style: style);
+  for (final (gesture, turn) in [
+    ('tap', _tapForward),
+    ('swipe', _swipeForward),
+  ]) {
+    testWidgets('Animations off: a $gesture shows the next page in the next '
+        'frame', (tester) async {
+      await _openReader(tester, animations: false);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.pageDown);
+      await turn(tester);
       await tester.pump();
-      expect(find.byKey(_picture), findsNothing, reason: '$style');
-      if (style == PageTurnStyle.none) {
-        expect(_page(tester), 2, reason: 'no animation to wait for');
-      }
+      expect(_page(tester), 2);
+      expect(_position(tester), 1.0);
+      // And there it stays.
       await tester.pumpAndSettle();
-      expect(_page(tester), 2, reason: '$style');
+      expect(_page(tester), 2);
+      expect(_position(tester), 1.0);
       await _closeReader(tester);
-    }
-  });
+    });
+
+    testWidgets('Animations on: a $gesture slides to the next page', (
+      tester,
+    ) async {
+      await _openReader(tester, animations: true);
+
+      await turn(tester);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(_position(tester), inExclusiveRange(0.0, 1.0));
+      await tester.pumpAndSettle();
+      expect(_page(tester), 2);
+      expect(_position(tester), 1.0);
+      await _closeReader(tester);
+    });
+  }
 }

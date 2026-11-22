@@ -10,6 +10,7 @@ import 'package:mekuru/features/backup/data/repositories/pending_book_data_repos
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
+import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -79,6 +80,20 @@ void main() {
       expect(prefs.getBool('reader.keep_screen_on'), true);
       expect(PreloadedAppSettings.initialThemeMode, ThemeMode.light);
       expect(PreloadedAppSettings.initialColorThemeName, 'blue');
+    });
+
+    test('a reader setting this version does not know is ignored', () async {
+      // Test builds had a page turn choice; their backups still hold it.
+      final manifest = buildManifest(
+        readerSettings: {
+          'reader.page_turn_style': 'none',
+          'reader.manga_page_turn_animation': false,
+        },
+      );
+
+      expect(await restoreService.restoreSettings(manifest), isTrue);
+      final loaded = await SharedPreferencesReaderSettingsStorage().load();
+      expect(loaded!.readerAnimations, isFalse);
     });
   });
 

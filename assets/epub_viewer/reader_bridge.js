@@ -335,7 +335,6 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
         ? ((displayed.page - 1) / displayed.total)
         : null
     });
-    _turnMaybeDone();
     if (_scrollView) {
       reportNewScrollChars(start, endCfi);
     } else if (_pendingNavChars) {
@@ -751,49 +750,6 @@ function keepPlace(pageStart, pageEnd) {
   return start;
 }
 
-// ── Page turn animation ───────────────────────────────────────
-// Dart covers the page with a picture of it, starts a turn with an id and
-// animates the picture away once the page the turn went to is in place:
-// 'pageTurned' carries the id back, with false when there was no page to
-// turn to. Null: nobody is waiting.
-var _turnId = null;
-// previous() into the chapter before shows that chapter's first page (and
-// reports it) before snapToLastPage() moves to its last: only then is the
-// turn done.
-var _turnAwaitsSnap = false;
-
-function _turnStarted(id, awaitsSnap) {
-  _turnId = typeof id === 'number' ? id : null;
-  _turnAwaitsSnap = !!awaitsSnap;
-}
-
-function _turnMaybeDone() {
-  if (_turnId === null || _turnAwaitsSnap) return;
-  var id = _turnId;
-  _turnId = null;
-  callDart('pageTurned', id, true);
-}
-
-// The turn went nowhere: the first or last page of the book.
-function _turnNotTaken(id) {
-  if (typeof id === 'number') callDart('pageTurned', id, false);
-}
-
-// A `quiet` next() or previous() turns the page under a finger still
-// dragging it, which is a peek, not a page read: its characters are not
-// counted. The finger then finished the turn: count the page it is on.
-function countTurnedPage() {
-  if (_turnId !== null) {
-    // Still on its way: counted when it arrives.
-    _pendingNavChars = true;
-    return;
-  }
-  var at = rendition && rendition.location;
-  if (!at || !at.start) return;
-  // From the start reported for it (keepPlace()), as 'relocated' counts.
-  reportPageChars(rendition.place || at.start.cfi, at.end ? at.end.cfi : at.start.cfi);
-}
-
 // ── Navigation (section-aware — bypasses epub.js broken scroll-delta logic) ──
 
 // Where the reader is. epub.js reports no location for an empty section,
@@ -806,12 +762,11 @@ function currentStart() {
   return view ? { index: view.section.index, cfi: '', displayed: null } : null;
 }
 
-function next(turnId, quiet) {
+function next() {
   unpinScroll();
   var start = currentStart();
   if (!start) {
     console.log('[EPUB_BRIDGE] next() called but nothing is displayed yet');
-    _turnNotTaken(turnId);
     return;
   }
   var currentPage = start.displayed ? start.displayed.page : 1;
@@ -835,8 +790,7 @@ function next(turnId, quiet) {
   } else if (!edges && currentPage < totalPages) {
     // More pages within this section — epub.js scroll-within-section works fine
     console.log('[EPUB_BRIDGE] next() scrolling within section');
-    _pendingNavChars = !quiet;
-    _turnStarted(turnId);
+    _pendingNavChars = true;
     rendition.next();
   } else {
     // At last page of section — directly navigate to next spine item
@@ -847,26 +801,22 @@ function next(turnId, quiet) {
       if (nextItem) {
         console.log('[EPUB_BRIDGE] next() jumping to section index=' +
           nextItem.index + ' href=' + nextItem.href);
-        _pendingNavChars = !quiet;
-        _turnStarted(turnId);
+        _pendingNavChars = true;
         rendition.display(nextItem.href);
       } else {
         console.log('[EPUB_BRIDGE] next() already at last section');
-        _turnNotTaken(turnId);
       }
     } else {
       console.log('[EPUB_BRIDGE] next() could not get spine item at index=' + start.index);
-      _turnNotTaken(turnId);
     }
   }
 }
 
-function previous(turnId, quiet) {
+function previous() {
   unpinScroll();
   var start = currentStart();
   if (!start) {
     console.log('[EPUB_BRIDGE] previous() called but nothing is displayed yet');
-    _turnNotTaken(turnId);
     return;
   }
   var currentPage = start.displayed ? start.displayed.page : 1;
@@ -884,8 +834,7 @@ function previous(turnId, quiet) {
   } else if (!edges && currentPage > 1) {
     // More pages before this one in the section — scroll backwards within section
     console.log('[EPUB_BRIDGE] previous() scrolling within section');
-    _pendingNavChars = !quiet;
-    _turnStarted(turnId);
+    _pendingNavChars = true;
     rendition.prev();
   } else {
     // At first page of section — navigate to LAST page of previous spine item
@@ -900,8 +849,7 @@ function previous(turnId, quiet) {
         // determines whether pagination is horizontal or vertical.
         // For vertical Japanese text (writing-mode: vertical-rl), the axis
         // is "vertical" and pages scroll top-to-bottom.
-        _pendingNavChars = !quiet;
-        _turnStarted(turnId, !_scrollView);
+        _pendingNavChars = true;
         rendition.display(prevItem.href).then(function () {
           // Scroll view: display() shows the new view in the same promise
           // chain, so it is moved to its end before anything is painted.
@@ -920,11 +868,9 @@ function previous(turnId, quiet) {
         });
       } else {
         console.log('[EPUB_BRIDGE] previous() already at first section');
-        _turnNotTaken(turnId);
       }
     } else {
       console.log('[EPUB_BRIDGE] previous() could not get spine item at index=' + start.index);
-      _turnNotTaken(turnId);
     }
   }
 }
@@ -2734,7 +2680,6 @@ function snapToLastPage(caller) {
   // further on: snap again on every resize until the reader moves on
   // (epub.js pinScroll()).
   function snap() {
-    _turnAwaitsSnap = false;
     manager.pinScroll(view, doSnap);
   }
 
