@@ -2196,7 +2196,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mangaAutoCropSetupFailed({required String details}) {
-    return 'Auto-crop setup failed: $details';
+    return 'Couldn\'t set up auto-crop. Try again.';
   }
 
   @override
@@ -4686,6 +4686,96 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readerAddNote => 'Add note';
+
+  @override
+  String get libraryDeleteBookFailed =>
+      'Couldn\'t delete the book. It\'s still in your library. Try again.';
+
+  @override
+  String get readerBookmarkDeleteFailed =>
+      'Couldn\'t delete the bookmark. Try again.';
+
+  @override
+  String get readerHighlightDeleteFailed =>
+      'Couldn\'t delete the highlight. Try again.';
+
+  @override
+  String get readerNoteSaveFailed => 'Couldn\'t save the note. Try again.';
+
+  @override
+  String get commonLoadFailed =>
+      'Couldn\'t load this. Close Mekuru and open it again.';
+
+  @override
+  String get commonSearchFailed => 'The search didn\'t work. Try again.';
+
+  @override
+  String commonExportFailed({required String format}) {
+    return 'Couldn\'t export the $format. Try again.';
+  }
+
+  @override
+  String get ocrDeleteFailed => 'Couldn\'t delete the OCR text. Try again.';
+
+  @override
+  String get libraryConvertToMangaFailed =>
+      'Couldn\'t convert the book. Try again.';
+
+  @override
+  String get libraryCoverChangeFailed =>
+      'Couldn\'t change the cover. Try again.';
+
+  @override
+  String get libraryReadFolderFailed =>
+      'Couldn\'t read the folder. Pick it again.';
+
+  @override
+  String get backupFullJobExportDoneTitle => 'Backup finished';
+
+  @override
+  String get backupFullJobRestoreDoneTitle => 'Restore ready';
+
+  @override
+  String get backupNotCreated => 'Couldn\'t create the backup. Try again.';
+
+  @override
+  String get backupExportNotFinished =>
+      'Couldn\'t export the backup. Try again.';
+
+  @override
+  String get backupFileNotOpened => 'Couldn\'t open the file. Try again.';
+
+  @override
+  String get backupRestoreNotFinished =>
+      'Couldn\'t restore the backup. Try again.';
+
+  @override
+  String get backupTooNew =>
+      'This backup was made with a newer Mekuru. Update Mekuru, then try again.';
+
+  @override
+  String get backupFileUnreadable =>
+      'This backup file can\'t be read. Pick another one.';
+
+  @override
+  String get backupApplyNotFinished =>
+      'Couldn\'t update the books from the backup. Try again.';
+
+  @override
+  String get backupFullNotStarted =>
+      'Couldn\'t start the full backup. Try again.';
+
+  @override
+  String get backupFullRestoreNotStarted =>
+      'Couldn\'t start the full restore. Try again.';
+
+  @override
+  String get proErrorCheckAccess =>
+      'Couldn\'t check your Pro access. Try again later.';
+
+  @override
+  String get dictionaryManagerPendingBackupFailed =>
+      'Couldn\'t apply the backup settings. Try again.';
 
   @override
   String get libraryFavoriteChangeFailed =>

@@ -2207,7 +2207,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String mangaAutoCropSetupFailed({required String details}) {
-    return 'Pengaturan pemotongan otomatis gagal: $details';
+    return 'Tidak dapat menyiapkan pemotongan otomatis. Coba lagi.';
   }
 
   @override
@@ -4711,6 +4711,97 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get readerAddNote => 'Tambah catatan';
+
+  @override
+  String get libraryDeleteBookFailed =>
+      'Tidak dapat menghapus buku. Buku masih ada di Pustaka Anda. Coba lagi.';
+
+  @override
+  String get readerBookmarkDeleteFailed =>
+      'Tidak dapat menghapus penanda halaman. Coba lagi.';
+
+  @override
+  String get readerHighlightDeleteFailed =>
+      'Tidak dapat menghapus sorotan. Coba lagi.';
+
+  @override
+  String get readerNoteSaveFailed =>
+      'Tidak dapat menyimpan catatan. Coba lagi.';
+
+  @override
+  String get commonLoadFailed =>
+      'Tidak dapat memuat. Tutup Mekuru, lalu buka lagi.';
+
+  @override
+  String get commonSearchFailed => 'Pencarian gagal. Coba lagi.';
+
+  @override
+  String commonExportFailed({required String format}) {
+    return 'Tidak dapat mengekspor $format. Coba lagi.';
+  }
+
+  @override
+  String get ocrDeleteFailed => 'Tidak dapat menghapus teks OCR. Coba lagi.';
+
+  @override
+  String get libraryConvertToMangaFailed =>
+      'Tidak dapat mengonversi buku. Coba lagi.';
+
+  @override
+  String get libraryCoverChangeFailed =>
+      'Tidak dapat mengubah sampul. Coba lagi.';
+
+  @override
+  String get libraryReadFolderFailed =>
+      'Tidak dapat membaca folder. Pilih lagi.';
+
+  @override
+  String get backupFullJobExportDoneTitle => 'Pencadangan selesai';
+
+  @override
+  String get backupFullJobRestoreDoneTitle => 'Pemulihan siap';
+
+  @override
+  String get backupNotCreated => 'Tidak dapat membuat cadangan. Coba lagi.';
+
+  @override
+  String get backupExportNotFinished =>
+      'Tidak dapat mengekspor cadangan. Coba lagi.';
+
+  @override
+  String get backupFileNotOpened => 'Tidak dapat membuka file. Coba lagi.';
+
+  @override
+  String get backupRestoreNotFinished =>
+      'Tidak dapat memulihkan cadangan. Coba lagi.';
+
+  @override
+  String get backupTooNew =>
+      'Cadangan ini dibuat dengan Mekuru yang lebih baru. Perbarui Mekuru, lalu coba lagi.';
+
+  @override
+  String get backupFileUnreadable =>
+      'File cadangan ini tidak dapat dibaca. Pilih file lain.';
+
+  @override
+  String get backupApplyNotFinished =>
+      'Tidak dapat memperbarui buku dari cadangan. Coba lagi.';
+
+  @override
+  String get backupFullNotStarted =>
+      'Tidak dapat memulai cadangan lengkap. Coba lagi.';
+
+  @override
+  String get backupFullRestoreNotStarted =>
+      'Tidak dapat memulai pemulihan lengkap. Coba lagi.';
+
+  @override
+  String get proErrorCheckAccess =>
+      'Tidak dapat memeriksa akses Pro Anda. Coba lagi nanti.';
+
+  @override
+  String get dictionaryManagerPendingBackupFailed =>
+      'Tidak dapat menerapkan pengaturan cadangan. Coba lagi.';
 
   @override
   String get libraryFavoriteChangeFailed =>

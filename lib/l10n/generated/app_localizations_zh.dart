@@ -2100,7 +2100,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String mangaAutoCropSetupFailed({required String details}) {
-    return '自动裁边设置失败：$details';
+    return '无法设置自动裁边。请重试。';
   }
 
   @override
@@ -4463,6 +4463,80 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get readerAddNote => '添加笔记';
+
+  @override
+  String get libraryDeleteBookFailed => '无法删除这本书。它仍在你的书库中。请重试。';
+
+  @override
+  String get readerBookmarkDeleteFailed => '无法删除书签。请重试。';
+
+  @override
+  String get readerHighlightDeleteFailed => '无法删除高亮。请重试。';
+
+  @override
+  String get readerNoteSaveFailed => '无法保存笔记。请重试。';
+
+  @override
+  String get commonLoadFailed => '无法加载。请关闭 Mekuru 后重新打开。';
+
+  @override
+  String get commonSearchFailed => '搜索失败。请重试。';
+
+  @override
+  String commonExportFailed({required String format}) {
+    return '无法导出 $format。请重试。';
+  }
+
+  @override
+  String get ocrDeleteFailed => '无法删除 OCR 文本。请重试。';
+
+  @override
+  String get libraryConvertToMangaFailed => '无法转换这本书。请重试。';
+
+  @override
+  String get libraryCoverChangeFailed => '无法更换封面。请重试。';
+
+  @override
+  String get libraryReadFolderFailed => '无法读取文件夹。请重新选择。';
+
+  @override
+  String get backupFullJobExportDoneTitle => '备份完成';
+
+  @override
+  String get backupFullJobRestoreDoneTitle => '恢复已就绪';
+
+  @override
+  String get backupNotCreated => '无法创建备份。请重试。';
+
+  @override
+  String get backupExportNotFinished => '无法导出备份。请重试。';
+
+  @override
+  String get backupFileNotOpened => '无法打开文件。请重试。';
+
+  @override
+  String get backupRestoreNotFinished => '无法恢复备份。请重试。';
+
+  @override
+  String get backupTooNew => '此备份由较新版本的 Mekuru 创建。请更新 Mekuru 后再试。';
+
+  @override
+  String get backupFileUnreadable => '无法读取此备份文件。请选择其他文件。';
+
+  @override
+  String get backupApplyNotFinished => '无法从备份更新书籍。请重试。';
+
+  @override
+  String get backupFullNotStarted => '无法开始完整备份。请重试。';
+
+  @override
+  String get backupFullRestoreNotStarted => '无法开始完整恢复。请重试。';
+
+  @override
+  String get proErrorCheckAccess => '无法检查你的 Pro 权限。请稍后再试。';
+
+  @override
+  String get dictionaryManagerPendingBackupFailed => '无法应用备份设置。请重试。';
 
   @override
   String get libraryFavoriteChangeFailed => '无法更改星标。请重试。';
@@ -6697,7 +6771,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String mangaAutoCropSetupFailed({required String details}) {
-    return '自动裁边设置失败：$details';
+    return '无法设置自动裁边。请重试。';
   }
 
   @override
@@ -9060,6 +9134,80 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerAddNote => '添加笔记';
+
+  @override
+  String get libraryDeleteBookFailed => '无法删除这本书。它仍在你的书库中。请重试。';
+
+  @override
+  String get readerBookmarkDeleteFailed => '无法删除书签。请重试。';
+
+  @override
+  String get readerHighlightDeleteFailed => '无法删除高亮。请重试。';
+
+  @override
+  String get readerNoteSaveFailed => '无法保存笔记。请重试。';
+
+  @override
+  String get commonLoadFailed => '无法加载。请关闭 Mekuru 后重新打开。';
+
+  @override
+  String get commonSearchFailed => '搜索失败。请重试。';
+
+  @override
+  String commonExportFailed({required String format}) {
+    return '无法导出 $format。请重试。';
+  }
+
+  @override
+  String get ocrDeleteFailed => '无法删除 OCR 文本。请重试。';
+
+  @override
+  String get libraryConvertToMangaFailed => '无法转换这本书。请重试。';
+
+  @override
+  String get libraryCoverChangeFailed => '无法更换封面。请重试。';
+
+  @override
+  String get libraryReadFolderFailed => '无法读取文件夹。请重新选择。';
+
+  @override
+  String get backupFullJobExportDoneTitle => '备份完成';
+
+  @override
+  String get backupFullJobRestoreDoneTitle => '恢复已就绪';
+
+  @override
+  String get backupNotCreated => '无法创建备份。请重试。';
+
+  @override
+  String get backupExportNotFinished => '无法导出备份。请重试。';
+
+  @override
+  String get backupFileNotOpened => '无法打开文件。请重试。';
+
+  @override
+  String get backupRestoreNotFinished => '无法恢复备份。请重试。';
+
+  @override
+  String get backupTooNew => '此备份由较新版本的 Mekuru 创建。请更新 Mekuru 后再试。';
+
+  @override
+  String get backupFileUnreadable => '无法读取此备份文件。请选择其他文件。';
+
+  @override
+  String get backupApplyNotFinished => '无法从备份更新书籍。请重试。';
+
+  @override
+  String get backupFullNotStarted => '无法开始完整备份。请重试。';
+
+  @override
+  String get backupFullRestoreNotStarted => '无法开始完整恢复。请重试。';
+
+  @override
+  String get proErrorCheckAccess => '无法检查你的 Pro 权限。请稍后再试。';
+
+  @override
+  String get dictionaryManagerPendingBackupFailed => '无法应用备份设置。请重试。';
 
   @override
   String get libraryFavoriteChangeFailed => '无法更改星标。请重试。';

@@ -2842,9 +2842,9 @@
   "@mangaAutoCropBoundsRefreshed": {
     "description": "Snackbar shown after auto-crop bounds are refreshed."
   },
-  "mangaAutoCropSetupFailed": "Auto-crop setup failed: {details}",
+  "mangaAutoCropSetupFailed": "Couldn't set up auto-crop. Try again.",
   "@mangaAutoCropSetupFailed": {
-    "description": "Snackbar shown when auto-crop setup fails.",
+    "description": "Snackbar shown when auto-crop setup fails. {details} is the error's text: the caller still passes it, but it is never shown, so leave it out of the translation.",
     "placeholders": {
       "details": {
         "type": "String"
@@ -6012,6 +6012,108 @@
   "readerAddNote": "Add note",
   "@readerAddNote": {
     "description": "Button that adds a note to a highlight: in the highlight menu shown for selected text (it also highlights the selection), and in the sheet for a highlight held on the page."
+  },
+  "libraryDeleteBookFailed": "Couldn't delete the book. It's still in your library. Try again.",
+  "@libraryDeleteBookFailed": {
+    "description": "Snack bar when deleting a book failed. The book is still in the library."
+  },
+  "readerBookmarkDeleteFailed": "Couldn't delete the bookmark. Try again.",
+  "@readerBookmarkDeleteFailed": {
+    "description": "Snack bar when a bookmark swiped away in the bookmarks list could not be deleted. The bookmark stays in the list."
+  },
+  "readerHighlightDeleteFailed": "Couldn't delete the highlight. Try again.",
+  "@readerHighlightDeleteFailed": {
+    "description": "Snack bar when a highlight could not be deleted. The highlight stays."
+  },
+  "readerNoteSaveFailed": "Couldn't save the note. Try again.",
+  "@readerNoteSaveFailed": {
+    "description": "Snack bar when the note typed for a highlight could not be saved."
+  },
+  "commonLoadFailed": "Couldn't load this. Close Mekuru and open it again.",
+  "@commonLoadFailed": {
+    "description": "Shown in place of a list or a text that could not be read from the device (bookmarks, highlights, dictionaries, servers, backups, saved words, a licence)."
+  },
+  "commonSearchFailed": "The search didn't work. Try again.",
+  "@commonSearchFailed": {
+    "description": "Shown in the lookup sheet when looking up the tapped word failed."
+  },
+  "commonExportFailed": "Couldn't export the {format}. Try again.",
+  "@commonExportFailed": {
+    "description": "Snack bar when exporting or sharing a file failed. {format} is a file type that stays untranslated: EPUB, CBZ or CSV.",
+    "placeholders": {
+      "format": {
+        "type": "String",
+        "example": "CBZ"
+      }
+    }
+  },
+  "ocrDeleteFailed": "Couldn't delete the OCR text. Try again.",
+  "@ocrDeleteFailed": {
+    "description": "Snack bar when Delete OCR on a manga failed. The OCR text is still there."
+  },
+  "libraryConvertToMangaFailed": "Couldn't convert the book. Try again.",
+  "@libraryConvertToMangaFailed": {
+    "description": "Snack bar when converting an EPUB to a manga failed."
+  },
+  "libraryCoverChangeFailed": "Couldn't change the cover. Try again.",
+  "@libraryCoverChangeFailed": {
+    "description": "Snack bar when the picked image could not be saved as the book's cover. The book keeps its old cover."
+  },
+  "libraryReadFolderFailed": "Couldn't read the folder. Pick it again.",
+  "@libraryReadFolderFailed": {
+    "description": "Snack bar when the folder picked to import a manga from could not be read."
+  },
+  "backupFullJobExportDoneTitle": "Backup finished",
+  "@backupFullJobExportDoneTitle": {
+    "description": "Title of the full backup page once the backup has been written."
+  },
+  "backupFullJobRestoreDoneTitle": "Restore ready",
+  "@backupFullJobRestoreDoneTitle": {
+    "description": "Title of the full restore page once the backup has been unpacked and Mekuru has to close or reload to use it."
+  },
+  "backupNotCreated": "Couldn't create the backup. Try again.",
+  "@backupNotCreated": {
+    "description": "Snack bar when creating a reading data backup failed."
+  },
+  "backupExportNotFinished": "Couldn't export the backup. Try again.",
+  "@backupExportNotFinished": {
+    "description": "Snack bar when exporting the latest reading data backup failed."
+  },
+  "backupFileNotOpened": "Couldn't open the file. Try again.",
+  "@backupFileNotOpened": {
+    "description": "Snack bar when the picked reading data backup file could not be opened."
+  },
+  "backupRestoreNotFinished": "Couldn't restore the backup. Try again.",
+  "@backupRestoreNotFinished": {
+    "description": "Snack bar when restoring a reading data backup failed."
+  },
+  "backupTooNew": "This backup was made with a newer Mekuru. Update Mekuru, then try again.",
+  "@backupTooNew": {
+    "description": "Snack bar when a reading data backup was made by a newer version of Mekuru than the one installed."
+  },
+  "backupFileUnreadable": "This backup file can't be read. Pick another one.",
+  "@backupFileUnreadable": {
+    "description": "Snack bar when the picked reading data backup file is damaged or is not a Mekuru backup."
+  },
+  "backupApplyNotFinished": "Couldn't update the books from the backup. Try again.",
+  "@backupApplyNotFinished": {
+    "description": "Snack bar when the books the user chose to overwrite from a backup could not be updated."
+  },
+  "backupFullNotStarted": "Couldn't start the full backup. Try again.",
+  "@backupFullNotStarted": {
+    "description": "Snack bar when a full backup could not be started."
+  },
+  "backupFullRestoreNotStarted": "Couldn't start the full restore. Try again.",
+  "@backupFullRestoreNotStarted": {
+    "description": "Snack bar when a full restore could not be started."
+  },
+  "proErrorCheckAccess": "Couldn't check your Pro access. Try again later.",
+  "@proErrorCheckAccess": {
+    "description": "Shown on the Pro page when Mekuru could not check whether the user has Pro."
+  },
+  "dictionaryManagerPendingBackupFailed": "Couldn't apply the backup settings. Try again.",
+  "@dictionaryManagerPendingBackupFailed": {
+    "description": "Snack bar when the dictionary order and enabled states from a restored backup could not be applied. Nothing changed."
   },
   "libraryFavoriteChangeFailed": "Couldn't change your favorites. Try again.",
   "@libraryFavoriteChangeFailed": {

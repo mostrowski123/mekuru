@@ -2136,7 +2136,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String mangaAutoCropSetupFailed({required String details}) {
-    return '自動トリミングの設定に失敗しました：$details';
+    return '自動トリミングを設定できませんでした。もう一度お試しください。';
   }
 
   @override
@@ -4560,6 +4560,83 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get readerAddNote => 'メモを追加';
+
+  @override
+  String get libraryDeleteBookFailed =>
+      '本を削除できませんでした。本はライブラリに残っています。もう一度お試しください。';
+
+  @override
+  String get readerBookmarkDeleteFailed => 'ブックマークを削除できませんでした。もう一度お試しください。';
+
+  @override
+  String get readerHighlightDeleteFailed => 'ハイライトを削除できませんでした。もう一度お試しください。';
+
+  @override
+  String get readerNoteSaveFailed => 'メモを保存できませんでした。もう一度お試しください。';
+
+  @override
+  String get commonLoadFailed => '読み込めませんでした。Mekuruを閉じて、もう一度開いてください。';
+
+  @override
+  String get commonSearchFailed => '検索できませんでした。もう一度お試しください。';
+
+  @override
+  String commonExportFailed({required String format}) {
+    return '$formatをエクスポートできませんでした。もう一度お試しください。';
+  }
+
+  @override
+  String get ocrDeleteFailed => 'OCRのテキストを削除できませんでした。もう一度お試しください。';
+
+  @override
+  String get libraryConvertToMangaFailed => '本を変換できませんでした。もう一度お試しください。';
+
+  @override
+  String get libraryCoverChangeFailed => '表紙を変更できませんでした。もう一度お試しください。';
+
+  @override
+  String get libraryReadFolderFailed => 'フォルダを読み込めませんでした。もう一度選択してください。';
+
+  @override
+  String get backupFullJobExportDoneTitle => 'バックアップ完了';
+
+  @override
+  String get backupFullJobRestoreDoneTitle => '復元の準備ができました';
+
+  @override
+  String get backupNotCreated => 'バックアップを作成できませんでした。もう一度お試しください。';
+
+  @override
+  String get backupExportNotFinished => 'バックアップをエクスポートできませんでした。もう一度お試しください。';
+
+  @override
+  String get backupFileNotOpened => 'ファイルを開けませんでした。もう一度お試しください。';
+
+  @override
+  String get backupRestoreNotFinished => 'バックアップを復元できませんでした。もう一度お試しください。';
+
+  @override
+  String get backupTooNew =>
+      'このバックアップは新しいバージョンのMekuruで作成されています。Mekuruをアップデートしてから、もう一度お試しください。';
+
+  @override
+  String get backupFileUnreadable => 'このバックアップファイルは読み込めません。別のファイルを選択してください。';
+
+  @override
+  String get backupApplyNotFinished => 'バックアップから本を更新できませんでした。もう一度お試しください。';
+
+  @override
+  String get backupFullNotStarted => '完全バックアップを開始できませんでした。もう一度お試しください。';
+
+  @override
+  String get backupFullRestoreNotStarted => '完全復元を開始できませんでした。もう一度お試しください。';
+
+  @override
+  String get proErrorCheckAccess => 'Proの利用状況を確認できませんでした。しばらくしてから、もう一度お試しください。';
+
+  @override
+  String get dictionaryManagerPendingBackupFailed =>
+      'バックアップ設定を適用できませんでした。もう一度お試しください。';
 
   @override
   String get libraryFavoriteChangeFailed => 'お気に入りを変更できませんでした。もう一度お試しください。';

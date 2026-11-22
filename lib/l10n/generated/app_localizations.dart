@@ -3726,10 +3726,10 @@ abstract class AppLocalizations {
   /// **'Auto-crop bounds refreshed.'**
   String get mangaAutoCropBoundsRefreshed;
 
-  /// Snackbar shown when auto-crop setup fails.
+  /// Snackbar shown when auto-crop setup fails. {details} is the error's text: the caller still passes it, but it is never shown, so leave it out of the translation.
   ///
   /// In en, this message translates to:
-  /// **'Auto-crop setup failed: {details}'**
+  /// **'Couldn\'t set up auto-crop. Try again.'**
   String mangaAutoCropSetupFailed({required String details});
 
   /// Snackbar shown when OCR cannot start because the pages cache is missing.
@@ -7591,6 +7591,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add note'**
   String get readerAddNote;
+
+  /// Snack bar when deleting a book failed. The book is still in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the book. It\'s still in your library. Try again.'**
+  String get libraryDeleteBookFailed;
+
+  /// Snack bar when a bookmark swiped away in the bookmarks list could not be deleted. The bookmark stays in the list.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the bookmark. Try again.'**
+  String get readerBookmarkDeleteFailed;
+
+  /// Snack bar when a highlight could not be deleted. The highlight stays.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the highlight. Try again.'**
+  String get readerHighlightDeleteFailed;
+
+  /// Snack bar when the note typed for a highlight could not be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the note. Try again.'**
+  String get readerNoteSaveFailed;
+
+  /// Shown in place of a list or a text that could not be read from the device (bookmarks, highlights, dictionaries, servers, backups, saved words, a licence).
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this. Close Mekuru and open it again.'**
+  String get commonLoadFailed;
+
+  /// Shown in the lookup sheet when looking up the tapped word failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The search didn\'t work. Try again.'**
+  String get commonSearchFailed;
+
+  /// Snack bar when exporting or sharing a file failed. {format} is a file type that stays untranslated: EPUB, CBZ or CSV.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t export the {format}. Try again.'**
+  String commonExportFailed({required String format});
+
+  /// Snack bar when Delete OCR on a manga failed. The OCR text is still there.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the OCR text. Try again.'**
+  String get ocrDeleteFailed;
+
+  /// Snack bar when converting an EPUB to a manga failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t convert the book. Try again.'**
+  String get libraryConvertToMangaFailed;
+
+  /// Snack bar when the picked image could not be saved as the book's cover. The book keeps its old cover.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change the cover. Try again.'**
+  String get libraryCoverChangeFailed;
+
+  /// Snack bar when the folder picked to import a manga from could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the folder. Pick it again.'**
+  String get libraryReadFolderFailed;
+
+  /// Title of the full backup page once the backup has been written.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup finished'**
+  String get backupFullJobExportDoneTitle;
+
+  /// Title of the full restore page once the backup has been unpacked and Mekuru has to close or reload to use it.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore ready'**
+  String get backupFullJobRestoreDoneTitle;
+
+  /// Snack bar when creating a reading data backup failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the backup. Try again.'**
+  String get backupNotCreated;
+
+  /// Snack bar when exporting the latest reading data backup failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t export the backup. Try again.'**
+  String get backupExportNotFinished;
+
+  /// Snack bar when the picked reading data backup file could not be opened.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the file. Try again.'**
+  String get backupFileNotOpened;
+
+  /// Snack bar when restoring a reading data backup failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t restore the backup. Try again.'**
+  String get backupRestoreNotFinished;
+
+  /// Snack bar when a reading data backup was made by a newer version of Mekuru than the one installed.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup was made with a newer Mekuru. Update Mekuru, then try again.'**
+  String get backupTooNew;
+
+  /// Snack bar when the picked reading data backup file is damaged or is not a Mekuru backup.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup file can\'t be read. Pick another one.'**
+  String get backupFileUnreadable;
+
+  /// Snack bar when the books the user chose to overwrite from a backup could not be updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the books from the backup. Try again.'**
+  String get backupApplyNotFinished;
+
+  /// Snack bar when a full backup could not be started.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start the full backup. Try again.'**
+  String get backupFullNotStarted;
+
+  /// Snack bar when a full restore could not be started.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start the full restore. Try again.'**
+  String get backupFullRestoreNotStarted;
+
+  /// Shown on the Pro page when Mekuru could not check whether the user has Pro.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check your Pro access. Try again later.'**
+  String get proErrorCheckAccess;
+
+  /// Snack bar when the dictionary order and enabled states from a restored backup could not be applied. Nothing changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t apply the backup settings. Try again.'**
+  String get dictionaryManagerPendingBackupFailed;
 
   /// Snack bar when adding a book or a collection to favorites, or removing it, could not be saved. The favorite stays as it was.
   ///
