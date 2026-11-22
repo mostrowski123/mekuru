@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
@@ -716,9 +717,139 @@ void main() {
         for (final d in await repo.watchVisibleDictionaries().first)
           (d.name, d.isEnabled),
       ],
-      // A dictionary the user switched off stays off.
-      [('JPDB', true), ('Switched off', false)],
+      // A dictionary the user switched off stays off; JPDB joins the end.
+      [('Switched off', false), ('JPDB', true)],
     );
+  });
+
+  group('schema 28 puts the unhidden dictionaries last', () {
+    late Directory tempDir;
+    late File dbFile;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('mekuru_hidden_order_');
+      dbFile = File('${tempDir.path}/mekuru.sqlite');
+    });
+
+    tearDown(() async {
+      if (await tempDir.exists()) await tempDir.delete(recursive: true);
+    });
+
+    AppDatabase openFile() => AppDatabase(NativeDatabase(dbFile));
+
+    /// Rewinds the seeded database to v27 with [hiddenIds] hidden and off,
+    /// the way the JPDB download left its row, and opens it.
+    Future<AppDatabase> migrate(List<int> hiddenIds) async {
+      final legacyDb = sqlite.sqlite3.open(dbFile.path);
+      legacyDb.execute('PRAGMA user_version = 27;');
+      for (final id in hiddenIds) {
+        legacyDb.execute(
+          'UPDATE dictionary_metas SET is_hidden = 1, is_enabled = 0 '
+          'WHERE id = $id;',
+        );
+      }
+      legacyDb.close();
+      final migratedDb = openFile();
+      addTearDown(migratedDb.close);
+      return migratedDb;
+    }
+
+    Future<Map<String, (int, bool)>> orderAndSwitch(AppDatabase db) async => {
+      for (final d in await DictionaryRepository(db).getAllDictionaries())
+        d.name: (d.sortOrder, d.isEnabled),
+    };
+
+    test('below the frequency dictionary the user ordered, which keeps '
+        'setting the rank', () async {
+      final seedDb = openFile();
+      final seedRepo = DictionaryRepository(seedDb);
+      final wordsId = await seedRepo.insertDictionary('Dict A');
+      final jpdbId = await seedRepo.insertDictionary('JPDB');
+      final ownId = await seedRepo.insertDictionary('My frequency list');
+      await seedRepo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '私',
+          reading: const Value('わたし'),
+          glossaries: '["I"]',
+          dictionaryId: wordsId,
+        ),
+      ]);
+      await seedRepo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: '私',
+          reading: const Value('わたし'),
+          frequencyRank: 32,
+          dictionaryId: jpdbId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '私',
+          reading: const Value('わたし'),
+          frequencyRank: 700,
+          dictionaryId: ownId,
+        ),
+      ]);
+      // 1.74.5's dictionary manager renumbered only the rows it showed, so
+      // the user's own list now ties with the hidden JPDB row.
+      await seedRepo.reorderDictionaries([wordsId, ownId]);
+      await seedDb.close();
+
+      final migratedDb = await migrate([jpdbId]);
+
+      final results = await DictionaryQueryService(
+        migratedDb,
+      ).searchLookupWithSource('私');
+      expect(results.single.frequencyRank, 700);
+      final rows = await orderAndSwitch(migratedDb);
+      expect(rows['JPDB']!.$2, isTrue);
+      expect(rows['JPDB']!.$1, greaterThan(rows['Dict A']!.$1));
+      expect(rows['JPDB']!.$1, greaterThan(rows['My frequency list']!.$1));
+      final visible = await DictionaryRepository(
+        migratedDb,
+      ).watchVisibleDictionaries().first;
+      expect(visible.map((d) => d.name), [
+        'Dict A',
+        'My frequency list',
+        'JPDB',
+      ]);
+    });
+
+    test('two of them keep their order, after every other row, with no '
+        'tie', () async {
+      final seedDb = openFile();
+      final seedRepo = DictionaryRepository(seedDb);
+      final aId = await seedRepo.insertDictionary('A');
+      final firstId = await seedRepo.insertDictionary('Hidden 1');
+      final secondId = await seedRepo.insertDictionary('Hidden 2');
+      final bId = await seedRepo.insertDictionary('B');
+      await seedRepo.reorderDictionaries([aId, bId]);
+      await (seedDb.update(seedDb.dictionaryMetas)
+            ..where((t) => t.id.isIn([firstId, secondId])))
+          .write(const DictionaryMetasCompanion(sortOrder: Value(1)));
+      await seedDb.close();
+
+      final migratedDb = await migrate([secondId, firstId]);
+
+      final rows = await orderAndSwitch(migratedDb);
+      expect(rows['A'], (0, true));
+      expect(rows['B'], (1, true));
+      expect(rows['Hidden 1'], (2, true));
+      expect(rows['Hidden 2'], (3, true));
+    });
+
+    test('a database with nothing hidden is left as it was', () async {
+      final seedDb = openFile();
+      final seedRepo = DictionaryRepository(seedDb);
+      await seedRepo.insertDictionary('A', sortOrder: 4);
+      final offId = await seedRepo.insertDictionary('B', sortOrder: 9);
+      await seedRepo.insertDictionary('C', sortOrder: 4);
+      await seedRepo.toggleDictionary(offId, isEnabled: false);
+      final before = await orderAndSwitch(seedDb);
+      await seedDb.close();
+
+      final migratedDb = await migrate([]);
+
+      expect(await orderAndSwitch(migratedDb), before);
+    });
   });
 
   test(

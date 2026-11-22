@@ -241,10 +241,25 @@ class AppDatabase extends _$AppDatabase {
       if (from < 28) {
         // Hidden rows are the JPDB frequency copies the user could never
         // switch. Frequency ranks now follow the switch, so list them, on.
-        await customStatement(
-          'UPDATE dictionary_metas SET is_hidden = 0, is_enabled = 1 '
-          'WHERE is_hidden = 1',
-        );
+        // Their sort_order was never one the user chose (the manager only
+        // renumbered the rows it showed) and the list order now picks the
+        // rank, so they go after every other row, keeping their own order.
+        final last = await customSelect(
+          'SELECT MAX(sort_order) AS m FROM dictionary_metas '
+          'WHERE is_hidden = 0',
+        ).getSingle();
+        var next = (last.read<int?>('m') ?? -1) + 1;
+        final hidden = await customSelect(
+          'SELECT id FROM dictionary_metas WHERE is_hidden = 1 '
+          'ORDER BY sort_order, id',
+        ).get();
+        for (final row in hidden) {
+          await customStatement(
+            'UPDATE dictionary_metas '
+            'SET is_hidden = 0, is_enabled = 1, sort_order = ? WHERE id = ?',
+            [next++, row.read<int>('id')],
+          );
+        }
       }
     },
     beforeOpen: (details) async {

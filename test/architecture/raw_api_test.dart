@@ -305,7 +305,7 @@ final _rows = [
     allowed: {
       'test/shared/test_database.dart': (1, 'createTestDatabase() itself'),
       'test/database_migration_test.dart': (
-        30,
+        31,
         'migrates a database file and reopens it',
       ),
       'test/database_busy_timeout_test.dart': (
