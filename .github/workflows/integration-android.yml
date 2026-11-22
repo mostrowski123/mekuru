@@ -266,7 +266,8 @@ jobs:
             integration_test/reader_two_page_vertical_test.dart
             integration_test/reader_two_page_rotation_test.dart
             integration_test/manga_background_test.dart
-            integration_test/manga_spread_flow_test.dart;
+            integration_test/manga_spread_flow_test.dart
+            integration_test/reader_resume_reopen_test.dart;
             status=$?;
             adb -s emulator-5554 logcat -d -s MekuruLocalOcr AndroidRuntime > build/android-ocr-logcat.txt || true;
             exit "$status"
