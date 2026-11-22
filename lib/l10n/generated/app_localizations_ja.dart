@@ -103,9 +103,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get commonClearSearch => '検索をクリア';
 
   @override
-  String get commonSearch => '検索';
-
-  @override
   String get commonBack => '戻る';
 
   @override
@@ -637,9 +634,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get proServerRepo => 'リポジトリ';
-
-  @override
-  String get proAlreadyUnlocked => 'アンロック済み';
 
   @override
   String get proActiveTitle => 'Mekuru Proをご利用中';
@@ -1264,9 +1258,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get backupExportSubtitle => '最新の読書データのバックアップを、選んだ場所にファイルとして保存します。';
 
   @override
-  String get backupSaveFileDialogTitle => '読書データのバックアップを保存';
-
-  @override
   String get backupScopeNoteTitle => '2種類のバックアップ';
 
   @override
@@ -1661,9 +1652,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get commonCopy => 'コピー';
-
-  @override
-  String get commonShare => '共有';
 
   @override
   String get commonContinue => '続ける';

@@ -104,9 +104,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonClearSearch => 'Hapus pencarian';
 
   @override
-  String get commonSearch => 'Cari';
-
-  @override
   String get commonBack => 'Kembali';
 
   @override
@@ -652,9 +649,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get proServerRepo => 'Repositori Server';
-
-  @override
-  String get proAlreadyUnlocked => 'Sudah Dibuka';
 
   @override
   String get proActiveTitle => 'Anda memiliki Mekuru Pro';
@@ -1308,9 +1302,6 @@ class AppLocalizationsId extends AppLocalizations {
       'Simpan cadangan data bacaan terbaru ke file pilihan Anda.';
 
   @override
-  String get backupSaveFileDialogTitle => 'Simpan cadangan data bacaan';
-
-  @override
   String get backupScopeNoteTitle => 'Dua jenis cadangan';
 
   @override
@@ -1719,9 +1710,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonCopy => 'Salin';
-
-  @override
-  String get commonShare => 'Bagikan';
 
   @override
   String get commonContinue => 'Lanjutkan';

@@ -104,9 +104,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get commonClearSearch => 'Borrar búsqueda';
 
   @override
-  String get commonSearch => 'Buscar';
-
-  @override
   String get commonBack => 'Atrás';
 
   @override
@@ -658,9 +655,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get proServerRepo => 'Repositorio del servidor';
-
-  @override
-  String get proAlreadyUnlocked => 'Ya desbloqueado';
 
   @override
   String get proActiveTitle => 'Tienes Mekuru Pro';
@@ -1320,9 +1314,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Guarda la copia de datos de lectura más reciente en el archivo que elijas.';
 
   @override
-  String get backupSaveFileDialogTitle => 'Guardar copia de datos de lectura';
-
-  @override
   String get backupScopeNoteTitle => 'Dos tipos de copia de seguridad';
 
   @override
@@ -1731,9 +1722,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get commonCopy => 'Copiar';
-
-  @override
-  String get commonShare => 'Compartir';
 
   @override
   String get commonContinue => 'Continuar';

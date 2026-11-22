@@ -68,10 +68,6 @@
   "@commonClearSearch": {
     "description": "Action label to clear the search query."
   },
-  "commonSearch": "搜索",
-  "@commonSearch": {
-    "description": "Generic search label."
-  },
   "commonBack": "返回",
   "@commonBack": {
     "description": "Generic back action."
@@ -648,10 +644,6 @@
   "proServerRepo": "服务器仓库",
   "@proServerRepo": {
     "description": "Button label linking to the OCR server repository."
-  },
-  "proAlreadyUnlocked": "已解锁",
-  "@proAlreadyUnlocked": {
-    "description": "Button label when Pro is already unlocked."
   },
   "proActiveTitle": "您已拥有 Mekuru Pro",
   "@proActiveTitle": {
@@ -1408,10 +1400,6 @@
   "@backupExportSubtitle": {
     "description": "Subtitle for the export-backup action."
   },
-  "backupSaveFileDialogTitle": "保存阅读数据备份",
-  "@backupSaveFileDialogTitle": {
-    "description": "Native file picker title when exporting a backup."
-  },
   "backupScopeNoteTitle": "两种备份",
   "@backupScopeNoteTitle": {
     "description": "Title for the informational note explaining backup scope."
@@ -1871,10 +1859,6 @@
   "commonCopy": "复制",
   "@commonCopy": {
     "description": "Generic copy action."
-  },
-  "commonShare": "分享",
-  "@commonShare": {
-    "description": "Generic share action."
   },
   "commonContinue": "继续",
   "@commonContinue": {

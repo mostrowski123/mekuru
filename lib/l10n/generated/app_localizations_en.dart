@@ -104,9 +104,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonClearSearch => 'Clear search';
 
   @override
-  String get commonSearch => 'Search';
-
-  @override
   String get commonBack => 'Back';
 
   @override
@@ -650,9 +647,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proServerRepo => 'Server Repo';
-
-  @override
-  String get proAlreadyUnlocked => 'Already Unlocked';
 
   @override
   String get proActiveTitle => 'You have Mekuru Pro';
@@ -1301,9 +1295,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Save the latest reading data backup to a file of your choice.';
 
   @override
-  String get backupSaveFileDialogTitle => 'Save reading data backup';
-
-  @override
   String get backupScopeNoteTitle => 'Two kinds of backup';
 
   @override
@@ -1711,9 +1702,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonCopy => 'Copy';
-
-  @override
-  String get commonShare => 'Share';
 
   @override
   String get commonContinue => 'Continue';

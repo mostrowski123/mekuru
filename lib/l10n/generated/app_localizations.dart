@@ -273,12 +273,6 @@ abstract class AppLocalizations {
   /// **'Clear search'**
   String get commonClearSearch;
 
-  /// Generic search label.
-  ///
-  /// In en, this message translates to:
-  /// **'Search'**
-  String get commonSearch;
-
   /// Generic back action.
   ///
   /// In en, this message translates to:
@@ -1148,12 +1142,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Server Repo'**
   String get proServerRepo;
-
-  /// Button label when Pro is already unlocked.
-  ///
-  /// In en, this message translates to:
-  /// **'Already Unlocked'**
-  String get proAlreadyUnlocked;
 
   /// Headline of the banner shown when Pro is already owned.
   ///
@@ -2289,12 +2277,6 @@ abstract class AppLocalizations {
   /// **'Save the latest reading data backup to a file of your choice.'**
   String get backupExportSubtitle;
 
-  /// Native file picker title when exporting a backup.
-  ///
-  /// In en, this message translates to:
-  /// **'Save reading data backup'**
-  String get backupSaveFileDialogTitle;
-
   /// Title for the informational note explaining backup scope.
   ///
   /// In en, this message translates to:
@@ -2942,12 +2924,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy'**
   String get commonCopy;
-
-  /// Generic share action.
-  ///
-  /// In en, this message translates to:
-  /// **'Share'**
-  String get commonShare;
 
   /// Generic continue action.
   ///

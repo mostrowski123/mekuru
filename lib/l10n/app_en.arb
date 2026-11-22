@@ -117,10 +117,6 @@
   "@commonClearSearch": {
     "description": "Action label to clear the search query."
   },
-  "commonSearch": "Search",
-  "@commonSearch": {
-    "description": "Generic search label."
-  },
   "commonBack": "Back",
   "@commonBack": {
     "description": "Generic back action."
@@ -841,10 +837,6 @@
   "proServerRepo": "Server Repo",
   "@proServerRepo": {
     "description": "Button label linking to the OCR server repository."
-  },
-  "proAlreadyUnlocked": "Already Unlocked",
-  "@proAlreadyUnlocked": {
-    "description": "Button label when Pro is already unlocked."
   },
   "proActiveTitle": "You have Mekuru Pro",
   "@proActiveTitle": {
@@ -1683,10 +1675,6 @@
   "@backupExportSubtitle": {
     "description": "Subtitle for the export-backup action."
   },
-  "backupSaveFileDialogTitle": "Save reading data backup",
-  "@backupSaveFileDialogTitle": {
-    "description": "Native file picker title when exporting a backup."
-  },
   "backupScopeNoteTitle": "Two kinds of backup",
   "@backupScopeNoteTitle": {
     "description": "Title for the informational note explaining backup scope."
@@ -2208,10 +2196,6 @@
   "commonCopy": "Copy",
   "@commonCopy": {
     "description": "Generic copy action."
-  },
-  "commonShare": "Share",
-  "@commonShare": {
-    "description": "Generic share action."
   },
   "commonContinue": "Continue",
   "@commonContinue": {

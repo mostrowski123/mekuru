@@ -102,9 +102,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonClearSearch => '清除搜索';
 
   @override
-  String get commonSearch => '搜索';
-
-  @override
   String get commonBack => '返回';
 
   @override
@@ -627,9 +624,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get proServerRepo => '服务器仓库';
-
-  @override
-  String get proAlreadyUnlocked => '已解锁';
 
   @override
   String get proActiveTitle => '您已拥有 Mekuru Pro';
@@ -1244,9 +1238,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupExportSubtitle => '将最新的阅读数据备份保存到您选择的文件。';
 
   @override
-  String get backupSaveFileDialogTitle => '保存阅读数据备份';
-
-  @override
   String get backupScopeNoteTitle => '两种备份';
 
   @override
@@ -1634,9 +1625,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get commonCopy => '复制';
-
-  @override
-  String get commonShare => '分享';
 
   @override
   String get commonContinue => '继续';
@@ -4717,9 +4705,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get commonClearSearch => '清除搜索';
 
   @override
-  String get commonSearch => '搜索';
-
-  @override
   String get commonBack => '返回';
 
   @override
@@ -5242,9 +5227,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get proServerRepo => '服务器仓库';
-
-  @override
-  String get proAlreadyUnlocked => '已解锁';
 
   @override
   String get proActiveTitle => '您已拥有 Mekuru Pro';
@@ -5859,9 +5841,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupExportSubtitle => '将最新的阅读数据备份保存到您选择的文件。';
 
   @override
-  String get backupSaveFileDialogTitle => '保存阅读数据备份';
-
-  @override
   String get backupScopeNoteTitle => '两种备份';
 
   @override
@@ -6249,9 +6228,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get commonCopy => '复制';
-
-  @override
-  String get commonShare => '分享';
 
   @override
   String get commonContinue => '继续';

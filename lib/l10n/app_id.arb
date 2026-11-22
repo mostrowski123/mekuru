@@ -68,10 +68,6 @@
   "@commonClearSearch": {
     "description": "Action label to clear the search query."
   },
-  "commonSearch": "Cari",
-  "@commonSearch": {
-    "description": "Generic search label."
-  },
   "commonBack": "Kembali",
   "@commonBack": {
     "description": "Generic back action."
@@ -648,10 +644,6 @@
   "proServerRepo": "Repositori Server",
   "@proServerRepo": {
     "description": "Button label linking to the OCR server repository."
-  },
-  "proAlreadyUnlocked": "Sudah Dibuka",
-  "@proAlreadyUnlocked": {
-    "description": "Button label when Pro is already unlocked."
   },
   "proActiveTitle": "Anda memiliki Mekuru Pro",
   "@proActiveTitle": {
@@ -1408,10 +1400,6 @@
   "@backupExportSubtitle": {
     "description": "Subtitle for the export-backup action."
   },
-  "backupSaveFileDialogTitle": "Simpan cadangan data bacaan",
-  "@backupSaveFileDialogTitle": {
-    "description": "Native file picker title when exporting a backup."
-  },
   "backupScopeNoteTitle": "Dua jenis cadangan",
   "@backupScopeNoteTitle": {
     "description": "Title for the informational note explaining backup scope."
@@ -1871,10 +1859,6 @@
   "commonCopy": "Salin",
   "@commonCopy": {
     "description": "Generic copy action."
-  },
-  "commonShare": "Bagikan",
-  "@commonShare": {
-    "description": "Generic share action."
   },
   "commonContinue": "Lanjutkan",
   "@commonContinue": {
