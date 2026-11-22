@@ -25,7 +25,7 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart';
 import 'package:mekuru/shared/downloads/download.dart' show requireRoom;
 import 'package:mekuru/shared/widgets/download_status.dart'
-    show dictionaryDownloadError;
+    show dictionaryDownloadError, recordedDownloadFailureText;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
@@ -515,21 +515,18 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
     ServerDownloadWorkStatus status,
     ({String key, String fileName, Map<String, dynamic> meta})? job,
   ) {
-    switch (status.error) {
-      case serverDownloadStoppedError:
-        announce((l10n) => l10n.serverBrowseDownloadStopped);
-      case serverDownloadUntrustedCertificateError:
-        announce((l10n) => l10n.serverCertificateUntrusted);
-      default:
-        final error = status.error ?? 'Download failed';
-        // Server offline or Wi-Fi gone is expected: a warning log only.
-        logFailure(
-          'sync.book_downloaded',
-          error,
-          attrs: {'server_type': job?.meta['serverType'] as String? ?? ''},
-        );
-        announce((l10n) => describeServerDownloadError(l10n, error));
+    final failure = RecordedDownloadFailure.parse(status.error);
+    // Stopped, or a certificate the user has to accept: nothing broke.
+    if (failure != RecordedFailureCode.stopped &&
+        failure != RecordedFailureCode.untrustedCertificate) {
+      // Server offline or Wi-Fi gone is expected: a warning log only.
+      logFailure(
+        'sync.book_downloaded',
+        status.error ?? 'Download failed',
+        attrs: {'server_type': job?.meta['serverType'] as String? ?? ''},
+      );
     }
+    announce((l10n) => describeServerDownloadError(l10n, status.error));
   }
 
   Future<void> _end(String key, ServerDownloadWorkDir dir) async {
@@ -628,26 +625,27 @@ String describeServerError(AppLocalizations l10n, Object error) =>
       _ => dictionaryDownloadError(l10n, error)!,
     };
 
-/// User-facing text for a server download that failed with [error], as
-/// [runServerDownloadWork] or the app recorded it, in the user's language.
-/// An error with no code says only that the download didn't finish.
-String describeServerDownloadError(AppLocalizations l10n, String error) {
-  if (error == serverDownloadInterruptedError) {
-    return l10n.serverBrowseDownloadInterrupted;
-  }
-  if (error == serverDownloadConnectionGoneError) {
-    return l10n.serverBrowseDownloadFailed(
-      error: l10n.serverErrorConnectionGone,
-    );
-  }
-  if (error == serverDownloadStorageFullError) {
-    return l10n.serverBrowseDownloadFailed(error: l10n.localOcrStorageFull);
-  }
-  final status = serverDownloadErrorStatus(error);
-  if (status == null) return l10n.downloadNotFinished;
-  return l10n.serverBrowseDownloadFailed(
-    error: serverErrorReason(l10n, SyncException(status, error)),
-  );
+/// The message, shown over any screen, of a server book's download that
+/// [runServerDownloadWork] or the app recorded as failed with [error]. It is
+/// [recordedDownloadFailureText] except where a book's own server says more:
+/// the user typed its address and signed in to it, and the message is not
+/// beside a Download button. No default: a new kind of failure is worded
+/// here before it compiles.
+String describeServerDownloadError(AppLocalizations l10n, String? error) {
+  final failure = RecordedDownloadFailure.parse(error);
+  return switch (failure) {
+    RecordedFailureCode.interrupted => l10n.serverBrowseDownloadInterrupted,
+    RecordedServerStatus(:final status) => l10n.serverBrowseDownloadFailed(
+      error: serverErrorReason(l10n, SyncException(status, '')),
+    ),
+    RecordedFailureCode.connectionGone || RecordedFailureCode.storageFull =>
+      l10n.serverBrowseDownloadFailed(
+        error: recordedDownloadFailureText(l10n, failure),
+      ),
+    RecordedFailureCode.stopped ||
+    RecordedFailureCode.untrustedCertificate ||
+    RecordedFailureCode.other => recordedDownloadFailureText(l10n, failure),
+  };
 }
 
 /// Why a Komga or Kavita request failed, in the user's language: a rejected

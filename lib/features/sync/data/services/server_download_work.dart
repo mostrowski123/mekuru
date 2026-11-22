@@ -50,12 +50,48 @@ const serverDownloadStorageFullError = 'storage_full';
 /// answered (`server_status:0`). The app explains it in the user's language.
 const serverDownloadStatusErrorPrefix = 'server_status:';
 
-/// The HTTP status in a [ServerDownloadWorkStatus.error] code (0: the server
-/// could not be reached), or null for any other error.
-int? serverDownloadErrorStatus(String error) =>
-    error.startsWith(serverDownloadStatusErrorPrefix)
-    ? int.tryParse(error.substring(serverDownloadStatusErrorPrefix.length))
-    : null;
+/// What a download worker recorded as a [ServerDownloadWorkStatus.error],
+/// read only through [RecordedDownloadFailure.parse]. Its strings are in
+/// status files that earlier builds wrote, so they never change.
+sealed class RecordedDownloadFailure {
+  const RecordedDownloadFailure();
+
+  /// [error] as recorded. One no code matches (an exception's own text, or
+  /// none) is [RecordedFailureCode.other].
+  factory RecordedDownloadFailure.parse(String? error) => switch (error) {
+    serverDownloadStoppedError => RecordedFailureCode.stopped,
+    serverDownloadUntrustedCertificateError =>
+      RecordedFailureCode.untrustedCertificate,
+    serverDownloadInterruptedError => RecordedFailureCode.interrupted,
+    serverDownloadConnectionGoneError => RecordedFailureCode.connectionGone,
+    serverDownloadStorageFullError => RecordedFailureCode.storageFull,
+    final String code when code.startsWith(serverDownloadStatusErrorPrefix) =>
+      switch (int.tryParse(
+        code.substring(serverDownloadStatusErrorPrefix.length),
+      )) {
+        final status? => RecordedServerStatus(status),
+        null => RecordedFailureCode.other,
+      },
+    _ => RecordedFailureCode.other,
+  };
+}
+
+/// The [RecordedDownloadFailure]s with a fixed code.
+enum RecordedFailureCode implements RecordedDownloadFailure {
+  stopped,
+  untrustedCertificate,
+  interrupted,
+  connectionGone,
+  storageFull,
+  other,
+}
+
+/// The server answered with [status], or (0) could not be reached.
+final class RecordedServerStatus implements RecordedDownloadFailure {
+  const RecordedServerStatus(this.status);
+
+  final int status;
+}
 
 /// A download that a worker recorded as failed, with its
 /// [ServerDownloadWorkStatus.error], for UI that words exceptions.

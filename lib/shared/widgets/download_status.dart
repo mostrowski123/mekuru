@@ -256,10 +256,8 @@ String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
       ) => l10n.serverBrowseDownloadFailed(
         error: l10n.serverErrorStatus(status: statusCode),
       ),
-      ServerDownloadFailedException(:final error) => _recordedDownloadFailure(
-        l10n,
-        error,
-      ),
+      ServerDownloadFailedException(:final error) =>
+        recordedDownloadFailureText(l10n, RecordedDownloadFailure.parse(error)),
       SocketException() ||
       HttpException() ||
       TlsException() ||
@@ -286,18 +284,23 @@ String modelDownloadFailureReason(AppLocalizations l, Object error) =>
     ? l.localOcrWifiLostIos
     : dictionaryDownloadError(l, error)!;
 
-/// A failure a download worker recorded ([ServerDownloadWorkStatus.error]).
-String _recordedDownloadFailure(AppLocalizations l10n, String error) =>
-    switch ((error, serverDownloadErrorStatus(error))) {
-      (serverDownloadInterruptedError, _) => l10n.downloadInterrupted,
-      (serverDownloadStoppedError, _) => l10n.serverBrowseDownloadStopped,
-      (serverDownloadUntrustedCertificateError, _) =>
-        l10n.serverCertificateUntrusted,
-      (serverDownloadStorageFullError, _) => l10n.localOcrStorageFull,
-      (_, 0) => l10n.localOcrDownloadNetwork,
-      (_, final int status) => l10n.serverBrowseDownloadFailed(
-        error: l10n.serverErrorStatus(status: status),
-      ),
-      // An exception's text (serverDownloadErrorCode), or none.
-      _ => l10n.downloadNotFinished,
-    };
+/// The one wording of each failure a download worker records: all a model's
+/// tile says, and a server book's message too except where the book's own
+/// server says more (`describeServerDownloadError`). No default: a new kind
+/// of failure is worded here before it compiles.
+String recordedDownloadFailureText(
+  AppLocalizations l10n,
+  RecordedDownloadFailure failure,
+) => switch (failure) {
+  RecordedFailureCode.stopped => l10n.serverBrowseDownloadStopped,
+  RecordedFailureCode.untrustedCertificate => l10n.serverCertificateUntrusted,
+  RecordedFailureCode.interrupted => l10n.downloadInterrupted,
+  RecordedFailureCode.connectionGone => l10n.serverErrorConnectionGone,
+  RecordedFailureCode.storageFull => l10n.localOcrStorageFull,
+  RecordedServerStatus(status: 0) => l10n.localOcrDownloadNetwork,
+  RecordedServerStatus(:final status) => l10n.serverBrowseDownloadFailed(
+    error: l10n.serverErrorStatus(status: status),
+  ),
+  // An exception's own text, or none.
+  RecordedFailureCode.other => l10n.downloadNotFinished,
+};

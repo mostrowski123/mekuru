@@ -9,6 +9,8 @@ import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
+import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart'
+    show describeServerDownloadError;
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
@@ -102,6 +104,126 @@ void main() {
         const ServerDownloadFailedException(serverDownloadStorageFullError),
       ),
       es.localOcrStorageFull,
+    );
+  });
+
+  test('every failure a download worker has recorded keeps its meaning', () {
+    String meaning(String? stored) =>
+        switch (RecordedDownloadFailure.parse(stored)) {
+          RecordedFailureCode code => code.name,
+          RecordedServerStatus(:final status) => 'server($status)',
+        };
+
+    // Spelled out, not the constants: these are in status files on disk,
+    // written by 1.74.5 and by earlier builds of this version.
+    expect(
+      {
+        for (final stored in [
+          'stopped',
+          'untrusted_certificate',
+          'interrupted',
+          'connection_gone',
+          'storage_full',
+          'server_status:0',
+          'server_status:401',
+          'server_status:503',
+          'server_status:',
+          'server_status:abc',
+          // An exception's own text (serverDownloadErrorCode), or none.
+          'FileSystemException: Cannot open file, path = /data/x',
+          'Download failed',
+          '',
+          null,
+        ])
+          stored: meaning(stored),
+      },
+      {
+        'stopped': 'stopped',
+        'untrusted_certificate': 'untrustedCertificate',
+        'interrupted': 'interrupted',
+        'connection_gone': 'connectionGone',
+        'storage_full': 'storageFull',
+        'server_status:0': 'server(0)',
+        'server_status:401': 'server(401)',
+        'server_status:503': 'server(503)',
+        'server_status:': 'other',
+        'server_status:abc': 'other',
+        'FileSystemException: Cannot open file, path = /data/x': 'other',
+        'Download failed': 'other',
+        '': 'other',
+        null: 'other',
+      },
+    );
+    // What the worker writes parses back.
+    expect(
+      meaning(serverDownloadErrorCode(const SocketException('refused'))),
+      'server(0)',
+    );
+    expect(
+      meaning(serverDownloadErrorCode(const ServerDownloadHttpException(404))),
+      'server(404)',
+    );
+  });
+
+  test('a recorded failure is worded for a model tile and for a server '
+      "book's message, which speaks of the book's own server", () {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    String tile(String stored) =>
+        dictionaryDownloadError(ja, ServerDownloadFailedException(stored))!;
+
+    expect(
+      {
+        for (final stored in [
+          'stopped',
+          'untrusted_certificate',
+          'interrupted',
+          'connection_gone',
+          'storage_full',
+          'server_status:0',
+          'server_status:401',
+          'server_status:503',
+          'FileSystemException: read-only',
+        ])
+          stored: (tile(stored), describeServerDownloadError(ja, stored)),
+      },
+      {
+        'stopped': ('ダウンロードが停止しました', 'ダウンロードが停止しました'),
+        'untrusted_certificate': (
+          ja.serverCertificateUntrusted,
+          ja.serverCertificateUntrusted,
+        ),
+        // A book's message is not beside a Download button.
+        'interrupted': (
+          'ダウンロードが中断されました。「ダウンロード」をタップして、もう一度お試しください。',
+          ja.serverBrowseDownloadInterrupted,
+        ),
+        'connection_gone': (
+          ja.serverErrorConnectionGone,
+          'ダウンロードに失敗しました：${ja.serverErrorConnectionGone}',
+        ),
+        'storage_full': (
+          ja.localOcrStorageFull,
+          'ダウンロードに失敗しました：${ja.localOcrStorageFull}',
+        ),
+        // The user typed a book server's address and signed in to it.
+        'server_status:0': (
+          'ダウンロードで接続できませんでした。インターネット接続を確認して、もう一度お試しください。',
+          'ダウンロードに失敗しました：${ja.serverErrorUnreachable}',
+        ),
+        'server_status:401': (
+          'ダウンロードに失敗しました：サーバーがエラー401を返しました。',
+          'ダウンロードに失敗しました：${ja.serverErrorSignInRejected}',
+        ),
+        'server_status:503': (
+          'ダウンロードに失敗しました：サーバーがエラー503を返しました。',
+          'ダウンロードに失敗しました：サーバーがエラー503を返しました。',
+        ),
+        // Never the stored text.
+        'FileSystemException: read-only': (
+          ja.downloadNotFinished,
+          ja.downloadNotFinished,
+        ),
+      },
     );
   });
 
