@@ -644,6 +644,21 @@ void main() {
       expect(restored.pages.single.blocks.single.lines, ['ねこ']);
     });
 
+    test('with a backup made, an OCR run does not read the cache again and '
+        'Delete OCR restores over a cache that cannot be read', () async {
+      final (book, cacheFile) = await mangaWithText('pdf');
+      await repo.backupOriginalMokuroOcrIfNeeded(book);
+      // Megabytes for a long PDF. Here, bytes that are not text at all, so a
+      // read of them throws.
+      await cacheFile.writeAsBytes([0xff, 0xfe, 0xfd]);
+
+      await repo.backupOriginalMokuroOcrIfNeeded(book);
+      expect(await repo.restoreOriginalMokuroOcr(book), isTrue);
+
+      final restored = await MangaCacheStore.read(cacheFile.path);
+      expect(restored.pages.single.blocks.single.lines, ['ねこ']);
+    });
+
     test('keeps no backup of text that OCR made', () async {
       final (book, _) = await mangaWithText('local');
 

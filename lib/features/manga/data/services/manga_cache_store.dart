@@ -33,6 +33,12 @@ class MangaCacheStore {
     }
   }
 
+  /// Throws [MangaPagesUnavailable.pagesMissing] unless there is a cache at
+  /// [path], without reading it: megabytes for a long text PDF.
+  static Future<void> requirePresent(String path) async {
+    if (!await File(path).exists()) throw MangaPagesUnavailable.pagesMissing;
+  }
+
   static bool _equal(Object? a, Object? b) {
     if (a is Map && b is Map) {
       return a.length == b.length &&

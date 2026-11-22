@@ -975,10 +975,9 @@ class BookRepository {
   Future<void> backupOriginalMokuroOcrIfNeeded(Book book) async {
     if (book.bookType != 'manga') return;
 
-    // Read first: a missing cache says so even when a backup exists.
-    final content = await MangaCacheStore.readEncoded(
-      p.join(book.filePath, mangaPagesCacheFileName),
-    );
+    // First: a missing cache says so even when a backup exists.
+    final cachePath = p.join(book.filePath, mangaPagesCacheFileName);
+    await MangaCacheStore.requirePresent(cachePath);
 
     final backupFile = File(
       p.join(book.filePath, originalMokuroOcrBackupFileName),
@@ -987,6 +986,7 @@ class BookRepository {
       return;
     }
 
+    final content = await MangaCacheStore.readEncoded(cachePath);
     final mokuroBook = await decodeMangaCache(content);
     if (!isOriginalText(mokuroBook.ocrSource)) {
       return;
@@ -1000,8 +1000,8 @@ class BookRepository {
     if (book.bookType != 'manga') return false;
 
     final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
-    // Only to say so when the cache is missing: the backup replaces it.
-    await MangaCacheStore.readEncoded(cacheFile.path);
+    // The backup replaces it, whatever it holds.
+    await MangaCacheStore.requirePresent(cacheFile.path);
 
     final backupFile = File(
       p.join(book.filePath, originalMokuroOcrBackupFileName),
