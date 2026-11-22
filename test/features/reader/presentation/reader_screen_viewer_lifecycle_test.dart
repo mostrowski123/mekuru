@@ -18,6 +18,7 @@ import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/reader/data/models/epub_models.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/data/repositories/bookmark_repository.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/providers/user_font_providers.dart';
@@ -568,6 +569,44 @@ void main() {
     await tester.tap(find.text('Retry'));
     await pumpUntilViewerBuilt(tester);
     expect(viewer(tester).initialCfi, _pageB);
+    await closeReader(tester);
+  });
+
+  testWidgets('a bookmark marks the start of the page on screen, and the '
+      'progress the place a re-layout holds mid-page', (tester) async {
+    const held = 'epubcfi(/6/4!/4/10/1:150)';
+    const pageStart = 'epubcfi(/6/4!/4/8/1:231)';
+    const pageEnd = 'epubcfi(/6/4!/4/12/1:20)';
+    await openReader(tester);
+    viewer(tester).onLoaded!();
+    viewer(tester).onLocationsReady!();
+    // What the bridge reports after a re-layout that holds the place.
+    viewer(tester).onRelocated!(
+      const EpubLocation(
+        startCfi: held,
+        pageStartCfi: pageStart,
+        endCfi: pageEnd,
+        progress: 0.3,
+      ),
+    );
+    await flushSaves(tester);
+    expect(books.saves.last, (cfi: held, progress: 0.3));
+
+    // A tap in the middle of the page brings up the controls.
+    viewer(tester).onTouchDown!(0.5, 0.5, null);
+    viewer(tester).onTouchUp!(0.5, 0.5, false, false, null);
+    await settle(tester);
+    await tester.tap(find.byTooltip(_en.readerBookmarkPageTooltip));
+    await settle(tester);
+    final saved = await tester.runAsync(
+      () => BookmarkRepository(db).getBookmarksForBook(book.id),
+    );
+    expect([for (final b in saved!) b.cfi], [pageStart]);
+
+    // The same page turned back to, with nothing held.
+    relocate(tester, pageStart, 0.3);
+    await settle(tester);
+    expect(find.byTooltip(_en.readerRemoveBookmarkTooltip), findsOneWidget);
     await closeReader(tester);
   });
 

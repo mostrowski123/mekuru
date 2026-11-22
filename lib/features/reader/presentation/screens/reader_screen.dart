@@ -171,7 +171,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   double? _pendingSeek;
   Timer? _seekSettleFallback;
   static const _kSeekSettleTimeout = Duration(milliseconds: 400);
+
+  /// The reader's place, saved as progress; it can be mid-page.
   String _currentCfi = '';
+
+  /// The start of the page on screen: what a bookmark marks.
+  String _pageStartCfi = '';
   bool _isCurrentPageBookmarked = false;
   int _bookmarkCheckGeneration = 0;
   bool _hasRestoredHighlights = false;
@@ -747,6 +752,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final cfi = location.startCfi.trim();
     if (_isEpubCfi(cfi)) {
       _currentCfi = cfi;
+      _pageStartCfi = location.pageStartCfi.trim();
       // Mid-scrub relocations (another seek already in flight) skip the
       // bookmark lookup; the final one runs it.
       if (!_seekInFlight) _checkBookmarkState();
@@ -1566,16 +1572,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // ── Bookmarks ────────────────────────────────────────────────────
 
   Future<void> _checkBookmarkState() async {
-    if (_currentCfi.isEmpty) return;
+    if (_pageStartCfi.isEmpty) return;
     final generation = ++_bookmarkCheckGeneration;
-    final cfiToCheck = _currentCfi;
+    final cfiToCheck = _pageStartCfi;
     final existing = await _bookmarkAtCfi(cfiToCheck);
     if (mounted && generation == _bookmarkCheckGeneration) {
       setState(() => _isCurrentPageBookmarked = existing != null);
     }
   }
 
-  /// The bookmark at [cfi], the current location. A bookmark saved while
+  /// The bookmark at [cfi], the page on screen's start. A bookmark saved while
   /// generated furigana still counted in CFIs is stored in a form the
   /// location never equals, so the section's other bookmarks are compared
   /// as the reader writes CFIs now: its icon shows, and tapping it removes
@@ -1604,10 +1610,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   Future<void> _toggleBookmark() async {
-    if (!_bookShown || _currentCfi.isEmpty) return;
+    if (!_bookShown || _pageStartCfi.isEmpty) return;
 
     final repo = ref.read(bookmarkRepositoryProvider);
-    final existing = await _bookmarkAtCfi(_currentCfi);
+    final existing = await _bookmarkAtCfi(_pageStartCfi);
     if (existing != null) {
       await repo.deleteBookmark(existing.id);
       AppHaptics.light();
@@ -1621,7 +1627,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         );
       }
     } else {
-      final cfi = _currentCfi;
+      final cfi = _pageStartCfi;
       final chapterTitle = await _epubController.chapterTitleAt(cfi);
       await repo.addBookmark(
         bookId: widget.book.id,

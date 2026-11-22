@@ -638,6 +638,52 @@ const checks = [
     expect(blank.length === 0, `a re-layout did not show the reader's page after ${blank.join(', ')}`);
   }],
 
+  ['a bookmark added while a re-layout holds the place is the start of the page on screen', async () => {
+    // After a re-layout the reported start is the reader's place, held
+    // mid-page (keepPlace()). A bookmark there matched no page: turning back
+    // to the page, or jumping to the bookmark, reports the page's start.
+    // Dart bookmarks pageStartCfi, else startCfi (EpubLocation.fromJson()).
+    const bookmarked = (loc) => loc.pageStartCfi ?? loc.startCfi;
+    const place = 'epubcfi(/6/2!/4/10/1:150)'; // mid-paragraph, mid-page
+    const p = await openBook('book.epub', `${JSON.stringify(place)}, "rtl", "paginated", false, "18", "#000000", null, 28, 28, false, "book", 1, null`);
+    try {
+      await p.evaluate('setFontSize("24")');
+      await settle(p);
+      const held = await lastRelocated(p);
+      const pageStart = await p.evaluate(() => rendition.location.start.cfi);
+      expect(held.startCfi === place && pageStart !== place,
+        `setFontSize("24") reported ${held.startCfi} on the page from ${pageStart}, so this checks nothing`);
+      await turned(p, 'next()');
+      await turned(p, 'previous()');
+      const back = await lastRelocated(p);
+      expect(bookmarked(held) === bookmarked(back),
+        `bookmarked at ${bookmarked(held)}, but the same page turned back to reports ${bookmarked(back)}`);
+      await turned(p, `toCfi(${JSON.stringify(bookmarked(held))})`);
+      const jumped = await lastRelocated(p);
+      expect(bookmarked(held) === bookmarked(jumped),
+        `bookmarked at ${bookmarked(held)}, but the jump to it reports ${bookmarked(jumped)}`);
+    } finally {
+      await p.close();
+    }
+  }],
+
+  ['scroll view reopened at a highlight (a range CFI) shows it', async () => {
+    // A book opened from a highlight in the library opens at its range.
+    const range = 'epubcfi(/6/2!/4/10,/1:150,/1:160)';
+    const p = await openBook('book.epub', `${JSON.stringify(range)}, "rtl", "scrolled", false, "24", "#000000", null, 0, 28, false, "book", 1, null`);
+    try {
+      await settle(p);
+      const got = await p.evaluate((asked) => {
+        const { start, end } = rendition.location;
+        const cfi = new ePub.CFI();
+        return { start: start.cfi, holds: cfi.compare(start.cfi, asked) <= 0 && cfi.compare(asked, end.cfi) <= 0 };
+      }, range);
+      expect(got.holds, `shows the strip from ${got.start}, which does not hold ${range}`);
+    } finally {
+      await p.close();
+    }
+  }],
+
   ["a jump made as a page back crosses into the chapter before goes to the jump's target", async () => {
     // previous() from a chapter's first page shows the chapter before, then
     // pins it to its last page (snapToLastPage()). A jump made while that

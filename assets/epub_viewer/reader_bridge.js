@@ -332,6 +332,9 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     var displayed = location.start.displayed;
     callDart('relocated', {
       startCfi: start.cfi,
+      // The page's own start, which a bookmark marks: startCfi is the place,
+      // which keepPlace() can hold mid-page.
+      pageStartCfi: location.start.cfi,
       endCfi: endCfi,
       progress: percent,
       href: location.start.href || null,

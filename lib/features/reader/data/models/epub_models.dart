@@ -2,6 +2,8 @@ import 'dart:convert';
 
 /// Location within an EPUB document.
 class EpubLocation {
+  /// The reader's place, saved as progress. After a re-layout it can be in
+  /// the middle of the page (reader_bridge.js keepPlace()).
   final String startCfi;
   final String endCfi;
   final double progress;
@@ -11,13 +13,18 @@ class EpubLocation {
   final String? href;
   final double? hrefProgression;
 
+  /// The start of the page on screen, where a bookmark goes; [startCfi]
+  /// when not given.
+  final String pageStartCfi;
+
   const EpubLocation({
     required this.startCfi,
     required this.endCfi,
     required this.progress,
     this.href,
     this.hrefProgression,
-  });
+    String? pageStartCfi,
+  }) : pageStartCfi = pageStartCfi ?? startCfi;
 
   factory EpubLocation.fromJson(Map<String, dynamic> json) {
     return EpubLocation(
@@ -26,6 +33,7 @@ class EpubLocation {
       progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
       href: json['href'] as String?,
       hrefProgression: (json['hrefProgression'] as num?)?.toDouble(),
+      pageStartCfi: json['pageStartCfi'] as String?,
     );
   }
 }
