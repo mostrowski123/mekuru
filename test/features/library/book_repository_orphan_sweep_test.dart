@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:path/path.dart' as p;
@@ -453,6 +454,75 @@ void main() {
       expect(booksRoot.existsSync(), isTrue);
       expect(survivor.existsSync(), isTrue);
       expect(await repo.getBookById(id), isNull);
+    });
+  });
+
+  group('sweepOrphanImportDirs — the old vocabulary export', () {
+    // Before 2026-11-22 the vocabulary CSV export wrote this file into app
+    // support and never deleted it.
+    late File oldExport;
+    late List<String> logged;
+
+    setUp(() {
+      oldExport = File(p.join(tempDir.path, 'vocabulary_export.csv'))
+        ..writeAsStringSync('expression,reading\n本,ほん\n');
+      logged = [];
+      usageLogSinkOverride = (message, _, {required isWarning}) =>
+          logged.add(message);
+    });
+    tearDown(() => usageLogSinkOverride = null);
+
+    test('is deleted, quietly, even with no books', () async {
+      // Today's export (temp folder, dated) and look-alikes elsewhere.
+      final keep = [
+        File(p.join(tempDir.path, 'vocabulary_export_2026-11-22.csv')),
+        File(p.join(tempDir.path, 'restore_staging', 'vocabulary_export.csv')),
+        File(p.join(booksRoot.path, 'vocabulary_export.csv')),
+      ];
+      for (final file in keep) {
+        file
+          ..createSync(recursive: true)
+          ..writeAsStringSync('x');
+      }
+
+      expect(await repo.sweepOrphanImportDirs(), 0);
+
+      expect(oldExport.existsSync(), isFalse);
+      for (final file in keep) {
+        expect(file.existsSync(), isTrue, reason: file.path);
+      }
+      expect(logged, isEmpty);
+    });
+
+    test('a second launch, with the file gone, is quiet too', () async {
+      await repo.sweepOrphanImportDirs();
+      await repo.sweepOrphanImportDirs();
+
+      expect(oldExport.existsSync(), isFalse);
+      expect(logged, isEmpty);
+    });
+
+    test('a folder of that name is left alone', () async {
+      oldExport.deleteSync();
+      final folder = Directory(oldExport.path)..createSync();
+      final inside = File(p.join(folder.path, 'notes.txt'))
+        ..writeAsStringSync('x');
+
+      await repo.sweepOrphanImportDirs();
+
+      expect(inside.existsSync(), isTrue);
+      expect(logged, isEmpty);
+    });
+
+    test('the import-dir sweep still runs after it', () async {
+      await seedLiveManga();
+      final orphan = plantDir(ancientOrphan);
+
+      expect(await repo.sweepOrphanImportDirs(), 1);
+
+      expect(oldExport.existsSync(), isFalse);
+      expect(orphan.existsSync(), isFalse);
+      expect(trashEntryNames().single, endsWith('_$ancientOrphan'));
     });
   });
 }

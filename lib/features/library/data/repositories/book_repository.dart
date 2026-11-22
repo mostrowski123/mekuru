@@ -1173,10 +1173,19 @@ class BookRepository {
   /// [minAge] (age comes from the timestamp embedded in every import dir
   /// name), and skips dirs registered in [inFlightImportDirNames].
   /// Never throws. Returns the number of directories quarantined.
+  ///
+  /// First it deletes `vocabulary_export.csv` from app support, which the
+  /// vocabulary CSV export left there before 2026-11-22.
   Future<int> sweepOrphanImportDirs({
     Duration minAge = const Duration(days: 7),
   }) async {
     try {
+      try {
+        final appDir = await getApplicationSupportDirectory();
+        await File(p.join(appDir.path, 'vocabulary_export.csv')).delete();
+      } on FileSystemException {
+        // Already gone, never exported, or not a file: nothing to do.
+      }
       final booksRoot = await _booksRootDir();
       if (!await booksRoot.exists()) return 0;
 
