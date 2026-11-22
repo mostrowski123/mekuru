@@ -365,19 +365,14 @@ class BookImportNotifier extends Notifier<BookImportState> {
     state = const BookImportState();
   }
 
+  /// Throws when the book could not be deleted; the caller says so
+  /// (saveLibraryChange), not the import banner.
   Future<void> deleteBook(int bookId) async {
-    try {
-      final repo = ref.read(bookRepositoryProvider);
-      final book = await repo.getBookById(bookId);
-      await repo.deleteBook(bookId);
-      if (book != null) {
-        logUsage('library.book_deleted', attrs: {'format': book.bookType});
-      }
-    } catch (e, st) {
-      Sentry.captureException(e, stackTrace: st);
-      state = BookImportState(
-        error: (l10n) => l10n.commonErrorWithDetails(details: '$e'),
-      );
+    final repo = ref.read(bookRepositoryProvider);
+    final book = await repo.getBookById(bookId);
+    await repo.deleteBook(bookId);
+    if (book != null) {
+      logUsage('library.book_deleted', attrs: {'format': book.bookType});
     }
   }
 }

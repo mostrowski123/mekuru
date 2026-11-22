@@ -1809,6 +1809,8 @@ class _BookTileState extends ConsumerState<_BookTile>
   void _confirmDelete(BuildContext context) {
     // Resolved before the dialog opens: the tile can unmount while it's up.
     final container = ProviderScope.containerOf(context, listen: false);
+    // The page the tile is on (the library or a collection) says it failed.
+    final messenger = ScaffoldMessenger.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1821,8 +1823,18 @@ class _BookTileState extends ConsumerState<_BookTile>
           ),
           TextButton(
             onPressed: () {
+              final failure = ctx.l10n.libraryDeleteBookFailed;
               Navigator.of(ctx).pop();
-              container.read(bookImportProvider.notifier).deleteBook(book.id);
+              unawaited(
+                saveLibraryChange(
+                  messenger,
+                  () => container
+                      .read(bookImportProvider.notifier)
+                      .deleteBook(book.id),
+                  failure: failure,
+                  event: 'library.book_delete_failed',
+                ),
+              );
             },
             child: Text(
               ctx.l10n.commonDelete,
