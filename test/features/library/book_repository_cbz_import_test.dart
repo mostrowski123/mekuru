@@ -400,6 +400,68 @@ void main() {
     );
   });
 
+  group('importEpub keeps the cover', () {
+    /// An EPUB whose manifest names its cover [href] and whose zip holds the
+    /// cover as `OEBPS/[entry]`.
+    Future<Book> importWithCover({
+      required String href,
+      required String entry,
+    }) async {
+      final archive = Archive();
+      void add(String name, String text) =>
+          archive.addFile(ArchiveFile.bytes(name, utf8.encode(text)));
+      add(
+        'META-INF/container.xml',
+        '<?xml version="1.0"?><container version="1.0" '
+            'xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+            '<rootfiles><rootfile full-path="OEBPS/content.opf" '
+            'media-type="application/oebps-package+xml"/></rootfiles>'
+            '</container>',
+      );
+      add(
+        'OEBPS/content.opf',
+        '<?xml version="1.0"?><package '
+            'xmlns="http://www.idpf.org/2007/opf" version="3.0">'
+            '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+            '<dc:title>表紙</dc:title></metadata><manifest>'
+            '<item id="cover" href="$href" media-type="image/jpeg" '
+            'properties="cover-image"/>'
+            '<item id="c1" href="c1.xhtml" '
+            'media-type="application/xhtml+xml"/>'
+            '</manifest><spine><itemref idref="c1"/></spine></package>',
+      );
+      add('OEBPS/c1.xhtml', '<html xmlns="http://www.w3.org/1999/xhtml"/>');
+      archive.addFile(ArchiveFile.bytes('OEBPS/$entry', testCoverJpegBytes));
+      final path = p.join(tempDir.path, 'cover.epub');
+      await File(path).writeAsBytes(ZipEncoder().encode(archive));
+      return repo.importEpub(path);
+    }
+
+    test('when the zip names the file with the escape written out', () async {
+      final book = await importWithCover(
+        href: 'cover%201.jpg',
+        entry: 'cover%201.jpg',
+      );
+      expect(book.coverImagePath, isNotNull);
+      expect(
+        await File(book.coverImagePath!).readAsBytes(),
+        testCoverJpegBytes,
+      );
+    });
+
+    test('when the href escapes the file name', () async {
+      final book = await importWithCover(
+        href: 'cover%201.jpg',
+        entry: 'cover 1.jpg',
+      );
+      expect(book.coverImagePath, isNotNull);
+      expect(
+        await File(book.coverImagePath!).readAsBytes(),
+        testCoverJpegBytes,
+      );
+    });
+  });
+
   test('importCbz imports a CBR as a manga book', skip: rarSkip, () async {
     final path = p.join(tempDir.path, 'Vol 2.cbr');
     await File(path).writeAsBytes(

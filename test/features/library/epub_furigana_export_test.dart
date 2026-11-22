@@ -382,28 +382,22 @@ void main() {
       );
     });
 
-    test(
-      'still rewrites a chapter when another manifest href does not '
-          'percent-decode',
-      () async {
-        final opf = _contentOpf.replaceFirst(
-          '<manifest>',
-          '<manifest><item id="bad" href="bad%zzz.xhtml" '
-              'media-type="application/xhtml+xml"/>',
-        );
-        final path = await writeEpub(
-          buildTestEpub(
-            chapter('<p><ruby>既存<rt>きそん</rt></ruby></p>'),
-            opf: opf,
-          ),
-        );
+    test('still rewrites a chapter when another manifest href does not '
+        'percent-decode', () async {
+      final opf = _contentOpf.replaceFirst(
+        '<manifest>',
+        '<manifest><item id="bad" href="bad%zzz.xhtml" '
+            'media-type="application/xhtml+xml"/>',
+      );
+      final path = await writeEpub(
+        buildTestEpub(chapter('<p><ruby>既存<rt>きそん</rt></ruby></p>'), opf: opf),
+      );
 
-        final out = await buildFuriganaEpub(path, mode: FuriganaMode.hide);
+      final out = await buildFuriganaEpub(path, mode: FuriganaMode.hide);
 
-        // The good sibling must still be recognized and rewritten.
-        expect(chapterOf(out!), isNot(contains('<rt>')));
-      },
-    );
+      // The good sibling must still be recognized and rewritten.
+      expect(chapterOf(out!), isNot(contains('<rt>')));
+    });
 
     test('rewrites a chapter whose link does not percent-decode', () async {
       // Bytes that are not UTF-8: the zip entry is named as the href is
@@ -427,6 +421,33 @@ void main() {
       final rewritten = ZipDecoder()
           .decodeBytes(out!)
           .findFile('OEBPS/ch%FF.xhtml')!
+          .readBytes()!;
+      expect(utf8.decode(rewritten), isNot(contains('<rt>')));
+    });
+
+    test('rewrites a chapter whose file is named with the escape written '
+        'out', () async {
+      // The link decodes (`ch 1.xhtml`), but the zip entry is named as the
+      // href is written.
+      final archive =
+          ZipDecoder().decodeBytes(
+            buildTestEpub(
+              chapter('<p>本文</p>'),
+              opf: _contentOpf.replaceFirst('chapter1.xhtml', 'ch%201.xhtml'),
+            ),
+          )..addFile(
+            ArchiveFile.bytes(
+              'OEBPS/ch%201.xhtml',
+              utf8.encode(chapter('<p><ruby>既存<rt>きそん</rt></ruby></p>')),
+            ),
+          );
+      final path = await writeEpub(ZipEncoder().encodeBytes(archive));
+
+      final out = await buildFuriganaEpub(path, mode: FuriganaMode.hide);
+
+      final rewritten = ZipDecoder()
+          .decodeBytes(out!)
+          .findFile('OEBPS/ch%201.xhtml')!
           .readBytes()!;
       expect(utf8.decode(rewritten), isNot(contains('<rt>')));
     });

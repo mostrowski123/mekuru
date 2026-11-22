@@ -222,7 +222,11 @@ Set<String> _contentDocumentNames(Archive archive) {
     if (item.getAttribute('media-type') != 'application/xhtml+xml') continue;
     final href = item.getAttribute('href');
     if (href == null) continue;
-    final name = resolveEpubHref(opfDir, href);
+    final name = resolveEpubHref(
+      opfDir,
+      href,
+      exists: (path) => archive.findFile(path) != null,
+    );
     if (name != null) names.add(name);
   }
   return names;

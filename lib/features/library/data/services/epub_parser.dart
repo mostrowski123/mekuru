@@ -71,13 +71,26 @@ bool _declaresVerticalWritingMode(List<int> bytes) =>
 /// POSIX paths inside the EPUB), returning null for refs that are unusable —
 /// empty or scheme'd (http:, data:) — or that escape the EPUB root. A ref
 /// that does not percent-decode is taken as written, see [decodeHref].
-String? resolveEpubHref(String baseDir, String ref) {
+/// With [exists] (is this path in the book?), a ref whose decoded path is
+/// not there but whose path as written is resolves as written: some EPUBs
+/// name the zip entry `cover%201.jpg` literally.
+String? resolveEpubHref(
+  String baseDir,
+  String ref, {
+  bool Function(String path)? exists,
+}) {
   final bare = ref.split('#').first.split('?').first;
   if (bare.isEmpty || bare.startsWith('data:')) return null;
   if (Uri.tryParse(bare)?.hasScheme ?? false) return null;
-  final resolved = p.posix.normalize(p.posix.join(baseDir, decodeHref(bare)));
-  if (resolved.startsWith('..')) return null;
-  return resolved;
+  String? inBook(String href) {
+    final resolved = p.posix.normalize(p.posix.join(baseDir, href));
+    return resolved.startsWith('..') ? null : resolved;
+  }
+
+  final decoded = inBook(decodeHref(bare));
+  if (exists == null || (decoded != null && exists(decoded))) return decoded;
+  final literal = inBook(bare);
+  return literal != null && exists(literal) ? literal : decoded;
 }
 
 /// Parses EPUB files to extract metadata and cover images.
@@ -235,6 +248,7 @@ class EpubParser {
         opfDir,
         fallbackTitle: fallbackTitle,
         hasVerticalCss: hasVerticalCss,
+        exists: (path) => archive.findFile(path) != null,
       );
     } finally {
       input.close();
@@ -311,15 +325,18 @@ class EpubParser {
       opfDir,
       fallbackTitle: fallbackTitle,
       hasVerticalCss: hasVerticalCss,
+      exists: (path) => File(p.join(extractDir, path)).existsSync(),
     );
   }
 
-  /// Extract metadata from a parsed OPF XML document.
+  /// Extract metadata from a parsed OPF XML document. [exists] says whether
+  /// a path is in the book, see [resolveEpubHref].
   static EpubMetadata _extractMetadataFromOpf(
     XmlDocument opfXml,
     String opfDir, {
     required String fallbackTitle,
     required bool hasVerticalCss,
+    required bool Function(String path) exists,
   }) {
     // Extract title from <dc:title>, falling back to <title> without the
     // namespace prefix, then to the EPUB's own filename.
@@ -371,13 +388,13 @@ class EpubParser {
 
       // Match by cover id from meta
       if (coverId != null && itemId == coverId) {
-        coverRelativePath = resolveEpubHref(opfDir, href);
+        coverRelativePath = resolveEpubHref(opfDir, href, exists: exists);
         break;
       }
 
       // Match by properties="cover-image" (EPUB 3)
       if (properties.contains('cover-image')) {
-        coverRelativePath = resolveEpubHref(opfDir, href);
+        coverRelativePath = resolveEpubHref(opfDir, href, exists: exists);
         break;
       }
     }
@@ -392,7 +409,7 @@ class EpubParser {
         if (href != null &&
             itemId.contains('cover') &&
             mediaType.startsWith('image/')) {
-          coverRelativePath = resolveEpubHref(opfDir, href);
+          coverRelativePath = resolveEpubHref(opfDir, href, exists: exists);
           break;
         }
       }
