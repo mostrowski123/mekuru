@@ -564,6 +564,33 @@ const checks = [
     }
   }],
 
+  ['after a chapter fails to show, turning the phone shows the page the reader was on', async () => {
+    // A chapter that cannot be laid out (here its render fails, as for an
+    // unreadable file) leaves the screen blank. epub.js kept that display
+    // pending, holding up what was queued after it, and as the one in
+    // progress, so a resize showed the failed chapter again.
+    const p = await openBook('book.epub', `"", "rtl", "paginated", false, "18", "#000000", null, 28, 28, false, "book", 1, null`);
+    try {
+      const place = await p.evaluate(() => {
+        book.spine.get(1).render = () => Promise.reject(new Error('unreadable'));
+        toCfi('c2.xhtml');
+        return rendition.location.start.cfi;
+      });
+      await p.waitForFunction(() => rendition.manager.views.all().every((v) => !v.contents));
+      await p.setViewportSize({ width: 800, height: 412 });
+      await p.waitForFunction(() => rendition.manager.views.all().some((v) => v.contents), null, { timeout: 5000 })
+        .catch(() => { throw new Error('the resize showed no page'); });
+      const shown = await p.evaluate((asked) => {
+        const { start, end } = rendition.currentLocation();
+        const cfi = new ePub.CFI();
+        return { index: start.index, holds: cfi.compare(start.cfi, asked) <= 0 && cfi.compare(asked, end.cfi) <= 0 };
+      }, place);
+      expect(shown.index === 0 && shown.holds, `the resize showed ${JSON.stringify(shown)}, not the page with ${place}`);
+    } finally {
+      await p.close();
+    }
+  }],
+
   ['every handler the page calls is registered in Dart', async () => {
     // The calls seen so far, and every name written in reader_bridge.js.
     const source = fs.readFileSync(path.join(viewer, 'reader_bridge.js'), 'utf8');

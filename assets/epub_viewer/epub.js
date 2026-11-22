@@ -8485,6 +8485,17 @@ class rendition_Rendition {
       this.emit(constants["c" /* EVENTS */].RENDITION.DISPLAYED, section);
       this.reportLocation();
     }, err => {
+      // [MEKURU PATCH] A failed display is over. Settled, it no longer holds
+      // up the queue (upstream left it pending until the next display()
+      // resolved it), and a later resize shows the reader's place again
+      // (onResized()), not the target that failed; with no page shown yet,
+      // a resize tries the target again. A newer display() owns both fields
+      // once it has started.
+      displaying.reject(err);
+      if (this.displaying === displaying) {
+        this.displaying = undefined;
+        if (this.location) this.lastDisplay = null;
+      }
       /**
        * Emit that has been an error displaying
        * @event displayError
