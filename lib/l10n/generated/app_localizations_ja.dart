@@ -4604,6 +4604,13 @@ class AppLocalizationsJa extends AppLocalizations {
       '本を開いている途中でリーダーが停止しました。「再試行」をタップしてもう一度お試しください。';
 
   @override
+  String get readerBookFileUnreadable =>
+      'この本のファイルが見つからないか、読み込めません。本をもう一度インポートしてください。';
+
+  @override
+  String get readerCouldNotOpen => '本を開けませんでした。「再試行」をタップしてもう一度お試しください。';
+
+  @override
   String get userDictionaryName => 'マイ辞書';
 
   @override

@@ -4795,6 +4795,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'El lector se detuvo al abrir el libro. Toca Reintentar para volver a intentarlo.';
 
   @override
+  String get readerBookFileUnreadable =>
+      'Falta el archivo de este libro o no se puede leer. Vuelve a importar el libro.';
+
+  @override
+  String get readerCouldNotOpen =>
+      'No se pudo abrir el libro. Toca Reintentar para volver a intentarlo.';
+
+  @override
   String get userDictionaryName => 'Mis definiciones';
 
   @override

@@ -3274,6 +3274,8 @@
   "mangaPageImageLoadFailed": "No se pudo cargar la imagen de esta página.",
   "mangaReaderPagesMissing": "Faltan los datos de las páginas de este manga. Vuelve a importar el manga.",
   "readerStoppedWhileOpening": "El lector se detuvo al abrir el libro. Toca Reintentar para volver a intentarlo.",
+  "readerBookFileUnreadable": "Falta el archivo de este libro o no se puede leer. Vuelve a importar el libro.",
+  "readerCouldNotOpen": "No se pudo abrir el libro. Toca Reintentar para volver a intentarlo.",
   "userDictionaryName": "Mis definiciones",
   "userDictionarySubtitle": "Definiciones que has añadido",
   "userDictionaryDeleteBody": "¿Eliminar Mis definiciones?\nSe perderán todas las definiciones que escribiste. Esta acción no se puede deshacer.",

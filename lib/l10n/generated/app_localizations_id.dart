@@ -4762,6 +4762,14 @@ class AppLocalizationsId extends AppLocalizations {
       'Pembaca berhenti saat membuka buku. Ketuk Coba lagi untuk mengulang.';
 
   @override
+  String get readerBookFileUnreadable =>
+      'File buku ini tidak ada atau tidak dapat dibaca. Impor ulang buku.';
+
+  @override
+  String get readerCouldNotOpen =>
+      'Buku tidak dapat dibuka. Ketuk Coba lagi untuk mengulang.';
+
+  @override
   String get userDictionaryName => 'Definisi saya';
 
   @override

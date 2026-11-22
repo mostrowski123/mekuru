@@ -7670,6 +7670,18 @@ abstract class AppLocalizations {
   /// **'The reader stopped while opening the book. Tap Retry to try again.'**
   String get readerStoppedWhileOpening;
 
+  /// EPUB reader error: the book's file is gone from the device or could not be read, so the book has to be imported again. A Retry button (commonRetry) follows.
+  ///
+  /// In en, this message translates to:
+  /// **'This book\'s file is missing or can\'t be read. Import the book again.'**
+  String get readerBookFileUnreadable;
+
+  /// EPUB reader error for a failure the user can only retry, for example the page reported an error while showing the book. A Retry button (commonRetry) follows.
+  ///
+  /// In en, this message translates to:
+  /// **'The book couldn\'t be opened. Tap Retry to try again.'**
+  String get readerCouldNotOpen;
+
   /// Name shown for the dictionary that holds the definitions the user wrote themselves.
   ///
   /// In en, this message translates to:

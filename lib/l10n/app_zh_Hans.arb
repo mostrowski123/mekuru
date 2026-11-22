@@ -3274,6 +3274,8 @@
   "mangaPageImageLoadFailed": "无法加载此页的图片。",
   "mangaReaderPagesMissing": "此漫画的页面数据丢失。请重新导入漫画。",
   "readerStoppedWhileOpening": "阅读器在打开图书时停止运行。点击重试。",
+  "readerBookFileUnreadable": "此书的文件丢失或无法读取。请重新导入此书。",
+  "readerCouldNotOpen": "无法打开此书。点击重试。",
   "userDictionaryName": "我的释义",
   "userDictionarySubtitle": "您添加的释义",
   "userDictionaryDeleteBody": "删除“我的释义”？\n您自己编写的所有释义都将丢失。此操作无法撤销。",

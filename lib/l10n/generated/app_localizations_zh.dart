@@ -4504,6 +4504,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerStoppedWhileOpening => '阅读器在打开图书时停止运行。点击重试。';
 
   @override
+  String get readerBookFileUnreadable => '此书的文件丢失或无法读取。请重新导入此书。';
+
+  @override
+  String get readerCouldNotOpen => '无法打开此书。点击重试。';
+
+  @override
   String get userDictionaryName => '我的释义';
 
   @override
@@ -9105,6 +9111,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerStoppedWhileOpening => '阅读器在打开图书时停止运行。点击重试。';
+
+  @override
+  String get readerBookFileUnreadable => '此书的文件丢失或无法读取。请重新导入此书。';
+
+  @override
+  String get readerCouldNotOpen => '无法打开此书。点击重试。';
 
   @override
   String get userDictionaryName => '我的释义';

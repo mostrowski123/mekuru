@@ -3274,6 +3274,8 @@
   "mangaPageImageLoadFailed": "Tidak dapat memuat gambar halaman ini.",
   "mangaReaderPagesMissing": "Data halaman manga ini tidak ada. Impor ulang manga.",
   "readerStoppedWhileOpening": "Pembaca berhenti saat membuka buku. Ketuk Coba lagi untuk mengulang.",
+  "readerBookFileUnreadable": "File buku ini tidak ada atau tidak dapat dibaca. Impor ulang buku.",
+  "readerCouldNotOpen": "Buku tidak dapat dibuka. Ketuk Coba lagi untuk mengulang.",
   "userDictionaryName": "Definisi saya",
   "userDictionarySubtitle": "Definisi yang Anda tambahkan",
   "userDictionaryDeleteBody": "Hapus Definisi saya?\nSemua definisi yang Anda tulis sendiri akan hilang. Tindakan ini tidak dapat dibatalkan.",

@@ -1240,6 +1240,8 @@
   "mangaPageImageLoadFailed": "このページの画像を読み込めませんでした。",
   "mangaReaderPagesMissing": "このマンガのページデータが見つかりません。マンガをもう一度インポートしてください。",
   "readerStoppedWhileOpening": "本を開いている途中でリーダーが停止しました。「再試行」をタップしてもう一度お試しください。",
+  "readerBookFileUnreadable": "この本のファイルが見つからないか、読み込めません。本をもう一度インポートしてください。",
+  "readerCouldNotOpen": "本を開けませんでした。「再試行」をタップしてもう一度お試しください。",
   "userDictionaryName": "マイ辞書",
   "userDictionarySubtitle": "自分で追加した定義",
   "userDictionaryDeleteBody": "マイ辞書を削除しますか？\n自分で書いた定義はすべて失われます。この操作は元に戻せません。",
