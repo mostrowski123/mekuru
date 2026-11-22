@@ -1,5 +1,6 @@
 // ignore_for_file: discarded_futures
 import 'dart:convert';
+import 'dart:io' show PathNotFoundException;
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:mekuru/shared/utils/app_routes.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/capabilities.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
@@ -280,6 +282,9 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
   bool _charging = false;
   bool _busy = true;
   String? _error;
+
+  /// Why the manga's page data could not be read; worded in build.
+  Object? _loadError;
   String get _cachePath =>
       p.join(widget.book.filePath, mangaPagesCacheFileName);
   @override
@@ -307,9 +312,10 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
         _busy = false;
       });
     } catch (e) {
+      logFailure('ocr.sheet_load_failed', e);
       if (mounted) {
         setState(() {
-          _error = '$e';
+          _loadError = e;
           _busy = false;
         });
       }
@@ -327,6 +333,7 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
     setState(() {
       _busy = true;
       _error = null;
+      _loadError = null;
     });
     try {
       final started = await startOcr(
@@ -547,6 +554,16 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
               const Padding(
                 padding: EdgeInsets.all(12),
                 child: LinearProgressIndicator(),
+              ),
+            if (_loadError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                // The pages cache is gone (MangaCacheStore.read).
+                child: Text(
+                  _loadError is PathNotFoundException
+                      ? l.mangaReaderPagesMissing
+                      : l.commonLoadFailed,
+                ),
               ),
             if (_error != null)
               Padding(
