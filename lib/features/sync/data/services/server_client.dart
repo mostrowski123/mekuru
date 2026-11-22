@@ -12,6 +12,9 @@ import 'server_download_work.dart';
 /// network-level failures (timeout, refused connection).
 class SyncException implements Exception {
   final int statusCode;
+
+  /// What went wrong, for a debugger only: it is built from the transport's
+  /// text and the request, so it can hold the server's address or a search.
   final String message;
 
   /// Why the server refused, as one of the client's fixed codes, when the
@@ -26,8 +29,11 @@ class SyncException implements Exception {
   /// The request never reached the server (no route, refused, timed out).
   bool get isUnreachable => statusCode == 0;
 
+  /// The status and the reason code, never [message]: this is what
+  /// telemetry, logs and crash reports get.
   @override
-  String toString() => 'SyncException($statusCode): $message';
+  String toString() =>
+      'SyncException($statusCode${reason == null ? '' : ', $reason'})';
 }
 
 /// Application-support folder holding each server download until it is

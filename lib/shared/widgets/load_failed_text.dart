@@ -6,10 +6,19 @@ import 'package:mekuru/l10n/l10n.dart';
 /// in the user's language; [error] itself goes to telemetry as [event], once
 /// per error, never on screen.
 class LoadFailedText extends StatefulWidget {
-  const LoadFailedText(this.error, {super.key, required this.event});
+  const LoadFailedText(
+    this.error, {
+    super.key,
+    required this.event,
+    this.reason,
+  });
 
   final Object error;
   final String event;
+
+  /// Why it could not load, already worded, to say instead of that it could
+  /// not.
+  final String? reason;
 
   @override
   State<LoadFailedText> createState() => _LoadFailedTextState();
@@ -31,6 +40,8 @@ class _LoadFailedTextState extends State<LoadFailedText> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      Text(context.l10n.commonLoadFailed, textAlign: TextAlign.center);
+  Widget build(BuildContext context) => Text(
+    widget.reason ?? context.l10n.commonLoadFailed,
+    textAlign: TextAlign.center,
+  );
 }

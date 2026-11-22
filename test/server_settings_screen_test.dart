@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
@@ -11,6 +12,7 @@ import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart'
 import 'package:mekuru/features/sync/presentation/screens/server_settings_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart';
+import 'package:sentry_flutter/sentry_flutter.dart' show SentryAttribute;
 
 import 'shared/test_database.dart';
 import 'test_app.dart';
@@ -24,6 +26,20 @@ class _SlowFakeSecrets extends ServerSecretStorage {
     await Future<void>.delayed(const Duration(milliseconds: 50));
     return 'api-key';
   }
+}
+
+/// An HttpClient on a network where no server name resolves, as dart:io
+/// reports it.
+class _NoSuchHost implements HttpClient {
+  @override
+  Future<HttpClientRequest> openUrl(String method, Uri url) async =>
+      throw SocketException(
+        "Failed host lookup: '${url.host}'",
+        osError: const OSError('No address associated with hostname', 7),
+      );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
 }
 
 void main() {
@@ -266,6 +282,55 @@ void main() {
     expect(row!.allowSelfSignedCert, isTrue);
 
     // Unmount so drift's stream-close timer fires before the test ends.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets("a connection test that cannot find the server keeps the "
+      "server's address out of telemetry", (tester) async {
+    final logs = <(String, Map<String, SentryAttribute>)>[];
+    usageLogSinkOverride = (message, attributes, {required isWarning}) =>
+        logs.add((message, attributes));
+    usageAnalyticsSinkOverride = (_, _) {};
+    addTearDown(() {
+      usageLogSinkOverride = null;
+      usageAnalyticsSinkOverride = null;
+    });
+    final db = createTestDatabase();
+    addTearDown(db.close);
+
+    await HttpOverrides.runZoned(() async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [databaseProvider.overrideWithValue(db)],
+          child: buildLocalizedTestApp(home: const ServerSettingsScreen()),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.add));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Server URL'),
+        'http://komga.example.com:25600',
+      );
+      await tester.tap(find.text('Test'));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }, createHttpClient: (_) => _NoSuchHost());
+
+    final tested = [
+      for (final (event, attributes) in logs)
+        if (event == 'sync.connection_tested') attributes,
+    ];
+    expect(tested, hasLength(1));
+    expect(tested.single['error_type']?.value, 'SyncException');
+    for (final attribute in tested.single.values) {
+      expect('${attribute.value}', isNot(contains('komga.example.com')));
+    }
+
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
   });

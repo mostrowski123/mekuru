@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
-import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
@@ -11,6 +10,7 @@ import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart'
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 
 /// Entry point of server browsing: the connection's libraries.
 class ServerBrowseScreen extends ConsumerWidget {
@@ -397,69 +397,32 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
   }
 }
 
-/// What telemetry gets of a failed browse: the error's type and, for a
-/// server's answer, its status and reason code. Never the error's text, which
-/// can name the server.
-final class _BrowseFailure {
-  const _BrowseFailure(this.error);
-
-  final Object error;
-
-  @override
-  String toString() => switch (error) {
-    SyncException(:final statusCode, :final reason) =>
-      'SyncException($statusCode${reason == null ? '' : ', $reason'})',
-    _ => '${error.runtimeType}',
-  };
-}
-
 /// Why browsing failed, and Retry. The failure goes to telemetry once.
-class _ErrorRetry extends StatefulWidget {
+class _ErrorRetry extends StatelessWidget {
   final Object error;
   final VoidCallback onRetry;
 
   const _ErrorRetry({required this.error, required this.onRetry});
 
   @override
-  State<_ErrorRetry> createState() => _ErrorRetryState();
-}
-
-class _ErrorRetryState extends State<_ErrorRetry> {
-  @override
-  void initState() {
-    super.initState();
-    logFailure('sync.browse_failed', _BrowseFailure(widget.error));
-  }
-
-  @override
-  void didUpdateWidget(_ErrorRetry oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.error, widget.error)) {
-      logFailure('sync.browse_failed', _BrowseFailure(widget.error));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final error = widget.error;
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              serverErrorReason(context.l10n, error),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: widget.onRetry,
-              child: Text(context.l10n.commonRetry),
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LoadFailedText(
+            error,
+            event: 'sync.browse_failed',
+            reason: serverErrorReason(context.l10n, error),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: onRetry,
+            child: Text(context.l10n.commonRetry),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
