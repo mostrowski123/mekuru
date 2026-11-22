@@ -146,6 +146,89 @@ void main() {
     });
   });
 
+  group('scrubPaths on a path that follows any character', () {
+    const name = ['Manga', 'Secret', 'Title', 'Here'];
+    const android = '/storage/emulated/0/Manga/Secret Title Here/001.jpg';
+    const ios =
+        '/var/mobile/Containers/Data/Application/ABC/Documents/Manga/'
+        'Secret Title Here/001.jpg';
+
+    void expectScrubbed(String input, String prose) {
+      final out = scrubPaths(input);
+      for (final word in name) {
+        expect(out, isNot(contains(word)), reason: input);
+      }
+      expect(out, contains(prose), reason: input);
+    }
+
+    test('in braces, as a Set or Map prints it', () {
+      expectScrubbed('Bad state: {$android}', 'Bad state: {');
+      expectScrubbed('Bad state: {$ios}', 'Bad state: {');
+      expect(
+        scrubPaths(
+          '{/data/user/0/moe.matthew.mekuru/files/books/'
+          'Alpha Beta Gamma Delta/x.epub: 3}',
+        ),
+        '{<path>: 3}',
+      );
+    });
+
+    test('after punctuation, arrows and Japanese brackets', () {
+      for (final before in ['|', ',', '>', '@', '-', '→', '「']) {
+        expectScrubbed('a$before$android', 'a$before');
+        expectScrubbed('a$before$ios', 'a$before');
+      }
+    });
+
+    test("after a letter, under Android's roots", () {
+      expectScrubbed('a$android', 'a');
+      expectScrubbed(
+        'x/data/user/0/moe.matthew.mekuru/files/Manga/Secret Title Here.epub',
+        'x',
+      );
+    });
+
+    test('with angle brackets in a name', () {
+      expect(
+        scrubPaths(
+          "PathNotFoundException: Cannot open file, path = '/var/mobile/"
+          'Containers/Data/Application/ABC/Library/Application Support/books/'
+          "book_1/<Secret> Title.epub' (OS Error: No such file or directory, "
+          'errno = 2)',
+        ),
+        "PathNotFoundException: Cannot open file, path = '<path>' "
+        '(OS Error: No such file or directory, errno = 2)',
+      );
+      expect(
+        scrubPaths('Import failed: /storage/emulated/0/a>b Secret/001.jpg'),
+        'Import failed: <path>',
+      );
+    });
+
+    test('shaped like a stack frame but naming no Dart file', () {
+      for (final input in [
+        'package:Secret/Title Here',
+        'dart:Secret/Title Here',
+        'package:secret/Title Here',
+      ]) {
+        final out = scrubPaths(input);
+        expect(out, isNot(contains('Secret')), reason: input);
+        expect(out, isNot(contains('secret')), reason: input);
+        expect(out, isNot(contains('Title')), reason: input);
+      }
+      // Real frames stay readable.
+      for (final frame in [
+        '#1      _rootRunUnary (dart:async/zone.dart:1525:47)',
+        '#2      Object.noSuchMethod '
+            '(dart:core-patch/object_patch.dart:38:5)',
+        '#3      Element.rebuild '
+            '(package:flutter/src/widgets/framework.dart:5541:22)',
+      ]) {
+        expect(scrubPaths(frame), frame);
+      }
+    });
+  });
+
   group('scrubPaths on iOS file errors, which name a file in quotes', () {
     // Foundation's NSCocoaErrorDomain messages, as `localizedDescription`
     // hands them to a PlatformException: the file or folder name in quotes,

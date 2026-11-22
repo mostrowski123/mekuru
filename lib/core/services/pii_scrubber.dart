@@ -15,10 +15,15 @@ final RegExp _uriPattern = RegExp(r'[a-zA-Z][a-zA-Z0-9+.-]*://\S+');
 /// `/document/primary:Download/…`) or a Windows one (`C:\…`, `C:/…`), to the
 /// end of the line or the first quote, bracket, `:`, `;` or `,` that is
 /// followed by whitespace. So `Kiki's` and `primary:Download` stay inside,
-/// and `' (OS Error` or `: No such file` end it.
+/// and `' (OS Error` or `: No such file` end it; `<` and `>` (`<Secret>`) do
+/// not. A `/` after a letter, digit, `.`, `_`, `~` or `<` is inside a
+/// relative path (`books/…`, `./…`) or a tag (`</p>`), except before
+/// Android's roots.
 final RegExp _absolutePathPattern = RegExp(
-  r'''(?:(?<!\w)[A-Za-z]:[\\/]|(?<![^\s'"`(\[=:])/)[^\s<>'"`)\]:;,]'''
-  r'''(?:[^\r\n<>'"`)\]:;,]|['"`)\]:;,](?![.'"`)\]:;,]*(?:\s|$)))*''',
+  r'''(?:(?<!\w)[A-Za-z]:[\\/]|(?<![\p{L}\p{N}\p{M}_.~<])/|'''
+  r'''/(?=(?:data/(?:user/\d+|data|app)|storage|sdcard|mnt)\b))'''
+  r'''[^\s<>'"`)\]:;,](?:[^\r\n'"`)\]:;,]|['"`)\]:;,](?![.'"`)\]:;,]*(?:\s|$)))*''',
+  unicode: true,
 );
 
 /// A name in quotes, as iOS file errors give one (`The file “進撃の巨人 01”
@@ -32,11 +37,11 @@ final RegExp _quotedNamePattern = RegExp(
 );
 
 /// A relative path (`books/進撃の巨人/page.jpg`, a SAF document ID
-/// `primary:Download/…`). Group 1 is a Dart stack frame
-/// (`package:mekuru/…dart:12:3`): it names code, not the user's files, so it
-/// is matched only to be kept.
+/// `primary:Download/…`). Group 1 is a Dart stack frame's file
+/// (`package:mekuru/…dart`, `dart:async/zone.dart`): it names code, not the
+/// user's files, so it is matched only to be kept.
 final RegExp _relativePathPattern = RegExp(
-  r'''((?:package|dart):\S+)|'''
+  r'''((?:package:[a-z][a-z0-9_]*|dart:[a-z_][a-z0-9_-]*)/[\w./-]*\.dart)|'''
   r'''[^\s<>'"`()\[\],;\\/]*(?:[\\/][^\s<>'"`()\[\],;\\/]+)+[\\/]?''',
 );
 
