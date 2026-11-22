@@ -87,6 +87,8 @@ final pendingDictionaryRestorePreviewProvider =
 
 // ──────────────── Backup State ────────────────
 
+/// What happened, for the screen to word. A failure says only what did not
+/// happen: an exception's own text never reaches the user.
 enum BackupMessageKind {
   backupCreated,
   backupFailed,
@@ -94,9 +96,11 @@ enum BackupMessageKind {
   backupExported,
   exportFailed,
   invalidBackupFile,
-  couldNotOpenFile,
   restoreSummary,
   restoreFailed,
+  // A reading data backup from a newer Mekuru, and one that doesn't parse.
+  restoreTooNew,
+  restoreUnreadable,
   booksUpdatedFromBackup,
   applyBookDataFailed,
   // A .zip picked where a .mekuru was expected, and vice versa.
@@ -138,8 +142,8 @@ class BackupMessage {
   const BackupMessage.backupCreated()
     : this._(kind: BackupMessageKind.backupCreated);
 
-  const BackupMessage.backupFailed(String details)
-    : this._(kind: BackupMessageKind.backupFailed, details: details);
+  const BackupMessage.backupFailed()
+    : this._(kind: BackupMessageKind.backupFailed);
 
   const BackupMessage.noBackupsToExport()
     : this._(kind: BackupMessageKind.noBackupsToExport);
@@ -147,26 +151,29 @@ class BackupMessage {
   const BackupMessage.backupExported()
     : this._(kind: BackupMessageKind.backupExported);
 
-  const BackupMessage.exportFailed(String details)
-    : this._(kind: BackupMessageKind.exportFailed, details: details);
+  const BackupMessage.exportFailed()
+    : this._(kind: BackupMessageKind.exportFailed);
 
   const BackupMessage.invalidBackupFile()
     : this._(kind: BackupMessageKind.invalidBackupFile);
 
-  const BackupMessage.couldNotOpenFile(String details)
-    : this._(kind: BackupMessageKind.couldNotOpenFile, details: details);
-
   const BackupMessage.restoreSummary(RestoreResult result)
     : this._(kind: BackupMessageKind.restoreSummary, result: result);
 
-  const BackupMessage.restoreFailed(String details)
-    : this._(kind: BackupMessageKind.restoreFailed, details: details);
+  const BackupMessage.restoreFailed()
+    : this._(kind: BackupMessageKind.restoreFailed);
+
+  const BackupMessage.restoreTooNew()
+    : this._(kind: BackupMessageKind.restoreTooNew);
+
+  const BackupMessage.restoreUnreadable()
+    : this._(kind: BackupMessageKind.restoreUnreadable);
 
   const BackupMessage.booksUpdatedFromBackup(int count)
     : this._(kind: BackupMessageKind.booksUpdatedFromBackup, count: count);
 
-  const BackupMessage.applyBookDataFailed(String details)
-    : this._(kind: BackupMessageKind.applyBookDataFailed, details: details);
+  const BackupMessage.applyBookDataFailed()
+    : this._(kind: BackupMessageKind.applyBookDataFailed);
 
   const BackupMessage.wrongKindFullBackup()
     : this._(kind: BackupMessageKind.wrongKindFullBackup);
@@ -191,11 +198,10 @@ class BackupMessage {
   const BackupMessage.fullPendingRestore()
     : this._(kind: BackupMessageKind.fullPendingRestore);
 
-  const BackupMessage.fullFailed(String details)
-    : this._(kind: BackupMessageKind.fullFailed, details: details);
+  const BackupMessage.fullFailed() : this._(kind: BackupMessageKind.fullFailed);
 
-  const BackupMessage.fullRestoreFailed(String details)
-    : this._(kind: BackupMessageKind.fullRestoreFailed, details: details);
+  const BackupMessage.fullRestoreFailed()
+    : this._(kind: BackupMessageKind.fullRestoreFailed);
 }
 
 class BackupState {
@@ -225,7 +231,7 @@ class BackupNotifier extends Notifier<BackupState> {
       _showSuccess(const BackupMessage.backupCreated());
     } catch (e, st) {
       logFailure('backup.failed', e, stackTrace: st, attrs: {'type': 'manual'});
-      state = BackupState(error: BackupMessage.backupFailed(e.toString()));
+      state = const BackupState(error: BackupMessage.backupFailed());
     }
   }
 
@@ -249,7 +255,7 @@ class BackupNotifier extends Notifier<BackupState> {
       }
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = BackupState(error: BackupMessage.exportFailed(e.toString()));
+      state = const BackupState(error: BackupMessage.exportFailed());
     }
   }
 
@@ -378,12 +384,14 @@ class RestoreNotifier extends Notifier<RestoreState> {
     } on WrongBackupKindException {
       state = const RestoreState(error: BackupMessage.wrongKindFullBackup());
     } on BackupVersionException catch (e) {
-      state = RestoreState(error: BackupMessage.restoreFailed(e.toString()));
+      logFailure('backup.restore_failed', e);
+      state = const RestoreState(error: BackupMessage.restoreTooNew());
     } on BackupFormatException catch (e) {
-      state = RestoreState(error: BackupMessage.restoreFailed(e.toString()));
+      logFailure('backup.restore_failed', e);
+      state = const RestoreState(error: BackupMessage.restoreUnreadable());
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = RestoreState(error: BackupMessage.restoreFailed(e.toString()));
+      state = const RestoreState(error: BackupMessage.restoreFailed());
     }
   }
 
@@ -401,9 +409,7 @@ class RestoreNotifier extends Notifier<RestoreState> {
       _showSuccess(BackupMessage.booksUpdatedFromBackup(toApply.length));
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = RestoreState(
-        error: BackupMessage.applyBookDataFailed(e.toString()),
-      );
+      state = const RestoreState(error: BackupMessage.applyBookDataFailed());
     }
   }
 
@@ -654,8 +660,8 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
         const BackupMessage.fullPendingRestore(),
       _ =>
         restoring
-            ? BackupMessage.fullRestoreFailed(error.toString())
-            : BackupMessage.fullFailed(error.toString()),
+            ? const BackupMessage.fullRestoreFailed()
+            : const BackupMessage.fullFailed(),
     };
     if (message.kind == BackupMessageKind.fullFailed ||
         message.kind == BackupMessageKind.fullRestoreFailed) {

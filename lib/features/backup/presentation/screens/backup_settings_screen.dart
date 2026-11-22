@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/capabilities.dart';
 import 'package:mekuru/core/platform/file_pick.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
 import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
@@ -15,6 +16,7 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:path/path.dart' as p;
 
@@ -234,9 +236,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
               ),
               error: (e, _) => Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(
-                  l10n.backupErrorLoadingHistory(details: e.toString()),
-                ),
+                child: LoadFailedText(e, event: 'backup.history_load_failed'),
               ),
             ),
           ],
@@ -359,16 +359,11 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     final details = message.details ?? '';
     return switch (message.kind) {
       BackupMessageKind.backupCreated => l10n.backupCreatedSuccess,
-      BackupMessageKind.backupFailed => l10n.backupFailed(details: details),
+      BackupMessageKind.backupFailed => l10n.backupNotCreated,
       BackupMessageKind.noBackupsToExport => l10n.backupNoBackupsToExport,
       BackupMessageKind.backupExported => l10n.backupExportedSuccess,
-      BackupMessageKind.exportFailed => l10n.backupExportFailed(
-        details: details,
-      ),
+      BackupMessageKind.exportFailed => l10n.backupExportNotFinished,
       BackupMessageKind.invalidBackupFile => l10n.backupInvalidFile,
-      BackupMessageKind.couldNotOpenFile => l10n.backupCouldNotOpenFile(
-        details: details,
-      ),
       BackupMessageKind.restoreSummary => _buildRestoreSummary(
         message.result ??
             const RestoreResult(
@@ -381,14 +376,12 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
               ),
             ),
       ),
-      BackupMessageKind.restoreFailed => l10n.backupRestoreFailed(
-        details: details,
-      ),
+      BackupMessageKind.restoreFailed => l10n.backupRestoreNotFinished,
+      BackupMessageKind.restoreTooNew => l10n.backupTooNew,
+      BackupMessageKind.restoreUnreadable => l10n.backupFileUnreadable,
       BackupMessageKind.booksUpdatedFromBackup =>
         l10n.backupBooksUpdatedFromBackup(count: message.count ?? 0),
-      BackupMessageKind.applyBookDataFailed => l10n.backupApplyBookDataFailed(
-        details: details,
-      ),
+      BackupMessageKind.applyBookDataFailed => l10n.backupApplyNotFinished,
       BackupMessageKind.wrongKindFullBackup => l10n.backupWrongKindFullBackup,
       BackupMessageKind.wrongKindReadingData => l10n.backupWrongKindReadingData,
       BackupMessageKind.fullBusy => l10n.backupFullBusy,
@@ -399,10 +392,8 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       BackupMessageKind.fullInvalid => l10n.backupFullInvalid,
       BackupMessageKind.fullIncomplete => l10n.backupFullIncomplete,
       BackupMessageKind.fullPendingRestore => l10n.backupFullPendingRestore,
-      BackupMessageKind.fullFailed => l10n.backupFullFailed(details: details),
-      BackupMessageKind.fullRestoreFailed => l10n.backupFullRestoreFailed(
-        details: details,
-      ),
+      BackupMessageKind.fullFailed => l10n.backupFullNotStarted,
+      BackupMessageKind.fullRestoreFailed => l10n.backupFullRestoreNotStarted,
       BackupMessageKind.fileDialogFailed => message.dialogFailure!.message(
         l10n,
       ),
@@ -507,10 +498,8 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     } on BackupFormatException {
       _showSnackbar(l10n.backupInvalidFile, isError: true);
     } catch (e) {
-      _showSnackbar(
-        l10n.backupCouldNotOpenFile(details: e.toString()),
-        isError: true,
-      );
+      logFailure('backup.file_open_failed', e);
+      _showSnackbar(l10n.backupFileNotOpened, isError: true);
     }
   }
 
