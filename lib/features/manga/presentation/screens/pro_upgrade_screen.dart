@@ -205,9 +205,9 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     try {
       await _storeService.initialize();
     } catch (e) {
+      logFailure('pro.store_init_failed', e);
       errorMessage ??= (l) =>
-          describeBillingError(l, e) ??
-          l.proErrorLoadBilling(store: storeName, details: '$e');
+          describeBillingError(l, e) ?? l.proErrorStore(store: storeName);
     }
 
     final servicesAvailable =
@@ -235,9 +235,9 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         );
         priceLabel = products[proUnlockProductId]?.price;
       } catch (e) {
+        logFailure('pro.price_load_failed', e);
         errorMessage ??= (l) =>
-            describeBillingError(l, e) ??
-            l.proErrorLoadPrice(store: storeName, details: '$e');
+            describeBillingError(l, e) ?? l.proErrorStore(store: storeName);
       }
     }
 
@@ -278,7 +278,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         SnackBar(
           content: Text(
             describeBillingError(context.l10n, e) ??
-                context.l10n.commonErrorWithDetails(details: '$e'),
+                context.l10n.serverErrorUnknown,
           ),
           duration: isPending
               ? const Duration(seconds: 5)
@@ -344,12 +344,12 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         }
         return snapshot;
       } catch (e) {
+        final cancelled = userCancellationStage(e) != null;
         logUsage(
           'pro.restore',
-          attrs: {
-            'result': userCancellationStage(e) == null ? 'error' : 'cancelled',
-          },
+          attrs: {'result': cancelled ? 'cancelled' : 'error'},
         );
+        if (!cancelled) logFailure('pro.restore_failed', e);
         rethrow;
       }
     });
@@ -358,17 +358,22 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   /// Testers only (see [canRequestSandboxRefund]), hence the English text.
   Future<void> _handleSandboxRefund() {
     return _runBusyAction(() async {
-      if (await requestSandboxRefund(proUnlockProductId)) {
-        // The revocation also arrives on the purchase stream, possibly after
-        // this query; then Pro is gone the next time the screen opens.
-        await _storeService.syncOwnedPurchases();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sandbox refund requested')),
-          );
+      try {
+        if (await requestSandboxRefund(proUnlockProductId)) {
+          // The revocation also arrives on the purchase stream, possibly
+          // after this query; then Pro is gone the next time the screen opens.
+          await _storeService.syncOwnedPurchases();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Sandbox refund requested')),
+            );
+          }
         }
+        return await _loadSnapshotDefault();
+      } catch (e) {
+        logFailure('pro.sandbox_refund_failed', e);
+        rethrow;
       }
-      return _loadSnapshotDefault();
     });
   }
 
