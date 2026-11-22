@@ -190,12 +190,53 @@ void main() {
 
     test('reports progress, verifies, installs and reports done', () async {
       pause = true;
+      // The worker writes status.json.tmp and renames it over status.json.
+      // On Windows a read of status.json during that rename makes the rename
+      // fail, so the test reads it once: after the folder watch has seen the
+      // first progress write land, while the paused server holds the worker.
+      final seen = <String>{};
+      final changed = StreamController<void>.broadcast();
+      final watch = dir.watch().listen((event) {
+        final path = event is FileSystemMoveEvent
+            ? event.destination ?? event.path
+            : event.path;
+        seen.add(p.basename(path));
+        changed.add(null);
+      });
+      addTearDown(watch.cancel);
+      Future<bool> saw(String name, Duration within) async {
+        final deadline = DateTime.now().add(within);
+        while (!seen.contains(name)) {
+          final left = deadline.difference(DateTime.now());
+          if (left <= Duration.zero) return false;
+          await changed.stream.first.timeout(left, onTimeout: () {});
+        }
+        return true;
+      }
+
+      // A watch reports nothing until it is live: write a file of the test's
+      // own until the watch sees it.
+      var live = false;
+      for (var i = 0; i < 50 && !live; i++) {
+        File(p.join(dir.path, 'watch-live')).writeAsStringSync('$i');
+        live = await saw('watch-live', const Duration(milliseconds: 200));
+      }
+      expect(live, isTrue);
       final done = run();
+      // A failed check must not leave the worker running into tearDown.
+      addTearDown(() async {
+        if (!resume.isCompleted) resume.complete();
+        await done;
+      });
       await halfSent.future;
-      // Read once, after the first chunk's write: on Windows a read while
-      // the worker renames the new status over the old one makes it fail.
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      final midway = await work().readStatus();
+      expect(await saw('status.json', const Duration(seconds: 30)), isTrue);
+      // A later progress write can still land during the read, which then
+      // fails. Both files in that rename are whole, so read again.
+      ServerDownloadWorkStatus? midway;
+      for (var i = 0; i < 20 && midway == null; i++) {
+        if (i > 0) await Future<void>.delayed(const Duration(milliseconds: 50));
+        midway = await work().readStatus();
+      }
       expect(midway?.state, ServerDownloadWorkState.running);
       expect(midway?.received, greaterThan(0));
       resume.complete();
