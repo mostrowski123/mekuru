@@ -6,19 +6,26 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/file_pick.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/screens/vocabulary_screen.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 
 import '../../../../test_app.dart';
 
-Widget _app(List<SavedWord> words, {List<Override> overrides = const []}) =>
-    ProviderScope(
-      overrides: [
-        vocabularyListProvider.overrideWith((ref) => Stream.value(words)),
-        ...overrides,
-      ],
-      child: buildLocalizedTestApp(home: const VocabularyScreen()),
-    );
+Widget _app(
+  List<SavedWord> words, {
+  List<Override> overrides = const [],
+  Locale? locale,
+}) => ProviderScope(
+  overrides: [
+    vocabularyListProvider.overrideWith((ref) => Stream.value(words)),
+    ...overrides,
+  ],
+  child: buildLocalizedTestApp(locale: locale, home: const VocabularyScreen()),
+);
+
+final _ja = lookupAppLocalizations(const Locale('ja'));
 
 final _taberu = SavedWord(
   id: 7,
@@ -168,12 +175,12 @@ void main() {
     expect(find.text('1 selected'), findsOneWidget);
   });
 
-  testWidgets('a failed CSV export says why and keeps the selection', (
-    tester,
-  ) async {
+  testWidgets('a failed CSV export says it did not export, in Japanese, and '
+      'keeps the selection', (tester) async {
     await tester.pumpWidget(
       _app(
         [_taberu],
+        locale: const Locale('ja'),
         overrides: [
           _exportAnswering([Exception('disk full')], []),
         ],
@@ -181,8 +188,48 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await _selectAndExport(tester);
-    expect(find.text('Error: Exception: disk full'), findsOneWidget);
-    expect(find.text('1 selected'), findsOneWidget);
+    await tester.tap(find.byTooltip(_ja.vocabularyExportCsvTooltip));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip(_ja.vocabularyExportSelectedTooltip));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Exception'), findsNothing);
+    expect(find.textContaining('disk full'), findsNothing);
+    expect(find.text(_ja.commonExportFailed(format: 'CSV')), findsOneWidget);
+    expect(find.text(_ja.vocabularySelectedCount(count: 1)), findsOneWidget);
+  });
+
+  testWidgets('a word list that cannot be read says so in Japanese', (
+    tester,
+  ) async {
+    final logs = <String>[];
+    usageLogSinkOverride = (message, _, {required isWarning}) =>
+        logs.add(message);
+    usageAnalyticsSinkOverride = (_, _) {};
+    addTearDown(() {
+      usageLogSinkOverride = null;
+      usageAnalyticsSinkOverride = null;
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vocabularyListProvider.overrideWith(
+            (ref) =>
+                Stream.error(Exception('database disk image is malformed')),
+          ),
+        ],
+        child: buildLocalizedTestApp(
+          locale: const Locale('ja'),
+          home: const VocabularyScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Exception'), findsNothing);
+    expect(find.text(_ja.commonLoadFailed), findsOneWidget);
+    expect(logs, contains('vocabulary.list_load_failed'));
   });
 }

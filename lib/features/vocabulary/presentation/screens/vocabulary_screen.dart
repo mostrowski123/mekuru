@@ -10,6 +10,7 @@ import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_pro
 import 'package:mekuru/features/vocabulary/presentation/utils/vocabulary_search.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 class VocabularyScreen extends ConsumerStatefulWidget {
@@ -95,9 +96,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.commonErrorWithDetails(details: e.toString())),
-        ),
+        SnackBar(content: Text(l10n.commonExportFailed(format: 'CSV'))),
       );
     }
   }
@@ -124,7 +123,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
       body: wordsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(
-          child: Text(l10n.commonErrorWithDetails(details: err.toString())),
+          child: LoadFailedText(err, event: 'vocabulary.list_load_failed'),
         ),
         data: (words) {
           if (words.isEmpty) {
