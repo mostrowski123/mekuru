@@ -18,6 +18,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/widgets/glass_tab_bar.dart';
+import 'package:mekuru/shared/widgets/load_failed_text.dart';
 
 /// Dictionary search screen with live fuzzy search.
 ///
@@ -421,8 +422,9 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
             child: hasDictionaries.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(
-                child: Text(
-                  context.l10n.commonErrorWithDetails(details: err.toString()),
+                child: LoadFailedText(
+                  err,
+                  event: 'dictionary.list_load_failed',
                 ),
               ),
               data: (dictionaries) =>
