@@ -273,11 +273,14 @@ void main() {
       expect(find.text('EPUB exported'), findsNothing);
       expect(find.textContaining('Error'), findsNothing);
 
-      // A save that fails says so.
+      // A save that fails says so in plain words, without the error's text.
       picker.answer = PlatformException(code: 'saf_io_error', message: 'full');
       await export();
-      await pumpUntilVisible(tester, find.textContaining('saf_io_error'));
-      expect(find.textContaining('Error: '), findsOneWidget);
+      await pumpUntilVisible(
+        tester,
+        find.text("Couldn't export the EPUB. Try again."),
+      );
+      expect(find.textContaining('saf_io_error'), findsNothing);
       await pumpUntilDeleted(tester, picker.path!);
     });
 
