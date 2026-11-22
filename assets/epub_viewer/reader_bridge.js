@@ -348,6 +348,8 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
       _pendingNavChars = false;
       reportPageChars(start.cfi, endCfi);
     }
+    // A page shown by a re-layout, not by the reader moving.
+    if (_holdPlace) _redrawMarksSoon();
   });
 
   rendition.on('displayError', function (err) {
@@ -1366,13 +1368,30 @@ function _furiganaApplied(doc) {
 
 // Generated furigana replaces the text nodes an annotation was drawn on,
 // which empties its range: draw the section's annotations (highlights and
-// underlines) again once the ruby has gone in or out.
+// underlines) again once the ruby has gone in or out. With no [doc], those
+// of every section on screen.
 function _refreshAnnotations(doc) {
   if (!rendition) return;
   rendition.views().forEach(function (view) {
-    if (!view.contents || view.contents.document !== doc) return;
+    if (!view.contents || (doc && view.contents.document !== doc)) return;
     rendition.annotations.clear(view);
     rendition.annotations.inject(view);
+  });
+}
+
+// epub.js places a view's highlights and underlines as it resizes the view.
+// In WKWebView vertical text flows again after that, and the marks stayed
+// where the text had been until the book was reopened (1.74.5 too). Once a
+// re-layout has shown its page, draw them again from where the text is now.
+var _marksRedraw = false;
+function _redrawMarksSoon() {
+  if (_marksRedraw) return;
+  _marksRedraw = true;
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      _marksRedraw = false;
+      _refreshAnnotations();
+    });
   });
 }
 

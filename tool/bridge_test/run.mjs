@@ -716,6 +716,79 @@ const checks = [
     }
   }],
 
+  ['after the phone is turned and turned back, a highlight is drawn on its text', async () => {
+    // A re-layout draws the marks again once its page is shown
+    // (_redrawMarksSoon()). In WKWebView they were left where vertical text
+    // had been before it flowed again; Chrome never showed that, so here
+    // this guards the redraw itself: one mark, on the text.
+    const p = await openBook('book.epub', `"", "rtl", "paginated", false, "28", "#000000", null, 28, 28, false, "book", 1, null`);
+    try {
+      await turned(p, 'toCfi("c2.xhtml")');
+      await turned(p, 'next()');
+      const cfi = await p.evaluate(() => {
+        const views = [];
+        rendition.views().forEach((v) => views.push(v));
+        const view = views.find((v) => v.contents);
+        const doc = view.contents.document;
+        const frame = view.iframe.getBoundingClientRect();
+        const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+        // Two characters well inside the page on screen; a paragraph can
+        // start on the page before.
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          for (let at = 0; at + 2 <= node.data.length; at++) {
+            if (!node.data.slice(at, at + 2).trim()) continue;
+            const range = doc.createRange();
+            range.setStart(node, at);
+            range.setEnd(node, at + 2);
+            const r = range.getBoundingClientRect();
+            const [x, y] = [r.left + frame.left, r.top + frame.top];
+            if (x > 40 && x < innerWidth - 40 && y > 80 && y < innerHeight - 80) {
+              const cfi = view.contents.cfiFromRange(range);
+              addHighlight(cfi, '#FFEB3B', '0.4', range.toString());
+              return cfi;
+            }
+          }
+        }
+        return null;
+      });
+      expect(cfi, 'no text on the page to highlight');
+      // Each mark's box against its text's, in the window's coordinates.
+      const drawn = () => p.evaluate((cfi) => {
+        const out = [];
+        rendition.views().forEach((view) => {
+          if (!view.contents) return;
+          const marks = Object.values(view.highlights || {});
+          if (marks.length === 0) return;
+          const frame = view.iframe.getBoundingClientRect();
+          const text = view.contents.range(cfi).getBoundingClientRect();
+          for (const { mark } of marks) {
+            const box = mark.element.getBoundingClientRect();
+            out.push([
+              Math.round(box.left - text.left - frame.left),
+              Math.round(box.top - text.top - frame.top),
+              Math.round(box.width - text.width),
+              Math.round(box.height - text.height),
+            ]);
+          }
+        });
+        return out;
+      }, cfi);
+      const onText = (boxes) => boxes.length === 1 && boxes[0].every((d) => Math.abs(d) <= 1);
+      const wrong = [];
+      for (const [step, size] of [['as drawn', null], ['sideways', [800, 412]], ['upright again', [412, 800]]]) {
+        if (size) {
+          await p.setViewportSize({ width: size[0], height: size[1] });
+          await settle(p);
+        }
+        const boxes = await drawn();
+        if (!onText(boxes)) wrong.push(`${step}: ${JSON.stringify(boxes)}`);
+      }
+      expect(wrong.length === 0, `marks off their text (dx, dy, dw, dh): ${wrong.join('; ')}`);
+    } finally {
+      await p.close();
+    }
+  }],
+
   ['a first chapter named in Japanese opens from the chapter list, a link and a saved place', async () => {
     // japanese_name.epub (make_epub.py): chapter 1 is 第一章.xhtml, and
     // chapter 2 links to it as written and percent-encoded.
