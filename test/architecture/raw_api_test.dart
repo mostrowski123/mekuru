@@ -182,7 +182,6 @@ final _rows = [
       'lib/features/manga/presentation/screens/manga_reader_screen.dart': 1,
       // Signed-in cloud OCR only; no test reaches it yet.
       'lib/features/manga/presentation/screens/pro_upgrade_screen.dart': 1,
-      'lib/features/reader/presentation/screens/reader_screen.dart': 1,
       'lib/features/settings/presentation/widgets/ocr_server_url_dialog.dart':
           1,
     },
