@@ -397,7 +397,7 @@ void main() {
             ].join('\n'),
   };
 
-  test('scans the hand-written Dart files under lib', () {
+  test('scans the hand-written Dart files under lib and test', () {
     expect(sources, isNotEmpty);
   });
 

@@ -383,7 +383,8 @@ void main() {
     });
 
     test(
-      'malformed percent-escape manifest href is skipped, not fatal',
+      'still rewrites a chapter when another manifest href does not '
+          'percent-decode',
       () async {
         final opf = _contentOpf.replaceFirst(
           '<manifest>',
