@@ -4613,6 +4613,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Permintaan tidak dapat diselesaikan. Coba lagi.';
 
   @override
+  String get serverErrorSecureConnection =>
+      'Tidak dapat membuat koneksi aman ke server. Jika server tidak memakai https, awali alamatnya dengan http://.';
+
+  @override
   String get dictionaryImportUnreadable =>
       'Berkas ini tidak dapat dibaca sebagai kamus. Impor kamus Yomitan (.zip) atau koleksi (.json).';
 

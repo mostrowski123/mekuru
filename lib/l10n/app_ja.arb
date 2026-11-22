@@ -1209,6 +1209,7 @@
   "localOcrCouldNotContinue": "OCRを続行できませんでした。もう一度お試しください。",
   "serverErrorUnreadable": "サーバーから、Mekuruが読み取れない応答が返されました。URLがお使いのKomgaまたはKavitaサーバーを指しているか確認してください。",
   "serverErrorUnknown": "リクエストを完了できませんでした。もう一度お試しください。",
+  "serverErrorSecureConnection": "サーバーと安全に接続できませんでした。サーバーが https を使っていない場合は、アドレスを http:// で始めてください。",
   "dictionaryImportUnreadable": "このファイルは辞書として読み取れませんでした。Yomitan辞書（.zip）またはコレクション（.json）をインポートしてください。",
   "dictionaryImportFailed": "辞書をインポートできませんでした。もう一度お試しください。",
   "settingsLowRamModeTitle": "省メモリモード",

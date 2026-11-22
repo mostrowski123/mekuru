@@ -7424,6 +7424,12 @@ abstract class AppLocalizations {
   /// **'The request couldn\'t be completed. Try again.'**
   String get serverErrorUnknown;
 
+  /// Why a Komga or Kavita request failed when the secure (TLS) connection could not be set up and the certificate is not the problem: most often the address says https for a server that only speaks http. Shown on its own or as {error} in serverSettingsLinkFailed and serverDialogConnectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t make a secure connection to the server. If it doesn\'t use https, start its address with http://.'**
+  String get serverErrorSecureConnection;
+
   /// Dictionary Manager banner when a file the user imported is not a dictionary Mekuru can read. Matches dictionaryManagerEmptySubtitle's names for the two formats.
   ///
   /// In en, this message translates to:

@@ -4587,6 +4587,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The request couldn\'t be completed. Try again.';
 
   @override
+  String get serverErrorSecureConnection =>
+      'Couldn\'t make a secure connection to the server. If it doesn\'t use https, start its address with http://.';
+
+  @override
   String get dictionaryImportUnreadable =>
       'This file couldn\'t be read as a dictionary. Import a Yomitan dictionary (.zip) or collection (.json).';
 

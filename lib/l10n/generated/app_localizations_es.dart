@@ -4645,6 +4645,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo completar la solicitud. Vuelve a intentarlo.';
 
   @override
+  String get serverErrorSecureConnection =>
+      'No se pudo establecer una conexión segura con el servidor. Si no usa https, empieza su dirección con http://.';
+
+  @override
   String get dictionaryImportUnreadable =>
       'Este archivo no se pudo leer como diccionario. Importa un diccionario Yomitan (.zip) o una colección (.json).';
 

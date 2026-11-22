@@ -4465,6 +4465,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get serverErrorUnknown => 'リクエストを完了できませんでした。もう一度お試しください。';
 
   @override
+  String get serverErrorSecureConnection =>
+      'サーバーと安全に接続できませんでした。サーバーが https を使っていない場合は、アドレスを http:// で始めてください。';
+
+  @override
   String get dictionaryImportUnreadable =>
       'このファイルは辞書として読み取れませんでした。Yomitan辞書（.zip）またはコレクション（.json）をインポートしてください。';
 

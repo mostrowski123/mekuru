@@ -4368,6 +4368,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serverErrorUnknown => '无法完成请求。请重试。';
 
   @override
+  String get serverErrorSecureConnection =>
+      '无法与服务器建立安全连接。如果服务器未使用 https，请让地址以 http:// 开头。';
+
+  @override
   String get dictionaryImportUnreadable =>
       '无法将此文件读取为词典。请导入 Yomitan 词典（.zip）或词典集合（.json）。';
 
@@ -9037,6 +9041,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get serverErrorUnknown => '无法完成请求。请重试。';
+
+  @override
+  String get serverErrorSecureConnection =>
+      '无法与服务器建立安全连接。如果服务器未使用 https，请让地址以 http:// 开头。';
 
   @override
   String get dictionaryImportUnreadable =>

@@ -3228,6 +3228,7 @@
   "localOcrCouldNotContinue": "OCR tidak dapat dilanjutkan. Coba lagi.",
   "serverErrorUnreadable": "Server mengirim jawaban yang tidak dapat dibaca Mekuru. Pastikan URL mengarah ke server Komga atau Kavita Anda.",
   "serverErrorUnknown": "Permintaan tidak dapat diselesaikan. Coba lagi.",
+  "serverErrorSecureConnection": "Tidak dapat membuat koneksi aman ke server. Jika server tidak memakai https, awali alamatnya dengan http://.",
   "dictionaryImportUnreadable": "Berkas ini tidak dapat dibaca sebagai kamus. Impor kamus Yomitan (.zip) atau koleksi (.json).",
   "dictionaryImportFailed": "Kamus tidak dapat diimpor. Coba lagi.",
   "settingsLowRamModeTitle": "Mode RAM rendah",

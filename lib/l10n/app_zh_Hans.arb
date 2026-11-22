@@ -3228,6 +3228,7 @@
   "localOcrCouldNotContinue": "OCR 无法继续。请重试。",
   "serverErrorUnreadable": "服务器返回了 Mekuru 无法读取的响应。请确认 URL 指向您的 Komga 或 Kavita 服务器。",
   "serverErrorUnknown": "无法完成请求。请重试。",
+  "serverErrorSecureConnection": "无法与服务器建立安全连接。如果服务器未使用 https，请让地址以 http:// 开头。",
   "dictionaryImportUnreadable": "无法将此文件读取为词典。请导入 Yomitan 词典（.zip）或词典集合（.json）。",
   "dictionaryImportFailed": "无法导入词典。请重试。",
   "settingsLowRamModeTitle": "低内存模式",

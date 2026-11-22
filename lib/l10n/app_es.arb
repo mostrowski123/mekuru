@@ -3228,6 +3228,7 @@
   "localOcrCouldNotContinue": "El OCR no pudo continuar. Vuelve a intentarlo.",
   "serverErrorUnreadable": "El servidor envió una respuesta que Mekuru no puede leer. Asegúrate de que la URL apunte a tu servidor Komga o Kavita.",
   "serverErrorUnknown": "No se pudo completar la solicitud. Vuelve a intentarlo.",
+  "serverErrorSecureConnection": "No se pudo establecer una conexión segura con el servidor. Si no usa https, empieza su dirección con http://.",
   "dictionaryImportUnreadable": "Este archivo no se pudo leer como diccionario. Importa un diccionario Yomitan (.zip) o una colección (.json).",
   "dictionaryImportFailed": "No se pudo importar el diccionario. Vuelve a intentarlo.",
   "settingsLowRamModeTitle": "Modo de poca RAM",
