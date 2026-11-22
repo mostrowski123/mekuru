@@ -159,10 +159,6 @@ final _rows = [
         "widget with its own context's l10n, as DownloadOutcomeText does "
         '(lib/shared/widgets/download_status.dart)',
     within: '/providers/',
-    counts: {
-      // A native job's error code, or an exception's text.
-      'lib/features/manga/presentation/providers/local_ocr_providers.dart': 1,
-    },
   ),
   // The uses left in files other work held when this row came in.
   _Row(

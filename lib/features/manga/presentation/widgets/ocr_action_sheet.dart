@@ -338,12 +338,7 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
       if (started && mounted) Navigator.pop(context);
     } catch (error) {
       if (mounted) {
-        setState(
-          () => _error = localOcrReason(
-            context,
-            error is PlatformException ? error.code : '$error',
-          ),
-        );
+        setState(() => _error = localOcrReason(context, error));
       }
     } finally {
       if (mounted) setState(() => _busy = false);

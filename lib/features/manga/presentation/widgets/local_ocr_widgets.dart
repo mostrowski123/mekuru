@@ -12,8 +12,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/services/ocr_failure.dart';
 import '../providers/local_ocr_providers.dart';
 
-String localOcrReason(BuildContext context, String? code) {
+/// Why on-device OCR stopped or did not start, in the user's language.
+/// [failure] is a code (a job's reason, a model's error) or what a step threw:
+/// a native failure is worded by its [PlatformException.code].
+String localOcrReason(BuildContext context, Object? failure) {
   final l = context.l10n;
+  final code = failure is PlatformException ? failure.code : failure;
   return switch (code) {
     null || '' => '',
     'interrupted' || 'stopped' => l.localOcrInterrupted,
@@ -57,11 +61,12 @@ String localOcrReason(BuildContext context, String? code) {
     'download_changed' ||
     'invalid_content_range' => l.localOcrDownloadDamaged,
     'model_install_failed' => l.localOcrModelInstallFailed,
-    final http when http.startsWith('download_http_') => l.serverErrorStatus(
-      status: int.tryParse(http.substring('download_http_'.length)) ?? 0,
-    ),
-    // A code with no words of its own, or an exception's text (a native
-    // failure's message, a Dart error): never shown.
+    final String http when http.startsWith('download_http_') =>
+      l.serverErrorStatus(
+        status: int.tryParse(http.substring('download_http_'.length)) ?? 0,
+      ),
+    // A code with no words of its own, a Dart error, or an exception's text
+    // (a native failure's message): never shown.
     _ => l.localOcrCouldNotContinue,
   };
 }
@@ -187,16 +192,9 @@ Future<void> runLocalOcrAction(
     // The snack bar may not show what failed.
     logFailure('ocr.local_action_failed', error);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            localOcrReason(
-              context,
-              error is PlatformException ? error.code : '$error',
-            ),
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(localOcrReason(context, error))));
     }
   }
 }
@@ -587,12 +585,7 @@ class _LocalOcrDownloadTileState extends ConsumerState<LocalOcrDownloadTile> {
             child: Text(
               localOcrReason(
                 context,
-                state.hasError
-                    ? switch (state.error) {
-                        final PlatformException e => e.code,
-                        final e => '$e',
-                      }
-                    : model!.error,
+                state.hasError ? state.error : model!.error,
               ),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,

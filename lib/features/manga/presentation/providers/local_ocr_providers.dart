@@ -1,6 +1,5 @@
 // ignore_for_file: discarded_futures
 import 'dart:async';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import '../../data/services/local_ocr_client.dart';
@@ -94,7 +93,10 @@ class LocalOcrLaunch {
   final OcrJobSpec spec;
   final bool cancelling;
   final OcrJobProgress? job;
-  final String? error;
+
+  /// What the launch or its cancel threw, worded where it is shown
+  /// (localOcrReason).
+  final Object? error;
   final DateTime? seededAt;
   const LocalOcrLaunch(
     this.spec, {
@@ -137,13 +139,7 @@ class LocalOcrLaunches extends Notifier<Map<int, LocalOcrLaunch>> {
       }
       ref.invalidate(localOcrJobsProvider);
     } catch (error) {
-      state = {
-        ...state,
-        id: LocalOcrLaunch(
-          spec,
-          error: error is PlatformException ? error.code : error.toString(),
-        ),
-      };
+      state = {...state, id: LocalOcrLaunch(spec, error: error)};
     }
   }
 
@@ -180,11 +176,7 @@ class LocalOcrLaunches extends Notifier<Map<int, LocalOcrLaunch>> {
       } catch (error) {
         state = {
           ...state,
-          bookId: LocalOcrLaunch(
-            launch.spec,
-            job: launch.job,
-            error: error is PlatformException ? error.code : error.toString(),
-          ),
+          bookId: LocalOcrLaunch(launch.spec, job: launch.job, error: error),
         };
       }
     }

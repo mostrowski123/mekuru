@@ -140,12 +140,10 @@ void main() {
       final pending = controller.start(spec, () async {});
       await controller.start(spec, () async {});
       expect(client.starts, 1);
-      client.created.completeError(StateError('could not start'));
+      final failure = StateError('could not start');
+      client.created.completeError(failure);
       await pending;
-      expect(
-        container.read(localOcrLaunchesProvider)[1]!.error,
-        contains('could not start'),
-      );
+      expect(container.read(localOcrLaunchesProvider)[1]!.error, same(failure));
     },
   );
   test(
