@@ -16,6 +16,7 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dar
     show DictionaryParseException;
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
+import 'package:mekuru/shared/downloads/download_tile_state.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/settings/presentation/widgets/jmdict_download_tile.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
@@ -81,8 +82,8 @@ class _Tile {
   final Future<void> Function(ProviderContainer c) delete;
 }
 
-_Shown _view(FixedDictionaryState s) => (
-  installed: s.isImported,
+_Shown _view(DownloadTileState s) => (
+  installed: s.isInstalled,
   downloading: s.isDownloading,
   deleting: s.isDeleting,
   progress: s.isDownloading ? s.progress : null,
@@ -429,6 +430,6 @@ void main() {
       'github.com/yomidevs/jmdict-yomitan/releases/latest/download/'
           'JMdict_english_with_examples.zip',
     ]);
-    expect(container.read(_jmdict).isImported, isTrue);
+    expect(container.read(_jmdict).isInstalled, isTrue);
   });
 }

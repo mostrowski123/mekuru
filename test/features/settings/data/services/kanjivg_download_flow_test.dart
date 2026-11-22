@@ -10,6 +10,7 @@ import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/shared/downloads/download_tile_state.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 import 'package:path/path.dart' as p;
@@ -70,7 +71,7 @@ void main() {
   File inRoot(String path) => File(p.join(root.path, path));
   File archive() => inRoot('kanjivg_download.zip');
   File marker() => inRoot(p.join('kanjivg', '.kanjivg_complete'));
-  KanjiVgState tile() => container.read(kanjiVgProvider);
+  DownloadTileState tile() => container.read(kanjiVgProvider);
 
   /// What the last download failed with.
   Object? failure() {
@@ -111,7 +112,7 @@ void main() {
     expect(progress.first, 0.0);
     expect(progress, orderedEquals([...progress]..sort()));
     expect(progress, containsAll([0.9, 1.0]));
-    expect(tile().isDownloaded, isTrue);
+    expect(tile().isInstalled, isTrue);
     expect(tile().isDownloading, isFalse);
     expect(tile().fileCount, 2);
     expect(tile().outcome, (action: TileAction.download, error: null));
@@ -124,14 +125,14 @@ void main() {
     final relaunched = ProviderContainer();
     addTearDown(relaunched.dispose);
     await relaunched.read(kanjiVgProvider.notifier).checkStatus();
-    expect(relaunched.read(kanjiVgProvider).isDownloaded, isTrue);
+    expect(relaunched.read(kanjiVgProvider).isInstalled, isTrue);
     expect(relaunched.read(kanjiVgProvider).fileCount, 2);
   });
 
   test('a failed download says why and leaves nothing installed', () async {
     await download();
 
-    expect(tile().isDownloaded, isFalse);
+    expect(tile().isInstalled, isFalse);
     expect(tile().isDownloading, isFalse);
     expect(
       failure(),
@@ -140,7 +141,7 @@ void main() {
     expect(marker().existsSync(), isFalse);
     expect(archive().existsSync(), isFalse);
     await container.read(kanjiVgProvider.notifier).checkStatus();
-    expect(tile().isDownloaded, isFalse);
+    expect(tile().isInstalled, isFalse);
   });
 
   test('a transfer cut off midway leaves no partial archive', () async {
@@ -148,7 +149,7 @@ void main() {
 
     await download();
 
-    expect(tile().isDownloaded, isFalse);
+    expect(tile().isInstalled, isFalse);
     expect(failure(), isA<HttpException>());
     expect(archive().existsSync(), isFalse);
     expect(marker().existsSync(), isFalse);
@@ -162,12 +163,12 @@ void main() {
     await download();
 
     // Was: downloaded, 0 files, and the installed marker written.
-    expect(tile().isDownloaded, isFalse);
+    expect(tile().isInstalled, isFalse);
     expect(failure(), isA<FormatException>());
     expect(marker().existsSync(), isFalse);
     expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
     await container.read(kanjiVgProvider.notifier).checkStatus();
-    expect(tile().isDownloaded, isFalse);
+    expect(tile().isInstalled, isFalse);
   });
 
   test('an archive that breaks partway through its SVGs leaves none of '
@@ -183,12 +184,12 @@ void main() {
 
     await download();
 
-    expect(tile().isDownloaded, isFalse);
+    expect(tile().isInstalled, isFalse);
     expect(failure(), isA<FormatException>());
     // Was: 04e00.svg left in the folder, without the marker.
     expect(root.listSync(recursive: true).whereType<File>(), isEmpty);
     await container.read(kanjiVgProvider.notifier).checkStatus();
-    expect(tile().isDownloaded, isFalse);
+    expect(tile().isInstalled, isFalse);
   });
 
   test('an install already there survives a download that breaks partway, '
@@ -226,7 +227,7 @@ void main() {
 
     expect(http.requests, isEmpty);
     expect(tile().isDownloading, isFalse);
-    expect(tile().isDownloaded, isFalse);
+    expect(tile().isInstalled, isFalse);
     expect(
       failure(),
       isA<InsufficientSpaceException>().having(
@@ -249,7 +250,7 @@ void main() {
     mockWifiConnected(false);
     await done;
 
-    expect(tile().isDownloaded, isFalse);
+    expect(tile().isInstalled, isFalse);
     expect(failure(), isA<WifiLostException>());
     expect(marker().existsSync(), isFalse);
     expect(archive().existsSync(), isFalse);

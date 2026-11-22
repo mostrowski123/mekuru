@@ -24,6 +24,7 @@ import 'package:mekuru/features/settings/presentation/providers/enhanced_furigan
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
+import 'package:mekuru/shared/widgets/download_tile.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/features/word_audio/presentation/widgets/word_audio_download_tile.dart';
@@ -67,6 +68,15 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     final enhancedFuriganaState = ref.watch(enhancedFuriganaDictProvider);
     final lowRamMode = ref.watch(lowRamModeProvider);
     final theme = Theme.of(context);
+    // Installed but switched off in the dictionary list: it ranks nothing,
+    // and a tap goes where it is switched on.
+    final jpdbOff =
+        jpdbFreqState.isInstalled &&
+        ref.watch(
+          dictionariesProvider.select(
+            (d) => JpdbFreqDownloadService.isSwitchedOffIn(d.value ?? []),
+          ),
+        );
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.downloadsTitle)),
@@ -81,7 +91,22 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           const CatalogDictionaryTile(entry: CatalogDictionary.jitendex),
 
           // KANJIDIC
-          _KanjidicTile(state: kanjidicState, theme: theme),
+          DownloadTile(
+            provider: _kanjidic,
+            icon: Icons.font_download_outlined,
+            title: l10n.downloadsKanjidicTitle,
+            subtitle: kanjidicState.isInstalled
+                ? l10n.downloadsKanjidicDownloaded
+                : l10n.downloadsKanjidicDescription,
+            onDownload: (context) => askThenDownload(
+              context,
+              _kanjidicSize,
+              ref.read(_kanjidic.notifier).download,
+            ),
+            deleteTooltip: l10n.downloadsDeleteKanjidicTooltip,
+            deleteTitle: l10n.downloadsDeleteKanjidicTitle,
+            deleteBody: l10n.downloadsDeleteKanjidicBody,
+          ),
           if (kanjidicState.isDownloading)
             DictionaryDownloadProgress(progress: kanjidicState.progress),
           if (kanjidicState.outcome case final outcome?)
@@ -116,7 +141,26 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           SettingsSectionHeader(title: l10n.downloadsSectionAssets),
 
           // KanjiVG
-          _KanjiVgTile(state: kanjiVgState, theme: theme),
+          DownloadTile(
+            provider: kanjiVgProvider,
+            icon: Icons.brush_outlined,
+            title: l10n.downloadsKanjiStrokeOrderTitle,
+            subtitle: kanjiVgState.isInstalled
+                ? l10n.downloadsKanjiStrokeOrderDownloaded(
+                    count: kanjiVgState.fileCount,
+                  )
+                : l10n.downloadsKanjiStrokeOrderDescription,
+            onDownload: (context) => askThenDownload(
+              context,
+              _kanjiVgSize,
+              ref.read(kanjiVgProvider.notifier).download,
+              body: (size) => context.l10n
+                  .downloadsKanjiStrokeOrderMobileDataBody(size: size),
+            ),
+            deleteTooltip: l10n.downloadsDeleteKanjiDataTooltip,
+            deleteTitle: l10n.downloadsDeleteKanjiDataTitle,
+            deleteBody: l10n.downloadsDeleteKanjiDataBody,
+          ),
           if (kanjiVgState.isDownloading)
             DownloadProgress(
               progress: kanjiVgState.progress,
@@ -140,7 +184,32 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           const SizedBox(height: 8),
 
           // JPDB Frequency
-          _JpdbFreqTile(state: jpdbFreqState, theme: theme),
+          DownloadTile(
+            provider: _jpdb,
+            icon: Icons.bar_chart_outlined,
+            title: l10n.downloadsStarterPackWordFrequency,
+            subtitle: jpdbOff
+                ? l10n.downloadsWordFrequencySwitchedOff
+                : jpdbFreqState.isInstalled
+                ? l10n.downloadsWordFrequencyDownloaded
+                : l10n.downloadsWordFrequencyDescription,
+            onTap: jpdbOff
+                ? () => Navigator.of(context).push(
+                    namedRoute(
+                      'dictionary_manager',
+                      (_) => const DictionaryManagerScreen(),
+                    ),
+                  )
+                : null,
+            onDownload: (context) => askThenDownload(
+              context,
+              _jpdbSize,
+              ref.read(_jpdb.notifier).download,
+            ),
+            deleteTooltip: l10n.downloadsDeleteFrequencyDataTooltip,
+            deleteTitle: l10n.downloadsDeleteFrequencyDataTitle,
+            deleteBody: l10n.downloadsDeleteFrequencyDataBody,
+          ),
           if (jpdbFreqState.isDownloading)
             DictionaryDownloadProgress(progress: jpdbFreqState.progress),
           if (jpdbFreqState.outcome case final outcome?)
@@ -156,8 +225,32 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Enhanced Furigana Dictionary (UniDic-lite, optional download)
-          _EnhancedFuriganaDictTile(state: enhancedFuriganaState, theme: theme),
+          // Enhanced Furigana Dictionary (UniDic-lite, optional download).
+          // Low RAM mode never loads it (MeCab stays on IPADIC). Its files
+          // can still be deleted.
+          DownloadTile(
+            provider: enhancedFuriganaDictProvider,
+            icon: Icons.spellcheck_outlined,
+            title: l10n.downloadsEnhancedFuriganaTitle,
+            subtitle: lowRamMode
+                ? l10n.lowRamModeOffHere
+                : enhancedFuriganaState.isInstalled
+                ? l10n.downloadsEnhancedFuriganaInstalled
+                : l10n.downloadsEnhancedFuriganaDescription,
+            enabled: !lowRamMode,
+            // No confirmation of its own: the subtitle already gives both
+            // sizes.
+            onDownload: lowRamMode
+                ? null
+                : (context) => askThenDownload(
+                    context,
+                    _enhancedFuriganaSize,
+                    ref.read(enhancedFuriganaDictProvider.notifier).download,
+                  ),
+            deleteTooltip: l10n.downloadsEnhancedFuriganaRemoveTooltip,
+            deleteTitle: l10n.downloadsEnhancedFuriganaConfirmRemoveTitle,
+            deleteBody: l10n.downloadsEnhancedFuriganaConfirmRemoveBody,
+          ),
           // Kill-switch: lets the user disable the enhanced dictionary
           // without deleting the ~250 MB download. Useful as a recovery step
           // if word tapping ever stops working on a particular device.
@@ -474,363 +567,3 @@ const _kanjidicSize = '0.7 MB';
 const _jpdbSize = '6 MB';
 const _kanjiVgSize = '22 MB';
 const _enhancedFuriganaSize = '45 MB';
-
-class _KanjiVgTile extends ConsumerWidget {
-  const _KanjiVgTile({required this.state, required this.theme});
-
-  final KanjiVgState state;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final subtitle = state.isDownloaded
-        ? l10n.downloadsKanjiStrokeOrderDownloaded(count: state.fileCount)
-        : l10n.downloadsKanjiStrokeOrderDescription;
-
-    return ListTile(
-      leading: Icon(Icons.brush_outlined, color: theme.colorScheme.primary),
-      title: Text(l10n.downloadsKanjiStrokeOrderTitle),
-      subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref),
-    );
-  }
-
-  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
-    if (state.isDownloading || state.isDeleting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isDownloaded) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: context.l10n.downloadsDeleteKanjiDataTooltip,
-        onPressed: () => _confirmDelete(context),
-      );
-    }
-
-    return FilledButton.tonal(
-      onPressed: () => askThenDownload(
-        context,
-        _kanjiVgSize,
-        ref.read(kanjiVgProvider.notifier).download,
-        body: (size) =>
-            context.l10n.downloadsKanjiStrokeOrderMobileDataBody(size: size),
-      ),
-      child: Text(context.l10n.commonDownload),
-    );
-  }
-
-  void _confirmDelete(BuildContext context) {
-    // Resolved before the dialog opens: the tile can unmount while it's up.
-    final container = ProviderScope.containerOf(context, listen: false);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.downloadsDeleteKanjiDataTitle),
-        content: Text(ctx.l10n.downloadsDeleteKanjiDataBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(ctx.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              container.read(kanjiVgProvider.notifier).delete();
-            },
-            child: Text(
-              ctx.l10n.commonDelete,
-              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _JpdbFreqTile extends ConsumerWidget {
-  const _JpdbFreqTile({required this.state, required this.theme});
-
-  final FixedDictionaryState state;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    // Installed but switched off in the dictionary list: it ranks nothing,
-    // and a tap goes where it is switched on.
-    final off =
-        state.isImported &&
-        ref.watch(
-          dictionariesProvider.select(
-            (d) => JpdbFreqDownloadService.isSwitchedOffIn(d.value ?? []),
-          ),
-        );
-    final subtitle = off
-        ? l10n.downloadsWordFrequencySwitchedOff
-        : state.isImported
-        ? l10n.downloadsWordFrequencyDownloaded
-        : l10n.downloadsWordFrequencyDescription;
-
-    return ListTile(
-      leading: Icon(Icons.bar_chart_outlined, color: theme.colorScheme.primary),
-      title: Text(l10n.downloadsStarterPackWordFrequency),
-      subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref),
-      onTap: off
-          ? () => Navigator.of(context).push(
-              namedRoute(
-                'dictionary_manager',
-                (_) => const DictionaryManagerScreen(),
-              ),
-            )
-          : null,
-    );
-  }
-
-  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
-    if (state.isDownloading || state.isDeleting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isImported) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: context.l10n.downloadsDeleteFrequencyDataTooltip,
-        onPressed: () => _confirmDelete(context),
-      );
-    }
-
-    return FilledButton.tonal(
-      onPressed: () => askThenDownload(
-        context,
-        _jpdbSize,
-        ref.read(_jpdb.notifier).download,
-      ),
-      child: Text(context.l10n.commonDownload),
-    );
-  }
-
-  void _confirmDelete(BuildContext context) {
-    // Resolved before the dialog opens: the tile can unmount while it's up.
-    final container = ProviderScope.containerOf(context, listen: false);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.downloadsDeleteFrequencyDataTitle),
-        content: Text(ctx.l10n.downloadsDeleteFrequencyDataBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(ctx.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              container.read(_jpdb.notifier).delete();
-            },
-            child: Text(
-              ctx.l10n.commonDelete,
-              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _KanjidicTile extends ConsumerWidget {
-  const _KanjidicTile({required this.state, required this.theme});
-
-  final FixedDictionaryState state;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final subtitle = state.isImported
-        ? l10n.downloadsKanjidicDownloaded
-        : l10n.downloadsKanjidicDescription;
-
-    return ListTile(
-      leading: Icon(
-        Icons.font_download_outlined,
-        color: theme.colorScheme.primary,
-      ),
-      title: Text(l10n.downloadsKanjidicTitle),
-      subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref),
-    );
-  }
-
-  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
-    if (state.isDownloading || state.isDeleting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isImported) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: context.l10n.downloadsDeleteKanjidicTooltip,
-        onPressed: () => _confirmDelete(context),
-      );
-    }
-
-    return FilledButton.tonal(
-      onPressed: () => askThenDownload(
-        context,
-        _kanjidicSize,
-        ref.read(_kanjidic.notifier).download,
-      ),
-      child: Text(context.l10n.commonDownload),
-    );
-  }
-
-  void _confirmDelete(BuildContext context) {
-    // Resolved before the dialog opens: the tile can unmount while it's up.
-    final container = ProviderScope.containerOf(context, listen: false);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.downloadsDeleteKanjidicTitle),
-        content: Text(ctx.l10n.downloadsDeleteKanjidicBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(ctx.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              container.read(_kanjidic.notifier).delete();
-            },
-            child: Text(
-              ctx.l10n.commonDelete,
-              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EnhancedFuriganaDictTile extends ConsumerWidget {
-  const _EnhancedFuriganaDictTile({required this.state, required this.theme});
-
-  final EnhancedFuriganaDictState state;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    // Low RAM mode never loads it (MeCab stays on IPADIC). Its files can
-    // still be deleted.
-    final lowRamMode = ref.watch(lowRamModeProvider);
-    final subtitle = lowRamMode
-        ? l10n.lowRamModeOffHere
-        : state.isInstalled
-        ? l10n.downloadsEnhancedFuriganaInstalled
-        : l10n.downloadsEnhancedFuriganaDescription;
-
-    return ListTile(
-      enabled: !lowRamMode,
-      leading: Icon(
-        Icons.spellcheck_outlined,
-        color: theme.colorScheme.primary,
-      ),
-      title: Text(l10n.downloadsEnhancedFuriganaTitle),
-      subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref, lowRamMode: lowRamMode),
-    );
-  }
-
-  Widget _buildTrailing(
-    BuildContext context,
-    WidgetRef ref, {
-    required bool lowRamMode,
-  }) {
-    if (state.isDownloading || state.isUninstalling) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isInstalled) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: context.l10n.downloadsEnhancedFuriganaRemoveTooltip,
-        onPressed: () => _confirmRemove(context),
-      );
-    }
-
-    // No confirmation of its own: the subtitle already gives both sizes.
-    return FilledButton.tonal(
-      onPressed: lowRamMode
-          ? null
-          : () => askThenDownload(
-              context,
-              _enhancedFuriganaSize,
-              ref.read(enhancedFuriganaDictProvider.notifier).download,
-            ),
-      child: Text(context.l10n.commonDownload),
-    );
-  }
-
-  void _confirmRemove(BuildContext context) {
-    // Resolved before the dialog opens: the tile can unmount while it's up.
-    final container = ProviderScope.containerOf(context, listen: false);
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.downloadsEnhancedFuriganaConfirmRemoveTitle),
-        content: Text(ctx.l10n.downloadsEnhancedFuriganaConfirmRemoveBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(ctx.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              container.read(enhancedFuriganaDictProvider.notifier).uninstall();
-            },
-            child: Text(
-              ctx.l10n.commonDelete,
-              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

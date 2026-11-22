@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/shared/downloads/download_tile_state.dart';
 import 'package:mekuru/shared/downloads/download.dart';
 
 void main() {
-  group('KanjiVgState', () {
+  group('DownloadTileState', () {
     test('default state is not downloaded, not downloading', () {
-      const state = KanjiVgState();
-      expect(state.isDownloaded, isFalse);
+      const state = DownloadTileState();
+      expect(state.isInstalled, isFalse);
       expect(state.isDownloading, isFalse);
       expect(state.isDeleting, isFalse);
       expect(state.progress, 0.0);
@@ -15,30 +15,30 @@ void main() {
     });
 
     test('copyWith preserves unmodified fields', () {
-      const state = KanjiVgState(isDownloaded: true, fileCount: 100);
+      const state = DownloadTileState(isInstalled: true, fileCount: 100);
       final updated = state.copyWith(progress: 0.5);
-      expect(updated.isDownloaded, isTrue);
+      expect(updated.isInstalled, isTrue);
       expect(updated.fileCount, 100);
       expect(updated.progress, 0.5);
     });
 
     test('copyWith can set fields to new values', () {
-      const state = KanjiVgState();
+      const state = DownloadTileState();
       final updated = state.copyWith(isDownloading: true, progress: 0.75);
       expect(updated.isDownloading, isTrue);
       expect(updated.progress, 0.75);
-      expect(updated.isDownloaded, isFalse);
+      expect(updated.isInstalled, isFalse);
     });
 
     test('copyWith clears the outcome when not passed', () {
-      const state = KanjiVgState(
+      const state = DownloadTileState(
         outcome: (action: TileAction.download, error: null),
       );
       expect(state.copyWith(isDownloading: true).outcome, isNull);
     });
 
     test('copyWith can set the outcome', () {
-      const state = KanjiVgState();
+      const state = DownloadTileState();
       final updated = state.copyWith(
         outcome: (action: TileAction.delete, error: null),
       );

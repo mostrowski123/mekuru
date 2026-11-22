@@ -61,7 +61,7 @@ Future<void> installStarterPack(BuildContext context) async {
       !container
           .read(fixedDictionaryProvider(FixedDictionary.jmdict))
           .isDownloading;
-  final needJpdb = !container.read(_jpdb).isImported;
+  final needJpdb = !container.read(_jpdb).isInstalled;
   if (!needDictionary && !needJpdb) return;
 
   // One question for both, from the caller still on screen.
@@ -134,7 +134,7 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
     );
     final jpdb = ref.watch(_jpdb);
     final hasDictionary = installed.jitendex || installed.jmdict;
-    final ready = hasDictionary && jpdb.isImported;
+    final ready = hasDictionary && jpdb.isInstalled;
     final busy = jitendex.isDownloading || jpdb.isDownloading;
     final inFlight = [
       if (jitendex.isDownloading) jitendex.progress,
@@ -182,7 +182,7 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
           const SizedBox(height: 8),
           _StatusRow(
             label: l10n.downloadsStarterPackWordFrequency,
-            isReady: jpdb.isImported && !installed.jpdbOff,
+            isReady: jpdb.isInstalled && !installed.jpdbOff,
           ),
           if (installed.jpdbOff) ...[
             const SizedBox(height: 4),

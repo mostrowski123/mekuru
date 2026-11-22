@@ -18,6 +18,7 @@ import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/downloads/download_tile_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/manga/data/services/model_download_job.dart';
@@ -246,7 +247,7 @@ void main() {
             ? FakeFixedDictionaryNotifier(
                 dictionary,
                 (_) => started.add('jpdb'),
-                initial: const FixedDictionaryState(isImported: true),
+                initial: const DownloadTileState(isInstalled: true),
               )
             : null,
       ),
@@ -307,7 +308,7 @@ void main() {
             ? FakeFixedDictionaryNotifier(
                 dictionary,
                 (_) {},
-                initial: const FixedDictionaryState(isImported: true),
+                initial: const DownloadTileState(isInstalled: true),
               )
             : null,
       ),

@@ -14,6 +14,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/shared/downloads/download.dart';
+import 'package:mekuru/shared/downloads/download_tile_state.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
@@ -36,7 +37,7 @@ class _NoStatusCheck extends EnhancedFuriganaDictNotifier {
 class _Installs extends _NoStatusCheck {
   @override
   Future<void> download(NetworkConsent network) async {
-    state = const EnhancedFuriganaDictState(
+    state = const DownloadTileState(
       isInstalled: true,
       outcome: (action: TileAction.download, error: null),
     );
@@ -60,8 +61,7 @@ void main() {
   File inRoot(String path) => File(p.join(root.path, path));
   File archive() => inRoot('unidic_lite_download.tar.gz');
   Directory installDir() => Directory(p.join(root.path, 'unidic-lite'));
-  EnhancedFuriganaDictState tile() =>
-      container.read(enhancedFuriganaDictProvider);
+  DownloadTileState tile() => container.read(enhancedFuriganaDictProvider);
 
   /// What the last download failed with.
   Object? failure() {
@@ -96,7 +96,7 @@ void main() {
   });
 
   test('a failed download says why and installs nothing', () async {
-    final seen = <EnhancedFuriganaDictState>[];
+    final seen = <DownloadTileState>[];
     container.listen(enhancedFuriganaDictProvider, (_, next) => seen.add(next));
 
     await download();
@@ -293,7 +293,7 @@ void main() {
       () => notifier.download(NetworkConsent.mobileData),
       ja.localOcrDownloadDamaged,
     );
-    await shows(notifier.uninstall, ja.downloadsEnhancedFuriganaRemoved);
+    await shows(notifier.delete, ja.downloadsEnhancedFuriganaRemoved);
   });
 
   for (final lowRamMode in [false, true]) {

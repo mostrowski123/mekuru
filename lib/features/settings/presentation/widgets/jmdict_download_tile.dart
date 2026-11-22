@@ -9,6 +9,7 @@ import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
+import 'package:mekuru/shared/widgets/download_tile.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 // Zip sizes for the mobile-data question, rounded: the JMdict English
@@ -44,14 +45,19 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          title: Text(l10n.downloadsStarterPackJmdict),
-          subtitle: Text(
-            state.isImported
-                ? l10n.downloadsJmdictDownloaded
-                : l10n.downloadsJmdictDescription,
-          ),
-          trailing: _buildTrailing(context, state),
+        DownloadTile(
+          provider: _jmdict,
+          title: l10n.downloadsStarterPackJmdict,
+          subtitle: state.isInstalled
+              ? l10n.downloadsJmdictDownloaded
+              : l10n.downloadsJmdictDescription,
+          onDownload: (context) {
+            AppHaptics.light();
+            _showVariantPicker(context);
+          },
+          deleteTooltip: l10n.downloadsDeleteJmdictTooltip,
+          deleteTitle: l10n.downloadsDeleteJmdictTitle,
+          deleteBody: l10n.downloadsDeleteJmdictBody,
         ),
         if (state.isDownloading)
           DictionaryDownloadProgress(progress: state.progress),
@@ -65,35 +71,6 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildTrailing(BuildContext context, FixedDictionaryState state) {
-    if (state.isDownloading || state.isDeleting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isImported) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: context.l10n.downloadsDeleteJmdictTooltip,
-        onPressed: () => _confirmDelete(context),
-      );
-    }
-
-    return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        _showVariantPicker(context);
-      },
-      child: Text(context.l10n.commonDownload),
     );
   }
 
@@ -158,32 +135,4 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
     size,
     (network) => container.read(_jmdict.notifier).download(network, variant),
   );
-
-  void _confirmDelete(BuildContext context) {
-    // Resolved before the dialog opens: the tile can unmount while it's up.
-    final container = ProviderScope.containerOf(context, listen: false);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.downloadsDeleteJmdictTitle),
-        content: Text(ctx.l10n.downloadsDeleteJmdictBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(ctx.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              container.read(_jmdict.notifier).delete();
-            },
-            child: Text(
-              ctx.l10n.commonDelete,
-              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

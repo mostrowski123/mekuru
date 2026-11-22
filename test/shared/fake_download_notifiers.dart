@@ -17,6 +17,7 @@ import 'package:mekuru/features/settings/data/services/yomitan_dict_download_ser
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/shared/downloads/download_tile_state.dart';
 
 import '../test_app.dart';
 
@@ -53,7 +54,7 @@ List<Override> fakeDownloadNotifierOverrides(
             (v) => started.add(
               v == null ? dictionary.name : '${dictionary.name}:${v.name}',
             ),
-            initial: FixedDictionaryState(
+            initial: DownloadTileState(
               isDownloading:
                   jmdictDownloading && dictionary == FixedDictionary.jmdict,
             ),
@@ -147,14 +148,14 @@ class FakeFixedDictionaryNotifier extends FixedDictionaryNotifier {
   FakeFixedDictionaryNotifier(
     super.dictionary,
     this.onDownload, {
-    this.initial = const FixedDictionaryState(),
+    this.initial = const DownloadTileState(),
   });
 
   final void Function(YomitanDictType? variant) onDownload;
-  final FixedDictionaryState initial;
+  final DownloadTileState initial;
 
   @override
-  FixedDictionaryState build() => initial;
+  DownloadTileState build() => initial;
 
   @override
   Future<void> checkStatus() async {}
