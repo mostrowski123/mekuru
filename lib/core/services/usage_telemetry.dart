@@ -12,6 +12,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../database/database_provider.dart';
@@ -87,9 +88,9 @@ void logUsage(String event, {Map<String, Object>? attrs}) {
 }
 
 /// Logs a failure event. The message stays the constant [event] name; the
-/// error contributes its runtime type plus its text run through
-/// [sanitizeErrorText], so failures are diagnosable without file paths or
-/// document content leaving the device.
+/// error contributes its runtime type plus its text ([_failureText]) run
+/// through [sanitizeErrorText], so failures are diagnosable without file
+/// paths or document content leaving the device.
 ///
 /// Pass [stackTrace] when the failure is a bug rather than an expected
 /// condition: it also files a Sentry issue (stack, breadcrumbs, grouping,
@@ -107,7 +108,7 @@ void logFailure(
     _emitLog(event, {
       ...?attrs,
       'error_type': error.runtimeType.toString(),
-      'error_message': sanitizeErrorText(error.toString()),
+      'error_message': sanitizeErrorText(_failureText(error)),
       if (userSide) 'user_side': true,
     }, isWarning: true);
     if (stackTrace != null && !userSide) {
@@ -115,6 +116,27 @@ void logFailure(
     }
   });
 }
+
+/// The text of [error] that telemetry keeps. An error that holds a path,
+/// a file name or a host in a field of its own sends its other fields: a
+/// file error its message and the OS's, never its path; a platform error
+/// its code, since its message and details can name a file; a socket error
+/// the OS's words, since its message names the host it looked up. Anything
+/// else sends its text.
+String _failureText(Object error) => switch (error) {
+  FileSystemException(:final message, :final osError) =>
+    osError == null
+        ? message
+        : '$message (OS Error: ${osError.message}, '
+              'errno = ${osError.errorCode})',
+  PlatformException(:final code) => code,
+  SocketException(:final osError) =>
+    osError == null
+        ? 'SocketException'
+        : 'SocketException (OS Error: ${osError.message}, '
+              'errno = ${osError.errorCode})',
+  _ => error.toString(),
+};
 
 /// A failure on the user's side, not Mekuru's (Android stopping a download
 /// in the background, too little room for one): logged, never an issue.

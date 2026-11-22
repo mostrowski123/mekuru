@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/network_status.dart';
@@ -185,6 +186,73 @@ void main() {
       expect(message, isNotNull);
       expect(message, contains('Bad state'));
       expect(message, isNot(contains('secret')));
+    });
+
+    group('sends the fields of an error that keeps a path or name apart', () {
+      String? logged(Object error) {
+        String? message;
+        usageLogSinkOverride = (_, attributes, {required isWarning}) =>
+            message = attributes['error_message']?.value as String?;
+        usageAnalyticsSinkOverride = (_, _) {};
+        logFailure('book.import_failed', error);
+        return message;
+      }
+
+      test("a file error: its message and the OS's, never its path", () {
+        const path = '/storage/emulated/0/Download/進撃の巨人 第1巻 完全版.epub';
+        for (final error in const [
+          FileSystemException(
+            'Cannot open file',
+            path,
+            OSError('No such file or directory', 2),
+          ),
+          PathNotFoundException(path, OSError('No such file or directory', 2)),
+        ]) {
+          final message = logged(error);
+          expect(
+            message,
+            '${error.message} (OS Error: No such file or directory, errno = 2)',
+          );
+          for (final part in ['進撃', '第1巻', '完全版', 'Download']) {
+            expect(message, isNot(contains(part)));
+          }
+        }
+        // dart:io puts the new path of a rename in the message itself.
+        expect(
+          logged(
+            const FileSystemException(
+              "Cannot rename file to '/data/user/0/books/秘密の本 1.epub'",
+              '/data/user/0/books/a.epub',
+            ),
+          ),
+          isNot(contains('秘密')),
+        );
+      });
+
+      test("a platform error: its code, never its message or details", () {
+        final message = logged(
+          PlatformException(
+            code: 'saf_read_failed',
+            message: 'Could not read “秘密の本 第2巻.cbz”',
+            details: 'content://com.android.providers/document/秘密の本',
+          ),
+        );
+        expect(message, 'saf_read_failed');
+      });
+
+      test("a socket error: the OS's words, never the host", () {
+        final message = logged(
+          const SocketException(
+            "Failed host lookup: 'komga.example.com'",
+            osError: OSError('No address associated with hostname', 7),
+          ),
+        );
+        expect(
+          message,
+          'SocketException (OS Error: No address associated with hostname, '
+          'errno = 7)',
+        );
+      });
     });
   });
 
