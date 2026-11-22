@@ -4372,6 +4372,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonNoSaveDialog => '此设备没有文件选择器，因此 Mekuru 无法在此将文件保存到存储中。';
 
   @override
+  String get downloadWaitingConnection => '正在等待网络连接。';
+
+  @override
+  String get downloadRetrying => '下载已中断。即将重试…';
+
+  @override
+  String get downloadsWordFrequencySwitchedOff =>
+      '已安装，但已关闭。请在“管理词典”中启用它，用于搜索排名。';
+
+  @override
   String get localOcrCouldNotContinue => 'OCR 无法继续。请重试。';
 
   @override
@@ -8975,6 +8985,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get commonNoSaveDialog => '此设备没有文件选择器，因此 Mekuru 无法在此将文件保存到存储中。';
+
+  @override
+  String get downloadWaitingConnection => '正在等待网络连接。';
+
+  @override
+  String get downloadRetrying => '下载已中断。即将重试…';
+
+  @override
+  String get downloadsWordFrequencySwitchedOff =>
+      '已安装，但已关闭。请在“管理词典”中启用它，用于搜索排名。';
 
   @override
   String get localOcrCouldNotContinue => 'OCR 无法继续。请重试。';

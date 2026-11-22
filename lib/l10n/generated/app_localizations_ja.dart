@@ -4469,6 +4469,16 @@ class AppLocalizationsJa extends AppLocalizations {
       'この端末にはファイル選択画面がないため、Mekuruはストレージにファイルを保存できません。';
 
   @override
+  String get downloadWaitingConnection => 'インターネット接続を待機中です。';
+
+  @override
+  String get downloadRetrying => 'ダウンロードが中断されました。まもなく再試行します…';
+
+  @override
+  String get downloadsWordFrequencySwitchedOff =>
+      'インストール済みですが、オフになっています。検索結果を並べ替えるには、「辞書を管理」でオンにしてください。';
+
+  @override
   String get localOcrCouldNotContinue => 'OCRを続行できませんでした。もう一度お試しください。';
 
   @override

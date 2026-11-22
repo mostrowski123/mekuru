@@ -5899,6 +5899,18 @@
   "@commonNoSaveDialog": {
     "description": "Shown when the user tries to save an export (a book, a backup or a vocabulary CSV) on an Android device that has no system file picker (some e-readers)."
   },
+  "downloadWaitingConnection": "Waiting for an internet connection.",
+  "@downloadWaitingConnection": {
+    "description": "Downloads screen and Settings (Android): a background download (High quality translation model, offline word audio pack) that may use mobile data is waiting because the phone has no network at all. Shown instead of its percentage, which stands still meanwhile."
+  },
+  "downloadRetrying": "The download was interrupted. Trying again shortly…",
+  "@downloadRetrying": {
+    "description": "Downloads screen and Settings (Android): a background download whose last attempt failed; it tries again by itself after a short wait. Shown instead of its percentage, which stands still meanwhile."
+  },
+  "downloadsWordFrequencySwitchedOff": "Installed, but turned off. Turn it on in Manage Dictionaries to rank search results.",
+  "@downloadsWordFrequencySwitchedOff": {
+    "description": "Downloads screen (word frequency row) and the starter pack card: the word frequency data is installed, but its switch in the dictionary list (Manage Dictionaries, commonManageDictionaries) is off, so search results are not ranked by it."
+  },
   "localOcrCouldNotContinue": "OCR couldn't continue. Try again.",
   "@localOcrCouldNotContinue": {
     "description": "On-device manga OCR (Android) and starting any OCR scan: a failure with no message of its own. Shown on its own, as a scan's reason, or after a page number in localOcrPageError."

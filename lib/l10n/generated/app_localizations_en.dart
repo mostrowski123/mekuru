@@ -4590,6 +4590,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'This device has no file picker, so Mekuru can\'t save files to storage here.';
 
   @override
+  String get downloadWaitingConnection => 'Waiting for an internet connection.';
+
+  @override
+  String get downloadRetrying =>
+      'The download was interrupted. Trying again shortly…';
+
+  @override
+  String get downloadsWordFrequencySwitchedOff =>
+      'Installed, but turned off. Turn it on in Manage Dictionaries to rank search results.';
+
+  @override
   String get localOcrCouldNotContinue => 'OCR couldn\'t continue. Try again.';
 
   @override

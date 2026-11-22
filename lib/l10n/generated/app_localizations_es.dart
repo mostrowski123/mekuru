@@ -4647,6 +4647,17 @@ class AppLocalizationsEs extends AppLocalizations {
       'Este dispositivo no tiene selector de archivos, así que Mekuru no puede guardar archivos en el almacenamiento aquí.';
 
   @override
+  String get downloadWaitingConnection => 'Esperando conexión a internet.';
+
+  @override
+  String get downloadRetrying =>
+      'La descarga se interrumpió. Se volverá a intentar en breve…';
+
+  @override
+  String get downloadsWordFrequencySwitchedOff =>
+      'Instalado, pero desactivado. Actívalo en Administrar diccionarios para ordenar los resultados de búsqueda.';
+
+  @override
   String get localOcrCouldNotContinue =>
       'El OCR no pudo continuar. Vuelve a intentarlo.';
 

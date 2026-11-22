@@ -7436,6 +7436,24 @@ abstract class AppLocalizations {
   /// **'This device has no file picker, so Mekuru can\'t save files to storage here.'**
   String get commonNoSaveDialog;
 
+  /// Downloads screen and Settings (Android): a background download (High quality translation model, offline word audio pack) that may use mobile data is waiting because the phone has no network at all. Shown instead of its percentage, which stands still meanwhile.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for an internet connection.'**
+  String get downloadWaitingConnection;
+
+  /// Downloads screen and Settings (Android): a background download whose last attempt failed; it tries again by itself after a short wait. Shown instead of its percentage, which stands still meanwhile.
+  ///
+  /// In en, this message translates to:
+  /// **'The download was interrupted. Trying again shortly…'**
+  String get downloadRetrying;
+
+  /// Downloads screen (word frequency row) and the starter pack card: the word frequency data is installed, but its switch in the dictionary list (Manage Dictionaries, commonManageDictionaries) is off, so search results are not ranked by it.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed, but turned off. Turn it on in Manage Dictionaries to rank search results.'**
+  String get downloadsWordFrequencySwitchedOff;
+
   /// On-device manga OCR (Android) and starting any OCR scan: a failure with no message of its own. Shown on its own, as a scan's reason, or after a page number in localOcrPageError.
   ///
   /// In en, this message translates to:

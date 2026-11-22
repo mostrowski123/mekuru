@@ -4615,6 +4615,17 @@ class AppLocalizationsId extends AppLocalizations {
       'Perangkat ini tidak memiliki pemilih file, sehingga Mekuru tidak dapat menyimpan file ke penyimpanan di sini.';
 
   @override
+  String get downloadWaitingConnection => 'Menunggu koneksi internet.';
+
+  @override
+  String get downloadRetrying =>
+      'Unduhan terputus. Akan dicoba lagi sebentar lagi…';
+
+  @override
+  String get downloadsWordFrequencySwitchedOff =>
+      'Terpasang, tetapi dinonaktifkan. Aktifkan di Kelola Kamus untuk peringkat hasil pencarian.';
+
+  @override
   String get localOcrCouldNotContinue =>
       'OCR tidak dapat dilanjutkan. Coba lagi.';
 
