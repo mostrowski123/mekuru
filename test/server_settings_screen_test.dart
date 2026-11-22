@@ -55,6 +55,32 @@ void main() {
     expect(reason(StateError('Bad state: secret')), es.serverErrorUnknown);
   });
 
+  test('a secure connection that cannot be made says to check http and '
+      'https', () {
+    final ja = lookupAppLocalizations(const Locale('ja'));
+    // https typed for a server that only speaks http.
+    const wrongProtocol = HandshakeException(
+      'Handshake error in client (OS Error: '
+      'WRONG_VERSION_NUMBER(tls_record.cc:127))',
+    );
+    expect(
+      serverErrorReason(ja, wrongProtocol),
+      'サーバーと安全に接続できませんでした。サーバーが https を使っていない場合は、'
+      'アドレスを http:// で始めてください。',
+    );
+    expect(
+      serverErrorReason(ja, const TlsException('no shared cipher')),
+      ja.serverErrorSecureConnection,
+    );
+    // A certificate the device does not trust keeps its own words, also for
+    // a caller that did not check for it first.
+    const untrusted = HandshakeException(
+      'Handshake error in client (OS Error: CERTIFICATE_VERIFY_FAILED: '
+      'self signed certificate(handshake.cc:393))',
+    );
+    expect(serverErrorReason(ja, untrusted), ja.serverCertificateUntrusted);
+  });
+
   test('a failed server download is worded once, in the app language', () {
     final es = lookupAppLocalizations(const Locale('es'));
     String describe(Object error) =>
