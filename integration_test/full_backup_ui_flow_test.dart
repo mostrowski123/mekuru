@@ -112,12 +112,14 @@ void main() {
       await scrollTo(tester, find.text(l10n.backupFullReplacesChip));
       expect(find.text(l10n.backupFullReplacesChip), findsOneWidget);
 
-      // Export: the page covers the screen until Done.
+      // Export: the page covers the screen until Done. Wait for the page,
+      // not its running title: the title changes once the job is over, and
+      // a job this small can be over before the test first looks.
       await scrollTo(tester, find.text(l10n.backupFullExportTitle));
       await tester.tap(find.text(l10n.backupFullExportTitle));
       await pumpUntilVisible(
         tester,
-        find.text(l10n.backupFullJobExportTitle),
+        find.byType(FullBackupJobScreen),
         timeout: const Duration(seconds: 15),
       );
       expect(
@@ -129,6 +131,8 @@ void main() {
         find.text(l10n.backupFullJobDone),
         timeout: const Duration(seconds: 60),
       );
+      expect(find.text(l10n.backupFullJobExportDoneTitle), findsOneWidget);
+      expect(find.text(l10n.backupFullJobExportTitle), findsNothing);
       expect(File(zipPath).lengthSync(), greaterThan(0));
       await tester.tap(find.text(l10n.backupFullJobDone));
       await pumpUntilGone(tester, find.byType(FullBackupJobScreen));
@@ -159,7 +163,7 @@ void main() {
       await tester.tap(confirm);
       await pumpUntilVisible(
         tester,
-        find.text(l10n.backupFullJobRestoreTitle),
+        find.byType(FullBackupJobScreen),
         timeout: const Duration(seconds: 15),
       );
       await pumpUntilVisible(
@@ -167,6 +171,8 @@ void main() {
         find.text(l10n.backupFullRestartButton),
         timeout: const Duration(seconds: 60),
       );
+      expect(find.text(l10n.backupFullJobRestoreDoneTitle), findsOneWidget);
+      expect(find.text(l10n.backupFullJobRestoreTitle), findsNothing);
       expect(find.text(l10n.backupFullRestartTitle), findsOneWidget);
       expect(exitCalls, 0);
       final staging = p.join(root.path, StagedFullRestore.stagingDirName);
