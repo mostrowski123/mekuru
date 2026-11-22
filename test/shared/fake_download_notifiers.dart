@@ -17,6 +17,7 @@ import 'package:mekuru/features/settings/data/services/yomitan_dict_download_ser
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/shared/downloads/download.dart' show TileAction;
 import 'package:mekuru/shared/downloads/download_tile_state.dart';
 
 import '../test_app.dart';
@@ -197,7 +198,10 @@ class FakeCatalogDownloadNotifier extends CatalogDownloadNotifier {
   @override
   Future<void> delete(int dictionaryId) async {
     onDelete?.call(dictionaryId);
-    state = CatalogDownloadState(deletedId: dictionaryId);
+    state = CatalogDownloadState(
+      deletedId: dictionaryId,
+      outcome: (action: TileAction.delete, error: null),
+    );
   }
 }
 

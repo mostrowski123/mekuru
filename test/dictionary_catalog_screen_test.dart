@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +11,7 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/fixed_dictionary_providers.dart';
 import 'package:mekuru/shared/downloads/download.dart' show TileAction;
@@ -195,6 +198,79 @@ void main() {
 
     expect(find.text('You already have JMdict'), findsNothing);
     expect(started, [CatalogDictionary.jitendex]);
+  });
+
+  testWidgets('a line saying a download or delete worked goes once the '
+      'dictionary manager has undone it', (tester) async {
+    mockWifiConnected(true);
+    final dictionaries = StreamController<List<DictionaryMeta>>();
+    addTearDown(dictionaries.close);
+    DictionaryMeta jitendex(int id) => DictionaryMeta(
+      id: id,
+      name: '${CatalogDictionary.jitendex.title} [2026-09-01]',
+      isEnabled: true,
+      dateImported: DateTime(2026, 9, 1),
+      sortOrder: 0,
+      isHidden: false,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dictionariesProvider.overrideWith((ref) => dictionaries.stream),
+          catalogDownloadProvider(CatalogDictionary.jitendex).overrideWith(
+            () => FakeCatalogDownloadNotifier(
+              CatalogDictionary.jitendex,
+              started.add,
+              result: const CatalogDownloadState(
+                outcome: (action: TileAction.download, error: null),
+              ),
+              onDelete: deleted.add,
+            ),
+          ),
+          fixedDictionaryProvider(FixedDictionary.jmdict).overrideWith(
+            () => FakeFixedDictionaryNotifier(
+              FixedDictionary.jmdict,
+              jmdictStarted.add,
+            ),
+          ),
+        ],
+        child: buildLocalizedTestApp(
+          home: const Scaffold(
+            body: CatalogDictionaryTile(entry: CatalogDictionary.jitendex),
+          ),
+        ),
+      ),
+    );
+    dictionaries.add([jitendex(1)]);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Delete Dictionary'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Deleted.'), findsOneWidget);
+
+    // Imported again in the dictionary manager: it is there, not deleted.
+    dictionaries.add([jitendex(2)]);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Delete Dictionary'), findsOneWidget);
+    expect(find.text('Deleted.'), findsNothing);
+
+    // Deleted there, then downloaded here: complete while it is installed.
+    dictionaries.add([]);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Download'));
+    await tester.pumpAndSettle();
+    expect(started, [CatalogDictionary.jitendex]);
+    dictionaries.add([jitendex(3)]);
+    await tester.pumpAndSettle();
+    expect(find.text('Download complete.'), findsOneWidget);
+
+    // Deleted in the dictionary manager: no longer complete.
+    dictionaries.add([]);
+    await tester.pumpAndSettle();
+    expect(find.text('Download'), findsOneWidget);
+    expect(find.text('Download complete.'), findsNothing);
   });
 
   testWidgets('a download stopped by Wi-Fi going says so', (tester) async {

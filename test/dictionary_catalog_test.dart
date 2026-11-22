@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -214,11 +215,15 @@ void main() {
     final db = createTestDatabase();
     addTearDown(db.close);
     final repo = _ListedRepository(db);
+    // The list the row watches, as the repository's stream feeds it.
+    final listed = StreamController<List<DictionaryMeta>>();
+    addTearDown(listed.close);
+    listed.add(const []);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           dictionaryRepositoryProvider.overrideWithValue(repo),
-          dictionariesProvider.overrideWith((ref) => Stream.value(const [])),
+          dictionariesProvider.overrideWith((ref) => listed.stream),
         ],
         child: buildLocalizedTestApp(
           home: const Scaffold(
@@ -250,6 +255,7 @@ void main() {
         isHidden: false,
       ),
     ];
+    listed.add(repo.listed!);
     await download.download(NetworkConsent.mobileData);
     await tester.pump();
     expect(find.text(ja.downloadsDownloadComplete), findsOneWidget);
