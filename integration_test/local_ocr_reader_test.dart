@@ -171,28 +171,26 @@ void main() {
     await reader.close(tester);
   }, timeout: const Timeout(Duration(minutes: 5)));
 
-  testWidgets(
-    'tapping the OCR button scans the visible page without a sheet',
-    (tester) async {
-      final reader = await _Reader.open(tester);
-      await tester.tap(reader.button);
-      await pumpUntilVisible(tester, reader.overlayCancel);
-      expect(find.byType(OcrActionSheet), findsNothing);
-      if (!reader.supplied) expect(reader.client.created?.json['pages'], [7]);
-      // The receipt names the engine and is the tappable way to the options.
-      expect(
-        find.text(reader.l.localOcrQuickStartedOnDevice(count: 1, pages: '8')),
-        findsOneWidget,
-      );
-      await tester.tap(find.text(reader.l.localOcrOptions));
-      await pumpUntilVisible(tester, find.byType(OcrActionSheet));
-      Navigator.of(tester.element(find.byType(OcrActionSheet))).pop();
-      await pumpUntilGone(tester, find.byType(OcrActionSheet));
-      await reader.cancelScan(tester);
-      await reader.close(tester);
-    },
-    timeout: const Timeout(Duration(minutes: 5)),
-  );
+  testWidgets('tapping the OCR button scans the visible page without a sheet', (
+    tester,
+  ) async {
+    final reader = await _Reader.open(tester);
+    await tester.tap(reader.button);
+    await pumpUntilVisible(tester, reader.overlayCancel);
+    expect(find.byType(OcrActionSheet), findsNothing);
+    if (!reader.supplied) expect(reader.client.created?.json['pages'], [7]);
+    // The receipt names the engine and is the tappable way to the options.
+    expect(
+      find.text(reader.l.localOcrQuickStartedOnDevice(count: 1, pages: '8')),
+      findsOneWidget,
+    );
+    await tester.tap(find.text(reader.l.localOcrOptions));
+    await pumpUntilVisible(tester, find.byType(OcrActionSheet));
+    Navigator.of(tester.element(find.byType(OcrActionSheet))).pop();
+    await pumpUntilGone(tester, find.byType(OcrActionSheet));
+    await reader.cancelScan(tester);
+    await reader.close(tester);
+  }, timeout: const Timeout(Duration(minutes: 5)));
 
   testWidgets(
     'the first tap, before any engine was chosen, opens the options sheet',
@@ -248,11 +246,10 @@ void main() {
 
       progress.add(at(OcrStatus.running, 0));
       await tester.pump(const Duration(milliseconds: 300));
+      // The text an older version saved for it, worded in the user's
+      // language now.
       progress.add(at(OcrStatus.failed, 0, 'Could not connect to OCR server.'));
-      await pumpUntilVisible(
-        tester,
-        find.text('Could not connect to OCR server.'),
-      );
+      await pumpUntilVisible(tester, find.text(l.ocrErrorConnectFailed));
       // Let the bar finish sliding in; its action is off screen until then.
       await tester.pump(const Duration(seconds: 1));
       await tester.tap(find.text(l.localOcrOptions));
