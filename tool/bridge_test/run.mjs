@@ -789,6 +789,49 @@ const checks = [
     }
   }],
 
+  ['a page taken down leaves nothing behind that reads it', async () => {
+    // A page measures itself a frame after its size changes
+    // (Contents.resizeObservers()) and reads the selection 250 ms after it
+    // changes (onSelectionChange()). A re-layout took the page down in
+    // between (DefaultViewManager.resize() clears every view), and the late
+    // call then read a window whose iframe was gone: Android 14's WebView
+    // (Chromium 113) threw "this.window.getComputedStyle is not a function".
+    // This Chrome answers such a call, so the check records the call itself.
+    const p = await openBook('book.epub', `"", "rtl", "paginated", false, "18", "#000000", null, 28, 28, false, "book", 1, null`);
+    try {
+      const late = await p.evaluate(async () => {
+        const calls = [];
+        for (const name of ['resizeCheck', 'triggerSelectedEvent']) {
+          const run = ePub.Contents.prototype[name];
+          ePub.Contents.prototype[name] = function (...args) {
+            if (!this.document.defaultView) calls.push(name);
+            return run.apply(this, args);
+          };
+        }
+        const contents = rendition.getContents()[0];
+        const root = contents.document.documentElement;
+        await new Promise((resolve) => {
+          // Observers are told in the order they were made, so this runs
+          // after the page's own has asked for its frame.
+          const after = new ResizeObserver(() => {
+            after.disconnect();
+            rendition.manager.clear();
+            resolve();
+          });
+          contents.document.dispatchEvent(new Event('selectionchange'));
+          root.style.width = `${root.clientWidth + 10}px`;
+          after.observe(root);
+        });
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        return calls;
+      });
+      expect(late.length === 0 && p.thrown.length === 0,
+        `ran after the page was taken down: ${[...late, ...p.thrown].join(' | ')}`);
+    } finally {
+      await p.close();
+    }
+  }],
+
   ['a first chapter named in Japanese opens from the chapter list, a link and a saved place', async () => {
     // japanese_name.epub (make_epub.py): chapter 1 is 第一章.xhtml, and
     // chapter 2 links to it as written and percent-encoded.

@@ -5906,6 +5906,14 @@ class Contents {
       this.observer.disconnect();
     }
     clearTimeout(this.expanding);
+    // [MEKURU PATCH] Nothing the page asked for runs once it is taken down.
+    // A resize clears every view (DefaultViewManager.resize()), often a frame
+    // after the page asked to measure itself (resizeObservers()) or within
+    // 250 ms of a selection change (onSelectionChange()). Run then, the call
+    // read a window whose iframe was gone, and Android 14's WebView (Chromium
+    // 113) threw "this.window.getComputedStyle is not a function".
+    cancelAnimationFrame(this._resizeFrame);
+    clearTimeout(this.selectionEndTimeout);
   }
 
   /**
@@ -6007,7 +6015,9 @@ class Contents {
   resizeObservers() {
     // create an observer instance
     this.observer = new ResizeObserver(e => {
-      requestAnimationFrame(this.resizeCheck.bind(this));
+      // [MEKURU PATCH] Kept, so that removeListeners() can cancel it.
+      cancelAnimationFrame(this._resizeFrame);
+      this._resizeFrame = requestAnimationFrame(this.resizeCheck.bind(this));
     });
 
     // pass in the target node
