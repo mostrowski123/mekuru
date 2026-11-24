@@ -31,6 +31,7 @@ Each rule in `CLAUDE.md`, and what fails when it is broken. "nothing" marks wher
 | Tests use `createTestDatabase()` | `test/architecture/raw_api_test.dart` |
 | Pure-logic files import no Flutter above `foundation.dart` | nothing |
 | No personal data in telemetry; book titles in breadcrumbs only | partly: `test/core/usage_telemetry_test.dart` (paths in error text; a file error's path, a platform error's message and a socket error's host never sent), `test/server_settings_screen_test.dart` (a Komga or Kavita server's address) |
+| Firebase Analytics reports only from release-workflow builds on real devices | `test/architecture/analytics_gate_test.dart` |
 | Append-only schema, a `schemaVersion` bump, an `if (from < N)` block | partly: `test/database_migration_test.dart` |
 | Late columns also re-added by `_repairMissingColumns` | partly: `test/database_migration_test.dart` |
 | `applyStagedFullRestoreIfAny()` first in `_bootApp`, `IosFullBackup.start()` after it | nothing |

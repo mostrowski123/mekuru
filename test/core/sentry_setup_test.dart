@@ -6,16 +6,19 @@ import 'package:mekuru/core/services/sentry_setup.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+const TelemetryAudience _audience = (
+  environment: 'debug',
+  isSynthetic: true,
+  installSource: 'sideload',
+);
+
 void main() {
   late SentryOptions options;
   final logged = <String>[];
 
   setUp(() {
     options = SentryOptions();
-    applySharedSentryOptions(options, (
-      environment: 'debug',
-      isSynthetic: true,
-    ));
+    applySharedSentryOptions(options, _audience);
     logged.clear();
     usageLogSinkOverride = (message, _, {required isWarning}) =>
         logged.add(message);
@@ -50,15 +53,12 @@ void main() {
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     final ios = SentryOptions()..debug = true;
-    applySharedSentryOptions(ios, (environment: 'debug', isSynthetic: true));
+    applySharedSentryOptions(ios, _audience);
     expect(ios.debug, isFalse);
 
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     final android = SentryOptions()..debug = true;
-    applySharedSentryOptions(android, (
-      environment: 'debug',
-      isSynthetic: true,
-    ));
+    applySharedSentryOptions(android, _audience);
     expect(android.debug, isTrue);
   });
 }

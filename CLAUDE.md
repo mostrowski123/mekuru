@@ -48,7 +48,7 @@ Run codegen after editing `@DriftDatabase` or `environment_config.yaml`.
 - **Layout**: feature-first under `lib/features/<feature>/{data,presentation}/`. `data/` has `models|repositories|services`; `presentation/` has `providers|screens|widgets`. Shared infra in `lib/core/`.
 - **State**: Riverpod, no codegen. The global `databaseProvider` is created once in `lib/main.dart` — **never instantiate `AppDatabase` elsewhere** in app code. Tests use the shared `createTestDatabase()` helper from `test/shared/test_database.dart`, which returns `AppDatabase(NativeDatabase.memory())`.
 - **Pure-logic files** (e.g. `reader_interaction_logic.dart`, `compound_word_resolver.dart`) must stay free of Flutter UI/widget imports so they remain unit-testable (`flutter/foundation.dart` for `debugPrint` is the accepted ceiling).
-- **Telemetry**: `lib/core/services/usage_telemetry.dart` (Sentry-backed, fire-and-forget). **Never** put file names, user text, looked-up words, or other personally identifiable information in telemetry messages, attributes, or breadcrumbs. Book titles may appear only in breadcrumbs.
+- **Telemetry**: `lib/core/services/usage_telemetry.dart` (Sentry-backed, fire-and-forget). **Never** put file names, user text, looked-up words, or other personally identifiable information in telemetry messages, attributes, or breadcrumbs. Book titles may appear only in breadcrumbs. Firebase Analytics starts off on both platforms (`AndroidManifest.xml`, `Info.plist`). `AnalyticsService` turns it on only on real devices, in builds from `build-release.yml` and `release-ios.yml`, which pass `--dart-define=OFFICIAL_BUILD=true`. A new release build step must pass that define too.
 
 ## One owner each
 

@@ -134,7 +134,7 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: flutter build apk --release --no-pub --flavor play --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
+        run: flutter build apk --release --no-pub --flavor play --dart-define=OFFICIAL_BUILD=true --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
 
       - name: Verify native libraries and manifest in release APK
         run: python scripts/verify_native_libs.py build/app/outputs/flutter-apk/app-play-release.apk
@@ -146,7 +146,7 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: flutter build appbundle --release --no-pub --flavor play --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
+        run: flutter build appbundle --release --no-pub --flavor play --dart-define=OFFICIAL_BUILD=true --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
 
       - name: Verify native libraries and manifest in release App Bundle
         run: python scripts/verify_native_libs.py build/app/outputs/bundle/playRelease/app-play-release.aab
@@ -161,6 +161,7 @@ jobs:
         run: >
           flutter build apk --release --no-pub --flavor parallel
           --dart-define=PARALLEL_BUILD=true
+          --dart-define=OFFICIAL_BUILD=true
           --build-number=${{ steps.tag.outputs.version_code }}
           --target-platform android-arm,android-arm64,android-x64
 

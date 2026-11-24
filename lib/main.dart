@@ -103,10 +103,11 @@ Future<void> main() async {
   // Here, not in _bootApp: iOS runs that twice in one process.
   registerThirdPartyLicenses();
 
-  final audience = await resolveSentryAudience();
-  if (audience.isSynthetic) {
-    AnalyticsService.instance.suppress();
-  }
+  final audience = await resolveTelemetryAudience();
+  AnalyticsService.instance.configure(
+    isSynthetic: audience.isSynthetic,
+    installSource: audience.installSource,
+  );
 
   await SentryFlutter.init((options) {
     applySharedSentryOptions(options, audience);
@@ -210,6 +211,11 @@ Future<void> _runDeferredStartupWarmups() => tracedOperation(
     await _runStartupWarmup(
       step: 'firebase',
       action: FirebaseRuntime.instance.ensureFirebaseApp,
+    );
+    // Its own step: an App Check failure above leaves Firebase initialized.
+    await _runStartupWarmup(
+      step: 'analytics',
+      action: AnalyticsService.instance.applyToFirebase,
     );
     await Future.wait([
       _runStartupWarmup(

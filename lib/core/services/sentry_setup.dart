@@ -16,16 +16,20 @@ import 'pii_scrubber.dart';
 import 'synthetic_client.dart';
 import 'usage_telemetry.dart';
 
-/// Which reporting bucket this install belongs to, and whether it is a real
-/// reader at all.
-typedef SentryAudience = ({String environment, bool isSynthetic});
+/// Which reporting bucket this install belongs to in Sentry and in Firebase
+/// Analytics, and whether it is a real reader at all.
+typedef TelemetryAudience = ({
+  String environment,
+  bool isSynthetic,
+  String installSource,
+});
 
 /// Debug builds always use 'debug'; release builds are bucketed by where the
 /// install came from (see [sentryEnvironmentForInstaller]).
 /// Emulators and cloud device farms otherwise blend into the sideload
 /// bucket, which is a real audience (the GitHub APK). Their crashes and
 /// product metrics are both misleading, so callers report nothing for them.
-Future<SentryAudience> resolveSentryAudience() async {
+Future<TelemetryAudience> resolveTelemetryAudience() async {
   final (installerStore, isSynthetic) = await (
     _installerStore(),
     _detectSyntheticClient(),
@@ -36,8 +40,20 @@ Future<SentryAudience> resolveSentryAudience() async {
         ? 'debug'
         : sentryEnvironmentForInstaller(installerStore),
     isSynthetic: isSynthetic,
+    installSource: installSourceFor(installerStore),
   );
 }
+
+/// The `install_source` Firebase Analytics user property. Unlike
+/// [sentryEnvironmentForInstaller] it tells the App Store from TestFlight,
+/// and counts a simulator or an unknown store as a sideload.
+@visibleForTesting
+String installSourceFor(String? installerStore) => switch (installerStore) {
+  'com.android.vending' => 'play',
+  'com.apple' => 'app_store',
+  'com.apple.testflight' => 'testflight',
+  _ => 'sideload',
+};
 
 /// Release-build environment for an install. Every iOS install is `ios`:
 /// `package_info_plus` reports `com.apple` (App Store), `com.apple.testflight`
@@ -97,7 +113,10 @@ Future<bool> _detectSyntheticClient() async {
 
 /// Options every isolate's hub must agree on — above all the PII scrub
 /// hooks, which are the privacy guarantee this app documents.
-void applySharedSentryOptions(SentryOptions options, SentryAudience audience) {
+void applySharedSentryOptions(
+  SentryOptions options,
+  TelemetryAudience audience,
+) {
   // An empty DSN disables the Dart and the native SDK alike. Sample rates
   // can't silence synthetic clients: `sampleRate` never reaches the Android
   // SDK, which went on reporting their NDK crashes (MEKURU-26).
@@ -133,7 +152,7 @@ void applySharedSentryOptions(SentryOptions options, SentryAudience audience) {
 Future<void> initSentryForBackgroundIsolate() async {
   try {
     if (EnvironmentConfig.sentryDsn.isEmpty) return;
-    final audience = await resolveSentryAudience();
+    final audience = await resolveTelemetryAudience();
     if (audience.isSynthetic) return;
     final info = await PackageInfo.fromPlatform();
     await Sentry.init((options) {

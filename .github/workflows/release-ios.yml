@@ -97,7 +97,7 @@ jobs:
       # ponytail: run_number restarts at 1 if this workflow file is renamed;
       # add a floor (like PLAY_VERSION_CODE_FLOOR) if that ever happens.
       - name: Build archive
-        run: flutter build ipa --no-codesign --no-pub --build-number=${{ github.run_number }}
+        run: flutter build ipa --no-codesign --no-pub --dart-define=OFFICIAL_BUILD=true --build-number=${{ github.run_number }}
 
       - name: Verify native frameworks
         run: |
