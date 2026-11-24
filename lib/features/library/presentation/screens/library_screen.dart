@@ -112,6 +112,13 @@ List<Object> libraryGridEntries({
   ...looseBooks.where((b) => !b.isFavorite),
 ];
 
+/// The key of an entry's tile on the library page.
+ValueKey<String> _gridTileKey(Object entry) => switch (entry) {
+  Collection(:final id) => ValueKey('folder-tile-$id'),
+  Book(:final id) => ValueKey('book-tile-$id'),
+  _ => throw ArgumentError.value(entry, 'entry'),
+};
+
 /// Library screen displaying imported books in a grid view.
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
@@ -554,6 +561,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       collections: collections,
       looseBooks: looseBooks,
     );
+    final indexByKey = {
+      for (final (index, entry) in entries.indexed) _gridTileKey(entry): index,
+    };
     return CustomScrollView(
       slivers: [
         if (recent != null)
@@ -575,24 +585,30 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
           sliver: SliverGrid(
             gridDelegate: _libraryGridDelegate(context, ref),
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final entry = entries[index];
-              if (entry is Collection) {
-                return _CollectionFolderTile(
-                  key: ValueKey('folder-tile-${entry.id}'),
-                  collection: entry,
-                  books: folderBooks[entry.id] ?? const [],
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final entry = entries[index];
+                if (entry is Collection) {
+                  return _CollectionFolderTile(
+                    key: _gridTileKey(entry),
+                    collection: entry,
+                    books: folderBooks[entry.id] ?? const [],
+                  );
+                }
+                final book = entry as Book;
+                return _BookTile(
+                  key: _gridTileKey(book),
+                  book: book,
+                  isSelectionMode: _isSelectionMode,
+                  isSelected: _selectedIds.contains(book.id),
+                  onToggleSelection: () => _toggleSelection(book.id),
                 );
-              }
-              final book = entry as Book;
-              return _BookTile(
-                key: ValueKey('book-tile-${book.id}'),
-                book: book,
-                isSelectionMode: _isSelectionMode,
-                isSelected: _selectedIds.contains(book.id),
-                onToggleSelection: () => _toggleSelection(book.id),
-              );
-            }, childCount: entries.length),
+              },
+              childCount: entries.length,
+              // A tile moves with its book when an import adds one ahead of
+              // it, instead of being rebuilt: a sheet it opened works from it.
+              findChildIndexCallback: (key) => indexByKey[key],
+            ),
           ),
         ),
       ],
@@ -1182,13 +1198,20 @@ class _BookTile extends ConsumerStatefulWidget {
 }
 
 class _BookTileState extends ConsumerState<_BookTile>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late final AnimationController _scaleController;
   late final Animation<double> _scaleAnimation;
 
   Offset? _pointerDownPosition;
   Timer? _longPressTimer;
   bool _longPressFired = false;
+
+  /// While the options sheet is up the tile stays built, even when books
+  /// imported ahead push it out of view: the sheet's rows act through it.
+  bool _optionsOpen = false;
+
+  @override
+  bool get wantKeepAlive => _optionsOpen;
 
   Book get book => widget.book;
 
@@ -1276,6 +1299,7 @@ class _BookTileState extends ConsumerState<_BookTile>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final progress = book.readProgress.clamp(0.0, 1.0);
@@ -1406,206 +1430,213 @@ class _BookTileState extends ConsumerState<_BookTile>
     final container = ProviderScope.containerOf(context, listen: false);
     final deleteOcrFuture = book.bookType == 'manga' ? _loadDeleteOcr() : null;
     final lowRamMode = ref.read(lowRamModeProvider);
+    _optionsOpen = true;
+    updateKeepAlive();
     showModalBottomSheet(
       context: context,
       // The sheet can exceed the default max height on small screens
       // (EPUB block + export + rename/cover/delete), so it scrolls.
-      builder: (sheetContext) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: Text(book.title),
-                subtitle: Text(
-                  context.l10n.vocabularyAddedOn(
-                    date: _formatDate(book.dateAdded),
+      // Built from sheetContext: the OCR row rebuilds after the tile may be gone.
+      builder: (sheetContext) {
+        final l10n = sheetContext.l10n;
+        final theme = Theme.of(sheetContext);
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: Text(book.title),
+                  subtitle: Text(
+                    l10n.vocabularyAddedOn(date: _formatDate(book.dateAdded)),
                   ),
                 ),
-              ),
-              const Divider(),
-              // Bookmarks/highlights are EPUB-only features
-              if (book.bookType != 'manga') ...[
-                ListTile(
-                  leading: const Icon(Icons.bookmark_outline),
-                  title: Text(context.l10n.libraryBookmarksTitle),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _showBookBookmarks(context);
-                  },
-                ),
-                Consumer(
-                  builder: (context, ref, _) {
-                    final isProUnlocked = proUnlockedValue(
-                      ref.watch(proUnlockedProvider),
-                    );
-                    return ListTile(
-                      enabled: isProUnlocked,
-                      leading: Icon(
-                        Icons.highlight,
-                        color: isProUnlocked
+                const Divider(),
+                // Bookmarks/highlights are EPUB-only features
+                if (book.bookType != 'manga') ...[
+                  ListTile(
+                    leading: const Icon(Icons.bookmark_outline),
+                    title: Text(l10n.libraryBookmarksTitle),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _showBookBookmarks(context);
+                    },
+                  ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final isProUnlocked = proUnlockedValue(
+                        ref.watch(proUnlockedProvider),
+                      );
+                      return ListTile(
+                        enabled: isProUnlocked,
+                        leading: Icon(
+                          Icons.highlight,
+                          color: isProUnlocked
+                              ? null
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        title: Text(l10n.readerHighlightsTooltip),
+                        trailing: isProUnlocked
                             ? null
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      title: Text(context.l10n.readerHighlightsTooltip),
-                      trailing: isProUnlocked
-                          ? null
-                          : TextButton(
-                              onPressed: () {
+                            : TextButton(
+                                onPressed: () {
+                                  Navigator.of(sheetContext).pop();
+                                  openProUpgrade(
+                                    context,
+                                    source: 'library_highlights',
+                                  );
+                                },
+                                child: Text(l10n.commonUnlock),
+                              ),
+                        onTap: isProUnlocked
+                            ? () {
                                 Navigator.of(sheetContext).pop();
-                                openProUpgrade(
-                                  context,
-                                  source: 'library_highlights',
-                                );
+                                _showBookHighlights(context);
+                              }
+                            : null,
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.ios_share_outlined),
+                    title: Text(l10n.libraryExportFuriganaTitle),
+                    onTap: () {
+                      AppHaptics.light();
+                      Navigator.of(sheetContext).pop();
+                      runFuriganaExport(context, ref, book);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.auto_stories_outlined),
+                    title: Text(l10n.libraryConvertToMangaTitle),
+                    subtitle: Text(l10n.libraryConvertToMangaSubtitle),
+                    onTap: () {
+                      AppHaptics.light();
+                      Navigator.of(sheetContext).pop();
+                      runEpubMangaConversion(context, ref, book);
+                    },
+                  ),
+                ],
+                // Manga-only features
+                if (book.bookType == 'manga') ...[
+                  FutureBuilder<_DeleteOcr?>(
+                    future: deleteOcrFuture,
+                    builder: (ctx, snapshot) {
+                      final deleteOcr = snapshot.data;
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!lowRamMode)
+                            ListTile(
+                              leading: const Icon(Icons.document_scanner),
+                              title: Text(l10n.localOcrRecognize),
+                              subtitle: Text(switch (wording) {
+                                Wording.android =>
+                                  l10n.localOcrOnDeviceSubtitle,
+                                Wording.ios => l10n.localOcrOnDeviceSubtitleIos,
+                              }),
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                showOcrActionSheet(context, book);
                               },
-                              child: Text(context.l10n.commonUnlock),
                             ),
-                      onTap: isProUnlocked
-                          ? () {
-                              Navigator.of(sheetContext).pop();
-                              _showBookHighlights(context);
-                            }
-                          : null,
-                    );
-                  },
-                ),
+                          if (deleteOcr != null)
+                            ListTile(
+                              leading: const Icon(Icons.delete_sweep_outlined),
+                              title: Text(l10n.ocrRemoveActionTitle),
+                              subtitle: Text(switch (deleteOcr) {
+                                _DeleteOcr.clear => l10n.ocrRemoveSubtitle,
+                                _DeleteOcr.restoreMokuro =>
+                                  l10n.ocrRestoreOriginalMokuroSubtitle,
+                                _DeleteOcr.restorePdf =>
+                                  l10n.ocrRemovePdfSubtitle,
+                              }),
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                _removeOcr(context, container, deleteOcr);
+                              },
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.folder_zip_outlined),
+                    title: Text(l10n.libraryExportCbzTitle),
+                    subtitle: Text(l10n.libraryExportCbzSubtitle),
+                    onTap: () {
+                      AppHaptics.light();
+                      Navigator.of(sheetContext).pop();
+                      runMangaCbzExport(context, ref, book);
+                    },
+                  ),
+                ],
+                const Divider(),
+                if (!widget.inFolder)
+                  FavoriteToggleTile(
+                    isFavorite: book.isFavorite,
+                    onToggle: () {
+                      unawaited(
+                        saveLibraryChange(
+                          ScaffoldMessenger.of(sheetContext),
+                          () => container
+                              .read(bookRepositoryProvider)
+                              .setFavorite(book.id, !book.isFavorite),
+                          failure: l10n.libraryFavoriteChangeFailed,
+                          event: 'library.favorite_change_failed',
+                        ),
+                      );
+                      Navigator.of(sheetContext).pop();
+                    },
+                  ),
                 ListTile(
-                  leading: const Icon(Icons.ios_share_outlined),
-                  title: Text(context.l10n.libraryExportFuriganaTitle),
+                  leading: const Icon(Icons.collections_bookmark_outlined),
+                  title: Text(l10n.libraryAddToCollectionAction),
                   onTap: () {
                     AppHaptics.light();
                     Navigator.of(sheetContext).pop();
-                    runFuriganaExport(context, ref, book);
+                    showCollectionAssignSheet(context, book);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.auto_stories_outlined),
-                  title: Text(context.l10n.libraryConvertToMangaTitle),
-                  subtitle: Text(context.l10n.libraryConvertToMangaSubtitle),
+                  leading: const Icon(Icons.edit_outlined),
+                  title: Text(l10n.commonRename),
                   onTap: () {
                     AppHaptics.light();
                     Navigator.of(sheetContext).pop();
-                    runEpubMangaConversion(context, ref, book);
+                    _showRenameDialog(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.image_outlined),
+                  title: Text(l10n.libraryChangeCoverAction),
+                  onTap: () {
+                    AppHaptics.light();
+                    Navigator.of(sheetContext).pop();
+                    _changeCover(context);
+                  },
+                ),
+                ListTile(
+                  iconColor: theme.colorScheme.error,
+                  textColor: theme.colorScheme.error,
+                  leading: const Icon(Icons.delete_outline),
+                  title: Text(l10n.libraryDeleteBookTitle),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _confirmDelete(context);
                   },
                 ),
               ],
-              // Manga-only features
-              if (book.bookType == 'manga') ...[
-                FutureBuilder<_DeleteOcr?>(
-                  future: deleteOcrFuture,
-                  builder: (ctx, snapshot) {
-                    final deleteOcr = snapshot.data;
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (!lowRamMode)
-                          ListTile(
-                            leading: const Icon(Icons.document_scanner),
-                            title: Text(context.l10n.localOcrRecognize),
-                            subtitle: Text(switch (wording) {
-                              Wording.android =>
-                                context.l10n.localOcrOnDeviceSubtitle,
-                              Wording.ios =>
-                                context.l10n.localOcrOnDeviceSubtitleIos,
-                            }),
-                            onTap: () {
-                              Navigator.of(sheetContext).pop();
-                              showOcrActionSheet(context, book);
-                            },
-                          ),
-                        if (deleteOcr != null)
-                          ListTile(
-                            leading: const Icon(Icons.delete_sweep_outlined),
-                            title: Text(context.l10n.ocrRemoveActionTitle),
-                            subtitle: Text(switch (deleteOcr) {
-                              _DeleteOcr.clear =>
-                                context.l10n.ocrRemoveSubtitle,
-                              _DeleteOcr.restoreMokuro =>
-                                context.l10n.ocrRestoreOriginalMokuroSubtitle,
-                              _DeleteOcr.restorePdf =>
-                                context.l10n.ocrRemovePdfSubtitle,
-                            }),
-                            onTap: () {
-                              Navigator.of(sheetContext).pop();
-                              _removeOcr(context, container, deleteOcr);
-                            },
-                          ),
-                      ],
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.folder_zip_outlined),
-                  title: Text(context.l10n.libraryExportCbzTitle),
-                  subtitle: Text(context.l10n.libraryExportCbzSubtitle),
-                  onTap: () {
-                    AppHaptics.light();
-                    Navigator.of(sheetContext).pop();
-                    runMangaCbzExport(context, ref, book);
-                  },
-                ),
-              ],
-              const Divider(),
-              if (!widget.inFolder)
-                FavoriteToggleTile(
-                  isFavorite: book.isFavorite,
-                  onToggle: () {
-                    unawaited(
-                      saveLibraryChange(
-                        ScaffoldMessenger.of(sheetContext),
-                        () => container
-                            .read(bookRepositoryProvider)
-                            .setFavorite(book.id, !book.isFavorite),
-                        failure: sheetContext.l10n.libraryFavoriteChangeFailed,
-                        event: 'library.favorite_change_failed',
-                      ),
-                    );
-                    Navigator.of(sheetContext).pop();
-                  },
-                ),
-              ListTile(
-                leading: const Icon(Icons.collections_bookmark_outlined),
-                title: Text(context.l10n.libraryAddToCollectionAction),
-                onTap: () {
-                  AppHaptics.light();
-                  Navigator.of(sheetContext).pop();
-                  showCollectionAssignSheet(context, book);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: Text(context.l10n.commonRename),
-                onTap: () {
-                  AppHaptics.light();
-                  Navigator.of(sheetContext).pop();
-                  _showRenameDialog(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.image_outlined),
-                title: Text(context.l10n.libraryChangeCoverAction),
-                onTap: () {
-                  AppHaptics.light();
-                  Navigator.of(sheetContext).pop();
-                  _changeCover(context);
-                },
-              ),
-              ListTile(
-                iconColor: Theme.of(context).colorScheme.error,
-                textColor: Theme.of(context).colorScheme.error,
-                leading: const Icon(Icons.delete_outline),
-                title: Text(context.l10n.libraryDeleteBookTitle),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _confirmDelete(context);
-                },
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        );
+      },
+    ).whenComplete(() {
+      if (!mounted) return;
+      _optionsOpen = false;
+      updateKeepAlive();
+    });
   }
 
   // The sheets pop themselves before calling onNavigate.
@@ -2309,7 +2340,7 @@ class _CollectionFolderScreenState
   Widget _tile(List<Book> members, int index, Animation<double> route) {
     // ReorderableBuilder asserts a ValueKey on every direct child, so the
     // key must sit on the outermost widget returned here.
-    final key = ValueKey('book-tile-${members[index].id}');
+    final key = _gridTileKey(members[index]);
     final tile = _BookTile(
       key: index < _FolderPreview.previewCount ? key : null,
       book: members[index],
