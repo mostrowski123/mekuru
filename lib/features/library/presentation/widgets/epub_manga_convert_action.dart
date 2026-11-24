@@ -42,7 +42,10 @@ Future<void> runEpubMangaConversion(
   );
   if (confirmed != true || !context.mounted) return;
 
-  showBlockingProgressDialog(context, l10n.libraryConvertToMangaProgress);
+  final closeSpinner = showBlockingProgressDialog(
+    context,
+    l10n.libraryConvertToMangaProgress,
+  );
 
   Object? failure;
   StackTrace? failureStack;
@@ -58,8 +61,8 @@ Future<void> runEpubMangaConversion(
     failureStack = st;
   }
 
+  closeSpinner();
   if (!context.mounted) return;
-  Navigator.of(context).pop(); // spinner
 
   switch (failure) {
     case null:

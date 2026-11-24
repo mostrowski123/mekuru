@@ -27,7 +27,10 @@ Future<void> runMangaCbzExport(
   final l10n = context.l10n;
   final messenger = ScaffoldMessenger.of(context);
 
-  showBlockingProgressDialog(context, l10n.libraryExportCbzProgress);
+  final closeSpinner = showBlockingProgressDialog(
+    context,
+    l10n.libraryExportCbzProgress,
+  );
 
   Object? failure;
   StackTrace? failureStack;
@@ -55,8 +58,8 @@ Future<void> runMangaCbzExport(
     failureStack = st;
   }
 
+  closeSpinner();
   if (!context.mounted) return;
-  Navigator.of(context).pop(); // spinner
 
   if (failure != null || cbzPath == null) {
     final message = switch (failure) {

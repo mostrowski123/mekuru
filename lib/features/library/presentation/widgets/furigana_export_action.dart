@@ -47,7 +47,10 @@ Future<void> runFuriganaExport(
   );
   if (!context.mounted) return;
 
-  showBlockingProgressDialog(context, l10n.libraryExportFuriganaProgress);
+  final closeSpinner = showBlockingProgressDialog(
+    context,
+    l10n.libraryExportFuriganaProgress,
+  );
 
   final exportAttrs = <String, Object>{
     'mode': exportMode.name,
@@ -80,8 +83,8 @@ Future<void> runFuriganaExport(
       failure = e;
     }
 
+    closeSpinner();
     if (!context.mounted) return;
-    Navigator.of(context).pop(); // spinner
 
     if (failure != null) {
       messenger.showSnackBar(
